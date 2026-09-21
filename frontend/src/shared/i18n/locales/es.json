@@ -1,0 +1,13 @@
+{
+  "app": {
+    "name": "Applications Tracker"
+  },
+  "health": {
+    "title": "Estado del sistema",
+    "api": "API",
+    "database": "Base de datos",
+    "environment": "Entorno",
+    "loading": "Comprobando…",
+    "error": "No se puede conectar con la API"
+  }
+}

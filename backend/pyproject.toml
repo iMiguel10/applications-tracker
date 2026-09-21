@@ -1,0 +1,35 @@
+[project]
+name = "applications-tracker-api"
+version = "0.1.0"
+description = "REST API for tracking job applications"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy[asyncio]",
+    "asyncpg",
+    "pydantic-settings",
+    "alembic",
+    "email-validator",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "ruff",
+    "mypy",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+
+[tool.ruff.lint]
+ignore = ["B008", "EXE002"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]

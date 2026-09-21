@@ -1,0 +1,26 @@
+services:
+  api-test:
+    build:
+      context: ./backend
+    entrypoint: ["/app/entrypoint.sh"]
+    command: pytest
+    env_file:
+      - .env.test
+    depends_on:
+      db-test:
+        condition: service_healthy
+
+  db-test:
+    image: postgres:17
+    env_file:
+      - .env.test
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_test:
