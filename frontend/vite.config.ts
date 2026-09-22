@@ -23,5 +23,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // Mientras no haya tests, `npm run test` no debe romper la verificación.
+    passWithNoTests: true,
   },
 });

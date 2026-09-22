@@ -1,48 +1,42 @@
 # Applications Tracker
 
-Aplicación para el seguimiento de solicitudes de puestos de trabajo.
+Un cuaderno de bitácora para la búsqueda de empleo: cada candidatura, cómo avanza (cambios de estado y entrevistas) y cuál es el próximo paso, para que ninguna se quede olvidada.
 
-- **backend/**: API REST con FastAPI + SQLAlchemy (async) + Alembic, organizada en capas `api → services → repositories → db`.
-- **frontend/**: React + TypeScript + Vite con arquitectura feature-based (TanStack Query, react-hook-form + zod, Tailwind v4 + shadcn/ui, i18next).
-- **Auth**: SuperTokens (pendiente de integrar).
-- **Base de datos**: PostgreSQL 17.
+> **Estado:** diseño cerrado y entorno de desarrollo listo. La implementación empieza por la fase F0. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
 
-## Desarrollo
+## Qué resuelve
+
+- **Todas las solicitudes en un sitio**, con filtros por estado, empresa, modalidad y fechas.
+- **Historial real de cada proceso.** Cada cambio de estado queda registrado con la fecha en que ocurrió y se puede deshacer si fue un error.
+- **Qué hacer hoy:** próximas entrevistas, recordatorios vencidos y candidaturas sin actividad.
+- **Métricas honestas.** Cada porcentaje indica sobre cuántas solicitudes se calcula, y el sistema nunca da por descartada una candidatura que solo lleva tiempo sin respuesta.
+
+## Stack
+
+FastAPI · SQLAlchemy async · Alembic · PostgreSQL 17 · SuperTokens · React 19 · TypeScript · Vite · TanStack Query · Tailwind + shadcn/ui · Docker · MkDocs
+
+## Decisiones destacadas
+
+- **Arquitectura en capas verificable:** `endpoints → services → repositories`. Una sola regla la resume: *si habla con la base de datos, vive en `repositories/`*.
+- **El estado de una solicitud es una máquina de estados** con historial append-only. Las transiciones solo las valida el backend, y la API le indica al frontend cuáles ofrecer.
+- **Aislamiento entre usuarios en dos capas:** filtro obligatorio por usuario en cada consulta y claves foráneas compuestas que impiden, desde la propia base de datos, enlazar datos de otro usuario.
+- **Autenticación delegada en SuperTokens**, con sesiones por cookies httpOnly, rotación de tokens y un core aislado con su propia base de datos.
+
+Cada decisión, con la alternativa descartada y el porqué, está en la [documentación de arquitectura](docs/arquitectura/index.md).
+
+## Arrancar
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-| Servicio | URL |
+| | |
 |---|---|
-| Frontend | http://localhost:5173 |
-| API | http://localhost:8000 |
-| Documentación de la API | http://localhost:8000/docs |
-| PostgreSQL | localhost:5432 |
+| Aplicación | http://localhost:5173 |
+| API (OpenAPI) | http://localhost:8000/docs |
+| Documentación | http://localhost:8001 |
 
-Las migraciones se aplican automáticamente al arrancar el contenedor `api`.
+## Documentación
 
-```bash
-# Crear una migración
-docker compose exec api alembic revision --autogenerate -m "descripcion"
-
-# Instalar una dependencia del frontend (se instala en el volumen del contenedor)
-docker compose run --rm frontend npm install <paquete>
-
-# Añadir una dependencia del backend
-docker compose exec api uv add <paquete>
-```
-
-## Tests y calidad
-
-```bash
-# Tests del backend contra una base de datos aislada
-docker compose -f compose.test.yml up --build --abort-on-container-exit
-
-# Lint y tipos
-docker compose exec api ruff check .
-docker compose exec api mypy app
-docker compose exec frontend npm run lint
-docker compose exec frontend npx tsc -b
-```
+El sitio en `docs/` (MkDocs) contiene la especificación, la arquitectura, la autenticación y la bitácora de decisiones. La guía de trabajo del repositorio (comandos, convenciones e invariantes) está en [CLAUDE.md](CLAUDE.md).
