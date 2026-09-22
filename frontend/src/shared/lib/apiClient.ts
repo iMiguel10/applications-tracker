@@ -19,10 +19,16 @@ type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 /**
  * Único punto de acceso HTTP a la API. Solo los `services/` de cada feature
  * deben importarlo; los hooks y componentes nunca llaman a fetch directamente.
+ *
+ * No gestiona el 401: el SDK de SuperTokens intercepta fetch, refresca la sesión
+ * y reintenta. Refrescar también aquí provocaría refrescos duplicados, que
+ * SuperTokens interpreta como robo de token y revoca la sesión (invariante 10).
  */
 async function request<T>(path: string, { body, headers, ...init }: RequestOptions = {}): Promise<T> {
   const response = await fetch(`${API_URL}/api/v1${path}`, {
     ...init,
+    // Las cookies de sesión (httpOnly) solo viajan con credentials: "include".
+    credentials: "include",
     headers: {
       ...(body !== undefined && { "Content-Type": "application/json" }),
       ...headers,

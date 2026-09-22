@@ -1,8 +1,8 @@
 # Autenticación
 
-> Estado: **borrador v1** · Fecha: 2026-09-22 · Depende de la [arquitectura](index.md) y de [servicios y estructura](servicios-y-estructura.md)
+> Estado: **v2, implementado en F1** · Fecha: 2026-09-22 · Depende de la [arquitectura](index.md) y de [servicios y estructura](servicios-y-estructura.md)
 >
-> Los nombres concretos de funciones y eventos de los SDK de SuperTokens se verifican contra su versión al implementar F1. Si alguno difiere, este documento se corrige en ese mismo commit.
+> Versiones verificadas al implementar: `supertokens-python` 0.31.3 (CDI 5.4), core `supertokens-postgresql:12.2.0` (admite la CDI 5.4, comprobado con su `/apiversion`) y `supertokens-web-js` 0.16.0. Los nombres de funciones y eventos de este documento están comprobados contra esas versiones.
 
 ## 1. Punto de partida
 
@@ -67,12 +67,21 @@ init(
         api_key=settings.supertokens_api_key,
     ),
     framework="fastapi",
-    recipe_list=[session.init(), emailpassword.init()],
+    recipe_list=[
+        session.init(get_token_transfer_method=lambda *_: "cookie"),
+        emailpassword.init(),
+    ],
     mode="asgi",
+    telemetry=False,
 )
 ```
 
-Variables nuevas en `.env`: `API_DOMAIN`, `WEBSITE_DOMAIN`, `SUPERTOKENS_CONNECTION_URI`, `SUPERTOKENS_API_KEY`, `SUPERTOKENS_DB_NAME`, `SUPERTOKENS_DB_USER` y `SUPERTOKENS_DB_PASSWORD`.
+- **Solo cookies** (`get_token_transfer_method`): el SDK admite también tokens en cabecera; fijarlo evita que un cliente pueda elegir ese modo.
+- **`telemetry=False`**: por defecto el SDK envía datos de uso a SuperTokens. En una app de datos personales no aporta nada.
+- **Versión del core fijada** (`12.2.0`, nunca `latest`). SDK y core hablan un protocolo versionado (CDI). Antes de subir cualquiera de los dos, hay que comprobar que la CDI del SDK (`supertokens_python.constants.SUPPORTED_CDI_VERSIONS`) aparece en el `/apiversion` del core.
+- **Access token de 5 minutos** (`ACCESS_TOKEN_VALIDITY: 300` en el core). Ver [decisión 0002](../decisiones/0002-access-token-de-5-minutos.md).
+
+Variables nuevas en `.env`: `API_DOMAIN`, `WEBSITE_DOMAIN`, `SUPERTOKENS_CONNECTION_URI`, `SUPERTOKENS_API_KEY` (el core exige al menos 20 caracteres), `SUPERTOKENS_DB_NAME`, `SUPERTOKENS_DB_USER` y `SUPERTOKENS_DB_PASSWORD`. En `Settings` no tienen valor por defecto: si falta alguna, la API no arranca.
 
 ### Middleware y CORS
 
@@ -111,6 +120,22 @@ async def get_current_user(
 - `verify_session()` responde 401 si no hay sesión válida. El frontend lo interpreta como "intenta refrescar y, si no, al login".
 - `get_or_create` hace `INSERT … ON CONFLICT (supertokens_user_id) DO NOTHING` + `SELECT`. Es idempotente y seguro ante peticiones concurrentes (arquitectura §4).
 - **Ningún endpoint usa `verify_session()` directamente**: todos dependen de `get_current_user`. Así la sesión y el usuario propio siempre van juntos, y en las pruebas basta con sustituir una sola dependencia.
+- `UserRepository.get_or_create` hace primero un `SELECT`: casi todas las peticiones son de usuarios que ya existen y no deben escribir nada. Solo si no existe hace el `INSERT … ON CONFLICT DO NOTHING`.
+- El email se lee con `IdentityRepository.get_email()`, el único punto que consulta usuarios al SDK. Aplica la regla de capas: SuperTokens es el almacén de identidades, así que su acceso vive en `repositories/`. En los tests se sustituye por un doble sin red.
+
+### Router protegido por construcción
+
+```python
+# app/api/v1/router.py
+router.include_router(health.router)                    # pública
+
+protected = APIRouter(dependencies=[Depends(get_current_user)])
+protected.include_router(me.router)
+protected.include_router(applications.router)
+router.include_router(protected)
+```
+
+La invariante 8 no depende de acordarse de añadir la dependencia en cada endpoint: todo lo que se incluye en `protected` exige sesión. Los endpoints que necesitan el usuario lo siguen pidiendo como parámetro (`current_user: CurrentUser = Depends(get_current_user)`). FastAPI resuelve la dependencia una sola vez por petición.
 
 ### Endpoints
 
@@ -136,12 +161,18 @@ async def get_current_user(
 - `routes/AuthLoaders.ts` usa `await Session.doesSessionExist()`. Hay dos loaders:
   - `requireAuthLoader`: sin sesión, redirige a `/login?redirect=<ruta>`.
   - `redirectIfAuthenticatedLoader`: redirige desde `/login` y `/register` si ya hay sesión.
-- `app/providers/AuthProvider.tsx` expone `useAuth()` con `signIn`, `signUp` y `signOut`, y los datos de `GET /me` a través de un `useQuery` con `staleTime: Infinity`.
-- `apiClient` ya envía `credentials: "include"`. **No gestiona el 401**: esa es tarea del interceptor del SDK.
+- **Sin `AuthProvider`** (cambio respecto al borrador v1). En GestPro, el provider guardaba la sesión de Supabase en un contexto de React. Aquí la sesión la gestiona el SDK y los datos de `GET /me` los guarda TanStack Query, así que un contexto solo duplicaría ese estado. En su lugar, `features/auth/hooks/` expone `useMe` (con `staleTime: Infinity`), `useSignIn`, `useSignUp` y `useSignOut`, sobre `features/auth/services/auth.service.ts`, que traduce los estados del SDK a un resultado propio (`ok`, `wrong_credentials`, `field_errors`, `error`).
+- `apiClient` envía `credentials: "include"`. **No gestiona el 401**: esa es tarea del interceptor del SDK.
+- **`?redirect=` solo acepta rutas internas** (`features/auth/lib/safeRedirect.ts`): empieza por `/`, pero no por `//` ni por `/\`. Si no, `/login?redirect=https://malo.example` llevaría al usuario recién autenticado a una web externa (*open redirect*).
+- Cada ruta con `loader` declara `HydrateFallback`: es lo que React Router pinta en la primera carga mientras el loader comprueba la sesión.
 
 > **Trampa — refrescar la sesión a mano.** Si `apiClient` reintentase por su cuenta tras un 401 llamando a `/auth/session/refresh`, habría dos refrescos a la vez: el suyo y el del SDK. O varios, si hay varias peticiones en paralelo o varias pestañas. SuperTokens rota el refresh token en cada uso. Cuando llega un refresh con un token ya rotado, lo interpreta como un **robo de token** y revoca la sesión entera. El resultado es un usuario al que se cierra la sesión al azar, casi siempre al volver a una pestaña tras un rato, que es cuando varias peticiones caducadas salen juntas. El SDK coordina el refresco entre peticiones y pestañas con un bloqueo; por eso la regla es que **solo el SDK refresca**.
 
-- Cuando la sesión ya no se puede recuperar, el SDK lo notifica en el `onHandleEvent` de `Session.init` con el evento de sesión expirada o no autorizada. Ahí se limpia la caché y se navega al login.
+- Cuando la sesión ya no se puede recuperar, el SDK lo notifica en el `onHandleEvent` de `Session.init` con el evento `UNAUTHORISED`. Ese evento limpia la caché y navega a `/login?redirect=…`, salvo que ya se esté en una página pública. `SIGN_OUT` también limpia la caché.
+
+!!! note "Dos cosas que parecen fallos y no lo son"
+    - **Cookies legibles desde JavaScript.** `document.cookie` muestra `sFrontToken` y `st-last-access-token-update`. `sFrontToken` es una copia en Base64 de la *carga* del access token **sin la firma**: el SDK la usa para saber si hay sesión sin preguntar al servidor, y no sirve para autenticarse. Las credenciales (`sAccessToken`, `sRefreshToken`) son httpOnly y no aparecen.
+    - **`POST /auth/session/refresh → 401` al abrir el login sin sesión.** `doesSessionExist()` no puede ver el refresh token (es httpOnly). Si no encuentra `sFrontToken`, intenta refrescar para comprobarlo, y el 401 significa "no hay sesión". El navegador lo registra en consola como recurso fallido, pero es la respuesta esperada.
 
 > **Trampa — la caché sobrevive al logout.** TanStack Query guarda en memoria las respuestas de la sesión anterior. Si el usuario A cierra sesión y B inicia sesión en el mismo navegador, B ve durante un instante los datos de A mientras las queries se revalidan. Si alguna query tiene `staleTime` alto (como `/me`), los sigue viendo hasta recargar. Por eso `signOut()` y el evento de sesión expirada ejecutan `queryClient.clear()` **antes** de navegar.
 
@@ -172,22 +203,32 @@ Con los dos en el mismo sitio, las cookies viajan en las peticiones `fetch` sin 
 
 ## 6. Pruebas
 
-La mayoría de las pruebas de API **no usan SuperTokens**: sustituyen `get_current_user` con `app.dependency_overrides` por un usuario de prueba creado en la BD. Un fixture `as_user(user)` permite cambiar de usuario dentro de una misma prueba.
+La mayoría de las pruebas de API **no usan SuperTokens**: sustituyen `get_current_user` con `app.dependency_overrides` por un usuario de prueba creado en la BD. Fixtures de `tests/conftest.py`:
+
+- **`client`**: autenticado como `user`, el caso por defecto.
+- **`anonymous_client`**: sin sesión.
+- **`as_user(otro)`**: cambia el usuario dentro de una misma prueba.
 
 Pruebas adversas, que son las que demuestran que el diseño funciona:
 
 | # | Prueba | Qué demuestra |
 |---|---|---|
-| T1 | Petición a `/api/v1/*` sin cookies → 401 | Ningún endpoint queda sin proteger. Se recorren **todas** las rutas del router, no una lista escrita a mano, para que un endpoint nuevo quede cubierto automáticamente. |
+| T1 | Petición a `/api/v1/*` sin cookies → 401 | Ningún endpoint queda sin proteger. Las rutas se leen del **esquema OpenAPI**, no de una lista escrita a mano ni de `app.routes` (FastAPI ya no copia ahí las rutas de los routers incluidos), para que un endpoint nuevo quede cubierto automáticamente. Una prueba de control falla si el recorrido encuentra menos de 3 rutas: sin ella, T1 pasaría en verde sin comprobar nada. |
 | T2 | Usuario B lee, edita y borra un recurso de A → 404 en todos los casos | Aislamiento entre usuarios (arquitectura §7) |
 | T3 | Usuario B crea una solicitud con la empresa de A → 404, y la BD no contiene la fila | La FK compuesta y el filtro por `user_id` |
 | T4 | Dos llamadas simultáneas a `get_or_create` con el mismo `supertokens_user_id` → una sola fila en `users` | Idempotencia ante concurrencia |
 | T5 | `POST /auth/signin` desde el origen permitido → la respuesta incluye `Access-Control-Allow-Origin` | Orden de los middlewares (§3) |
 | T6 | `OPTIONS` desde un origen no permitido → sin cabeceras CORS | La lista de orígenes no está abierta |
-| T7 | *(humo, con el core real)* registro → login → `GET /me` → logout → `GET /me` responde 401 | El logout revoca la sesión de verdad y no solo borra la cookie |
-| T8 | *(frontend)* `signOut()` vacía la caché de TanStack Query | No hay fuga de datos entre usuarios del mismo navegador |
+| T7 | *(humo, con el core real)* registro → `GET /me` → se copian las cookies → logout → `POST /auth/session/refresh` con las cookies copiadas responde 401 | El logout revoca el refresh token: la sesión no se puede renovar. El access token copiado sigue valiendo hasta caducar, 5 min como máximo ([decisión 0002](../decisiones/0002-access-token-de-5-minutos.md)). |
+| T8 | *(frontend)* `useSignOut` vacía la caché de TanStack Query | No hay fuga de datos entre usuarios del mismo navegador |
 
-La prueba T7 necesita el core de SuperTokens, así que en F1 `compose.test.yml` incorpora `supertokens` y su BD de pruebas.
+La prueba T7 necesita el core de SuperTokens, así que `compose.test.yml` incorpora `supertokens-test` y `supertokens-db-test`, esta última en `tmpfs`, sin datos persistentes.
+
+!!! success "Las pruebas detectan el fallo que dicen cubrir"
+    Al implementar F1 se provocó a propósito cada fallo y se comprobó que la prueba se ponía en rojo:
+
+    - **T5.** Con el orden de middlewares invertido, la respuesta del login es 200 **sin** `Access-Control-Allow-Origin`: es exactamente la trampa de §3.
+    - **T8.** Sin el `queryClient.clear()`, la caché conserva 2 entradas.
 
 ## 7. Lo que no se hace todavía
 
@@ -202,3 +243,5 @@ La prueba T7 necesita el core de SuperTokens, así que en F1 `compose.test.yml` 
 | MFA | Evolución documentada, no se construye | Recetas de SuperTokens |
 
 Registro con enumeración de emails: `FIELD_ERROR` "email ya registrado" revela que una dirección tiene cuenta. Es el comportamiento estándar del registro y se acepta para el MVP.
+
+**Dependencia con script de instalación denegado.** `supertokens-web-js` trae `browser-tabs-lock`, el bloqueo entre pestañas que coordina el refresco. Su `postinstall` solo imprime un mensaje de agradecimiento, así que está denegado en `package.json` (`"allowScripts": {"browser-tabs-lock": false}`). npm moderno no ejecuta scripts de instalación sin aprobación explícita.

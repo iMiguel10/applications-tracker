@@ -6,11 +6,14 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-22): F0 terminada.**
+> **Estado (2026-09-22): F1 terminada.**
 >
-> - **Existe:** el entorno Docker, `/api/v1/health` y el esqueleto vertical F0: crear y listar solicitudes (`POST`/`GET /api/v1/applications`) pasando por todas las capas, con tests, y la página `/applications` del frontend.
-> - **F0 es desechable:** el modelo `Application` (puesto y empresa en texto, sin usuario) se rehace en F2. Lo permanente es la infraestructura que F0 dejó resuelta: `db/base.py`, `tests/conftest.py`, `schemas/pagination.py`, `apiClient`, los componentes `ui/` y el patrón de capas.
-> - **No existe todavía:** autenticación (SuperTokens), `users`, `companies`, historial de estados, `domain/`, entrevistas, recordatorios ni dashboard. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
+> - **Existe:**
+>     - Entorno Docker, `/api/v1/health` y el esqueleto F0: crear y listar solicitudes.
+>     - Autenticación F1: SuperTokens con core propio, registro, login, logout, `GET /api/v1/me`, tabla `users` de enlace, router protegido, páginas `/login` y `/register` y rutas protegidas.
+>     - Tests del backend (incluidas T1 y T4–T7) y del frontend (T8, `safeRedirect`).
+> - **Pendiente de F2:** las solicitudes de F0 **todavía no se filtran por usuario**: exigen sesión, pero cualquier usuario autenticado ve todas. El modelo `Application` (puesto y empresa en texto, sin `user_id`) se rehace en F2.
+> - **No existe todavía:** `companies`, historial de estados, `domain/`, entrevistas, recordatorios ni dashboard. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
 
 ## 2. Documentación
 
@@ -34,7 +37,7 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `api` | 8000 | FastAPI + SQLAlchemy async + Alembic (python 3.12, uv). `/docs` = OpenAPI. |
 | `frontend` | 5173 | React 19 + TS + Vite 8, TanStack Query, react-hook-form + zod, Tailwind v4 + shadcn/ui, i18next |
 | `docs` | 8001 | MkDocs Material **fijado a la 9** (MkDocs 2.0 rompe plugins y temas) |
-| `supertokens`, `supertokens-db` | — | **F1, aún no existen.** Core de auth con **su propia** instancia de Postgres; no se publican puertos. |
+| `supertokens`, `supertokens-db` | — | Core de auth **fijado a 12.2.0** (debe implementar la CDI de `supertokens-python`), con **su propia** instancia de Postgres; no se publican puertos. Access token de 5 min ([0002](docs/decisiones/0002-access-token-de-5-minutos.md)). |
 
 Usa siempre `localhost` y nunca `127.0.0.1` (ver trampas).
 
@@ -61,7 +64,8 @@ docker compose -f compose.test.yml down -v
 docker compose exec frontend npm run lint
 docker compose exec frontend npx tsc -b
 docker compose exec frontend npm run build
-docker compose run --rm frontend npm install <paquete>
+docker compose exec frontend npm run test                                  # vitest
+docker compose exec frontend npm install <paquete>                         # exec, NO run (ver trampas)
 docker compose exec frontend npx shadcn add <componente>                   # versión del proyecto; nunca escribir ui a mano
 
 # Documentación
@@ -115,7 +119,11 @@ Violarlas es un fallo, no una diferencia de criterio.
 
 ## 8. Trampas conocidas
 
-- **Dependencias que "no se instalan".** `api_venv` (volumen con nombre) y `/app/node_modules` (volumen anónimo) **no se actualizan al reconstruir la imagen**. Instala dentro del contenedor. Tras un `git pull` con dependencias nuevas: `docker compose up --build -V` y `docker compose run --rm api uv sync`.
+- **Dependencias que "no se instalan".** `api_venv` (volumen con nombre) y `/app/node_modules` (volumen anónimo) **no se actualizan al reconstruir la imagen**. Instala dentro del contenedor **en marcha, con `exec`**. `docker compose run --rm frontend npm install` crea un contenedor nuevo con su propio `node_modules`: el paquete se pierde y el contenedor `frontend` nunca lo ve, aunque `package.json` sí cambie. Tras un `git pull` con dependencias nuevas: `docker compose up --build -V` y `docker compose run --rm api uv sync`.
+- **Variables nuevas del `.env` no se aplican con `restart`.** `env_file` se lee al **crear** el contenedor: usa `docker compose up -d --force-recreate <servicio>`.
+- **El logout no invalida al instante un access token ya emitido.** Se valida sin consultar al core, así que una copia sigue sirviendo hasta caducar (5 min). El refresh token sí queda revocado ([0002](docs/decisiones/0002-access-token-de-5-minutos.md)).
+- **Endpoints nuevos: dentro del router `protected`** de `api/v1/router.py`, salvo que deban ser públicos. La prueba T1 lee las rutas del OpenAPI y falla si alguno responde sin sesión.
+- **`POST /auth/session/refresh → 401` al abrir el login sin sesión es normal**: `doesSessionExist()` pregunta así si hay sesión. Y `sFrontToken` es legible desde JS a propósito: no lleva firma y no sirve para autenticarse.
 - **Orden de middlewares.** SuperTokens se añade **antes** que `CORSMiddleware` (en Starlette el último añadido es el más externo). Si se invierte, el login devuelve 200 y aun así el navegador bloquea la respuesta con un error de CORS.
 - **`localhost` frente a `127.0.0.1`.** Para el navegador son sitios distintos: las cookies de sesión no viajan y el login parece no funcionar sin dar error.
 - **Caché tras el logout.** `signOut()` y la sesión expirada ejecutan `queryClient.clear()` antes de navegar; si no, el siguiente usuario ve datos del anterior.
@@ -142,8 +150,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 |---|---|
 | ✔ Entorno | Docker de desarrollo, health, sitio de documentación |
 | ✔ F0 | Esqueleto vertical desechable: crear y listar solicitudes sin auth, atravesando todas las capas |
-
-| F1 | SuperTokens (core + BD), `users`, `get_current_user`, login y registro, rutas protegidas |
+| ✔ F1 | SuperTokens (core + BD), `users`, `get_current_user`, router protegido, login y registro, rutas protegidas |
 | F2 | Empresas y solicitudes: CRUD, filtros, paginación, archivado, pruebas de aislamiento, OpenAPI en docs |
 | F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |
 | F4 | Entrevistas y recordatorios (`in_app` + `NotificationChannel`) |

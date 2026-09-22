@@ -32,5 +32,31 @@
       "companyRequired": "Indica la empresa",
       "tooLong": "Máximo 200 caracteres"
     }
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "signOut": "Cerrar sesión",
+    "signInTitle": "Inicia sesión",
+    "signUpTitle": "Crea tu cuenta",
+    "noAccount": "¿No tienes cuenta?",
+    "haveAccount": "¿Ya tienes cuenta?",
+    "fields": {
+      "email": "Email",
+      "password": "Contraseña",
+      "confirmPassword": "Repite la contraseña"
+    },
+    "validation": {
+      "emailRequired": "Indica tu email",
+      "emailInvalid": "El email no tiene un formato válido",
+      "passwordRequired": "Indica la contraseña",
+      "passwordsDoNotMatch": "Las contraseñas no coinciden"
+    },
+    "errors": {
+      "wrongCredentials": "Email o contraseña incorrectos",
+      "emailRejected": "Este email no es válido o ya está registrado",
+      "passwordPolicy": "La contraseña debe tener al menos 8 caracteres e incluir letras y números",
+      "generic": "Algo ha fallado. Inténtalo de nuevo."
+    }
   }
 }

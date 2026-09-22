@@ -3,7 +3,7 @@
 Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y el próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
 !!! warning "Estado"
-    En desarrollo. Terminada la fase F0 (esqueleto vertical: crear y listar solicitudes); la siguiente es F1, autenticación.
+    En desarrollo. Terminadas F0 (esqueleto vertical) y F1 (autenticación con SuperTokens); la siguiente es F2, empresas y solicitudes.
 
 ## En una página
 

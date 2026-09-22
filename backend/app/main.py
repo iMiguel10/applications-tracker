@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from supertokens_python import get_all_cors_headers
+from supertokens_python.framework.fastapi import get_middleware
 
 from app.api.v1.router import router as api_router
 from app.core.config import settings
@@ -9,8 +11,10 @@ from app.core.exception_handlers import (
 )
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
+from app.core.supertokens import init_supertokens
 
 setup_logging()
+init_supertokens()
 
 app = FastAPI(
     title="Applications Tracker API",
@@ -20,12 +24,17 @@ app = FastAPI(
 
 app.include_router(api_router, prefix="/api/v1")
 
+# El orden importa: en Starlette el ÚLTIMO add_middleware es el más externo.
+# SuperTokens se añade primero y CORS después, para que CORS envuelva también las
+# respuestas de /auth/*. Invertido, el login respondería 200 sin
+# Access-Control-Allow-Origin y el navegador lo bloquearía (autenticacion.md §3).
+app.add_middleware(get_middleware())
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", *get_all_cors_headers()],
 )
 
 app.add_exception_handler(

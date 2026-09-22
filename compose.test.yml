@@ -1,3 +1,5 @@
+# Entorno aislado para pytest. Los valores van escritos aquí (no ${...}) para no
+# depender del .env de desarrollo: son credenciales desechables de contenedores de prueba.
 services:
   api-test:
     build:
@@ -8,6 +10,8 @@ services:
       - .env.test
     depends_on:
       db-test:
+        condition: service_healthy
+      supertokens-test:
         condition: service_healthy
 
   db-test:
@@ -21,6 +25,37 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Core real solo para la prueba de humo de auth (T7); el resto de tests
+  # sustituyen get_current_user y no lo usan.
+  supertokens-db-test:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: supertokens_test
+      POSTGRES_USER: supertokens_test
+      POSTGRES_PASSWORD: supertokens_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  supertokens-test:
+    image: supertokens/supertokens-postgresql:12.2.0
+    environment:
+      POSTGRESQL_CONNECTION_URI: postgresql://supertokens_test:supertokens_test@supertokens-db-test:5432/supertokens_test
+      API_KEYS: supertokens-test-api-key-0123456789
+      ACCESS_TOKEN_VALIDITY: 300
+    depends_on:
+      supertokens-db-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e \"GET /hello HTTP/1.1\r\nhost: 127.0.0.1\r\nConnection: close\r\n\r\n\" >&3 && cat <&3 | grep Hello'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data_test:

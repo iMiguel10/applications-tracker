@@ -13,6 +13,42 @@ services:
       timeout: 5s
       retries: 5
 
+  # BD exclusiva del core de SuperTokens (decisión A11). Sin env_file: con el .env
+  # completo tomaría POSTGRES_DB/USER de la app y crearía la misma base de datos.
+  supertokens-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${SUPERTOKENS_DB_NAME}
+      POSTGRES_USER: ${SUPERTOKENS_DB_USER}
+      POSTGRES_PASSWORD: ${SUPERTOKENS_DB_PASSWORD}
+    volumes:
+      - supertokens_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Core de autenticación. Sin puertos publicados: solo `api` habla con él por la
+  # red interna. Versión fijada: debe implementar la CDI que usa supertokens-python.
+  supertokens:
+    image: supertokens/supertokens-postgresql:12.2.0
+    environment:
+      POSTGRESQL_CONNECTION_URI: postgresql://${SUPERTOKENS_DB_USER}:${SUPERTOKENS_DB_PASSWORD}@supertokens-db:5432/${SUPERTOKENS_DB_NAME}
+      API_KEYS: ${SUPERTOKENS_API_KEY}
+      # Access token de 5 min: se valida sin consultar al core, así que tras un logout
+      # seguiría sirviendo hasta caducar. 5 min acota esa ventana; el SDK del frontend
+      # lo refresca solo (decisión 0002).
+      ACCESS_TOKEN_VALIDITY: 300
+    depends_on:
+      supertokens-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e \"GET /hello HTTP/1.1\r\nhost: 127.0.0.1\r\nConnection: close\r\n\r\n\" >&3 && cat <&3 | grep Hello'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: ./backend
@@ -28,6 +64,8 @@ services:
       - .env
     depends_on:
       db:
+        condition: service_healthy
+      supertokens:
         condition: service_healthy
 
   docs:
@@ -57,3 +95,4 @@ services:
 volumes:
   api_venv:
   postgres_data:
+  supertokens_data:

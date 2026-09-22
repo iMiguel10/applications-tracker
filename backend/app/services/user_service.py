@@ -1,0 +1,27 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.repositories.identity_repository import IdentityRepository
+from app.repositories.user_repository import UserRepository
+from app.schemas.user import CurrentUser, MeRead
+
+
+class UserService:
+    def __init__(
+        self,
+        session: AsyncSession,
+        identities: IdentityRepository | None = None,
+    ) -> None:
+        self.session = session
+        self.users = UserRepository(session)
+        self.identities = identities or IdentityRepository()
+
+    async def get_or_create(self, supertokens_user_id: str) -> CurrentUser:
+        user = await self.users.get_or_create(supertokens_user_id)
+        # Solo hay algo que confirmar la primera vez; en el resto de peticiones la
+        # transacción no ha escrito nada y el commit no cuesta.
+        await self.session.commit()
+        return CurrentUser(id=user.id, supertokens_user_id=user.supertokens_user_id)
+
+    async def get_me(self, current_user: CurrentUser) -> MeRead:
+        email = await self.identities.get_email(current_user.supertokens_user_id)
+        return MeRead(id=current_user.id, email=email)

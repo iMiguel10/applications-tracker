@@ -2,7 +2,7 @@
 
 Un cuaderno de bitácora para la búsqueda de empleo: cada candidatura, cómo avanza (cambios de estado y entrevistas) y cuál es el próximo paso, para que ninguna se quede olvidada.
 
-> **Estado:** en desarrollo. Terminada la fase F0 (esqueleto vertical: crear y listar solicitudes); la siguiente es F1, autenticación. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado:** en desarrollo. Terminadas F0 (esqueleto vertical) y F1 (autenticación con SuperTokens); la siguiente es F2, empresas y solicitudes. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Qué resuelve
 

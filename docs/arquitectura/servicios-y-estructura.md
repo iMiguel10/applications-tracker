@@ -13,8 +13,8 @@
 | `api` | `./backend` (python 3.12 + uv) | 8000 | API FastAPI; hace de proxy de `/auth/*` hacia SuperTokens | ✔ existe |
 | `frontend` | `./frontend/Dockerfile.dev` (node 24) | 5173 | SPA con Vite y HMR | ✔ existe |
 | `docs` | `squidfunk/mkdocs-material:9` | 8001 | Este sitio, con recarga en vivo | ✔ existe |
-| `supertokens-db` | `postgres:17` | — | Base de datos exclusiva del core de SuperTokens | F1 |
-| `supertokens` | `registry.supertokens.io/supertokens/supertokens-postgresql` | — | Core de autenticación: usuarios, contraseñas, sesiones | F1 |
+| `supertokens-db` | `postgres:17` | — | Base de datos exclusiva del core de SuperTokens | ✔ existe (F1) |
+| `supertokens` | `supertokens/supertokens-postgresql:12.2.0` (versión fijada) | — | Core de autenticación: usuarios, contraseñas, sesiones | ✔ existe (F1) |
 | `mailpit` | `axllent/mailpit` | 8025 (UI) | Captura los emails en desarrollo | `[C]` Llega con la recuperación de contraseña o el canal de email |
 | `api-test`, `db-test` | como `api` y `db` | — | Suite de pytest contra una BD aislada (`compose.test.yml`) | ✔ existe |
 
@@ -24,7 +24,7 @@ Aclaraciones:
 - **El core de SuperTokens no publica puerto.** Solo `api` habla con él por la red interna de Docker (`http://supertokens:3567`). El navegador nunca lo ve.
 - **`mailpit` está considerado pero no se añade** hasta que algo envíe emails. Meterlo antes es un servicio que arranca sin usarse.
 
-Esqueleto de lo que se añade a `compose.yml` en F1. Se conservan los detalles heredados: healthchecks, `depends_on` con `service_healthy` y volúmenes con nombre.
+Fragmento de `compose.yml` con los servicios de auth (añadidos en F1). Se conservan los detalles heredados: healthchecks, `depends_on` con `service_healthy` y volúmenes con nombre. `supertokens-db` **no** usa `env_file: .env`: con él tomaría `POSTGRES_DB`/`POSTGRES_USER` de la app y crearía la misma base de datos.
 
 ```yaml
   supertokens-db:
@@ -42,10 +42,11 @@ Esqueleto de lo que se añade a `compose.yml` en F1. Se conservan los detalles h
       retries: 5
 
   supertokens:
-    image: registry.supertokens.io/supertokens/supertokens-postgresql
+    image: supertokens/supertokens-postgresql:12.2.0   # debe implementar la CDI del SDK
     environment:
       POSTGRESQL_CONNECTION_URI: postgresql://${SUPERTOKENS_DB_USER}:${SUPERTOKENS_DB_PASSWORD}@supertokens-db:5432/${SUPERTOKENS_DB_NAME}
       API_KEYS: ${SUPERTOKENS_API_KEY}
+      ACCESS_TOKEN_VALIDITY: 300   # decisión 0002
     depends_on:
       supertokens-db:
         condition: service_healthy
@@ -67,7 +68,8 @@ Esqueleto de lo que se añade a `compose.yml` en F1. Se conservan los detalles h
 >
 > - **Backend.** `api_venv` es un volumen con nombre. Docker lo rellena con el `.venv` de la imagen **solo la primera vez** que lo crea. Si se añade una dependencia y se reconstruye la imagen, el contenedor sigue montando el volumen viejo, sin el paquete nuevo, y falla con `ModuleNotFoundError`. La imagen, que sí lo tiene, parece correcta.
 > - **Frontend.** Con `/app/node_modules`, el volumen anónimo, pasa lo mismo: `docker compose up --build` reutiliza el volumen anónimo del contenedor anterior.
-> - **Solución.** Instalar siempre las dependencias **dentro** del contenedor (`docker compose exec api uv add …`, `docker compose run --rm frontend npm install …`). Después de un `git pull` que cambie dependencias, usar `docker compose up --build -V`: `-V` renueva los volúmenes anónimos, y además `docker compose run --rm api uv sync` para el volumen con nombre.
+> - **Solución.** Instalar siempre las dependencias **dentro del contenedor en marcha, con `exec`**: `docker compose exec api uv add …` y `docker compose exec frontend npm install …`. Así se actualizan a la vez el volumen que usa el contenedor y el `package.json`/`pyproject.toml` del host, por el bind mount. Después de un `git pull` que cambie dependencias, usar `docker compose up --build -V`: `-V` renueva los volúmenes anónimos, y además `docker compose run --rm api uv sync` para el volumen con nombre.
+> - **[nuevo] No usar `docker compose run --rm frontend npm install`**, que era la convención heredada de GestPro. `run` crea un contenedor **nuevo** con su propio volumen anónimo de `node_modules`: el paquete se instala ahí y se descarta al terminar. El contenedor `frontend` en marcha nunca lo recibe y Vite falla al importarlo. Solo cambian `package.json` y `package-lock.json`, así que parece que la instalación funcionó.
 
 ## 2. Estructura del repositorio
 
@@ -110,14 +112,16 @@ backend/
 │   │   └── application_status.py
 │   ├── models/                 tablas SQLAlchemy, una por fichero
 │   ├── schemas/                modelos Pydantic de entrada y salida, uno por recurso
-│   ├── repositories/           [nuevo] todo el acceso a la BD
-│   │   └── application_repository.py
+│   ├── repositories/           [nuevo] todo el acceso a almacenes de datos
+│   │   ├── application_repository.py
+│   │   ├── user_repository.py      get_or_create idempotente (F1)
+│   │   └── identity_repository.py  único punto que consulta usuarios al SDK de SuperTokens (F1)
 │   ├── services/               reglas de negocio y transacciones
 │   │   ├── application_service.py
 │   │   ├── application_status_service.py
 │   │   └── notifications/      NotificationChannel + InAppChannel (F4)
 │   └── api/v1/
-│       ├── router.py           agrega los routers
+│       ├── router.py           routers públicos + `protected` (exige sesión por construcción)
 │       ├── deps.py             get_db, get_current_user, fábricas de services
 │       └── endpoints/          un fichero por recurso
 └── tests/
@@ -170,10 +174,10 @@ Dirección de dependencias: `endpoints → services → repositories → models`
 
 ```
 frontend/src/
-├── main.tsx, App.tsx          providers (QueryClient, SuperTokens en F1) + RouterProvider + Toaster
-├── app/providers/             AuthProvider: estado de sesión y useAuth() (F1)
+├── main.tsx, App.tsx          importa PRIMERO shared/lib/supertokens; QueryClient + RouterProvider + Toaster
+├── app/providers/             providers globales (vacío: la sesión la gestionan el SDK y TanStack Query, ver autenticación §4)
 ├── features/
-│   ├── auth/                  login, registro, logout (F1)
+│   ├── auth/                  login, registro, logout, /me; lib/safeRedirect (F1)
 │   ├── companies/             (F2)
 │   ├── applications/          solicitudes + cambios de estado (F2, F3)
 │   ├── interviews/            (F4)

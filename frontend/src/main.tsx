@@ -1,3 +1,6 @@
+// PRIMERO: inicializa SuperTokens antes de que nada pueda lanzar peticiones.
+import "./shared/lib/supertokens";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClientProvider } from "@tanstack/react-query";

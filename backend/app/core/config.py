@@ -7,6 +7,13 @@ class Settings(BaseSettings):
 
     cors_origins: str = ""
 
+    # SuperTokens. Sin valores por defecto: si falta alguno, la API no arranca
+    # (mejor que descubrirlo en el primer login).
+    api_domain: str
+    website_domain: str
+    supertokens_connection_uri: str
+    supertokens_api_key: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

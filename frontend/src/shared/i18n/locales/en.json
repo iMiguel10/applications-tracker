@@ -32,5 +32,31 @@
       "companyRequired": "Enter the company",
       "tooLong": "200 characters maximum"
     }
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "signOut": "Sign out",
+    "signInTitle": "Sign in",
+    "signUpTitle": "Create your account",
+    "noAccount": "No account yet?",
+    "haveAccount": "Already have an account?",
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Repeat the password"
+    },
+    "validation": {
+      "emailRequired": "Enter your email",
+      "emailInvalid": "The email format is not valid",
+      "passwordRequired": "Enter the password",
+      "passwordsDoNotMatch": "Passwords do not match"
+    },
+    "errors": {
+      "wrongCredentials": "Incorrect email or password",
+      "emailRejected": "This email is not valid or is already registered",
+      "passwordPolicy": "The password must be at least 8 characters long and include letters and numbers",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

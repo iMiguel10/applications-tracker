@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings",
     "alembic",
     "email-validator",
+    "supertokens-python>=0.31.3",
 ]
 
 [dependency-groups]
