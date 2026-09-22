@@ -17,6 +17,10 @@ SuperTokens.init({
   },
   recipeList: [
     Session.init({
+      // Explícito aunque sea el valor por defecto: el backend acepta también
+      // tokens en cabecera (decisión 0003), y el navegador debe usar SIEMPRE
+      // cookies httpOnly, que JavaScript no puede leer (RNF-01).
+      tokenTransferMethod: "cookie",
       onHandleEvent: (event) => {
         // La caché de TanStack Query sobrevive al cambio de usuario: sin esto, el
         // siguiente usuario del navegador vería datos del anterior (prueba T8).

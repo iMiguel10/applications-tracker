@@ -67,16 +67,13 @@ init(
         api_key=settings.supertokens_api_key,
     ),
     framework="fastapi",
-    recipe_list=[
-        session.init(get_token_transfer_method=lambda *_: "cookie"),
-        emailpassword.init(),
-    ],
+    recipe_list=[session.init(), emailpassword.init()],
     mode="asgi",
     telemetry=False,
 )
 ```
 
-- **Solo cookies** (`get_token_transfer_method`): el SDK admite también tokens en cabecera; fijarlo evita que un cliente pueda elegir ese modo.
+- **Cookies y Bearer** ([decisión 0003](../decisiones/0003-autenticacion-por-cookie-y-bearer.md)). El navegador usa cookies httpOnly: el frontend fija `tokenTransferMethod: "cookie"` de forma explícita. Las integraciones y Swagger usan `Authorization: Bearer`: un login con `st-auth-mode: header`, **o sin esa cabecera**, devuelve los tokens en las cabeceras de respuesta. Hasta la decisión 0003 el backend solo aceptaba cookies. Cómo autenticarse en cada caso: [Documentar y usar la API](../guias/documentar-la-api.md).
 - **`telemetry=False`**: por defecto el SDK envía datos de uso a SuperTokens. En una app de datos personales no aporta nada.
 - **Versión del core fijada** (`12.2.0`, nunca `latest`). SDK y core hablan un protocolo versionado (CDI). Antes de subir cualquiera de los dos, hay que comprobar que la CDI del SDK (`supertokens_python.constants.SUPPORTED_CDI_VERSIONS`) aparece en el `/apiversion` del core.
 - **Access token de 5 minutos** (`ACCESS_TOKEN_VALIDITY: 300` en el core). Ver [decisión 0002](../decisiones/0002-access-token-de-5-minutos.md).
@@ -147,6 +144,8 @@ La invariante 8 no depende de acordarse de añadir la dependencia en cada endpoi
 | `POST /auth/session/refresh` | Middleware | Rota los tokens (la llama el SDK, nunca nuestro código) |
 | `GET /auth/signup/email/exists` | Middleware | Comprueba si un email ya está registrado |
 | `GET /api/v1/me` | Nuestro endpoint | Devuelve `{id, email}`. El email se pide a SuperTokens en ese momento (A12). |
+
+Las rutas `/auth/*` aparecen en el OpenAPI (`/docs`) gracias a `app/api/auth_docs.py`, un router que las declara **solo para documentarlas**: el middleware responde antes de que la petición llegue a él. `get_current_user` declara además los esquemas `BearerAuth` y `CookieAuth` (con `auto_error=False`, así que no validan nada) para que Swagger muestre *Authorize* y el candado en cada ruta protegida.
 
 ## 4. Frontend
 

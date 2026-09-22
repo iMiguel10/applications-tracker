@@ -1,0 +1,977 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Applications Tracker API",
+    "description": "\nAPI REST de **Applications Tracker**: seguimiento de solicitudes a puestos de trabajo.\n\n## Autenticación\n\nLa autenticación la gestiona SuperTokens (email y contraseña). Hay dos modos, y la\nAPI acepta los dos en todas las rutas protegidas:\n\n| Cliente | Modo | Cómo |\n|---|---|---|\n| Navegador (la SPA) | Cookies httpOnly | Login con la cabecera `st-auth-mode: cookie`. El navegador envía las cookies solo. |\n| Integraciones, scripts, Swagger | Bearer | Login con `st-auth-mode: header` (o sin esa cabecera). Se usa `Authorization: Bearer <st-access-token>`. |\n\n### Probar desde esta página\n\n1. Despliega **POST /auth/signin**, pulsa *Try it out* y ejecuta con un usuario existente.\n2. En *Response headers*, copia el valor de `st-access-token`.\n3. Pulsa **Authorize**, pega el token en *BearerAuth* y confirma.\n4. Las rutas con candado ya se pueden ejecutar. El token caduca a los **5 minutos**: renuévalo con `POST /auth/session/refresh` o repite el login.\n\n## Convenciones\n\n- **Errores de validación:** 422, con el detalle de cada campo en `detail`.\n- **Sin sesión:** 401 `{\"message\": \"unauthorised\"}`.\n- **Recursos de otro usuario:** 404, igual que si no existieran.\n- **Listados paginados:** `page` (desde 1) y `limit` (máximo 100) →\n  `{items, total, page, limit, pages}`.\n- **Fechas:** ISO 8601 en UTC.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Registrarse",
+        "description": "Crea la cuenta e inicia sesión en la misma llamada.\n\nResponde siempre **200**: el resultado va en `status`. `FIELD_ERROR` indica\nun email ya registrado o con formato no válido, o una contraseña que no\ncumple la política.",
+        "operationId": "signup_auth_signup_post",
+        "parameters": [
+          {
+            "name": "st-auth-mode",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "cookie",
+                    "header"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cómo se entregan los tokens. `header` (o sin la cabecera): en las cabeceras de respuesta `st-access-token` y `st-refresh-token`, para integraciones y Swagger. `cookie`: en cookies httpOnly, para navegadores.",
+              "title": "St-Auth-Mode"
+            },
+            "description": "Cómo se entregan los tokens. `header` (o sin la cabecera): en las cabeceras de respuesta `st-access-token` y `st-refresh-token`, para integraciones y Swagger. `cookie`: en cookies httpOnly, para navegadores."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthCredentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthOk"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuthFieldError"
+                    }
+                  ],
+                  "title": "Response Signup Auth Signup Post"
+                }
+              }
+            },
+            "headers": {
+              "st-access-token": {
+                "description": "Access token (modo `header`). Enviarlo como `Authorization: Bearer <token>`. Caduca a los 5 minutos.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "st-refresh-token": {
+                "description": "Refresh token (modo `header`). Solo sirve para `POST /auth/session/refresh`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "front-token": {
+                "description": "Carga del access token en Base64, sin firma. Informativa: no sirve para autenticarse.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signin": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Iniciar sesión",
+        "description": "Inicia sesión con email y contraseña.\n\nResponde siempre **200**: el resultado va en `status`. Para usar el resto de\nla API desde Swagger o una integración, toma la cabecera de respuesta\n`st-access-token` y envíala como `Authorization: Bearer <token>`.",
+        "operationId": "signin_auth_signin_post",
+        "parameters": [
+          {
+            "name": "st-auth-mode",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "cookie",
+                    "header"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cómo se entregan los tokens. `header` (o sin la cabecera): en las cabeceras de respuesta `st-access-token` y `st-refresh-token`, para integraciones y Swagger. `cookie`: en cookies httpOnly, para navegadores.",
+              "title": "St-Auth-Mode"
+            },
+            "description": "Cómo se entregan los tokens. `header` (o sin la cabecera): en las cabeceras de respuesta `st-access-token` y `st-refresh-token`, para integraciones y Swagger. `cookie`: en cookies httpOnly, para navegadores."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthCredentials"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthOk"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuthWrongCredentials"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuthFieldError"
+                    }
+                  ],
+                  "title": "Response Signin Auth Signin Post"
+                }
+              }
+            },
+            "headers": {
+              "st-access-token": {
+                "description": "Access token (modo `header`). Enviarlo como `Authorization: Bearer <token>`. Caduca a los 5 minutos.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "st-refresh-token": {
+                "description": "Refresh token (modo `header`). Solo sirve para `POST /auth/session/refresh`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "front-token": {
+                "description": "Carga del access token en Base64, sin firma. Informativa: no sirve para autenticarse.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signout": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Cerrar sesión",
+        "description": "Revoca la sesión: el refresh token deja de servir al momento.\n\nUn access token ya emitido sigue siendo válido hasta que caduca (5 minutos\ncomo máximo).",
+        "operationId": "signout_auth_signout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthStatusOk"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/session/refresh": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Renovar la sesión",
+        "description": "Emite un access token nuevo y rota el refresh token.\n\nEn modo `header`, se envía el **refresh** token como `Authorization: Bearer`.\nCada refresh token solo vale una vez: reutilizar uno ya rotado se trata como\nrobo y revoca la sesión.",
+        "operationId": "refresh_auth_session_refresh_post",
+        "parameters": [
+          {
+            "name": "st-auth-mode",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "cookie",
+                    "header"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Cómo se entregan los tokens. `header` (o sin la cabecera): en las cabeceras de respuesta `st-access-token` y `st-refresh-token`, para integraciones y Swagger. `cookie`: en cookies httpOnly, para navegadores.",
+              "title": "St-Auth-Mode"
+            },
+            "description": "Cómo se entregan los tokens. `header` (o sin la cabecera): en las cabeceras de respuesta `st-access-token` y `st-refresh-token`, para integraciones y Swagger. `cookie`: en cookies httpOnly, para navegadores."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tokens nuevos.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "headers": {
+              "st-access-token": {
+                "description": "Access token (modo `header`). Enviarlo como `Authorization: Bearer <token>`. Caduca a los 5 minutos.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "st-refresh-token": {
+                "description": "Refresh token (modo `header`). Solo sirve para `POST /auth/session/refresh`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "front-token": {
+                "description": "Carga del access token en Base64, sin firma. Informativa: no sirve para autenticarse.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token inválido o revocado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Estado de la API",
+        "description": "Comprueba que la API responde y que llega a la base de datos (`SELECT 1`).\n\nPúblico: no requiere sesión.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthRead"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Usuario de la sesión actual",
+        "description": "Devuelve el usuario autenticado. El email se lee de SuperTokens en cada\nllamada: esta API no guarda datos de identidad.",
+        "operationId": "read_me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/applications": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Crear una solicitud",
+        "description": "Registra una solicitud nueva.\n\nVersión F0 (provisional): solo puesto y empresa en texto. En F2 se amplía con\nempresa registrada, estado, fechas y el resto de datos.",
+        "operationId": "create_application_api_v1_applications_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Listar solicitudes",
+        "description": "Lista paginada de solicitudes, las más recientes primero.\n\nVersión F0 (provisional): todavía no se filtra por usuario; en F2 cada usuario\nverá solo las suyas.",
+        "operationId": "list_applications_api_v1_applications_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página, empezando en 1.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Página, empezando en 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página (máximo 100).",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página (máximo 100)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ApplicationRead_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationCreate": {
+        "properties": {
+          "position_title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Position Title",
+            "description": "Puesto al que se aplica. Se recortan los espacios de los extremos.",
+            "examples": [
+              "Backend Developer"
+            ]
+          },
+          "company_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Company Name",
+            "description": "Empresa. En F2 pasará a ser una referencia a una empresa registrada.",
+            "examples": [
+              "Acme"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_title",
+          "company_name"
+        ],
+        "title": "ApplicationCreate"
+      },
+      "ApplicationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Identificador de la solicitud."
+          },
+          "position_title": {
+            "type": "string",
+            "title": "Position Title",
+            "examples": [
+              "Backend Developer"
+            ]
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name",
+            "examples": [
+              "Acme"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Momento de creación, en UTC."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position_title",
+          "company_name",
+          "created_at"
+        ],
+        "title": "ApplicationRead"
+      },
+      "AuthCredentials": {
+        "properties": {
+          "formFields": {
+            "items": {
+              "$ref": "#/components/schemas/FormField"
+            },
+            "type": "array",
+            "title": "Formfields",
+            "description": "Exactamente dos campos: `email` y `password`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "formFields"
+        ],
+        "title": "AuthCredentials",
+        "description": "Cuerpo de registro y login: lista de campos en el formato de SuperTokens.",
+        "examples": [
+          {
+            "formFields": [
+              {
+                "id": "email",
+                "value": "ana@example.com"
+              },
+              {
+                "id": "password",
+                "value": "secreto123"
+              }
+            ]
+          }
+        ]
+      },
+      "AuthFieldError": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "FIELD_ERROR",
+            "title": "Status"
+          },
+          "formFields": {
+            "items": {
+              "$ref": "#/components/schemas/AuthFieldErrorItem"
+            },
+            "type": "array",
+            "title": "Formfields"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "formFields"
+        ],
+        "title": "AuthFieldError",
+        "description": "Algún campo no es válido: email con formato incorrecto o ya registrado,\no contraseña que no cumple la política (mínimo 8 caracteres, con letras y\nnúmeros)."
+      },
+      "AuthFieldErrorItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "email",
+              "password"
+            ],
+            "title": "Id"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error",
+            "description": "Mensaje en inglés de SuperTokens. Los clientes deben traducir por `id`, no por el texto.",
+            "examples": [
+              "This email already exists. Please sign in instead."
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "error"
+        ],
+        "title": "AuthFieldErrorItem"
+      },
+      "AuthOk": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "OK",
+            "title": "Status"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUser"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "user"
+        ],
+        "title": "AuthOk"
+      },
+      "AuthStatusOk": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "OK",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AuthStatusOk"
+      },
+      "AuthUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Id del usuario en SuperTokens."
+          },
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emails"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "emails"
+        ],
+        "title": "AuthUser"
+      },
+      "AuthWrongCredentials": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "WRONG_CREDENTIALS_ERROR",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AuthWrongCredentials",
+        "description": "Email o contraseña incorrectos. No indica cuál de los dos falla."
+      },
+      "FormField": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "email",
+              "password"
+            ],
+            "title": "Id",
+            "description": "Nombre del campo."
+          },
+          "value": {
+            "type": "string",
+            "title": "Value",
+            "description": "Valor del campo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value"
+        ],
+        "title": "FormField"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthRead": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "`ok` si la API responde.",
+            "examples": [
+              "ok"
+            ]
+          },
+          "database": {
+            "type": "string",
+            "title": "Database",
+            "description": "`ok` si la base de datos responde.",
+            "examples": [
+              "ok"
+            ]
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment",
+            "description": "Entorno en el que corre la API.",
+            "examples": [
+              "development"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "database",
+          "environment"
+        ],
+        "title": "HealthRead"
+      },
+      "MeRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "Identificador del usuario en esta API."
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email",
+            "description": "Email de la cuenta, leído de SuperTokens en cada petición.",
+            "examples": [
+              "ana@example.com"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email"
+        ],
+        "title": "MeRead"
+      },
+      "Page_ApplicationRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationRead"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Elementos de la página pedida."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total de elementos que cumplen el filtro."
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Página devuelta, empezando en 1."
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Tamaño de página pedido."
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "description": "Número total de páginas (0 si no hay elementos)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "pages"
+        ],
+        "title": "Page[ApplicationRead]"
+      },
+      "UnauthorizedError": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "const": "unauthorised",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "UnauthorizedError",
+        "description": "Respuesta 401 de SuperTokens: no hay sesión, o el token ha caducado o es inválido."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "description": "Access token obtenido en `POST /auth/signin` (cabecera de respuesta `st-access-token`). Caduca a los 5 minutos.",
+        "scheme": "bearer"
+      },
+      "CookieAuth": {
+        "type": "apiKey",
+        "description": "Cookie httpOnly que usa el navegador tras un login con `st-auth-mode: cookie`. Swagger no puede fijarla a mano.",
+        "in": "cookie",
+        "name": "sAccessToken"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Autenticación",
+      "description": "Registro, login, logout y renovación de sesión. Las sirve el middleware de SuperTokens: responden siempre 200 con el resultado en `status`, salvo `signout` y `refresh`, que responden 401 sin sesión."
+    },
+    {
+      "name": "Health",
+      "description": "Estado de la API y de la base de datos. Público."
+    },
+    {
+      "name": "Me",
+      "description": "Usuario de la sesión actual."
+    },
+    {
+      "name": "Applications",
+      "description": "Solicitudes a puestos de trabajo."
+    }
+  ]
+}

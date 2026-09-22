@@ -25,6 +25,8 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `docs/arquitectura/index.md` | Decisiones A1–A17 con alternativas descartadas, modelo de datos, flujos, invariantes |
 | `docs/arquitectura/servicios-y-estructura.md` | Servicios de compose, estructura, **reglas de capas**, convenciones heredadas |
 | `docs/arquitectura/autenticacion.md` | SuperTokens: integración, trampas, pruebas adversas |
+| `docs/guias/documentar-la-api.md` | Cómo se documenta un endpoint, cómo probar desde Swagger y cómo integrarse (Bearer) |
+| `docs/referencia/openapi.json` | Copia **generada** del OpenAPI (no se edita a mano) que publica la referencia del sitio |
 | `docs/decisiones/` | Bitácora de cambios de rumbo durante el desarrollo, con plantilla |
 
 **Si el código y un documento no coinciden, no se corrige el documento sin más.** Primero se averigua si el diseño evolucionó (y se actualiza el documento dejando constancia) o si la implementación se lo saltó (y entonces es un fallo del código).
@@ -55,6 +57,7 @@ docker compose exec api mypy app tests
 docker compose exec api alembic revision --autogenerate -m "descripcion"   # revisar SIEMPRE el fichero generado
 docker compose exec api alembic upgrade head                               # también se aplica al arrancar api
 docker compose exec api uv add <paquete>                                   # nunca uv/pip en el host
+docker compose exec api python -m app.scripts.export_openapi               # tras cambiar endpoints/schemas, mismo commit
 
 # Tests del backend (BD aislada)
 docker compose -f compose.test.yml up --build --abort-on-container-exit --exit-code-from api-test
@@ -123,6 +126,9 @@ Violarlas es un fallo, no una diferencia de criterio.
 - **Variables nuevas del `.env` no se aplican con `restart`.** `env_file` se lee al **crear** el contenedor: usa `docker compose up -d --force-recreate <servicio>`.
 - **El logout no invalida al instante un access token ya emitido.** Se valida sin consultar al core, así que una copia sigue sirviendo hasta caducar (5 min). El refresh token sí queda revocado ([0002](docs/decisiones/0002-access-token-de-5-minutos.md)).
 - **Endpoints nuevos: dentro del router `protected`** de `api/v1/router.py`, salvo que deban ser públicos. La prueba T1 lee las rutas del OpenAPI y falla si alguno responde sin sesión.
+- **Endpoints documentados o los tests fallan.** Cada operación necesita `summary=` y un docstring (se publica como descripción para integradores). Y `docs/referencia/openapi.json` debe regenerarse con `export_openapi`: un test lo compara con la app.
+- **Login sin `st-auth-mode` = tokens en cabeceras, no cookies** (decisión 0003). El frontend fija `tokenTransferMethod: "cookie"`; no lo quites.
+- **El refresh token rota en cada uso.** Reutilizar uno ya usado se trata como robo y revoca la sesión: una integración debe guardar el par nuevo tras cada refresco.
 - **`POST /auth/session/refresh → 401` al abrir el login sin sesión es normal**: `doesSessionExist()` pregunta así si hay sesión. Y `sFrontToken` es legible desde JS a propósito: no lleva firma y no sirve para autenticarse.
 - **Orden de middlewares.** SuperTokens se añade **antes** que `CORSMiddleware` (en Starlette el último añadido es el más externo). Si se invierte, el login devuelve 200 y aun así el navegador bloquea la respuesta con un error de CORS.
 - **`localhost` frente a `127.0.0.1`.** Para el navegador son sitios distintos: las cookies de sesión no viajan y el login parece no funcionar sin dar error.

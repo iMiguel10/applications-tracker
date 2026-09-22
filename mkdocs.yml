@@ -48,7 +48,12 @@ nav:
       - arquitectura/index.md
       - Servicios y estructura: arquitectura/servicios-y-estructura.md
       - Autenticación: arquitectura/autenticacion.md
+  - Guías:
+      - Documentar y usar la API: guias/documentar-la-api.md
+  - Referencia:
+      - API: referencia/api.md
   - Decisiones:
       - decisiones/index.md
       - "0001 — clock_timestamp en created_at": decisiones/0001-clock-timestamp-en-created-at.md
       - "0002 — Access token de 5 minutos": decisiones/0002-access-token-de-5-minutos.md
+      - "0003 — Cookie y Bearer": decisiones/0003-autenticacion-por-cookie-y-bearer.md

@@ -13,7 +13,9 @@ from app.main import app
 # Mismo sitio que WEBSITE_DOMAIN (localhost): con otro host, SuperTokens exigiría
 # cookies SameSite=None + HTTPS (autenticacion.md §5).
 BASE_URL = "http://localhost:8000"
-HEADERS = {"Origin": "http://localhost:5173"}
+# Como el navegador: supertokens-web-js envía st-auth-mode: cookie en cada petición.
+# Sin esa cabecera, el login devolvería los tokens en cabeceras (decisión 0003).
+HEADERS = {"Origin": "http://localhost:5173", "st-auth-mode": "cookie"}
 PASSWORD = "secreto123"
 
 
@@ -76,6 +78,36 @@ async def test_signup_me_and_signout_revokes_refresh_token(
     # El refresh token quedó revocado: la sesión no se puede renovar. El access
     # token copiado sigue valiendo hasta caducar (5 min, decisión 0002).
     assert refresh.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_header_mode_login_gives_bearer_token_that_authenticates(
+    real_auth_client: AsyncClient,
+):
+    # Contrato para integraciones y Swagger (decisión 0003): tokens en cabeceras
+    # y Authorization: Bearer, sin cookies de por medio.
+    email = f"smoke-{uuid.uuid4()}@example.com"
+    await real_auth_client.post(
+        "/auth/signup", json=_form(email, PASSWORD), headers={"rid": "emailpassword"}
+    )
+    real_auth_client.cookies.clear()
+
+    signin = await real_auth_client.post(
+        "/auth/signin",
+        json=_form(email, PASSWORD),
+        headers={"st-auth-mode": "header"},
+    )
+    access_token = signin.headers.get("st-access-token")
+
+    assert signin.json()["status"] == "OK"
+    assert access_token
+    assert "sAccessToken" not in signin.cookies
+
+    me = await real_auth_client.get(
+        "/api/v1/me", headers={"Authorization": f"Bearer {access_token}"}
+    )
+    assert me.status_code == 200
+    assert me.json()["email"] == email
 
 
 @pytest.mark.asyncio

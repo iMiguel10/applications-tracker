@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CurrentUser(BaseModel):
@@ -11,5 +11,8 @@ class CurrentUser(BaseModel):
 
 
 class MeRead(BaseModel):
-    id: uuid.UUID
-    email: str | None
+    id: uuid.UUID = Field(description="Identificador del usuario en esta API.")
+    email: str | None = Field(
+        description="Email de la cuenta, leído de SuperTokens en cada petición.",
+        examples=["ana@example.com"],
+    )

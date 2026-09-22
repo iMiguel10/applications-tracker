@@ -8,6 +8,9 @@ services:
     command: pytest
     env_file:
       - .env.test
+    # Solo lectura: el test compara la referencia versionada con la app.
+    volumes:
+      - ./docs/referencia:/reference:ro
     depends_on:
       db-test:
         condition: service_healthy

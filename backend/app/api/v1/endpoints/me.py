@@ -15,4 +15,6 @@ async def read_me(
     current_user: CurrentUser = Depends(get_current_user),
     users: UserService = Depends(get_user_service),
 ) -> MeRead:
+    """Devuelve el usuario autenticado. El email se lee de SuperTokens en cada
+    llamada: esta API no guarda datos de identidad."""
     return await users.get_me(current_user)

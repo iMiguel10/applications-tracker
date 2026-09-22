@@ -24,8 +24,12 @@ def init_supertokens() -> None:
         ),
         framework="fastapi",
         recipe_list=[
-            # Solo cookies: el frontend nunca maneja tokens (RNF-01).
-            session.init(get_token_transfer_method=lambda *_: "cookie"),
+            # Cookies y cabeceras (decisión 0003). El frontend usa cookies httpOnly
+            # (modo por defecto de supertokens-web-js) y nunca ve los tokens. Un
+            # cliente que envíe `st-auth-mode: header` en el login los recibe en
+            # cabeceras y se autentica con `Authorization: Bearer` (integraciones,
+            # Swagger).
+            session.init(),
             emailpassword.init(),
         ],
         mode="asgi",

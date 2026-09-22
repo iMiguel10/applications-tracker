@@ -55,7 +55,7 @@ Si algo no encaja en ninguno de esos destinos, dilo en tu informe en vez de inve
 
 ### Tres reglas para que no envejezca
 
-1. **La referencia de la API no se escribe a mano:** sale del OpenAPI de FastAPI. Si falta información, se añade al schema o al endpoint, no a una página paralela.
+1. **La referencia de la API no se escribe a mano:** sale del OpenAPI de FastAPI. Si falta información, se añade al schema o al endpoint (convenciones en `docs/guias/documentar-la-api.md`), no a una página paralela. Tras cambiar endpoints o schemas, regenera `docs/referencia/openapi.json` con `docker compose exec api python -m app.scripts.export_openapi`; un test falla si no coincide con la app.
 2. **Los diagramas son texto** (Mermaid), nunca imágenes. La excepción son las capturas reales de la interfaz en el README.
 3. **La documentación cambia en el mismo commit que el código.** Si se aplaza, no se hace.
 

@@ -60,6 +60,8 @@ services:
     volumes:
       - ./backend:/app
       - api_venv:/app/.venv
+      # Destino de app.scripts.export_openapi (referencia de la API del sitio).
+      - ./docs/referencia:/reference
     env_file:
       - .env
     depends_on:

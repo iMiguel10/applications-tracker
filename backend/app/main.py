@@ -3,6 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from supertokens_python import get_all_cors_headers
 from supertokens_python.framework.fastapi import get_middleware
 
+from app.api import auth_docs
+from app.api.openapi import (
+    API_DESCRIPTION,
+    API_TITLE,
+    API_VERSION,
+    OPENAPI_TAGS,
+    SWAGGER_UI_PARAMETERS,
+)
 from app.api.v1.router import router as api_router
 from app.core.config import settings
 from app.core.exception_handlers import (
@@ -17,11 +25,15 @@ setup_logging()
 init_supertokens()
 
 app = FastAPI(
-    title="Applications Tracker API",
-    description="REST API for tracking job applications.",
-    version="0.1.0",
+    title=API_TITLE,
+    description=API_DESCRIPTION,
+    version=API_VERSION,
+    openapi_tags=OPENAPI_TAGS,
+    swagger_ui_parameters=SWAGGER_UI_PARAMETERS,
 )
 
+# Solo documentación: el middleware de SuperTokens atiende /auth/* antes que el router.
+app.include_router(auth_docs.router)
 app.include_router(api_router, prefix="/api/v1")
 
 # El orden importa: en Starlette el ÚLTIMO add_middleware es el más externo.
