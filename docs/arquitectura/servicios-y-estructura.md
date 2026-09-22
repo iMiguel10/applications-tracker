@@ -150,11 +150,14 @@ Dirección de dependencias: `endpoints → services → repositories → models`
 | Errores | `AppException` → `{"detail": …}`, con handler genérico para los 500 | Heredado |
 | Services y repositories | **[nuevo]** **Clases** que reciben la `AsyncSession` en el constructor; `deps.py` las construye por petición. Así service y repositories comparten la sesión y, por tanto, la transacción. | La plantilla usaba funciones sueltas que recibían `db` |
 | Códigos de error | **[nuevo]** `AppException` lleva un `code` estable (`not_found`, `invalid_transition`, `company_in_use`…) y la respuesta es `{"detail", "code"}`. El frontend traduce por `code`, nunca por el texto. | La plantilla solo devolvía `detail` |
-| Fechas | **[nuevo]** `DateTime(timezone=True)` y `server_default=func.now()` | La plantilla usaba `DateTime` naive y quitaba el UTC a mano |
+| Fechas | **[nuevo]** `DateTime(timezone=True)`; `created_at` con `server_default=func.clock_timestamp()`, nunca `now()` ([decisión 0001](../decisiones/0001-clock-timestamp-en-created-at.md)) | La plantilla usaba `DateTime` naive y quitaba el UTC a mano |
 | Ids | **[nuevo]** `UUID`, con `server_default=text("gen_random_uuid()")` | La plantilla usaba enteros |
 | Nombres de constraints | **[nuevo]** `MetaData(naming_convention=…)` en `db/base.py`, para que Alembic genere nombres deterministas y las migraciones de `CHECK` y FK se puedan revertir | No existía |
 | Nombres | Fichero `application_repository.py` → clase `ApplicationRepository`; schemas `ApplicationCreate`, `ApplicationUpdate`, `ApplicationRead`, `ApplicationList` | Heredado y ampliado |
-| Calidad | `ruff check`, `ruff format`, `mypy app` (con el plugin de pydantic) sin errores | Heredado; el plugin es **[nuevo]** |
+| Calidad | `ruff check`, `ruff format`, `mypy app tests` (con el plugin de pydantic) sin errores | Heredado; el plugin es **[nuevo]** |
+| Migraciones | **[nuevo]** `migrations/env.py` importa `app.models`, y `models/__init__.py` importa cada modelo: un modelo no importado es invisible para autogenerate, que generaría un `drop_table`. Un *post-write hook* de Alembic pasa `ruff check --fix` y `ruff format` a cada migración generada. | En la plantilla `env.py` no importaba los modelos |
+| Log de SQL | **[nuevo]** En desarrollo, nivel INFO del logger `sqlalchemy.engine` en `core/logging.py`, **no** `create_engine(echo=True)`, que añade su propio handler y duplica cada línea | La plantilla usaba `echo=True` |
+| Tests | **[nuevo]** `tests/conftest.py`: engine con `NullPool` (un event loop por test) y sesión dentro de una transacción externa con `join_transaction_mode="create_savepoint"`. El `commit()` de los services solo confirma un savepoint y todo se revierte al acabar. `get_db` se sustituye con `dependency_overrides`. | La plantilla hacía commits reales y `engine.dispose()` por test |
 
 > **Fallos encontrados en la plantilla**, anotados de paso; ya se corrigieron en este proyecto al copiarla:
 >
@@ -223,6 +226,9 @@ features/<feature>/
 | Filtros de listados | Estado local | Parámetros de la URL (`useUrlFilters`), decisión A16 |
 | Módulo genérico `tracking` | Factory para 5 módulos idénticos | No aplica: no hay entidades con la misma forma |
 | Tipos | Escritos a mano en `types/` | Igual: a mano. Ver la decisión cerrada 9. |
+| Utilidad `cn` | `clsx` + `tailwind-merge` en `shared/lib/utils.ts` | **[nuevo]** shadcn 4.2x genera los componentes con `import { cn } from "cn"`, el paquete oficial `shadcn-ui/cn`. `shared/lib/utils.ts` lo reexporta para que el código propio siga importando de `@/shared/lib/utils`; `clsx` y `tailwind-merge` se eliminan. |
+| ESLint en `ui/` | Sin excepción: `npm run lint` fallaba por `buttonVariants` | **[nuevo]** `react-refresh/only-export-components` desactivada solo en `src/shared/components/ui/**`, que es código generado y no se edita |
+| Tipo `Page<T>` | No existía | **[nuevo]** `shared/types/Page.ts`, espejo de `schemas/pagination.py` |
 
 Se mantienen tal cual: shadcn/ui (`base-nova`) en `shared/components/ui` (añadidos con el CLI, nunca a mano), los wrappers de formulario de `shared/components/form`, el alias `@/`, i18n con claves y la configuración de TanStack Query.
 

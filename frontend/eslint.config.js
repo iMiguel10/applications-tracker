@@ -19,4 +19,12 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Código generado por el CLI de shadcn: no se edita a mano (se regeneraría) y
+    // exporta variantes junto al componente (p. ej. buttonVariants).
+    files: ['src/shared/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

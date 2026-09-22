@@ -48,4 +48,6 @@ nav:
       - arquitectura/index.md
       - Servicios y estructura: arquitectura/servicios-y-estructura.md
       - Autenticación: arquitectura/autenticacion.md
-  - Decisiones: decisiones/index.md
+  - Decisiones:
+      - decisiones/index.md
+      - "0001 — clock_timestamp en created_at": decisiones/0001-clock-timestamp-en-created-at.md

@@ -6,12 +6,11 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-22):** diseño cerrado, sin código de producto todavía.
+> **Estado (2026-09-22): F0 terminada.**
 >
-> - **Existe:** el entorno Docker de desarrollo, un endpoint `/api/v1/health` con su página de prueba y la documentación en `docs/`.
-> - **No existe todavía:** autenticación (SuperTokens), modelos, migraciones, repositories, services de negocio ni features del frontend.
->
-> Todo lo que este documento describe sobre esas piezas es la **norma a seguir** al construirlas, no algo que se pueda consultar ya en el código.
+> - **Existe:** el entorno Docker, `/api/v1/health` y el esqueleto vertical F0: crear y listar solicitudes (`POST`/`GET /api/v1/applications`) pasando por todas las capas, con tests, y la página `/applications` del frontend.
+> - **F0 es desechable:** el modelo `Application` (puesto y empresa en texto, sin usuario) se rehace en F2. Lo permanente es la infraestructura que F0 dejó resuelta: `db/base.py`, `tests/conftest.py`, `schemas/pagination.py`, `apiClient`, los componentes `ui/` y el patrón de capas.
+> - **No existe todavía:** autenticación (SuperTokens), `users`, `companies`, historial de estados, `domain/`, entrevistas, recordatorios ni dashboard. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
 
 ## 2. Documentación
 
@@ -49,7 +48,7 @@ docker compose up --build -V          # tras cambiar dependencias (renueva los v
 # Backend
 docker compose exec api ruff check .
 docker compose exec api ruff format .
-docker compose exec api mypy app
+docker compose exec api mypy app tests
 docker compose exec api alembic revision --autogenerate -m "descripcion"   # revisar SIEMPRE el fichero generado
 docker compose exec api alembic upgrade head                               # también se aplica al arrancar api
 docker compose exec api uv add <paquete>                                   # nunca uv/pip en el host
@@ -63,7 +62,7 @@ docker compose exec frontend npm run lint
 docker compose exec frontend npx tsc -b
 docker compose exec frontend npm run build
 docker compose run --rm frontend npm install <paquete>
-docker compose exec frontend npx shadcn@latest add <componente>            # nunca escribir componentes ui a mano
+docker compose exec frontend npx shadcn add <componente>                   # versión del proyecto; nunca escribir ui a mano
 
 # Documentación
 docker compose run --rm docs build --strict                                # falla ante enlaces rotos
@@ -123,6 +122,10 @@ Violarlas es un fallo, no una diferencia de criterio.
 - **Deshacer un cambio de estado** ordena por `created_at`. Ordenar por `changed_at` (fecha que declara el usuario) borraría el cambio equivocado.
 - **Alembic autogenerate** no detecta cambios en `CHECK` ni en índices funcionales como `lower(name)`: revisa y completa cada migración a mano.
 - **Finales de línea:** `entrypoint.sh` debe tener LF (lo fuerza `.gitattributes`). Con CRLF, el contenedor `api` no arranca.
+- **`now()` frente a `clock_timestamp()`.** `now()` es la hora de *inicio de la transacción*: todas las filas de una transacción empatan y el orden por `created_at` queda al azar. Esto pasa siempre en los tests, que corren en una transacción externa. `created_at` usa siempre `clock_timestamp()` ([decisión 0001](docs/decisiones/0001-clock-timestamp-en-created-at.md)).
+- **Modelo nuevo invisible para Alembic.** Si no se importa en `app/models/__init__.py`, autogenerate no lo ve y genera un `drop_table`.
+- **Tests y `commit`.** No abras sesiones propias en los tests: usa el fixture `db_session` (transacción externa + savepoints) o `client`, que sustituye `get_db` por esa sesión. Una sesión aparte confirmaría datos de verdad en `db-test`.
+- **shadcn genera `import { cn } from "cn"`.** Es el paquete oficial `shadcn-ui/cn`; `@/shared/lib/utils` lo reexporta. No lo cambies a mano en los componentes generados.
 
 ## 9. Agentes
 
@@ -138,7 +141,8 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | Fase | Contenido |
 |---|---|
 | ✔ Entorno | Docker de desarrollo, health, sitio de documentación |
-| **F0** | Esqueleto vertical **desechable**: crear y listar solicitudes sin auth, atravesando todas las capas |
+| ✔ F0 | Esqueleto vertical desechable: crear y listar solicitudes sin auth, atravesando todas las capas |
+
 | F1 | SuperTokens (core + BD), `users`, `get_current_user`, login y registro, rutas protegidas |
 | F2 | Empresas y solicitudes: CRUD, filtros, paginación, archivado, pruebas de aislamiento, OpenAPI en docs |
 | F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |

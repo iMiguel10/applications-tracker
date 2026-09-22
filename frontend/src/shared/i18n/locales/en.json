@@ -9,5 +9,28 @@
     "environment": "Environment",
     "loading": "Checking…",
     "error": "Cannot connect to the API"
+  },
+  "common": {
+    "loading": "Loading…",
+    "previous": "Previous",
+    "next": "Next",
+    "pagination": "Page {{page}} of {{pages}} · {{total}} total"
+  },
+  "applications": {
+    "title": "Applications",
+    "create": "Add application",
+    "created": "Application added",
+    "createError": "Could not add the application",
+    "loadError": "Could not load applications",
+    "empty": "No applications yet.",
+    "fields": {
+      "position": "Position",
+      "company": "Company"
+    },
+    "validation": {
+      "positionRequired": "Enter the position",
+      "companyRequired": "Enter the company",
+      "tooLong": "200 characters maximum"
+    }
   }
 }

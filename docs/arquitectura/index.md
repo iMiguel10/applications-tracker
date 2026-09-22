@@ -110,7 +110,7 @@ erDiagram
     applications ||--o{ reminders : ""
 ```
 
-Todas las tablas tienen `id uuid PK DEFAULT gen_random_uuid()`, `created_at timestamptz NOT NULL DEFAULT now()` y, salvo las inmutables (`users` y `application_status_changes`), `updated_at`.
+Todas las tablas tienen `id uuid PK DEFAULT gen_random_uuid()`, `created_at timestamptz NOT NULL DEFAULT clock_timestamp()` ([decisión 0001](../decisiones/0001-clock-timestamp-en-created-at.md): `now()` daría la misma hora a todas las filas de una transacción) y, salvo las inmutables (`users` y `application_status_changes`), `updated_at`.
 
 | Tabla | Para qué | Propiedad |
 |---|---|---|
@@ -159,7 +159,7 @@ Restricciones e índices:
 | `to_status` | `varchar(20) NOT NULL` | |
 | `changed_at` | `timestamptz NOT NULL` | Fecha declarada por el usuario |
 | `note` | `text` | |
-| `created_at` | `timestamptz NOT NULL DEFAULT now()` | Orden real de inserción (§4). Sin `updated_at`: la fila no se edita. |
+| `created_at` | `timestamptz NOT NULL DEFAULT clock_timestamp()` | Orden real de inserción (§4). Con `now()`, dos cambios en la misma transacción empatarían ([0001](../decisiones/0001-clock-timestamp-en-created-at.md)). Sin `updated_at`: la fila no se edita. |
 
 Índice: `(application_id, created_at DESC)`.
 

@@ -9,5 +9,28 @@
     "environment": "Entorno",
     "loading": "Comprobando…",
     "error": "No se puede conectar con la API"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pagination": "Página {{page}} de {{pages}} · {{total}} en total"
+  },
+  "applications": {
+    "title": "Solicitudes",
+    "create": "Añadir solicitud",
+    "created": "Solicitud añadida",
+    "createError": "No se pudo añadir la solicitud",
+    "loadError": "No se pudieron cargar las solicitudes",
+    "empty": "Todavía no hay solicitudes.",
+    "fields": {
+      "position": "Puesto",
+      "company": "Empresa"
+    },
+    "validation": {
+      "positionRequired": "Indica el puesto",
+      "companyRequired": "Indica la empresa",
+      "tooLong": "Máximo 200 caracteres"
+    }
   }
 }
