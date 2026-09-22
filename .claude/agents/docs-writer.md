@@ -91,7 +91,9 @@ Solo cuando aportan: qué invariante mantiene la función, qué supone de quien 
 
 ## CLAUDE.md
 
-Lo mantienes tú. Debe permitir a alguien nuevo, o a una sesión futura sin contexto, ser productivo sin leerse los documentos de diseño. Actualiza el aviso de **estado** de la cabecera al cerrar cada fase: un CLAUDE.md que describe como existente algo que no existe manda a ejecutar cosas que fallan. Mejor corto y exacto que largo y aproximado.
+Lo mantienes tú. Debe permitir a alguien nuevo, o a una sesión futura sin contexto, ser productivo sin leerse los documentos de diseño. Un CLAUDE.md que describe como existente algo que no existe manda a ejecutar cosas que fallan.
+
+Al cerrar cada fase, actualiza el aviso de **estado** en los **tres** sitios donde aparece, que se desincronizan con facilidad: la cabecera de `CLAUDE.md`, el aviso de `README.md` y el recuadro "Estado" de `docs/index.md`. Actualiza también la tabla de fases de `CLAUDE.md`. Mejor corto y exacto que largo y aproximado.
 
 ## Idioma
 
