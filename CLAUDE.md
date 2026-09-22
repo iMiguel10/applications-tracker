@@ -111,7 +111,7 @@ Violarlas es un fallo, no una diferencia de criterio.
 
 1. Todo método de repository sobre datos de usuario recibe `user_id` y filtra por él.
 2. Un recurso de otro usuario responde **404**, nunca 403.
-3. `applications.status` es igual al `to_status` del último cambio del historial, ordenado por **`created_at`** (no por `changed_at`).
+3. `applications.status` es igual al `to_status` del cambio del historial con el **`seq` más alto** ([0004](docs/decisiones/0004-secuencia-para-ordenar-el-historial.md)). Nunca se ordena por fechas.
 4. El estado solo cambia vía `ApplicationStatusService`, con `SELECT … FOR UPDATE`. `PATCH /applications/{id}` no acepta `status`.
 5. Toda solicitud tiene al menos un cambio en su historial (el inicial). *Desde F3: en F2 aún no existe el historial.*
 6. Las transacciones las confirma el service; un repository nunca hace `commit`.
@@ -133,7 +133,7 @@ Violarlas es un fallo, no una diferencia de criterio.
 - **Orden de middlewares.** SuperTokens se añade **antes** que `CORSMiddleware` (en Starlette el último añadido es el más externo). Si se invierte, el login devuelve 200 y aun así el navegador bloquea la respuesta con un error de CORS.
 - **`localhost` frente a `127.0.0.1`.** Para el navegador son sitios distintos: las cookies de sesión no viajan y el login parece no funcionar sin dar error.
 - **Caché tras el logout.** `signOut()` y la sesión expirada ejecutan `queryClient.clear()` antes de navegar; si no, el siguiente usuario ve datos del anterior.
-- **Deshacer un cambio de estado** ordena por `created_at`. Ordenar por `changed_at` (fecha que declara el usuario) borraría el cambio equivocado.
+- **Deshacer un cambio de estado** ordena por `seq` (columna de identidad del historial). Por `changed_at` (fecha que declara el usuario) o por `created_at` (reloj del sistema, que puede retroceder) se borraría el cambio equivocado.
 - **Alembic autogenerate** no incluye los `CHECK` al modificar una tabla existente (solo al crear una), y añade columnas `NOT NULL` sin default a tablas con filas, lo que hace fallar la migración. Revisa y completa cada migración a mano; comprueba con `alembic check` que modelos y BD coinciden, y aplica `downgrade -1` + `upgrade head` para probar que es reversible. Los valores de enums se congelan como texto dentro de la migración.
 - **`comando | tail` oculta el código de salida real** (el que se ve es el de `tail`). Para saber si ESLint, `tsc` o pytest han fallado, ejecútalos sin tubería o redirige a un fichero.
 - **Login en Swagger cierra la sesión de la app** en ese navegador: el login en modo cabecera caduca las cookies de sesión. Usa Swagger en una ventana privada.

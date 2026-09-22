@@ -76,7 +76,7 @@ Presta atención especial a estas invariantes. Su incumplimiento es un fallo rea
 
 1. Todo método de repository sobre datos de usuario recibe `user_id` y filtra por él.
 2. Un recurso de otro usuario responde 404, nunca 403.
-3. `applications.status` es igual al `to_status` del último cambio del historial, ordenado por `created_at`.
+3. `applications.status` es igual al `to_status` del cambio del historial con el `seq` más alto (decisión 0004), nunca ordenado por fechas.
 4. El estado solo cambia vía `ApplicationStatusService` (con `FOR UPDATE`); `PATCH` no acepta `status`.
 5. Toda solicitud tiene al menos un cambio en su historial.
 6. Los repositories nunca hacen `commit`.

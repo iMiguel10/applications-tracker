@@ -71,7 +71,7 @@ Si trabajas sobre alguna de estas áreas y la prueba no existe, **escríbela**:
 | Aislamiento entre usuarios | El usuario B recibe 404 al leer, editar o borrar cualquier recurso de A, y la BD no cambia |
 | Enlaces entre usuarios | B no puede crear una solicitud con la empresa de A ni un recordatorio sobre una solicitud de A (FK compuesta + filtro) |
 | Transiciones | Cada transición prohibida de la especificación §6 devuelve 409 `invalid_transition`; las permitidas funcionan, incluidos los saltos hacia delante |
-| Consistencia estado ↔ historial | Tras crear, cambiar y deshacer, `status` es igual al último `to_status` ordenado por `created_at` |
+| Consistencia estado ↔ historial | Tras crear, cambiar y deshacer, `status` es igual al `to_status` del cambio con el `seq` más alto (nunca ordenado por fechas) |
 | Deshacer | Registrar un cambio con `changed_at` pasado y luego deshacer elimina **ese** cambio, no otro; deshacer el cambio inicial devuelve 409 |
 | `changed_at` | Se rechaza una fecha futura o anterior al último cambio |
 | Concurrencia | Dos cambios de estado simultáneos sobre la misma solicitud no dejan dos cambios que parten del mismo estado |

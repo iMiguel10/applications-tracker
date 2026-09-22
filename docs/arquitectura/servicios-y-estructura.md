@@ -260,7 +260,7 @@ Confirmadas con el usuario durante el diseño:
 | 3 | Login con email y contraseña | Sin recetas ThirdParty ni Passwordless en el MVP |
 | 4 | `users` es solo un enlace, sin email | Los datos de identidad se piden a SuperTokens cuando hacen falta |
 | 5 | Se mantiene `last_activity_at` | La actualizan los services al cambiar de estado y al tocar entrevistas |
-| 6 | Se mantiene `changed_at` en el historial | Deshacer ordena por `created_at`; las métricas usan `changed_at` |
+| 6 | Se mantiene `changed_at` en el historial | El orden y deshacer usan `seq` ([0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)); las métricas usan `changed_at` y `created_at` queda como dato informativo |
 | 7 | Recordatorios solo en la app, preparados para email y otros canales | `channel` + `NotificationChannel`; sin worker en el MVP |
 | 8 | Documentación con MkDocs Material 9 | Imagen fijada; diagramas Mermaid |
 | 9 | Tipos del frontend escritos a mano (heredado) | Generarlos desde OpenAPI (`openapi-typescript`) queda como mejora si aparecen divergencias. Riesgo aceptado: un cambio de schema en el backend no rompe la compilación del frontend. |

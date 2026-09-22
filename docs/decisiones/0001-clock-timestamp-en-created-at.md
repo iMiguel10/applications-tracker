@@ -27,4 +27,4 @@ Todas las columnas `created_at` usan `server_default=func.clock_timestamp()`, qu
 ## Consecuencias
 
 - `created_at` refleja el instante real de cada fila, incluso dentro de una transacción larga.
-- `clock_timestamp()` depende del reloj del sistema, que puede retroceder (ajustes de NTP). Para listados es irrelevante. Para el historial de estados, donde el orden es la fuente de verdad de deshacer, queda pendiente decidir en F3 si se añade una columna de secuencia estrictamente creciente (`bigint GENERATED ALWAYS AS IDENTITY`) y se ordena por ella.
+- `clock_timestamp()` depende del reloj del sistema, que puede retroceder (ajustes de NTP). Para listados es irrelevante. Para el historial de estados, donde el orden es la fuente de verdad de deshacer, **resuelto en la [decisión 0004](0004-secuencia-para-ordenar-el-historial.md)**: el historial se ordena por una columna de secuencia (`seq`), no por `created_at`.

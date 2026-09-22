@@ -82,9 +82,16 @@ Hay dos pares de datos duplicados. Para cada uno se fija cuál manda.
 | Escritura | Solo desde `ApplicationStatusService`, que en **una transacción** inserta el cambio y actualiza `status` y `last_activity_at`. |
 | Creación | Crear una solicitud inserta también su primer cambio (`from_status = NULL`). Ninguna solicitud existe sin historial. |
 | Deshacer | Se borra el último cambio y `status` se fija al `to_status` del anterior. No se puede deshacer el cambio inicial. |
-| "Último" | Se ordena por `created_at` (orden de inserción), **no** por `changed_at`. |
+| "Último" | El cambio con el **`seq` más alto** ([decisión 0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)): una columna `bigint GENERATED ALWAYS AS IDENTITY`, que siempre crece y no depende del reloj. **No** se ordena por `changed_at` (la declara el usuario) ni por `created_at` (viene del reloj del sistema, que puede retroceder). |
 | Detección de desviación | Una prueba de repository comprueba, tras cada operación, que `status == último to_status`. |
 
+> **Trampa — ordenar el historial por una fecha.**
+>
+> - **`changed_at` no sirve**: es la fecha que declara el usuario.
+> - **`created_at` tampoco**: depende del reloj del sistema, que puede retroceder (NTP, una máquina virtual que se reanuda). Si retrocede entre dos cambios, *deshacer* borraría el equivocado ([decisión 0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)).
+>
+> El caso concreto de `changed_at`:
+>
 > **Trampa — ordenar por `changed_at`.** `changed_at` es la fecha que **declara** el usuario, y puede ser pasada (RF-30). Si se registra hoy un rechazo con fecha de la semana pasada, y ya existía un cambio de hace tres días, ordenar por `changed_at` haría "último" al de hace tres días. Deshacer eliminaría entonces el cambio equivocado. `created_at` refleja el orden real en que se escribieron las filas. Para evitar historias imposibles, el service además rechaza un `changed_at` anterior al del último cambio o posterior a ahora.
 
 ### Usuario de SuperTokens ↔ usuario propio
@@ -159,17 +166,19 @@ Restricciones e índices:
 | `to_status` | `varchar(20) NOT NULL` | |
 | `changed_at` | `timestamptz NOT NULL` | Fecha declarada por el usuario |
 | `note` | `text` | |
-| `created_at` | `timestamptz NOT NULL DEFAULT clock_timestamp()` | Orden real de inserción (§4). Con `now()`, dos cambios en la misma transacción empatarían ([0001](../decisiones/0001-clock-timestamp-en-created-at.md)). Sin `updated_at`: la fila no se edita. |
+| `created_at` | `timestamptz NOT NULL DEFAULT clock_timestamp()` | Cuándo se registró. Informativo: **no** se usa para ordenar ([0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)). Sin `updated_at`: la fila no se edita. |
+| `seq` | `bigint GENERATED ALWAYS AS IDENTITY` | **El orden del historial** ([0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)). Siempre creciente y ajeno al reloj. Es único por tabla, no por solicitud: nunca se muestra como "cambio número N". |
 
-Índice: `(application_id, created_at DESC)`.
+Índice: `(application_id, seq DESC)`.
 
-!!! info "Dos fechas con significados distintos"
+!!! info "Una secuencia y dos fechas, con significados distintos"
     | Campo | Quién lo pone | Qué significa | Para qué se usa |
     |---|---|---|---|
-    | `created_at` | La base de datos, automáticamente al insertar | **Cuándo se registró** el cambio en el sistema | Ordenar el historial y decidir cuál es el último para **deshacer** (§4) |
+    | `seq` | La secuencia de Postgres, al insertar | **En qué orden** se registraron los cambios | Ordenar el historial y decidir cuál es el último para **deshacer** (§4) |
+    | `created_at` | La base de datos (`clock_timestamp()`) | **Cuándo se registró** el cambio en el sistema | Informativo y para auditar |
     | `changed_at` | El usuario (por defecto, ahora) | **Cuándo ocurrió** de verdad | Métricas de tiempos ("tardaron 9 días en responder") y la línea de tiempo que se muestra |
 
-    Si hoy se apunta que la empresa rechazó la candidatura el lunes, `created_at` es hoy y `changed_at` es el lunes. Como las filas del historial nunca se editan, `created_at` hace el papel de un `updated_at` fiable.
+    Si hoy se apunta que la empresa rechazó la candidatura el lunes, `created_at` es hoy y `changed_at` es el lunes.
 
     El `updated_at` de `applications` **no sirve** para deshacer: cambia con cualquier edición (notas, salario) y no guarda el estado anterior.
 
@@ -237,7 +246,7 @@ No hay multi-tenancy de organizaciones, pero cada usuario es su propio inquilino
 ### Deshacer el último cambio (RF-34)
 
 1. `DELETE /applications/{id}/status-changes/last`.
-2. Se bloquea la solicitud y se leen los dos últimos cambios por `created_at`.
+2. Se bloquea la solicitud y se leen los dos últimos cambios por `seq` descendente.
 3. Si solo hay uno (el inicial), se responde 409.
 4. Si no, se borra el último, se fija `status` al `to_status` del anterior y se confirma.
 
@@ -298,7 +307,7 @@ Cada prueba corre dentro de una transacción que se revierte al terminar: no que
 La violación de cualquiera de estas reglas es un fallo, no una diferencia de criterio:
 
 1. Todo método de repository sobre datos de usuario recibe `user_id` y filtra por él.
-2. `applications.status` es igual al `to_status` del último cambio de su historial, ordenado por `created_at`.
+2. `applications.status` es igual al `to_status` del cambio con el `seq` más alto de su historial ([0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)).
 3. El estado solo cambia a través de `ApplicationStatusService`. `PATCH /applications/{id}` no acepta `status`.
 4. Toda solicitud tiene al menos un cambio en su historial. *(Aplica desde F3: en F2 la tabla de historial no existe todavía y la migración de F3 creará el cambio inicial de las solicitudes existentes.)*
 5. Un recurso de otro usuario responde 404, nunca 403.
