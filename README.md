@@ -2,7 +2,7 @@
 
 Un cuaderno de bitácora para la búsqueda de empleo: cada candidatura, cómo avanza (cambios de estado y entrevistas) y cuál es el próximo paso, para que ninguna se quede olvidada.
 
-> **Estado:** diseño cerrado y entorno de desarrollo listo. La implementación empieza por la fase F0. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado:** en desarrollo. Terminada la fase F0 (esqueleto vertical: crear y listar solicitudes); la siguiente es F1, autenticación. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Qué resuelve
 

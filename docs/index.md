@@ -3,7 +3,7 @@
 Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y el próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
 !!! warning "Estado"
-    Diseño cerrado. Existe el entorno Docker de desarrollo y un endpoint de salud; la implementación empieza por la fase F0.
+    En desarrollo. Terminada la fase F0 (esqueleto vertical: crear y listar solicitudes); la siguiente es F1, autenticación.
 
 ## En una página
 
