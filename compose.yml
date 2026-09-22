@@ -30,6 +30,15 @@ services:
       db:
         condition: service_healthy
 
+  docs:
+    image: squidfunk/mkdocs-material:9
+    command: serve --dev-addr 0.0.0.0:8000 --livereload
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./mkdocs.yml:/docs/mkdocs.yml:ro
+      - ./docs:/docs/docs:ro
+
   frontend:
     build:
       context: ./frontend
