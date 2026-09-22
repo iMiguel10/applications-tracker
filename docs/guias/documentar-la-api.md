@@ -29,6 +29,8 @@ La API acepta dos modos en todas las rutas protegidas ([decisión 0003](../decis
 3. Pulsa **Authorize** (arriba a la derecha), pega el token en **BearerAuth** y confirma. Swagger lo recuerda aunque recargues la página.
 4. Las rutas con candado ya se pueden ejecutar. El *curl* que muestra Swagger incluye la cabecera, listo para copiar.
 
+> **Trampa — hacer login en Swagger cierra la sesión de la app en ese navegador.** Un login en modo cabecera responde con `Set-Cookie` que **caducan** `sAccessToken` y `sRefreshToken`: SuperTokens no deja que convivan una sesión por cookie y otra por cabecera. Swagger (`localhost:8000/docs`) comparte origen con la API, así que esas cookies son las mismas que usa la app en `localhost:5173`. Al volver a la app, su refresco responde 401 y te manda al login. Para usar las dos a la vez, abre Swagger en una **ventana privada** o en otro navegador.
+
 El access token **caduca a los 5 minutos** ([decisión 0002](../decisiones/0002-access-token-de-5-minutos.md)). Cuando las peticiones empiecen a responder 401, repite el login, o renueva el token con `POST /auth/session/refresh` enviando el **refresh token** como Bearer.
 
 ### Desde una integración

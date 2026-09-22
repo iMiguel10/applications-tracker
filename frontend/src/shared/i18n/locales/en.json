@@ -14,23 +14,120 @@
     "loading": "Loading…",
     "previous": "Previous",
     "next": "Next",
-    "pagination": "Page {{page}} of {{pages}} · {{total}} total"
+    "pagination": "Page {{page}} of {{pages}} · {{total}} total",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "selectDate": "Pick a date",
+    "noResults": "No results with these filters.",
+    "createOption": "Create “{{label}}”",
+    "unspecified": "Unspecified",
+    "fields": {
+      "notes": "Notes"
+    },
+    "validation": {
+      "tooLong": "Too long",
+      "url": "Must start with http:// or https://",
+      "notesTooLong": "5,000 characters maximum"
+    }
   },
   "applications": {
     "title": "Applications",
-    "create": "Add application",
-    "created": "Application added",
-    "createError": "Could not add the application",
-    "loadError": "Could not load applications",
-    "empty": "No applications yet.",
+    "new": "New application",
+    "newTitle": "New application",
+    "editTitle": "Edit application",
+    "create": "Create application",
+    "created": "Application created",
+    "updated": "Application updated",
+    "deleted": "Application deleted",
+    "empty": "No applications yet. Create the first one with “New application”.",
+    "searchPlaceholder": "Search position or company…",
+    "companyPlaceholder": "Search or type a new company",
+    "appliedAtToday": "Today",
+    "archived": "Archived",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "archivedToast": "Application archived",
+    "unarchivedToast": "Application unarchived",
+    "deleteTitle": "Delete the application?",
+    "deleteConfirm": "It will be deleted for good. To just hide it from the list, archive it.",
+    "timestamps": "Created {{created}} · updated {{updated}}",
     "fields": {
+      "company": "Company",
       "position": "Position",
-      "company": "Company"
+      "status": "Status",
+      "initialStatus": "Status",
+      "appliedAt": "Applied on",
+      "location": "Location",
+      "workMode": "Work mode",
+      "source": "Source",
+      "jobUrl": "Job posting",
+      "salary": "Gross annual salary",
+      "salaryMin": "Minimum",
+      "salaryMax": "Maximum",
+      "currency": "Currency"
+    },
+    "status": {
+      "saved": "Saved",
+      "applied": "Applied",
+      "screening": "Screening",
+      "interviewing": "Interviewing",
+      "offer": "Offer",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn"
+    },
+    "workMode": {
+      "onsite": "On-site",
+      "hybrid": "Hybrid",
+      "remote": "Remote"
+    },
+    "source": {
+      "linkedin": "LinkedIn",
+      "infojobs": "InfoJobs",
+      "indeed": "Indeed",
+      "company_website": "Company website",
+      "referral": "Referral",
+      "recruiter": "Recruiter",
+      "other": "Other"
+    },
+    "filters": {
+      "allStatuses": "All statuses",
+      "allWorkModes": "Any work mode",
+      "allSources": "All sources",
+      "archived": "Archived",
+      "archivedOptions": {
+        "active": "Active",
+        "archived": "Archived",
+        "all": "Active and archived"
+      },
+      "sortBy": "Sort",
+      "clear": "Clear filters"
+    },
+    "sort": {
+      "applied_at": {
+        "desc": "Applied: newest",
+        "asc": "Applied: oldest"
+      },
+      "updated_at": {
+        "desc": "Updated: recent",
+        "asc": "Updated: oldest"
+      },
+      "company": {
+        "asc": "Company: A → Z",
+        "desc": "Company: Z → A"
+      },
+      "position_title": {
+        "asc": "Position: A → Z",
+        "desc": "Position: Z → A"
+      }
     },
     "validation": {
+      "companyRequired": "Choose or create a company",
       "positionRequired": "Enter the position",
-      "companyRequired": "Enter the company",
-      "tooLong": "200 characters maximum"
+      "salaryNumber": "Whole numbers only",
+      "currency": "3-letter code, e.g. EUR"
     }
   },
   "auth": {
@@ -58,5 +155,46 @@
       "passwordPolicy": "The password must be at least 8 characters long and include letters and numbers",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "nav": {
+    "applications": "Applications",
+    "companies": "Companies"
+  },
+  "companies": {
+    "title": "Companies",
+    "new": "New company",
+    "newTitle": "New company",
+    "editTitle": "Edit company",
+    "created": "Company created",
+    "updated": "Company updated",
+    "deleted": "Company deleted",
+    "empty": "No companies yet. They are created when you add an application, or here.",
+    "searchPlaceholder": "Search companies…",
+    "applicationsCount": "Applications",
+    "deleteTitle": "Delete “{{name}}”?",
+    "deleteConfirm": "This cannot be undone.",
+    "deleteInUse": "It cannot be deleted: it has {{count}} application(s), archived ones included. Delete them or move them to another company first.",
+    "fields": {
+      "name": "Name",
+      "website": "Website",
+      "location": "Location"
+    },
+    "validation": {
+      "nameRequired": "Enter the name"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "validation": "Some data is not valid.",
+    "not_found": "It does not exist or is no longer available.",
+    "company_name_taken": "You already have a company with that name",
+    "company_in_use": "The company has applications and cannot be deleted",
+    "companies_limit_reached": "You have reached the maximum number of companies",
+    "applications_limit_reached": "You have reached the maximum number of applications",
+    "salary_range_invalid": "The minimum cannot be greater than the maximum",
+    "applied_at_required": "A sent application needs an application date",
+    "name_required": "The name is required",
+    "position_title_required": "The position is required",
+    "company_required": "The company is required"
   }
 }

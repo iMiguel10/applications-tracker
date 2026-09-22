@@ -14,23 +14,120 @@
     "loading": "Cargando…",
     "previous": "Anterior",
     "next": "Siguiente",
-    "pagination": "Página {{page}} de {{pages}} · {{total}} en total"
+    "pagination": "Página {{page}} de {{pages}} · {{total}} en total",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Borrar",
+    "selectDate": "Elegir fecha",
+    "noResults": "No hay resultados con estos filtros.",
+    "createOption": "Crear «{{label}}»",
+    "unspecified": "Sin especificar",
+    "fields": {
+      "notes": "Notas"
+    },
+    "validation": {
+      "tooLong": "Demasiado largo",
+      "url": "Debe empezar por http:// o https://",
+      "notesTooLong": "Máximo 5 000 caracteres"
+    }
   },
   "applications": {
     "title": "Solicitudes",
-    "create": "Añadir solicitud",
-    "created": "Solicitud añadida",
-    "createError": "No se pudo añadir la solicitud",
-    "loadError": "No se pudieron cargar las solicitudes",
-    "empty": "Todavía no hay solicitudes.",
+    "new": "Nueva solicitud",
+    "newTitle": "Nueva solicitud",
+    "editTitle": "Editar solicitud",
+    "create": "Crear solicitud",
+    "created": "Solicitud creada",
+    "updated": "Solicitud actualizada",
+    "deleted": "Solicitud borrada",
+    "empty": "Todavía no hay solicitudes. Crea la primera con «Nueva solicitud».",
+    "searchPlaceholder": "Buscar puesto o empresa…",
+    "companyPlaceholder": "Busca o escribe una empresa nueva",
+    "appliedAtToday": "Hoy",
+    "archived": "Archivada",
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "archivedToast": "Solicitud archivada",
+    "unarchivedToast": "Solicitud desarchivada",
+    "deleteTitle": "¿Borrar la solicitud?",
+    "deleteConfirm": "Se borrará definitivamente. Si solo quieres ocultarla del listado, archívala.",
+    "timestamps": "Creada el {{created}} · actualizada el {{updated}}",
     "fields": {
+      "company": "Empresa",
       "position": "Puesto",
-      "company": "Empresa"
+      "status": "Estado",
+      "initialStatus": "Estado",
+      "appliedAt": "Fecha de envío",
+      "location": "Ubicación",
+      "workMode": "Modalidad",
+      "source": "Fuente",
+      "jobUrl": "Oferta",
+      "salary": "Salario bruto anual",
+      "salaryMin": "Mínimo",
+      "salaryMax": "Máximo",
+      "currency": "Moneda"
+    },
+    "status": {
+      "saved": "Guardada",
+      "applied": "Enviada",
+      "screening": "En revisión",
+      "interviewing": "Entrevistas",
+      "offer": "Oferta",
+      "accepted": "Aceptada",
+      "rejected": "Descartada",
+      "withdrawn": "Retirada"
+    },
+    "workMode": {
+      "onsite": "Presencial",
+      "hybrid": "Híbrido",
+      "remote": "Remoto"
+    },
+    "source": {
+      "linkedin": "LinkedIn",
+      "infojobs": "InfoJobs",
+      "indeed": "Indeed",
+      "company_website": "Web de la empresa",
+      "referral": "Referido",
+      "recruiter": "Recruiter",
+      "other": "Otra"
+    },
+    "filters": {
+      "allStatuses": "Todos los estados",
+      "allWorkModes": "Toda modalidad",
+      "allSources": "Todas las fuentes",
+      "archived": "Archivadas",
+      "archivedOptions": {
+        "active": "Activas",
+        "archived": "Archivadas",
+        "all": "Activas y archivadas"
+      },
+      "sortBy": "Orden",
+      "clear": "Quitar filtros"
+    },
+    "sort": {
+      "applied_at": {
+        "desc": "Envío: más recientes",
+        "asc": "Envío: más antiguas"
+      },
+      "updated_at": {
+        "desc": "Actualizadas: recientes",
+        "asc": "Actualizadas: antiguas"
+      },
+      "company": {
+        "asc": "Empresa: A → Z",
+        "desc": "Empresa: Z → A"
+      },
+      "position_title": {
+        "asc": "Puesto: A → Z",
+        "desc": "Puesto: Z → A"
+      }
     },
     "validation": {
+      "companyRequired": "Elige o crea una empresa",
       "positionRequired": "Indica el puesto",
-      "companyRequired": "Indica la empresa",
-      "tooLong": "Máximo 200 caracteres"
+      "salaryNumber": "Solo números enteros",
+      "currency": "Código de 3 letras, p. ej. EUR"
     }
   },
   "auth": {
@@ -58,5 +155,46 @@
       "passwordPolicy": "La contraseña debe tener al menos 8 caracteres e incluir letras y números",
       "generic": "Algo ha fallado. Inténtalo de nuevo."
     }
+  },
+  "nav": {
+    "applications": "Solicitudes",
+    "companies": "Empresas"
+  },
+  "companies": {
+    "title": "Empresas",
+    "new": "Nueva empresa",
+    "newTitle": "Nueva empresa",
+    "editTitle": "Editar empresa",
+    "created": "Empresa creada",
+    "updated": "Empresa actualizada",
+    "deleted": "Empresa borrada",
+    "empty": "Todavía no hay empresas. Se crean al registrar una solicitud o desde aquí.",
+    "searchPlaceholder": "Buscar empresa…",
+    "applicationsCount": "Solicitudes",
+    "deleteTitle": "¿Borrar «{{name}}»?",
+    "deleteConfirm": "Esta acción no se puede deshacer.",
+    "deleteInUse": "No se puede borrar: tiene {{count}} solicitud(es), incluidas las archivadas. Bórralas o cámbialas de empresa primero.",
+    "fields": {
+      "name": "Nombre",
+      "website": "Web",
+      "location": "Ubicación"
+    },
+    "validation": {
+      "nameRequired": "Indica el nombre"
+    }
+  },
+  "errors": {
+    "generic": "Algo ha fallado. Inténtalo de nuevo.",
+    "validation": "Hay datos no válidos.",
+    "not_found": "No existe o ya no está disponible.",
+    "company_name_taken": "Ya tienes una empresa con ese nombre",
+    "company_in_use": "La empresa tiene solicitudes y no se puede borrar",
+    "companies_limit_reached": "Has alcanzado el máximo de empresas",
+    "applications_limit_reached": "Has alcanzado el máximo de solicitudes",
+    "salary_range_invalid": "El mínimo no puede ser mayor que el máximo",
+    "applied_at_required": "Una solicitud enviada necesita fecha de envío",
+    "name_required": "El nombre es obligatorio",
+    "position_title_required": "El puesto es obligatorio",
+    "company_required": "La empresa es obligatoria"
   }
 }

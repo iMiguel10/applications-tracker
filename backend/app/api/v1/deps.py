@@ -7,6 +7,7 @@ from supertokens_python.recipe.session.framework.fastapi import verify_session
 from app.db.session import get_db
 from app.schemas.user import CurrentUser
 from app.services.application_service import ApplicationService
+from app.services.company_service import CompanyService
 from app.services.user_service import UserService
 
 # Esquemas de seguridad SOLO para el OpenAPI: hacen que Swagger muestre el botón
@@ -34,6 +35,12 @@ def get_application_service(
     db: AsyncSession = Depends(get_db),
 ) -> ApplicationService:
     return ApplicationService(db)
+
+
+def get_company_service(
+    db: AsyncSession = Depends(get_db),
+) -> CompanyService:
+    return CompanyService(db)
 
 
 def get_user_service(

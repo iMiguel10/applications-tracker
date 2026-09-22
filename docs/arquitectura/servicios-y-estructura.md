@@ -162,6 +162,12 @@ Dirección de dependencias: `endpoints → services → repositories → models`
 | Migraciones | **[nuevo]** `migrations/env.py` importa `app.models`, y `models/__init__.py` importa cada modelo: un modelo no importado es invisible para autogenerate, que generaría un `drop_table`. Un *post-write hook* de Alembic pasa `ruff check --fix` y `ruff format` a cada migración generada. | En la plantilla `env.py` no importaba los modelos |
 | Log de SQL | **[nuevo]** En desarrollo, nivel INFO del logger `sqlalchemy.engine` en `core/logging.py`, **no** `create_engine(echo=True)`, que añade su propio handler y duplica cada línea | La plantilla usaba `echo=True` |
 | Tests | **[nuevo]** `tests/conftest.py`: engine con `NullPool` (un event loop por test) y sesión dentro de una transacción externa con `join_transaction_mode="create_savepoint"`. El `commit()` de los services solo confirma un savepoint y todo se revierte al acabar. `get_db` se sustituye con `dependency_overrides`. | La plantilla hacía commits reales y `engine.dispose()` por test |
+| Consultas | **[nuevo]** `eager_defaults=True` en `Base`: los valores que calcula la BD (`updated_at`) se leen con `RETURNING` también en los `UPDATE`; sin ello, leerlos en async falla con `MissingGreenlet`. Relaciones con `lazy="raise"`: cada consulta declara lo que carga (`joinedload`, o `contains_eager` si ya hay `join`). | No existía |
+| Búsquedas | **[nuevo]** `ILIKE` siempre con `repositories/search.py:contains_pattern()` y `escape=LIKE_ESCAPE`: sin escapar, `%` y `_` del usuario actúan como comodines | La plantilla usaba `f"%{search}%"` |
+| PATCH | **[nuevo]** Schemas `*Update` con todo opcional y `model_dump(exclude_unset=True)`: "no enviado" no toca el campo, `null` lo vacía. Las reglas entre campos (rango salarial, `applied_at` obligatoria) se validan en el service **sobre los valores mezclados** con lo guardado, porque el schema solo ve lo enviado. | La plantilla tenía PUT y PATCH separados |
+| Enumerados | **[nuevo]** `db/constraints.py:enum_check()` genera el `CHECK` desde el `StrEnum` de `domain/`. En las migraciones, en cambio, los valores se **congelan como texto**: una migración describe el esquema de su momento. | No existía |
+| Validación de texto | **[nuevo]** Normalizar (mayúsculas, recortes) con `BeforeValidator`, no con `StringConstraints(to_upper=True)`: Pydantic comprueba el `pattern` **antes** de `to_upper`, así que "eur" fallaría contra `^[A-Z]{3}$` | — |
+| Errores de negocio | **[nuevo]** `NotFoundError` (404 `not_found`), `ConflictError` (409 con `code`), `LimitReachedError` (409 `<recurso>_limit_reached`) y `AppException(status_code=422, code=...)` para reglas entre campos | La plantilla solo tenía `AppException` sin código |
 
 > **Fallos encontrados en la plantilla**, anotados de paso; ya se corrigieron en este proyecto al copiarla:
 >
@@ -189,7 +195,7 @@ frontend/src/
 ├── shared/
 │   ├── components/{ui,form,common,layout}
 │   ├── config/navigation.ts
-│   ├── hooks/                 useDebounce, useUrlFilters…
+│   ├── hooks/                 useDebounce…
 │   ├── i18n/                  i18n.ts + locales/{es,en}.json
 │   └── lib/                   apiClient.ts, queryClient.ts, supertokens.ts (F1), utils.ts
 ├── styles/global.css
@@ -227,12 +233,17 @@ features/<feature>/
 | Sesión | `supabase.auth` + `onAuthStateChange` | `supertokens-web-js` (`Session.doesSessionExist`, refresco automático de la sesión) |
 | Roles | `user`/`manager`/`admin` y filtrado de menús por rol | Un solo rol: `NavItem` sin `roles` |
 | Errores | Mensajes de Supabase | `ApiError` con `status` y `code`, traducido con la clave `errors.<code>` |
-| Filtros de listados | Estado local | Parámetros de la URL (`useUrlFilters`), decisión A16 |
+| Filtros de listados | Estado local | Parámetros de la URL (decisión A16). Cada listado tiene funciones **puras** `parse`/`serialize` (p. ej. `features/applications/lib/listParams.ts`) que descartan valores desconocidos: un enlace viejo o escrito a mano nunca rompe la página ni llega a la API como 422. Se prueban sin montar componentes. |
 | Módulo genérico `tracking` | Factory para 5 módulos idénticos | No aplica: no hay entidades con la misma forma |
 | Tipos | Escritos a mano en `types/` | Igual: a mano. Ver la decisión cerrada 9. |
 | Utilidad `cn` | `clsx` + `tailwind-merge` en `shared/lib/utils.ts` | **[nuevo]** shadcn 4.2x genera los componentes con `import { cn } from "cn"`, el paquete oficial `shadcn-ui/cn`. `shared/lib/utils.ts` lo reexporta para que el código propio siga importando de `@/shared/lib/utils`; `clsx` y `tailwind-merge` se eliminan. |
 | ESLint en `ui/` | Sin excepción: `npm run lint` fallaba por `buttonVariants` | **[nuevo]** `react-refresh/only-export-components` desactivada solo en `src/shared/components/ui/**`, que es código generado y no se edita |
 | Tipo `Page<T>` | No existía | **[nuevo]** `shared/types/Page.ts`, espejo de `schemas/pagination.py` |
+| Combobox asíncrono | `FormAsyncCombobox` con estado propio y `fetch` en un efecto | **[nuevo]** Carga las opciones con `useQuery` (prop `queryKey`, que conviene colgar de la key de la feature para que se refresque al invalidarla) y admite `onCreate` para crear el elemento sin salir del formulario (RF-13) |
+| Fechas sin hora | `Date` en el formulario y `toDateOnlyString` al enviar | **[nuevo]** El formulario guarda el texto `"yyyy-MM-dd"` de la API. `shared/lib/dates.ts` (`parseDateOnly`/`toDateOnly`) lo convierte con fecha **local**: `new Date("2026-09-01")` es medianoche UTC y, al oeste de UTC, el día anterior |
+| Selects opcionales | Sin opción vacía | **[nuevo]** `FormSelect` con `emptyLabel`: guarda `null`, no `""` |
+| Popover / Dialog | `asChild` (Radix) | Base UI usa la prop `render`: `asChild` no hace nada y anida un botón dentro de otro |
+| Errores de la API en formularios | Aviso genérico | **[nuevo]** `errorMessageKey(error)` traduce por `code` (`errors.<code>`); si el código corresponde a un campo, se marca el campo con `setError` |
 
 Se mantienen tal cual: shadcn/ui (`base-nova`) en `shared/components/ui` (añadidos con el CLI, nunca a mano), los wrappers de formulario de `shared/components/form`, el alias `@/`, i18n con claves y la configuración de TanStack Query.
 

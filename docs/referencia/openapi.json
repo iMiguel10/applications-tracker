@@ -383,13 +383,680 @@
         ]
       }
     },
+    "/api/v1/companies": {
+      "get": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Listar empresas",
+        "description": "Empresas del usuario, con el número de solicitudes de cada una (RF-11).",
+        "operationId": "list_companies_api_v1_companies_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página, empezando en 1.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Página, empezando en 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página.",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en el nombre (contiene).",
+              "title": "Q"
+            },
+            "description": "Busca en el nombre (contiene)."
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "name",
+                "created_at",
+                "applications_count"
+              ],
+              "type": "string",
+              "default": "name",
+              "title": "Sort By"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "default": "asc",
+              "title": "Order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_CompanyRead_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Crear una empresa",
+        "description": "Crea una empresa. El nombre es único por usuario sin distinguir mayúsculas:\nsi ya existe, responde 409 `company_name_taken`. 409\n`companies_limit_reached` al superar 2 000 empresas.",
+        "operationId": "create_company_api_v1_companies_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/companies/{company_id}": {
+      "get": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Ver una empresa",
+        "description": "Detalle de una empresa del usuario.",
+        "operationId": "get_company_api_v1_companies__company_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Editar una empresa",
+        "description": "Actualización parcial: solo cambian los campos enviados; `null` vacía un campo\nopcional. 409 `company_name_taken` si el nombre nuevo ya existe.",
+        "operationId": "update_company_api_v1_companies__company_id__patch",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Companies"
+        ],
+        "summary": "Borrar una empresa",
+        "description": "Borra una empresa sin solicitudes. Si tiene alguna (incluidas archivadas),\nresponde 409 `company_in_use` (RF-12).",
+        "operationId": "delete_company_api_v1_companies__company_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "company_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Company Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/applications": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Listar solicitudes",
+        "description": "Solicitudes del usuario, paginadas y filtrables (RF-22).\n\nPor defecto solo las activas (no archivadas), ordenadas por fecha de envío\ndescendente; las guardadas sin fecha de envío van al final.",
+        "operationId": "list_applications_api_v1_applications_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página, empezando en 1.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Página, empezando en 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página.",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApplicationStatus"
+              },
+              "title": "Status"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "work_mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/WorkMode"
+              },
+              "title": "Work Mode"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApplicationSource"
+              },
+              "title": "Source"
+            }
+          },
+          {
+            "name": "applied_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fecha de envío desde.",
+              "title": "Applied From"
+            },
+            "description": "Fecha de envío desde."
+          },
+          {
+            "name": "applied_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fecha de envío hasta.",
+              "title": "Applied To"
+            },
+            "description": "Fecha de envío hasta."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en el puesto y la empresa.",
+              "title": "Q"
+            },
+            "description": "Busca en el puesto y la empresa."
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "archived",
+                "all"
+              ],
+              "type": "string",
+              "description": "`active` (por defecto), `archived` o `all`.",
+              "default": "active",
+              "title": "Archived"
+            },
+            "description": "`active` (por defecto), `archived` o `all`."
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "applied_at",
+                "created_at",
+                "updated_at",
+                "company",
+                "position_title"
+              ],
+              "type": "string",
+              "description": "Las solicitudes sin fecha de envío van siempre al final.",
+              "default": "applied_at",
+              "title": "Sort By"
+            },
+            "description": "Las solicitudes sin fecha de envío van siempre al final."
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "default": "desc",
+              "title": "Order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ApplicationRead_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Applications"
         ],
         "summary": "Crear una solicitud",
-        "description": "Registra una solicitud nueva.\n\nVersión F0 (provisional): solo puesto y empresa en texto. En F2 se amplía con\nempresa registrada, estado, fechas y el resto de datos.",
+        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al superar 5 000 solicitudes.",
         "operationId": "create_application_api_v1_applications_post",
         "security": [
           {
@@ -430,6 +1097,98 @@
               }
             }
           },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{application_id}": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Ver una solicitud",
+        "description": "Detalle de una solicitud del usuario.",
+        "operationId": "get_application_api_v1_applications__application_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -442,13 +1201,13 @@
           }
         }
       },
-      "get": {
+      "patch": {
         "tags": [
           "Applications"
         ],
-        "summary": "Listar solicitudes",
-        "description": "Lista paginada de solicitudes, las más recientes primero.\n\nVersión F0 (provisional): todavía no se filtra por usuario; en F2 cada usuario\nverá solo las suyas.",
-        "operationId": "list_applications_api_v1_applications_get",
+        "summary": "Editar una solicitud",
+        "description": "Actualización parcial de los datos (RF-21): solo cambian los campos enviados y\n`null` vacía un campo opcional. El estado no se cambia aquí.\n\n422 `salary_range_invalid` o `applied_at_required` si el resultado incumple\nlas reglas teniendo en cuenta también los valores ya guardados.",
+        "operationId": "update_application_api_v1_applications__application_id__patch",
         "security": [
           {
             "BearerAuth": []
@@ -459,40 +1218,33 @@
         ],
         "parameters": [
           {
-            "name": "page",
-            "in": "query",
-            "required": false,
+            "name": "application_id",
+            "in": "path",
+            "required": true,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Página, empezando en 1.",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Página, empezando en 1."
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Elementos por página (máximo 100).",
-              "default": 20,
-              "title": "Limit"
-            },
-            "description": "Elementos por página (máximo 100)."
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_ApplicationRead_"
+                  "$ref": "#/components/schemas/ApplicationRead"
                 }
               }
             }
@@ -503,6 +1255,223 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Borrar una solicitud",
+        "description": "Borra la solicitud definitivamente (RF-25). Para ocultarla sin perderla,\nusar archivar.",
+        "operationId": "delete_application_api_v1_applications__application_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{application_id}/archive": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Archivar una solicitud",
+        "description": "Oculta la solicitud del listado por defecto sin borrarla; sigue contando en\nlas métricas (RF-24). Idempotente.",
+        "operationId": "archive_application_api_v1_applications__application_id__archive_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{application_id}/unarchive": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Desarchivar una solicitud",
+        "description": "Devuelve la solicitud al listado de activas. Idempotente.",
+        "operationId": "unarchive_application_api_v1_applications__application_id__unarchive_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -525,41 +1494,170 @@
     "schemas": {
       "ApplicationCreate": {
         "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id",
+            "description": "Empresa del usuario. Si no existe, se crea antes con POST /companies."
+          },
           "position_title": {
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
             "title": "Position Title",
-            "description": "Puesto al que se aplica. Se recortan los espacios de los extremos.",
             "examples": [
               "Backend Developer"
             ]
           },
-          "company_name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Company Name",
-            "description": "Empresa. En F2 pasará a ser una referencia a una empresa registrada.",
+          "job_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^https?://\\S+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Url",
             "examples": [
-              "Acme"
+              "https://acme.example/jobs/42"
             ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "examples": [
+              "Madrid"
+            ]
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "saved",
+              "applied"
+            ],
+            "title": "Status",
+            "description": "Estado inicial: `saved` (aún sin enviar) o `applied`. Los cambios posteriores de estado tienen su propia operación (F3).",
+            "default": "applied"
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied At",
+            "description": "Fecha de envío. Si el estado es `applied` y no se indica, se usa la fecha de hoy (UTC)."
+          },
+          "salary_min": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Min",
+            "description": "Bruto anual."
+          },
+          "salary_max": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Max",
+            "description": "Bruto anual."
+          },
+          "salary_currency": {
+            "type": "string",
+            "title": "Salary Currency",
+            "description": "Código ISO 4217.",
+            "default": "EUR",
+            "examples": [
+              "EUR"
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Máximo 5 000 caracteres."
           }
         },
         "type": "object",
         "required": [
-          "position_title",
-          "company_name"
+          "company_id",
+          "position_title"
         ],
         "title": "ApplicationCreate"
+      },
+      "ApplicationOrigin": {
+        "type": "string",
+        "enum": [
+          "manual"
+        ],
+        "title": "ApplicationOrigin",
+        "description": "Cómo entró la solicitud en el sistema (RF-26). Costura para importaciones:\nen el MVP solo existe el registro manual."
       },
       "ApplicationRead": {
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
-            "title": "Id",
-            "description": "Identificador de la solicitud."
+            "title": "Id"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanySummary"
           },
           "position_title": {
             "type": "string",
@@ -568,28 +1666,321 @@
               "Backend Developer"
             ]
           },
-          "company_name": {
-            "type": "string",
-            "title": "Company Name",
-            "examples": [
-              "Acme"
+          "job_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Url"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkMode"
+              },
+              {
+                "type": "null"
+              }
             ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "origin": {
+            "$ref": "#/components/schemas/ApplicationOrigin"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied At"
+          },
+          "salary_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Min"
+          },
+          "salary_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Max"
+          },
+          "salary_currency": {
+            "type": "string",
+            "title": "Salary Currency"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At",
+            "description": "`null` si está activa."
+          },
+          "last_activity_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Activity At",
+            "description": "Último cambio de estado o de entrevistas (no de datos)."
           },
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Created At",
-            "description": "Momento de creación, en UTC."
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
           }
         },
         "type": "object",
         "required": [
           "id",
+          "company",
           "position_title",
-          "company_name",
-          "created_at"
+          "job_url",
+          "location",
+          "work_mode",
+          "source",
+          "origin",
+          "status",
+          "applied_at",
+          "salary_min",
+          "salary_max",
+          "salary_currency",
+          "notes",
+          "archived_at",
+          "last_activity_at",
+          "created_at",
+          "updated_at"
         ],
         "title": "ApplicationRead"
+      },
+      "ApplicationSource": {
+        "type": "string",
+        "enum": [
+          "linkedin",
+          "infojobs",
+          "indeed",
+          "company_website",
+          "referral",
+          "recruiter",
+          "other"
+        ],
+        "title": "ApplicationSource",
+        "description": "Dónde se encontró la oferta."
+      },
+      "ApplicationStatus": {
+        "type": "string",
+        "enum": [
+          "saved",
+          "applied",
+          "screening",
+          "interviewing",
+          "offer",
+          "accepted",
+          "rejected",
+          "withdrawn"
+        ],
+        "title": "ApplicationStatus"
+      },
+      "ApplicationUpdate": {
+        "properties": {
+          "company_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company Id"
+          },
+          "position_title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position Title"
+          },
+          "job_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^https?://\\S+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Url"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied At"
+          },
+          "salary_min": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Min"
+          },
+          "salary_max": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000000.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Max"
+          },
+          "salary_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Currency"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "ApplicationUpdate",
+        "description": "Actualización parcial: solo se modifican los campos enviados; `null` vacía un\ncampo opcional. El estado NO se cambia aquí (invariante 3)."
       },
       "AuthCredentials": {
         "properties": {
@@ -742,6 +2133,252 @@
         "title": "AuthWrongCredentials",
         "description": "Email o contraseña incorrectos. No indica cuál de los dos falla."
       },
+      "CompanyCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Nombre. Único por usuario sin distinguir mayúsculas.",
+            "examples": [
+              "Acme"
+            ]
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^https?://\\S+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website",
+            "examples": [
+              "https://acme.example"
+            ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "examples": [
+              "Madrid"
+            ]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Máximo 5 000 caracteres."
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CompanyCreate"
+      },
+      "CompanyRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Acme"
+            ]
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "applications_count": {
+            "type": "integer",
+            "title": "Applications Count",
+            "description": "Solicitudes a esta empresa, incluidas las archivadas."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "website",
+          "location",
+          "notes",
+          "applications_count",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CompanyRead"
+      },
+      "CompanySummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "examples": [
+              "Acme"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CompanySummary"
+      },
+      "CompanyUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "examples": [
+              "Acme Corp"
+            ]
+          },
+          "website": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "pattern": "^https?://\\S+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "CompanyUpdate",
+        "description": "Actualización parcial: solo se modifican los campos enviados. Enviar `null`\nvacía un campo opcional."
+      },
+      "ErrorResponse": {
+        "properties": {
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "examples": [
+              "Company not found"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "examples": [
+              "not_found"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "detail",
+          "code"
+        ],
+        "title": "ErrorResponse",
+        "description": "Error de negocio. `code` es estable (contrato); `detail` es informativo."
+      },
       "FormField": {
         "properties": {
           "id": {
@@ -886,6 +2523,47 @@
         ],
         "title": "Page[ApplicationRead]"
       },
+      "Page_CompanyRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompanyRead"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Elementos de la página pedida."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total de elementos que cumplen el filtro."
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Página devuelta, empezando en 1."
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Tamaño de página pedido."
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "description": "Número total de páginas (0 si no hay elementos)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "pages"
+        ],
+        "title": "Page[CompanyRead]"
+      },
       "UnauthorizedError": {
         "properties": {
           "message": {
@@ -940,6 +2618,15 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WorkMode": {
+        "type": "string",
+        "enum": [
+          "onsite",
+          "hybrid",
+          "remote"
+        ],
+        "title": "WorkMode"
       }
     },
     "securitySchemes": {
@@ -968,6 +2655,10 @@
     {
       "name": "Me",
       "description": "Usuario de la sesión actual."
+    },
+    {
+      "name": "Companies",
+      "description": "Empresas del usuario, reutilizables entre solicitudes."
     },
     {
       "name": "Applications",

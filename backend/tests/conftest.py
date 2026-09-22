@@ -53,6 +53,12 @@ async def user(db_session: AsyncSession) -> CurrentUser:
 
 
 @pytest_asyncio.fixture
+async def other_user(db_session: AsyncSession) -> CurrentUser:
+    """Segundo usuario, para las pruebas de aislamiento (T2, T3)."""
+    return await create_test_user(db_session)
+
+
+@pytest_asyncio.fixture
 async def anonymous_client(
     db_session: AsyncSession,
 ) -> AsyncGenerator[AsyncClient, None]:

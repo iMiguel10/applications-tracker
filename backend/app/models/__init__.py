@@ -1,6 +1,7 @@
 # Importar aquí cada modelo: es lo que los registra en Base.metadata, y
 # migrations/env.py importa este paquete para que Alembic los vea.
 from app.models.application import Application
+from app.models.company import Company
 from app.models.user import User
 
-__all__ = ["Application", "User"]
+__all__ = ["Application", "Company", "User"]

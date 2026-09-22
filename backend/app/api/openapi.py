@@ -45,6 +45,10 @@ OPENAPI_TAGS = [
         "description": "Estado de la API y de la base de datos. Público.",
     },
     {"name": "Me", "description": "Usuario de la sesión actual."},
+    {
+        "name": "Companies",
+        "description": "Empresas del usuario, reutilizables entre solicitudes.",
+    },
     {"name": "Applications", "description": "Solicitudes a puestos de trabajo."},
 ]
 

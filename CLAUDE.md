@@ -6,14 +6,14 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-22): F1 terminada.**
+> **Estado (2026-09-22): F2 terminada.**
 >
 > - **Existe:**
->     - Entorno Docker, `/api/v1/health` y el esqueleto F0: crear y listar solicitudes.
->     - Autenticación F1: SuperTokens con core propio, registro, login, logout, `GET /api/v1/me`, tabla `users` de enlace, router protegido, páginas `/login` y `/register` y rutas protegidas.
->     - Tests del backend (incluidas T1 y T4–T7) y del frontend (T8, `safeRedirect`).
-> - **Pendiente de F2:** las solicitudes de F0 **todavía no se filtran por usuario**: exigen sesión, pero cualquier usuario autenticado ve todas. El modelo `Application` (puesto y empresa en texto, sin `user_id`) se rehace en F2.
-> - **No existe todavía:** `companies`, historial de estados, `domain/`, entrevistas, recordatorios ni dashboard. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
+>     - Entorno Docker, autenticación (F1) y documentación OpenAPI con referencia versionada.
+>     - F2: empresas y solicitudes completas, con CRUD, filtros, búsqueda, orden y paginación en la URL, archivado, cuotas y aislamiento entre usuarios (T2, T3), tanto en backend como en frontend.
+>     - `domain/` solo con enums; no hay tabla de transiciones todavía.
+> - **El estado de una solicitud no se puede cambiar todavía:** se fija al crearla (`saved`/`applied`). Cambios de estado, historial y deshacer son F3. Hasta entonces **la invariante 5 no aplica**, porque no existe tabla de historial; la migración de F3 creará el cambio inicial de cada solicitud existente.
+> - **No existe todavía:** historial de estados, entrevistas, recordatorios ni dashboard. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
 
 ## 2. Documentación
 
@@ -113,7 +113,7 @@ Violarlas es un fallo, no una diferencia de criterio.
 2. Un recurso de otro usuario responde **404**, nunca 403.
 3. `applications.status` es igual al `to_status` del último cambio del historial, ordenado por **`created_at`** (no por `changed_at`).
 4. El estado solo cambia vía `ApplicationStatusService`, con `SELECT … FOR UPDATE`. `PATCH /applications/{id}` no acepta `status`.
-5. Toda solicitud tiene al menos un cambio en su historial (el inicial).
+5. Toda solicitud tiene al menos un cambio en su historial (el inicial). *Desde F3: en F2 aún no existe el historial.*
 6. Las transacciones las confirma el service; un repository nunca hace `commit`.
 7. Las reglas de transición y la política de contraseñas viven **solo en el backend**. El frontend usa `allowed_transitions` y los `FIELD_ERROR` de SuperTokens.
 8. Todo endpoint protegido depende de `get_current_user`; ninguno usa `verify_session()` directamente.
@@ -134,7 +134,12 @@ Violarlas es un fallo, no una diferencia de criterio.
 - **`localhost` frente a `127.0.0.1`.** Para el navegador son sitios distintos: las cookies de sesión no viajan y el login parece no funcionar sin dar error.
 - **Caché tras el logout.** `signOut()` y la sesión expirada ejecutan `queryClient.clear()` antes de navegar; si no, el siguiente usuario ve datos del anterior.
 - **Deshacer un cambio de estado** ordena por `created_at`. Ordenar por `changed_at` (fecha que declara el usuario) borraría el cambio equivocado.
-- **Alembic autogenerate** no detecta cambios en `CHECK` ni en índices funcionales como `lower(name)`: revisa y completa cada migración a mano.
+- **Alembic autogenerate** no incluye los `CHECK` al modificar una tabla existente (solo al crear una), y añade columnas `NOT NULL` sin default a tablas con filas, lo que hace fallar la migración. Revisa y completa cada migración a mano; comprueba con `alembic check` que modelos y BD coinciden, y aplica `downgrade -1` + `upgrade head` para probar que es reversible. Los valores de enums se congelan como texto dentro de la migración.
+- **`comando | tail` oculta el código de salida real** (el que se ve es el de `tail`). Para saber si ESLint, `tsc` o pytest han fallado, ejecútalos sin tubería o redirige a un fichero.
+- **Login en Swagger cierra la sesión de la app** en ese navegador: el login en modo cabecera caduca las cookies de sesión. Usa Swagger en una ventana privada.
+- **Pydantic comprueba `pattern` antes que `to_upper`** en `StringConstraints`: normaliza con `BeforeValidator`.
+- **Fechas sin hora en el frontend:** usa `shared/lib/dates.ts`, nunca `new Date("yyyy-MM-dd")` (medianoche UTC = el día anterior al oeste de UTC).
+- **Base UI no es Radix:** los *triggers* usan `render={<Button />}`, no `asChild`.
 - **Finales de línea:** `entrypoint.sh` debe tener LF (lo fuerza `.gitattributes`). Con CRLF, el contenedor `api` no arranca.
 - **`now()` frente a `clock_timestamp()`.** `now()` es la hora de *inicio de la transacción*: todas las filas de una transacción empatan y el orden por `created_at` queda al azar. Esto pasa siempre en los tests, que corren en una transacción externa. `created_at` usa siempre `clock_timestamp()` ([decisión 0001](docs/decisiones/0001-clock-timestamp-en-created-at.md)).
 - **Modelo nuevo invisible para Alembic.** Si no se importa en `app/models/__init__.py`, autogenerate no lo ve y genera un `drop_table`.
@@ -157,7 +162,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ Entorno | Docker de desarrollo, health, sitio de documentación |
 | ✔ F0 | Esqueleto vertical desechable: crear y listar solicitudes sin auth, atravesando todas las capas |
 | ✔ F1 | SuperTokens (core + BD), `users`, `get_current_user`, router protegido, login y registro, rutas protegidas |
-| F2 | Empresas y solicitudes: CRUD, filtros, paginación, archivado, pruebas de aislamiento, OpenAPI en docs |
+| ✔ F2 | Empresas y solicitudes: CRUD, filtros, paginación, archivado, pruebas de aislamiento, OpenAPI en docs |
 | F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |
 | F4 | Entrevistas y recordatorios (`in_app` + `NotificationChannel`) |
 | F5 | Dashboard y exportación CSV |

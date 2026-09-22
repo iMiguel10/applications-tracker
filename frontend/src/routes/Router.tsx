@@ -2,7 +2,11 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { PageFallback } from "@/shared/components/common/PageFallback";
 import { AppLayout } from "@/shared/components/layout/AppLayout";
+import { ApplicationDetailPage } from "../pages/ApplicationDetailPage";
+import { ApplicationEditPage } from "../pages/ApplicationEditPage";
+import { ApplicationNewPage } from "../pages/ApplicationNewPage";
 import { ApplicationsPage } from "../pages/ApplicationsPage";
+import { CompaniesPage } from "../pages/CompaniesPage";
 import { HealthPage } from "../pages/HealthPage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
@@ -34,6 +38,10 @@ export const router = createBrowserRouter([
     children: [
       { path: "/", element: <Navigate to="/applications" replace /> },
       { path: "/applications", element: <ApplicationsPage /> },
+      { path: "/applications/new", element: <ApplicationNewPage /> },
+      { path: "/applications/:applicationId", element: <ApplicationDetailPage /> },
+      { path: "/applications/:applicationId/edit", element: <ApplicationEditPage /> },
+      { path: "/companies", element: <CompaniesPage /> },
     ],
   },
 ]);

@@ -23,6 +23,7 @@ Contienen las comprobaciones que este proyecto considera imprescindibles.
 3. **No arregles el código fuente.** Escribes pruebas; los fallos los **reportas**. La excepción es un error trivial y objetivo (un import que falta, una errata), que corriges diciéndolo con claridad en el informe.
 4. **Un fallo se reporta con su salida literal.** Nada de "hay un problema con la base de datos": pega el error.
 5. **Distingue lo que has verificado de lo que has supuesto.**
+6. **No leas el resultado de un comando a través de una tubería.** En `npx eslint . | tail`, el código de salida es el de `tail` (0) aunque ESLint haya fallado. Ejecuta sin tubería, o redirige a un fichero y mira `$?`.
 
 La razón de la tercera regla: un agente que corrige lo que él mismo evalúa deja de ser un control.
 

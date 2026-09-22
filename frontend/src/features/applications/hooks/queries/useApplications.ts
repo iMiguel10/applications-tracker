@@ -7,7 +7,7 @@ export function useApplications(params: ApplicationListParams) {
   return useQuery({
     queryKey: applicationKeys.list(params),
     queryFn: () => applicationService.list(params),
-    // Al cambiar de página se mantiene la anterior visible hasta que llega la nueva.
+    // Al cambiar de página o de filtro se mantiene la vista anterior hasta que llega la nueva.
     placeholderData: keepPreviousData,
   });
 }

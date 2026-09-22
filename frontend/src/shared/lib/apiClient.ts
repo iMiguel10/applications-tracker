@@ -6,11 +6,14 @@ if (!API_URL) {
 
 export class ApiError extends Error {
   readonly status: number;
+  /** Código estable de la API (p. ej. "company_name_taken"); se traduce con errors.<code>. */
+  readonly code: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code: string | null = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -38,7 +41,9 @@ async function request<T>(path: string, { body, headers, ...init }: RequestOptio
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    throw new ApiError(response.status, data?.detail ?? response.statusText);
+    // Los 422 de validación de FastAPI traen `detail` como lista y sin `code`.
+    const message = typeof data?.detail === "string" ? data.detail : response.statusText;
+    throw new ApiError(response.status, message, data?.code ?? null);
   }
 
   if (response.status === 204) {

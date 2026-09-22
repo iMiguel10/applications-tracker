@@ -14,3 +14,11 @@ NAMING_CONVENTION = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+    # Para todos los modelos: lee con RETURNING los valores que calcula la BD
+    # también en los UPDATE (p. ej. updated_at con onupdate=clock_timestamp()).
+    # Sin esto quedarían caducados tras el flush, y leerlos en async dispararía una
+    # consulta implícita que falla (MissingGreenlet).
+    # RUF012 se ignora: SQLAlchemy exige un dict de clase, y anotarlo como ClassVar
+    # choca en mypy con la declaración de DeclarativeBase.
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012

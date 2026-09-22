@@ -300,7 +300,7 @@ La violación de cualquiera de estas reglas es un fallo, no una diferencia de cr
 1. Todo método de repository sobre datos de usuario recibe `user_id` y filtra por él.
 2. `applications.status` es igual al `to_status` del último cambio de su historial, ordenado por `created_at`.
 3. El estado solo cambia a través de `ApplicationStatusService`. `PATCH /applications/{id}` no acepta `status`.
-4. Toda solicitud tiene al menos un cambio en su historial.
+4. Toda solicitud tiene al menos un cambio en su historial. *(Aplica desde F3: en F2 la tabla de historial no existe todavía y la migración de F3 creará el cambio inicial de las solicitudes existentes.)*
 5. Un recurso de otro usuario responde 404, nunca 403.
 6. Los instantes se guardan como `timestamptz` en UTC; `applied_at` es `date`.
 7. Las transacciones las confirma el service; un repository nunca hace `commit`.
