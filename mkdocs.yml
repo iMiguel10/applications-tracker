@@ -47,4 +47,5 @@ nav:
   - Arquitectura:
       - arquitectura/index.md
       - Servicios y estructura: arquitectura/servicios-y-estructura.md
+      - Autenticación: arquitectura/autenticacion.md
   - Decisiones: decisiones/index.md
