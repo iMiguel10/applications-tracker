@@ -46,4 +46,5 @@ nav:
       - Especificación: producto/especificacion.md
   - Arquitectura:
       - arquitectura/index.md
+      - Servicios y estructura: arquitectura/servicios-y-estructura.md
   - Decisiones: decisiones/index.md
