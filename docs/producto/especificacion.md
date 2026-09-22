@@ -171,6 +171,22 @@ stateDiagram-v2
 | `rejected` | Descartada | La empresa descarta, o el candidato rechaza la oferta desde `offer`. **Final.** |
 | `withdrawn` | Retirada | El candidato abandona el proceso. **Final.** |
 
+### Reglas de transición
+
+Una **transición** es un cambio de un estado a otro. Esta tabla es la lista completa de las permitidas; cualquier otra se rechaza (RF-32). La aplica **solo el backend**: la API devuelve, con cada solicitud, las transiciones disponibles desde su estado actual, y la interfaz ofrece únicamente esas.
+
+| Desde | Puede pasar a |
+|---|---|
+| *(creación)* | `saved`, `applied` |
+| `saved` | `applied`, `withdrawn` |
+| `applied` | `screening`, `interviewing`, `rejected`, `withdrawn` |
+| `screening` | `interviewing`, `rejected`, `withdrawn` |
+| `interviewing` | `offer`, `rejected`, `withdrawn` |
+| `offer` | `accepted`, `rejected`, `withdrawn` |
+| `accepted`, `rejected`, `withdrawn` | — *(estados finales)* |
+
+Ejemplos de transiciones **no** permitidas: `applied` → `saved` (retroceder), `rejected` → `offer` (salir de un estado final) o `saved` → `interviewing` (entrevistar sin haber aplicado).
+
 Reglas:
 
 1. Se puede **saltar** estados hacia delante: `applied` → `interviewing` es válido, porque en la realidad no todas las empresas hacen un screening.

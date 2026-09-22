@@ -44,4 +44,6 @@ nav:
   - Inicio: index.md
   - Producto:
       - Especificación: producto/especificacion.md
+  - Arquitectura:
+      - arquitectura/index.md
   - Decisiones: decisiones/index.md
