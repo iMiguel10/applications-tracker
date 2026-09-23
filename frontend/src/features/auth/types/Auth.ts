@@ -3,6 +3,15 @@ export interface Me {
   email: string | null;
 }
 
+export const LANGUAGES = ["es", "en"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+export interface Preferences {
+  /** `null`: sigue el idioma del navegador. */
+  language: Language | null;
+  stale_after_days: number;
+}
+
 export type AuthField = "email" | "password";
 
 /**

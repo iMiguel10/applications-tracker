@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Applications Tracker"
+    "name": "Applications Tracker",
+    "tagline": "Todas tus candidaturas, su historia y tu próximo paso, en un solo sitio."
   },
   "health": {
     "title": "Estado del sistema",
@@ -24,6 +25,8 @@
     "noResults": "No hay resultados con estos filtros.",
     "createOption": "Crear «{{label}}»",
     "unspecified": "Sin especificar",
+    "showOptions": "Mostrar opciones",
+    "clearSelection": "Quitar selección",
     "fields": {
       "notes": "Notas"
     },
@@ -140,7 +143,6 @@
       "companyRequired": "Elige o crea una empresa",
       "positionRequired": "Indica el puesto",
       "salaryNumber": "Solo números enteros",
-      "currency": "Código de 3 letras, p. ej. EUR",
       "statusRequired": "Elige un estado"
     }
   },
@@ -170,11 +172,29 @@
       "generic": "Algo ha fallado. Inténtalo de nuevo."
     }
   },
+  "preferences": {
+    "title": "Preferencias",
+    "saved": "Preferencias guardadas",
+    "fields": {
+      "language": "Idioma de la interfaz",
+      "staleAfterDays": "Avisar de solicitudes sin actividad tras (días)"
+    },
+    "language": {
+      "followBrowser": "Seguir el idioma del navegador",
+      "es": "Español",
+      "en": "English"
+    },
+    "validation": {
+      "staleAfterDays": "Debe ser un número entre 1 y 90"
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "applications": "Solicitudes",
     "companies": "Empresas",
-    "reminders": "Recordatorios"
+    "reminders": "Recordatorios",
+    "preferences": "Preferencias",
+    "openMenu": "Abrir menú"
   },
   "companies": {
     "title": "Empresas",
@@ -278,10 +298,12 @@
   "dashboard": {
     "title": "Dashboard",
     "statusBreakdown": {
-      "title": "Solicitudes por estado"
+      "title": "Solicitudes por estado",
+      "tooltip": "Solicitudes: {{count}}"
     },
     "weeklyApplications": {
-      "title": "Envíos por semana"
+      "title": "Envíos por semana",
+      "tooltip": "Solicitudes enviadas: {{count}}"
     },
     "responseRate": {
       "title": "Tasa de respuesta",

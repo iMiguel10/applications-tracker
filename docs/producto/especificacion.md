@@ -39,7 +39,7 @@ Applications Tracker es un **cuaderno de bitácora de una búsqueda de empleo**:
 | Profundidad del proceso | Estado actual + historial de cambios + entrevistas | Se pueden calcular tiempos y tasas; hay reglas de transición de estado. |
 | Recordatorios | En la app, preparados para otros canales | Entidad propia con `channel`; sin trabajos en segundo plano en el MVP. |
 | Autenticación | SuperTokens, email + contraseña | Sin login social en el MVP. |
-| Idiomas de la interfaz | Español e inglés | Todo texto visible pasa por i18n desde el primer día. |
+| Idiomas de la interfaz | Español e inglés | Todo texto visible pasa por i18n desde el primer día. Por defecto se detecta el del navegador; desde F8 se puede fijar uno explícito como preferencia de cuenta. |
 
 ## 3. Usuarios y roles
 
@@ -125,7 +125,7 @@ Usuario
 - **RF-61** Solicitudes enviadas por semana en las últimas 12 semanas.
 - **RF-62** Tasa de respuesta: solicitudes enviadas que llegaron a `screening` o más allá, sobre el total de enviadas.
 - **RF-63** Próximas entrevistas y recordatorios pendientes o vencidos.
-- **RF-64** Solicitudes **sin actividad** en N días (N = 14 por defecto) en estados de espera. Ver el [límite conocido](#8-limite-conocido).
+- **RF-64** Solicitudes **sin actividad** en N días (N = 14 por defecto, configurable por cada usuario entre 1 y 90 días desde F8 en `/preferences`) en estados de espera. Ver el [límite conocido](#8-limite-conocido).
 
 ### Datos (RF-70…)
 
@@ -294,7 +294,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | R2 | La recuperación de contraseña (RF-03) necesita envío de emails: proveedor SMTP en producción y Mailpit en desarrollo. | Medio. | En F1. Propuesta: fuera del MVP y, al añadirla, llega con Mailpit. |
 | R3 | Métricas engañosas por datos incompletos (ver §8). | Medio: el dashboard sería poco fiable. | Mitigado con RF-65 y RF-66. |
 | R4 | MkDocs 2.0 romperá plugins y temas, sin migración. | Bajo: la imagen está fijada a Material 9 (MkDocs 1.x). | Solo si hay que actualizar. La alternativa es Zensical. |
-| R5 | ¿Monedas múltiples en el salario? | Bajo. | En F2. Propuesta: una moneda por solicitud (EUR por defecto), sin conversiones. |
+| R5 | ¿Monedas múltiples en el salario? | Bajo. | Resuelto en F8: una moneda por solicitud (EUR por defecto), sin conversiones, pero de una lista **cerrada** de 4 (EUR, USD, GBP, CHF) — no cualquier código ISO 4217 en texto libre, como se había dejado abierto al principio. |
 | R6 | ¿Zona horaria de fechas y horas (entrevistas)? | Medio: bugs de "un día menos". | Decidido en la arquitectura: `timestamptz` en UTC y conversión en el frontend. `applied_at` es de tipo `date`, sin hora. |
 
 ## 14. Criterios de éxito

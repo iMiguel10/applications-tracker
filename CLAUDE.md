@@ -62,6 +62,7 @@ docker compose exec api alembic revision --autogenerate -m "descripcion"   # rev
 docker compose exec api alembic upgrade head                               # también se aplica al arrancar api
 docker compose exec api uv add <paquete>                                   # nunca uv/pip en el host
 docker compose exec api python -m app.scripts.export_openapi               # tras cambiar endpoints/schemas, mismo commit
+docker compose -f compose.test.yml run --rm api-test python -m app.scripts.check_performance   # RNF-10/RNF-11 a mano, no en CI
 
 # Tests del backend (BD aislada)
 cp .env.test.example .env.test                                             # primera vez

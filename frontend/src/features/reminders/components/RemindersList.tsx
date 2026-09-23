@@ -56,6 +56,7 @@ export function RemindersList({ reminders, showApplication = true }: RemindersLi
                 <Button
                   variant="ghost"
                   size="icon-sm"
+                  className="hover:bg-success/10 hover:text-success-text"
                   aria-label={t("reminders.complete")}
                   onClick={() => complete.mutate(reminder.id, { onError })}
                 >
@@ -64,6 +65,7 @@ export function RemindersList({ reminders, showApplication = true }: RemindersLi
                 <Button
                   variant="ghost"
                   size="icon-sm"
+                  className="hover:bg-destructive/10 hover:text-destructive"
                   aria-label={t("reminders.dismiss")}
                   onClick={() => dismiss.mutate(reminder.id, { onError })}
                 >

@@ -20,7 +20,7 @@
 | A12 | Usuario en nuestra BD | Tabla `users` mínima (`id`, `supertokens_user_id`, `created_at`) **sin copiar datos de identidad**: el email se pide a SuperTokens cuando hace falta. Se crea de forma perezosa e idempotente en la primera petición autenticada | **Sin tabla, guardando `supertokens_user_id` en cada tabla**: se pierde el `ON DELETE CASCADE` y el sitio donde colgar preferencias futuras (zona horaria, idioma, canal de avisos). **Copiar el email**: obliga a sincronizarlo cuando cambie. **Crearla en el hook de registro**: si el alta en SuperTokens va bien y el insert en nuestra BD falla, queda un usuario que puede iniciar sesión pero no existe para la API. La creación perezosa se autorrepara. Ver [§4](#4-consistencia-entre-almacenes). |
 | A13 | UI de auth | Formularios propios (react-hook-form + zod + shadcn) sobre `supertokens-web-js` | **UI prediseñada de `supertokens-auth-react`**: no encaja con shadcn ni con nuestro i18n, y personalizarla cuesta más que escribir dos formularios. |
 | A14 | Paginación | `page`/`limit` con `total` y `pages` (heredado de la plantilla) | **Keyset/cursor**: con un máximo de 5 000 filas por usuario, `OFFSET` no es un problema, y el paginado numerado es el que espera un listado. |
-| A15 | Búsqueda de texto | `ILIKE` sobre puesto y nombre de empresa | **`pg_trgm` o búsqueda full-text**: innecesario a este volumen (ver RNF-10). Se revisará si las mediciones lo piden. |
+| A15 | Búsqueda de texto | `ILIKE` sobre puesto y nombre de empresa | **`pg_trgm` o búsqueda full-text**: innecesario a este volumen (ver RNF-10, validado en F8 con `app/scripts/check_performance.py`: p95 = 9.9 ms con 2 000 solicitudes, muy por debajo del presupuesto de 300 ms). Se reconsiderará solo si mediciones futuras lo piden. |
 | A16 | Estado de filtros del listado | Parámetros de la URL | **Estado local**: se pierde al recargar, no se puede compartir un enlace y el botón atrás no funciona. |
 | A17 | Documentación | MkDocs Material fijado a la versión 9, con diagramas Mermaid y referencia de la API generada desde OpenAPI | **Docusaurus**: metería un segundo ecosistema Node solo para documentar. **Wiki externa**: se separa del código y envejece. |
 
@@ -145,7 +145,7 @@ Todas las tablas tienen `id uuid PK DEFAULT gen_random_uuid()`, `created_at time
 | `status` | `varchar(20) NOT NULL` | Los 8 estados de la especificación. Copia del historial (§4). |
 | `applied_at` | `date` | `CHECK (status IN ('saved','withdrawn') OR applied_at IS NOT NULL)` |
 | `salary_min` / `salary_max` | `integer` | Bruto anual. `CHECK (salary_min <= salary_max)` y ambos `>= 0` |
-| `salary_currency` | `char(3) NOT NULL DEFAULT 'EUR'` | Código ISO 4217, sin conversión (R5) |
+| `salary_currency` | `varchar(3) NOT NULL DEFAULT 'EUR'` | `CHECK IN ('EUR','USD','GBP','CHF')` (A5): lista cerrada, no cualquier código ISO 4217, sin conversión (R5, resuelto en F8) |
 | `notes` | `text` | `CHECK (char_length(notes) <= 5000)` |
 | `archived_at` | `timestamptz` | `NULL` = activa (RF-24) |
 | `last_activity_at` | `timestamptz NOT NULL` | La actualizan los services al cambiar de estado o tocar entrevistas. Alimenta el aviso "sin actividad" (RF-64). |
@@ -187,6 +187,7 @@ Restricciones e índices:
 - **`users`**
   - Columnas: `supertokens_user_id varchar(128) UNIQUE NOT NULL`, más `created_at`. Sin `updated_at`: la fila no se modifica.
   - No guarda email ni ningún otro dato de identidad (§4).
+  - **Preferencias (F8):** `language varchar(2)`, con `CHECK` de enumerado que admite `NULL` (igual que `work_mode`) — `NULL` significa "seguir el idioma del navegador", no un valor por defecto fijo. `stale_after_days smallint NOT NULL DEFAULT 14` (el valor de `STALE_AFTER_DAYS` en `app/domain/dashboard.py`), con `CHECK BETWEEN 1 AND 90`: personaliza el umbral de "sin actividad" de RF-64 por usuario. No son datos de identidad, así que no rompen A12: son preferencias propias de la cuenta en esta aplicación.
 - **`companies`**
   - Columnas: `user_id` (FK con cascade), `name varchar(200) NOT NULL`, `website varchar(500)`, `location varchar(200)`, `notes text`.
   - `UNIQUE (id, user_id)`.
@@ -258,11 +259,15 @@ No hay multi-tenancy de organizaciones, pero cada usuario es su propio inquilino
 
 ### Dashboard (RF-60…66)
 
-`GET /dashboard` responde con `DashboardService.get`, que agrega en una sola llamada el recuento por estado (RF-60, con los 8 estados presentes aunque estén a cero), los envíos por semana de las últimas 12 semanas (RF-61), la tasa de respuesta (RF-62, `null` si `sent_count` no llega a `MIN_SAMPLE_FOR_RATE = 5`, por RF-66), las próximas entrevistas y los recordatorios pendientes o vencidos (RF-63) y las solicitudes sin actividad (RF-64, `STALE_AFTER_DAYS = 14`). Es de solo lectura: no abre ninguna transacción de escritura. Cada lista trae un vistazo de 5 elementos (`WIDGET_LIST_LIMIT`) y su total; el listado completo de recordatorios, con sus acciones, vive en `/reminders`.
+`GET /dashboard` responde con `DashboardService.get`, que agrega en una sola llamada el recuento por estado (RF-60, con los 8 estados presentes aunque estén a cero), los envíos por semana de las últimas 12 semanas (RF-61), la tasa de respuesta (RF-62, `null` si `sent_count` no llega a `MIN_SAMPLE_FOR_RATE = 5`, por RF-66), las próximas entrevistas y los recordatorios pendientes o vencidos (RF-63) y las solicitudes sin actividad (RF-64). Es de solo lectura: no abre ninguna transacción de escritura.
+
+> **El umbral de "sin actividad" es por usuario desde F8, no una constante.** `DashboardService.get` carga el `User` con `UserRepository` y usa su `stale_after_days` (1–90, por defecto `STALE_AFTER_DAYS = 14` de `app/domain/dashboard.py`) en vez de la constante directamente. `STALE_AFTER_DAYS` sigue existiendo, pero ahora es solo el valor por defecto de la columna en la migración, no el que aplica el service en cada petición. Se gestiona con `GET`/`PATCH /me/preferences`. Cada lista trae un vistazo de 5 elementos (`WIDGET_LIST_LIMIT`) y su total; el listado completo de recordatorios, con sus acciones, vive en `/reminders`.
 
 > **Por qué unas métricas incluyen las solicitudes archivadas y otras no.** Las que retratan el **estado actual** de la búsqueda (recuento por estado, solicitudes sin actividad) **excluyen** las archivadas: archivar es la señal explícita del usuario de "esto ya no lo sigo", y mezclarlo con lo activo distorsionaría la foto de ahora mismo. Las que retratan **lo ocurrido** (envíos por semana, tasa de respuesta) **incluyen** las archivadas: que una solicitud se archivara después no borra que se enviara esa semana o que la empresa llegara a responder. La regla está en el docstring de `app/domain/dashboard.py`.
 
 RNF-11 (menos de 500 ms con 2 000 solicitudes) se cumple con varias consultas ligeras, ya cubiertas por los índices de §5 (`(user_id, status)`, `(user_id, last_activity_at)`, etc.), no con una única consulta SQL monolítica ni una tabla materializada.
+
+> **RNF-10 y RNF-11, validados en F8.** `app/scripts/check_performance.py` siembra 2 000 solicitudes, corre 20 iteraciones del listado por defecto y de `DashboardService.get`, y mide el percentil 95 de cada uno. Resultado en este equipo (2026-09-24): listado p95 = 9.9 ms (presupuesto 300 ms), dashboard p95 = 28.3 ms (presupuesto 500 ms). Ambos muy por debajo del presupuesto, a la escala que pide la especificación. Es un chequeo manual (no corre en CI ni en `pytest`): se relanza a mano cuando conviene revalidar.
 
 ### Exportar a CSV (RF-70)
 
@@ -282,6 +287,8 @@ Las pantallas con dificultad real:
 **Recordatorios: embebidos en F4, globales desde F5.** En F4 el frontend no tenía ruta ni página propia para `reminders`: se creaban y se listaban solo filtrados por `application_id`, desde el detalle de la solicitud. Fue una acotación de alcance deliberada, no un olvido: ver [decisión 0005](../decisiones/0005-recordatorios-sin-pagina-global-en-f4.md). F5 cerró ese hueco: `pages/RemindersPage.tsx` en `/reminders`, con su entrada en `shared/config/navigation.ts`, filtro por estado (URL, A16), paginación y crear/completar/descartar — el mismo alcance que ya tenía la API desde F4, sin editar ni borrar. `ReminderFormDialog` pasó de exigir siempre un `applicationId` fijo a aceptarlo opcional: si se omite (el listado global), ofrece un `FormAsyncCombobox` para ligar una solicitud o dejarlo sin ligar (RF-50). El backend no cambió: ya estaba listo para esta vista desde F4.
 
 **El dashboard es la página de inicio desde F5.** `/` redirige a `/dashboard`, que sustituye a `/applications` como primera pantalla tras iniciar sesión.
+
+**Idioma: detección del navegador, con preferencia de servidor desde F8.** i18next detecta el idioma del navegador como siempre. Al cargar `AppLayout`, un efecto lee `GET /me/preferences` y, si `language` no es `NULL`, lo fija por encima de esa detección; si es `NULL` ("seguir el navegador"), borra la clave `i18nextLng` de `localStorage` y deja que i18next vuelva a detectar, para que elegir "seguir el navegador" sea reversible y no se quede pegado al último idioma fijado a mano. La preferencia vive en `users.language` (§5); las reglas de validación y los límites siguen sin tener nada que ver con esto.
 
 ## 10. Entorno y despliegue
 

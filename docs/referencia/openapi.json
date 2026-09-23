@@ -383,6 +383,104 @@
         ]
       }
     },
+    "/api/v1/me/preferences": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Preferencias del usuario actual",
+        "description": "Idioma de la interfaz (F8) y umbral de \"sin actividad\" del dashboard\n(RF-64). `language` es `null` mientras el usuario no elige uno explícito: la\ninterfaz sigue el idioma del navegador.",
+        "operationId": "read_preferences_api_v1_me_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Actualiza las preferencias del usuario actual",
+        "description": "Actualización parcial: solo se cambian los campos enviados. Enviar\n`\"language\": null` vuelve a seguir el idioma del navegador.",
+        "operationId": "update_preferences_api_v1_me_preferences_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/companies": {
       "get": {
         "tags": [
@@ -2684,13 +2782,9 @@
             "description": "Bruto anual."
           },
           "salary_currency": {
-            "type": "string",
-            "title": "Salary Currency",
-            "description": "Código ISO 4217.",
-            "default": "EUR",
-            "examples": [
-              "EUR"
-            ]
+            "$ref": "#/components/schemas/Currency",
+            "description": "Moneda del rango salarial.",
+            "default": "EUR"
           },
           "notes": {
             "anyOf": [
@@ -2821,8 +2915,7 @@
             "title": "Salary Max"
           },
           "salary_currency": {
-            "type": "string",
-            "title": "Salary Currency"
+            "$ref": "#/components/schemas/Currency"
           },
           "notes": {
             "anyOf": [
@@ -3164,13 +3257,12 @@
           "salary_currency": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/Currency"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Salary Currency"
+            ]
           },
           "notes": {
             "anyOf": [
@@ -3560,6 +3652,17 @@
         "type": "object",
         "title": "CompanyUpdate",
         "description": "Actualización parcial: solo se modifican los campos enviados. Enviar `null`\nvacía un campo opcional."
+      },
+      "Currency": {
+        "type": "string",
+        "enum": [
+          "EUR",
+          "USD",
+          "GBP",
+          "CHF"
+        ],
+        "title": "Currency",
+        "description": "Monedas disponibles para el rango salarial (F8: desplegable cerrado, no\ntexto libre). Ampliar esta lista es un cambio pequeño y acotado."
       },
       "DashboardRead": {
         "properties": {
@@ -4025,6 +4128,15 @@
         "title": "InterviewUpdate",
         "description": "Actualización parcial: solo se modifican los campos enviados; `null` vacía un\ncampo opcional. Incluye `outcome`: es como se registra el resultado (RF-41)."
       },
+      "Language": {
+        "type": "string",
+        "enum": [
+          "es",
+          "en"
+        ],
+        "title": "Language",
+        "description": "Idioma de la interfaz. `null` en el usuario significa \"sigue el navegador\"."
+      },
       "MeRead": {
         "properties": {
           "id": {
@@ -4178,6 +4290,63 @@
           "pages"
         ],
         "title": "Page[ReminderRead]"
+      },
+      "PreferencesRead": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Language"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null`: sigue el idioma del navegador."
+          },
+          "stale_after_days": {
+            "type": "integer",
+            "maximum": 90.0,
+            "minimum": 1.0,
+            "title": "Stale After Days",
+            "description": "RF-64: días sin actividad para avisar en el dashboard."
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "stale_after_days"
+        ],
+        "title": "PreferencesRead"
+      },
+      "PreferencesUpdate": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Language"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stale_after_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 90.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale After Days"
+          }
+        },
+        "type": "object",
+        "title": "PreferencesUpdate"
       },
       "ReminderApplicationSummary": {
         "properties": {

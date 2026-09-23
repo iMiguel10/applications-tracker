@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import { Pagination } from "@/shared/components/common/Pagination";
 import { SearchInput } from "@/shared/components/common/SearchInput";
 import { CompaniesTable } from "@/features/companies/components/CompaniesTable";
@@ -73,7 +74,11 @@ export function CompaniesPage() {
       )}
       {data && data.total > 0 && (
         <>
-          <CompaniesTable companies={data.items} onEdit={openEdit} onDelete={setDeleting} />
+          <Card className="py-0">
+            <CardContent className="px-0">
+              <CompaniesTable companies={data.items} onEdit={openEdit} onDelete={setDeleting} />
+            </CardContent>
+          </Card>
           <Pagination
             page={data.page}
             pages={data.pages}

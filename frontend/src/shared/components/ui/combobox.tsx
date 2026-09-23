@@ -55,10 +55,16 @@ function ComboboxInput({
   disabled = false,
   showTrigger = true,
   showClear = false,
+  triggerLabel,
+  clearLabel,
   ...props
 }: ComboboxPrimitive.Input.Props & {
   showTrigger?: boolean
   showClear?: boolean
+  /** Accesible: el botón solo lleva un icono de flecha. */
+  triggerLabel?: string
+  /** Accesible: el botón solo lleva un icono de aspa. */
+  clearLabel?: string
 }) {
   return (
     <InputGroup className={cn("w-auto", className)}>
@@ -71,13 +77,13 @@ function ComboboxInput({
           <InputGroupButton
             size="icon-xs"
             variant="ghost"
-            render={<ComboboxTrigger />}
+            render={<ComboboxTrigger aria-label={triggerLabel} />}
             data-slot="input-group-button"
             className="group-has-data-[slot=combobox-clear]/input-group:hidden data-pressed:bg-transparent"
             disabled={disabled}
           />
         )}
-        {showClear && <ComboboxClear disabled={disabled} />}
+        {showClear && <ComboboxClear disabled={disabled} aria-label={clearLabel} />}
       </InputGroupAddon>
       {children}
     </InputGroup>

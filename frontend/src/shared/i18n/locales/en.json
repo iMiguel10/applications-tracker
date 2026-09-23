@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Applications Tracker"
+    "name": "Applications Tracker",
+    "tagline": "Every application, its story, and your next step — all in one place."
   },
   "health": {
     "title": "System status",
@@ -24,6 +25,8 @@
     "noResults": "No results with these filters.",
     "createOption": "Create “{{label}}”",
     "unspecified": "Unspecified",
+    "showOptions": "Show options",
+    "clearSelection": "Clear selection",
     "fields": {
       "notes": "Notes"
     },
@@ -140,7 +143,6 @@
       "companyRequired": "Choose or create a company",
       "positionRequired": "Enter the position",
       "salaryNumber": "Whole numbers only",
-      "currency": "3-letter code, e.g. EUR",
       "statusRequired": "Choose a status"
     }
   },
@@ -170,11 +172,29 @@
       "generic": "Something went wrong. Please try again."
     }
   },
+  "preferences": {
+    "title": "Preferences",
+    "saved": "Preferences saved",
+    "fields": {
+      "language": "Interface language",
+      "staleAfterDays": "Flag applications with no activity after (days)"
+    },
+    "language": {
+      "followBrowser": "Follow the browser language",
+      "es": "Español",
+      "en": "English"
+    },
+    "validation": {
+      "staleAfterDays": "Must be a number between 1 and 90"
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "applications": "Applications",
     "companies": "Companies",
-    "reminders": "Reminders"
+    "reminders": "Reminders",
+    "preferences": "Preferences",
+    "openMenu": "Open menu"
   },
   "companies": {
     "title": "Companies",
@@ -278,10 +298,12 @@
   "dashboard": {
     "title": "Dashboard",
     "statusBreakdown": {
-      "title": "Applications by status"
+      "title": "Applications by status",
+      "tooltip": "Applications: {{count}}"
     },
     "weeklyApplications": {
-      "title": "Applications sent per week"
+      "title": "Applications sent per week",
+      "tooltip": "Applications sent: {{count}}"
     },
     "responseRate": {
       "title": "Response rate",

@@ -14,6 +14,7 @@ from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.interview import Interview
 from app.models.reminder import Reminder
+from app.models.user import User
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.application_status_change_repository import (
     ApplicationStatusChangeRepository,
@@ -130,7 +131,9 @@ async def test_inverted_salary_range_is_rejected(
 
 
 @pytest.mark.asyncio
-async def test_currency_must_be_iso_code(db_session: AsyncSession, user: CurrentUser):
+async def test_currency_must_be_one_of_the_allowed_values(
+    db_session: AsyncSession, user: CurrentUser
+):
     company = await make_company(db_session, user.id)
 
     await _assert_rejected(
@@ -140,7 +143,8 @@ async def test_currency_must_be_iso_code(db_session: AsyncSession, user: Current
             company_id=company.id,
             position_title="X",
             status="saved",
-            salary_currency="eur",
+            # JPY es un código ISO 4217 válido, pero no está en el desplegable (F8).
+            salary_currency="JPY",
         ),
     )
 
@@ -259,4 +263,22 @@ async def test_unknown_reminder_status_is_rejected(
                 status="snoozed",
             )
         )
+
+
+@pytest.mark.asyncio
+async def test_unknown_language_preference_is_rejected(db_session: AsyncSession):
+    with pytest.raises(IntegrityError):
+        db_session.add(User(supertokens_user_id="st-bad-language", language="fr"))
+        await db_session.flush()
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_stale_after_days_out_of_range_is_rejected(db_session: AsyncSession):
+    with pytest.raises(IntegrityError):
+        db_session.add(
+            User(supertokens_user_id="st-bad-threshold", stale_after_days=0)
+        )
+        await db_session.flush()
+    await db_session.rollback()
     await db_session.rollback()

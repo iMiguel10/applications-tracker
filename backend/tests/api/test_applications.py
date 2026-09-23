@@ -24,7 +24,7 @@ async def test_create_application_returns_full_resource(
             "applied_at": "2026-09-15",
             "salary_min": 40000,
             "salary_max": 50000,
-            "salary_currency": "eur",
+            "salary_currency": "EUR",
             "job_url": "https://acme.example/jobs/1",
         },
     )

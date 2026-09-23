@@ -132,6 +132,8 @@ export function FormAsyncCombobox<T extends FieldValues>({
           onBlur={field.onBlur}
           aria-invalid={!!error}
           className={className}
+          triggerLabel={t("common.showOptions")}
+          clearLabel={t("common.clearSelection")}
         />
         <ComboboxContent>
           <ComboboxEmpty>

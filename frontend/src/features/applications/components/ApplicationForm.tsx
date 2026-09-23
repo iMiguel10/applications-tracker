@@ -20,6 +20,7 @@ import { useCreateCompany } from "@/features/companies/hooks/mutations/useCreate
 import { applicationSchema, type ApplicationFormValues } from "../schemas/application.schema";
 import {
   APPLICATION_SOURCES,
+  CURRENCIES,
   INITIAL_STATUSES,
   WORK_MODES,
   type CompanySummary,
@@ -148,7 +149,12 @@ export function ApplicationForm({
         <legend className="mb-2 text-sm font-medium">{t("applications.fields.salary")}</legend>
         <FormInput form={form} name="salary_min" inputMode="numeric" label={t("applications.fields.salaryMin")} />
         <FormInput form={form} name="salary_max" inputMode="numeric" label={t("applications.fields.salaryMax")} />
-        <FormInput form={form} name="salary_currency" label={t("applications.fields.currency")} />
+        <FormSelect
+          form={form}
+          name="salary_currency"
+          label={t("applications.fields.currency")}
+          options={CURRENCIES.map((value) => ({ value, label: value }))}
+        />
       </fieldset>
 
       <FormTextarea form={form} name="notes" label={t("common.fields.notes")} rows={4} />

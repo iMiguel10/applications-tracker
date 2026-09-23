@@ -1,8 +1,10 @@
+import uuid
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.identity_repository import IdentityRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import CurrentUser, MeRead
+from app.schemas.user import CurrentUser, MeRead, PreferencesRead, PreferencesUpdate
 
 
 class UserService:
@@ -25,3 +27,21 @@ class UserService:
     async def get_me(self, current_user: CurrentUser) -> MeRead:
         email = await self.identities.get_email(current_user.supertokens_user_id)
         return MeRead(id=current_user.id, email=email)
+
+    async def get_preferences(self, user_id: uuid.UUID) -> PreferencesRead:
+        # get_current_user ya crea la fila (invariante 8): si no existe, es un bug.
+        user = await self.users.get_by_id(user_id)
+        assert user is not None
+        return PreferencesRead.model_validate(user)
+
+    async def update_preferences(
+        self, user_id: uuid.UUID, data: PreferencesUpdate
+    ) -> PreferencesRead:
+        user = await self.users.get_by_id(user_id)
+        assert user is not None
+        changes = data.model_dump(exclude_unset=True)
+        for field, value in changes.items():
+            setattr(user, field, value)
+        await self.users.save(user)
+        await self.session.commit()
+        return PreferencesRead.model_validate(user)

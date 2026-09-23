@@ -23,6 +23,31 @@ async def test_get_or_create_returns_same_user_on_second_call(
 
 
 @pytest.mark.asyncio
+async def test_new_user_has_default_preferences(db_session: AsyncSession):
+    user = await UserRepository(db_session).get_or_create("st-user-defaults")
+
+    assert user.language is None
+    assert user.stale_after_days == 14
+
+
+@pytest.mark.asyncio
+async def test_save_persists_changes_to_an_already_loaded_user(
+    db_session: AsyncSession,
+):
+    repository = UserRepository(db_session)
+    user = await repository.get_or_create("st-user-save")
+
+    user.language = "en"
+    user.stale_after_days = 30
+    await repository.save(user)
+
+    reloaded = await repository.get_by_id(user.id)
+    assert reloaded is not None
+    assert reloaded.language == "en"
+    assert reloaded.stale_after_days == 30
+
+
+@pytest.mark.asyncio
 async def test_concurrent_get_or_create_creates_a_single_row():
     # T4: dos peticiones simultáneas del mismo usuario recién registrado.
     # Necesita dos transacciones reales e independientes, así que no usa el

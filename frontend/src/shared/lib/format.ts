@@ -20,9 +20,13 @@ export function formatSalaryRange(
   locale: string,
 ): string | null {
   if (min === null && max === null) return null;
+  // narrowSymbol: el símbolo por defecto solo existe para el euro en locale es; sin
+  // esto, la libra se mostraba como el código "GBP" en vez de "£" (el franco suizo
+  // sigue mostrándose como "CHF": no tiene símbolo propio, ni en Suiza).
   const money = new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
+    currencyDisplay: "narrowSymbol",
     maximumFractionDigits: 0,
   });
   if (min !== null && max !== null) return `${money.format(min)} – ${money.format(max)}`;

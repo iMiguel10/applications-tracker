@@ -10,6 +10,7 @@ import { CompaniesPage } from "../pages/CompaniesPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { HealthPage } from "../pages/HealthPage";
 import { LoginPage } from "../pages/LoginPage";
+import { PreferencesPage } from "../pages/PreferencesPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { RemindersPage } from "../pages/RemindersPage";
 import { redirectIfAuthenticatedLoader, requireAuthLoader } from "./AuthLoaders";
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: "/applications/:applicationId/edit", element: <ApplicationEditPage /> },
       { path: "/companies", element: <CompaniesPage /> },
       { path: "/reminders", element: <RemindersPage /> },
+      { path: "/preferences", element: <PreferencesPage /> },
     ],
   },
 ]);

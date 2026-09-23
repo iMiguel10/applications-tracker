@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.application_status import ApplicationStatus
 from app.domain.dashboard import STALE_AFTER_DAYS, WIDGET_LIST_LIMIT
+from app.repositories.user_repository import UserRepository
 from app.schemas.user import CurrentUser
 from app.services.dashboard_service import DashboardService
 from tests.factories import (
@@ -123,6 +124,31 @@ async def test_stale_applications_widget_reports_days_since_activity(
     assert dashboard.stale_applications_total == 1
     assert dashboard.stale_applications[0].application.id == stale.id
     assert dashboard.stale_applications[0].days_since_activity >= STALE_AFTER_DAYS + 5
+
+
+@pytest.mark.asyncio
+async def test_stale_after_days_follows_the_users_preference(
+    db_session: AsyncSession, user: CurrentUser
+):
+    # A 5 días, una solicitud sin actividad desde hace 6 ya cuenta como "sin
+    # actividad", aunque por debajo del umbral por defecto (14) no lo haría.
+    now = datetime.now(UTC)
+    await make_application(
+        db_session,
+        user.id,
+        status="applied",
+        last_activity_at=now - timedelta(days=6),
+    )
+    users = UserRepository(db_session)
+    custom_user = await users.get_by_id(user.id)
+    assert custom_user is not None
+    custom_user.stale_after_days = 5
+    await users.save(custom_user)
+
+    dashboard = await DashboardService(db_session).get(user.id)
+
+    assert dashboard.stale_after_days == 5
+    assert dashboard.stale_applications_total == 1
 
 
 @pytest.mark.asyncio

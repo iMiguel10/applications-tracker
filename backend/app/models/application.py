@@ -25,6 +25,7 @@ from app.domain.application import (
     MAX_NOTES_LENGTH,
     ApplicationOrigin,
     ApplicationSource,
+    Currency,
     WorkMode,
 )
 from app.domain.application_status import (
@@ -65,7 +66,7 @@ class Application(Base):
         CheckConstraint("salary_min >= 0", name="salary_min_non_negative"),
         CheckConstraint("salary_max >= 0", name="salary_max_non_negative"),
         CheckConstraint("salary_min <= salary_max", name="salary_range"),
-        CheckConstraint("salary_currency ~ '^[A-Z]{3}$'", name="salary_currency_iso"),
+        enum_check("salary_currency", Currency, "salary_currency"),
         CheckConstraint(
             f"char_length(notes) <= {MAX_NOTES_LENGTH}", name="notes_length"
         ),
@@ -104,7 +105,7 @@ class Application(Base):
     salary_min: Mapped[int | None] = mapped_column(Integer)
     salary_max: Mapped[int | None] = mapped_column(Integer)
     salary_currency: Mapped[str] = mapped_column(
-        String(3), server_default=DEFAULT_CURRENCY
+        String(3), server_default=DEFAULT_CURRENCY.value
     )
 
     notes: Mapped[str | None] = mapped_column(Text)

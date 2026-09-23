@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { errorMessageKey } from "@/shared/lib/errors";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import { Pagination } from "@/shared/components/common/Pagination";
 import { ApplicationFilters } from "@/features/applications/components/ApplicationFilters";
 import { ApplicationsTable } from "@/features/applications/components/ApplicationsTable";
@@ -64,7 +65,11 @@ export function ApplicationsPage() {
       )}
       {data && data.total > 0 && (
         <>
-          <ApplicationsTable applications={data.items} />
+          <Card className="py-0">
+            <CardContent className="px-0">
+              <ApplicationsTable applications={data.items} />
+            </CardContent>
+          </Card>
           <Pagination
             page={data.page}
             pages={data.pages}

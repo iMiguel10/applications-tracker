@@ -7,7 +7,6 @@ from app.domain.application_status import ApplicationStatus
 from app.domain.dashboard import (
     MIN_SAMPLE_FOR_RATE,
     RESPONSE_REACHED_STATUSES,
-    STALE_AFTER_DAYS,
     WAITING_STATUSES,
     WEEKS_OF_HISTORY,
     WIDGET_LIST_LIMIT,
@@ -15,6 +14,7 @@ from app.domain.dashboard import (
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.interview_repository import InterviewRepository
 from app.repositories.reminder_repository import ReminderFilters, ReminderRepository
+from app.repositories.user_repository import UserRepository
 from app.schemas.company import CompanySummary
 from app.schemas.dashboard import (
     ApplicationSummary,
@@ -37,9 +37,16 @@ class DashboardService:
         self.applications = ApplicationRepository(session)
         self.interviews = InterviewRepository(session)
         self.reminders = ReminderRepository(session)
+        self.users = UserRepository(session)
 
     async def get(self, user_id: uuid.UUID) -> DashboardRead:
         now = datetime.now(UTC)
+
+        # get_current_user ya crea la fila (invariante 8): si no existe, es un bug,
+        # no una petición inválida.
+        user = await self.users.get_by_id(user_id)
+        assert user is not None
+        stale_after_days = user.stale_after_days
 
         status_counts = await self._status_counts(user_id)
         weekly = await self._applications_per_week(user_id, now)
@@ -78,7 +85,7 @@ class DashboardService:
             descending=False,
         )
 
-        stale_before = now - timedelta(days=STALE_AFTER_DAYS)
+        stale_before = now - timedelta(days=stale_after_days)
         stale_rows, stale_total = await self.applications.list_stale(
             user_id,
             statuses=[status.value for status in WAITING_STATUSES],
@@ -106,7 +113,7 @@ class DashboardService:
             pending_reminders_total=pending_reminders_total,
             stale_applications=stale_applications,
             stale_applications_total=stale_total,
-            stale_after_days=STALE_AFTER_DAYS,
+            stale_after_days=stale_after_days,
         )
 
     async def _status_counts(self, user_id: uuid.UUID) -> list[StatusCount]:

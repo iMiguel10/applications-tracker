@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +15,14 @@ class UserRepository:
         return await self.session.scalar(
             select(User).where(User.supertokens_user_id == supertokens_user_id)
         )
+
+    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
+        return await self.session.scalar(select(User).where(User.id == user_id))
+
+    async def save(self, user: User) -> User:
+        """Envía a la BD los cambios de un usuario ya cargado (UPDATE)."""
+        await self.session.flush()
+        return user
 
     async def get_or_create(self, supertokens_user_id: str) -> User:
         """Devuelve el usuario propio, creándolo si no existe. Idempotente.

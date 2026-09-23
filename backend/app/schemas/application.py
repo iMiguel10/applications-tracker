@@ -1,13 +1,11 @@
 import uuid
 from datetime import date, datetime
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import (
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     Field,
-    StringConstraints,
     computed_field,
     model_validator,
 )
@@ -16,6 +14,7 @@ from app.domain.application import (
     DEFAULT_CURRENCY,
     ApplicationOrigin,
     ApplicationSource,
+    Currency,
     WorkMode,
 )
 from app.domain.application_status import ApplicationStatus, allowed_transitions
@@ -29,19 +28,6 @@ from app.schemas.common import (
 from app.schemas.company import CompanySummary
 
 Salary = Annotated[int, Field(ge=0, le=100_000_000)]
-
-
-def _normalize_currency(value: Any) -> Any:
-    return value.strip().upper() if isinstance(value, str) else value
-
-
-# BeforeValidator y no StringConstraints(to_upper=True): Pydantic comprueba el
-# `pattern` sobre el valor original, antes de to_upper, así que "eur" fallaría.
-Currency = Annotated[
-    str,
-    BeforeValidator(_normalize_currency),
-    StringConstraints(pattern="^[A-Z]{3}$"),
-]
 InitialStatus = Literal[ApplicationStatus.SAVED, ApplicationStatus.APPLIED]
 
 
@@ -69,7 +55,7 @@ class ApplicationCreate(BaseModel):
     salary_min: Salary | None = Field(default=None, description="Bruto anual.")
     salary_max: Salary | None = Field(default=None, description="Bruto anual.")
     salary_currency: Currency = Field(
-        default=DEFAULT_CURRENCY, description="Código ISO 4217.", examples=["EUR"]
+        default=DEFAULT_CURRENCY, description="Moneda del rango salarial."
     )
     notes: OptionalNotes = Field(default=None, description="Máximo 5 000 caracteres.")
 
@@ -116,7 +102,7 @@ class ApplicationRead(BaseModel):
     applied_at: date | None
     salary_min: int | None
     salary_max: int | None
-    salary_currency: str
+    salary_currency: Currency
     notes: str | None
     archived_at: datetime | None = Field(description="`null` si está activa.")
     last_activity_at: datetime = Field(

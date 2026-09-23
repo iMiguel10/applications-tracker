@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { APPLICATION_SOURCES, INITIAL_STATUSES, WORK_MODES } from "../types/Application";
+import { APPLICATION_SOURCES, CURRENCIES, INITIAL_STATUSES, WORK_MODES } from "../types/Application";
 
 const salary = z
   .string()
@@ -29,10 +29,7 @@ export const applicationSchema = z
     applied_at: z.string().nullable(),
     salary_min: salary,
     salary_max: salary,
-    salary_currency: z
-      .string()
-      .trim()
-      .regex(/^[A-Za-z]{3}$/, "applications.validation.currency"),
+    salary_currency: z.enum(CURRENCIES),
     notes: z.string().max(5000, "common.validation.notesTooLong"),
   })
   .refine(

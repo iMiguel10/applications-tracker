@@ -28,6 +28,9 @@ export const APPLICATION_SOURCES = [
 ] as const;
 export type ApplicationSource = (typeof APPLICATION_SOURCES)[number];
 
+export const CURRENCIES = ["EUR", "USD", "GBP", "CHF"] as const;
+export type Currency = (typeof CURRENCIES)[number];
+
 export interface CompanySummary {
   id: string;
   name: string;
@@ -51,7 +54,7 @@ export interface Application {
   applied_at: string | null;
   salary_min: number | null;
   salary_max: number | null;
-  salary_currency: string;
+  salary_currency: Currency;
   notes: string | null;
   archived_at: string | null;
   last_activity_at: string;

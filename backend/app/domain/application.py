@@ -28,7 +28,17 @@ class ApplicationOrigin(StrEnum):
     MANUAL = "manual"
 
 
-DEFAULT_CURRENCY = "EUR"
+class Currency(StrEnum):
+    """Monedas disponibles para el rango salarial (F8: desplegable cerrado, no
+    texto libre). Ampliar esta lista es un cambio pequeño y acotado."""
+
+    EUR = "EUR"
+    USD = "USD"
+    GBP = "GBP"
+    CHF = "CHF"
+
+
+DEFAULT_CURRENCY = Currency.EUR
 
 # Límites de la especificación §10.
 MAX_APPLICATIONS_PER_USER = 5_000

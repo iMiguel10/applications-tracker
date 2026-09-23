@@ -21,6 +21,15 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-text: var(--success-text);
+  --color-success: var(--success);
+  --color-status-offer: var(--status-offer);
+  --color-status-interviewing: var(--status-interviewing);
+  --color-status-screening: var(--status-screening);
+  --color-status-applied: var(--status-applied);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand: var(--brand);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -45,74 +54,106 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-/* Tokens neutros por defecto de shadcn: la paleta de marca se definirá más adelante. */
+/* Paleta de marca (F8.3): Primary #0B1220, Accent #3B82F6 / #8B5CF6, Success #14B8A6,
+   Background #E5E7EB. `--primary`/`--ring` usan un azul #2563EB (un tono más oscuro
+   que el accent #3B82F6 de partida): con blanco encima, el accent literal solo da
+   3.68:1 de contraste, por debajo del mínimo WCAG AA (4.5:1) para texto — este tono
+   es el más claro de la misma familia que sí lo cumple (5.17:1), así que los botones
+   ganan color sin perder legibilidad. Mismo criterio para las etapas de una
+   solicitud (`--status-*`) y para `--success-text`: cada uno es el tono más vivo de
+   su familia que aún pasa 4.5:1 sobre blanco, para las insignias en "tinta suave"
+   (fondo al 10% + texto del mismo color). `--brand` es el panel oscuro de login y
+   registro (siempre el primary original, con independencia del color de los botones).
+   Medido con la fórmula de luminancia relativa de WCAG 2.1 (script propio en F8.3). */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: #e5e7eb;
+  --foreground: #0b1220;
+  --card: #ffffff;
+  --card-foreground: #0b1220;
+  --popover: #ffffff;
+  --popover-foreground: #0b1220;
+  --primary: #2563eb;
+  --primary-foreground: #f8fafc;
+  --secondary: #e5e7eb;
+  --secondary-foreground: #0b1220;
+  --muted: #e5e7eb;
+  --muted-foreground: #525b66;
+  --accent: #dbeafe;
+  --accent-foreground: #1e3a8a;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --success: #14b8a6;
+  --success-foreground: #0b1220;
+  --success-text: #0f766e;
+  --border: #d1d5db;
+  --input: #d1d5db;
+  --ring: #2563eb;
+  --chart-1: #3b82f6;
+  --chart-2: #8b5cf6;
+  --chart-3: #14b8a6;
+  --chart-4: #60a5fa;
+  --chart-5: #a78bfa;
+  --brand: #0b1220;
+  --brand-foreground: #f8fafc;
+  /* Etapas del ciclo de vida de una solicitud (arquitectura §6): una progresión de
+     color con sentido narrativo, azul → índigo → violeta → ámbar, antes de cerrar en
+     éxito (verde) o descarte (rojo). "Guardada" y "Retirada" quedan neutras: aún no
+     ha empezado o ya no está en juego. */
+  --status-applied: #2563eb;
+  --status-screening: #4f46e5;
+  --status-interviewing: #7c3aed;
+  --status-offer: #b45309;
+  --sidebar: #0b1220;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: #2563eb;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+  --card: #111827;
+  --card-foreground: #e5e7eb;
+  --popover: #111827;
+  --popover-foreground: #e5e7eb;
+  --primary: #2563eb;
+  --primary-foreground: #f8fafc;
+  --secondary: #1e293b;
+  --secondary-foreground: #e5e7eb;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e3a8a;
+  --accent-foreground: #e5e7eb;
   --destructive: oklch(0.704 0.191 22.216);
+  --success: #14b8a6;
+  --success-foreground: #0b1220;
+  --success-text: #2dd4bf;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: #2563eb;
+  --chart-1: #3b82f6;
+  --chart-2: #8b5cf6;
+  --chart-3: #14b8a6;
+  --chart-4: #60a5fa;
+  --chart-5: #a78bfa;
+  --brand: #0b1220;
+  --brand-foreground: #f8fafc;
+  --status-applied: #60a5fa;
+  --status-screening: #818cf8;
+  --status-interviewing: #a78bfa;
+  --status-offer: #fbbf24;
+  --sidebar: #0b1220;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #2563eb;
 }
 
 @layer base {
