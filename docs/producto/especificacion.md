@@ -270,6 +270,7 @@ Requisitos derivados:
 | **F5 — Dashboard y exportación** | Métricas (RF-60…66) y CSV. | Consultas de agregación y rendimiento. |
 | **F6 — CI** | GitHub Actions: lint, tipos, tests y build. | Mantiene el verde de forma automática. |
 | **F7 — Preparación para despliegue** | `compose.prod.yml`, Nginx y variables de producción. | Paridad entre desarrollo y producción. |
+| **F8 — Revisión final** | Con el MVP funcional completo: qué funcionalidades faltan, qué merece mejorarse (rendimiento, pruebas, mensajes de error…) y una revisión de diseño de la interfaz (consistencia visual, accesibilidad, estados vacíos y de carga). | Cierra el MVP con una pasada deliberada, en vez de darlo por terminado solo porque se agotó la lista de fases. |
 
 **Evolución documentada que no se construye:** recordatorios por email y otros canales, importación CSV, extracción de datos desde la URL de la oferta, login social, etiquetas libres, adjuntos (CV y carta por solicitud), contactos de recruiters.
 

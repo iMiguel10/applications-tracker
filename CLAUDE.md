@@ -169,3 +169,4 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | F5 | Dashboard, exportación CSV y página global de recordatorios |
 | F6 | CI con GitHub Actions |
 | F7 | Preparación para despliegue |
+| F8 | Revisión final: funcionalidades faltantes, mejoras pendientes y diseño de la UI |
