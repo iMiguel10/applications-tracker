@@ -19,6 +19,10 @@ OptionalShortText = Annotated[
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None,
     BeforeValidator(_empty_to_none),
 ]
+OptionalMediumText = Annotated[
+    Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None,
+    BeforeValidator(_empty_to_none),
+]
 OptionalNotes = Annotated[
     Annotated[
         str, StringConstraints(strip_whitespace=True, max_length=MAX_NOTES_LENGTH)

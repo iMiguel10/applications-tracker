@@ -90,9 +90,7 @@ async def test_list_history_is_most_recent_first(
     application = await make_application(db_session, user.id, status="saved")
     await make_status_change(db_session, application, to_status="applied")
 
-    response = await client.get(
-        f"/api/v1/applications/{application.id}/status-changes"
-    )
+    response = await client.get(f"/api/v1/applications/{application.id}/status-changes")
 
     assert response.status_code == 200
     body = response.json()
@@ -140,7 +138,9 @@ async def test_undo_removes_the_last_by_seq_not_by_changed_at(
     # (el último insertado), no el que declara la fecha más reciente (0004).
     application = await make_application(db_session, user.id, status="saved")
     now = datetime.now(UTC)
-    await make_status_change(db_session, application, to_status="applied", changed_at=now)
+    await make_status_change(
+        db_session, application, to_status="applied", changed_at=now
+    )
     application.status = "applied"
     await make_status_change(
         db_session,

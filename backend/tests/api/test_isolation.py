@@ -17,7 +17,12 @@ from app.main import app
 from app.models.application import Application
 from app.models.company import Company
 from app.schemas.user import CurrentUser
-from tests.factories import make_application, make_company
+from tests.factories import (
+    make_application,
+    make_company,
+    make_interview,
+    make_reminder,
+)
 
 # Toda operación con un id de recurso en la ruta. test_every_id_route_is_covered
 # falla si aparece una nueva en el OpenAPI y no está aquí.
@@ -37,6 +42,20 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
         {"to_status": "applied"},
     ),
     ("DELETE", "/api/v1/applications/{application_id}/status-changes/last", None),
+    ("GET", "/api/v1/applications/{application_id}/interviews", None),
+    (
+        "POST",
+        "/api/v1/applications/{application_id}/interviews",
+        {"scheduled_at": "2026-10-01T10:00:00Z"},
+    ),
+    (
+        "PATCH",
+        "/api/v1/applications/{application_id}/interviews/{interview_id}",
+        {"notes": "Hackeada"},
+    ),
+    ("DELETE", "/api/v1/applications/{application_id}/interviews/{interview_id}", None),
+    ("POST", "/api/v1/reminders/{reminder_id}/complete", None),
+    ("POST", "/api/v1/reminders/{reminder_id}/dismiss", None),
 ]
 
 
@@ -68,7 +87,16 @@ async def test_other_user_gets_404_and_nothing_changes(
     application = await make_application(
         db_session, user.id, company, position_title="Original"
     )
-    url = path.format(company_id=company.id, application_id=application.id)
+    interview = await make_interview(db_session, application, notes="Original")
+    reminder = await make_reminder(
+        db_session, user.id, application_id=application.id, title="Original"
+    )
+    url = path.format(
+        company_id=company.id,
+        application_id=application.id,
+        interview_id=interview.id,
+        reminder_id=reminder.id,
+    )
 
     as_user(other_user)
     response = await client.request(method, url, json=body)
@@ -78,9 +106,13 @@ async def test_other_user_gets_404_and_nothing_changes(
 
     await db_session.refresh(company)
     await db_session.refresh(application)
+    await db_session.refresh(interview)
+    await db_session.refresh(reminder)
     assert company.name == "Acme"
     assert application.position_title == "Original"
     assert application.archived_at is None
+    assert interview.notes == "Original"
+    assert reminder.status == "pending"
 
 
 @pytest.mark.asyncio
@@ -157,3 +189,41 @@ async def test_cannot_link_an_application_to_another_users_company(
     ]
     assert linked == []
     assert isinstance(others_company, Company)
+
+
+@pytest.mark.asyncio
+async def test_reminder_list_never_includes_other_users_data(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user: CurrentUser,
+    other_user: CurrentUser,
+    as_user: Callable[[CurrentUser], None],
+):
+    await make_reminder(db_session, user.id)
+
+    as_user(other_user)
+    response = await client.get("/api/v1/reminders", params={"status": "all"})
+
+    assert response.json()["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_cannot_link_a_reminder_to_another_users_application(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user: CurrentUser,
+    other_user: CurrentUser,
+):
+    # T3: crear un recordatorio apuntando a la solicitud de otro usuario.
+    others_application = await make_application(db_session, other_user.id)
+
+    response = await client.post(
+        "/api/v1/reminders",
+        json={
+            "title": "x",
+            "due_at": "2026-10-01T10:00:00Z",
+            "application_id": str(others_application.id),
+        },
+    )
+
+    assert response.status_code == 404

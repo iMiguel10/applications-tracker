@@ -12,10 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
+from app.models.interview import Interview
+from app.models.reminder import Reminder
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.application_status_change_repository import (
     ApplicationStatusChangeRepository,
 )
+from app.repositories.interview_repository import InterviewRepository
+from app.repositories.reminder_repository import ReminderRepository
 from app.schemas.user import CurrentUser
 from tests.factories import make_application, make_company
 
@@ -173,6 +177,86 @@ async def test_history_note_over_max_length_is_rejected(
                 to_status="screening",
                 changed_at=datetime.now(UTC),
                 note="x" * 5001,
+            )
+        )
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_negative_interview_duration_is_rejected(
+    db_session: AsyncSession, user: CurrentUser
+):
+    application = await make_application(db_session, user.id)
+
+    with pytest.raises(IntegrityError):
+        await InterviewRepository(db_session).add(
+            Interview(
+                application_id=application.id,
+                scheduled_at=datetime.now(UTC),
+                duration_minutes=0,
+            )
+        )
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_unknown_interview_outcome_is_rejected(
+    db_session: AsyncSession, user: CurrentUser
+):
+    application = await make_application(db_session, user.id)
+
+    with pytest.raises(IntegrityError):
+        await InterviewRepository(db_session).add(
+            Interview(
+                application_id=application.id,
+                scheduled_at=datetime.now(UTC),
+                outcome="ghosted",
+            )
+        )
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_reminder_composite_fk_rejects_application_of_another_user(
+    db_session: AsyncSession, user: CurrentUser, other_user: CurrentUser
+):
+    # T3 a nivel de BD (decisión A9), igual que en applications.
+    others_application = await make_application(db_session, other_user.id)
+
+    with pytest.raises(IntegrityError):
+        await ReminderRepository(db_session).add(
+            Reminder(
+                user_id=user.id,
+                application_id=others_application.id,
+                title="Intruso",
+                due_at=datetime.now(UTC),
+            )
+        )
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_reminder_without_application_is_accepted(
+    db_session: AsyncSession, user: CurrentUser
+):
+    reminder = await ReminderRepository(db_session).add(
+        Reminder(user_id=user.id, title="Suelto", due_at=datetime.now(UTC))
+    )
+
+    assert reminder.application_id is None
+
+
+@pytest.mark.asyncio
+async def test_unknown_reminder_status_is_rejected(
+    db_session: AsyncSession, user: CurrentUser
+):
+    with pytest.raises(IntegrityError):
+        await ReminderRepository(db_session).add(
+            Reminder(
+                user_id=user.id,
+                title="x",
+                due_at=datetime.now(UTC),
+                status="snoozed",
             )
         )
     await db_session.rollback()

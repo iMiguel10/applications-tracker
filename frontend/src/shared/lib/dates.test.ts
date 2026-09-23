@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDateOnly, toDateOnly } from "./dates";
+import { datetimeLocalToIso, parseDateOnly, toDateOnly, toDateTimeLocal } from "./dates";
 
 describe("parseDateOnly", () => {
   it("keeps the calendar day in local time (no 'one day less')", () => {
@@ -18,5 +18,21 @@ describe("parseDateOnly", () => {
 
   it("round-trips with toDateOnly", () => {
     expect(toDateOnly(parseDateOnly("2026-12-31")!)).toBe("2026-12-31");
+  });
+});
+
+describe("datetimeLocalToIso / toDateTimeLocal", () => {
+  it("round-trips a datetime-local value through an ISO instant", () => {
+    const local = "2026-09-01T15:30";
+
+    const iso = datetimeLocalToIso(local);
+
+    expect(toDateTimeLocal(iso)).toBe(local);
+  });
+
+  it("produces a value Date can parse back", () => {
+    expect(Number.isNaN(new Date(datetimeLocalToIso("2026-09-01T15:30")).getTime())).toBe(
+      false,
+    );
   });
 });

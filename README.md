@@ -2,7 +2,7 @@
 
 Un cuaderno de bitácora para la búsqueda de empleo: cada candidatura, cómo avanza (cambios de estado y entrevistas) y cuál es el próximo paso, para que ninguna se quede olvidada.
 
-> **Estado:** en desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes) y F3 (ciclo de vida: historial de estados, transiciones y deshacer); la siguiente es F4, entrevistas y recordatorios. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado:** en desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes), F3 (ciclo de vida: historial de estados, transiciones y deshacer) y F4 (entrevistas y recordatorios); la siguiente es F5, dashboard y exportación CSV. [Ver fases](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Qué resuelve
 

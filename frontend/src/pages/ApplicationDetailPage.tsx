@@ -21,6 +21,8 @@ import { DeleteApplicationDialog } from "@/features/applications/components/Dele
 import { StatusHistoryTimeline } from "@/features/applications/components/StatusHistoryTimeline";
 import { useApplication } from "@/features/applications/hooks/queries/useApplication";
 import { useSetArchived } from "@/features/applications/hooks/mutations/useSetArchived";
+import { InterviewsSection } from "@/features/interviews/components/InterviewsSection";
+import { RemindersSection } from "@/features/reminders/components/RemindersSection";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -146,6 +148,13 @@ export function ApplicationDetailPage() {
       </p>
 
       <StatusHistoryTimeline applicationId={application.id} />
+
+      <InterviewsSection
+        application={application}
+        onSuggestInterviewing={() => setChangeStatusOpen(true)}
+      />
+
+      <RemindersSection applicationId={application.id} />
 
       <ChangeStatusDialog
         application={application}

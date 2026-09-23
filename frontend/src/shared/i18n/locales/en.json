@@ -196,6 +196,69 @@
       "nameRequired": "Enter the name"
     }
   },
+  "interviews": {
+    "title": "Interviews",
+    "new": "New interview",
+    "newTitle": "New interview",
+    "editTitle": "Edit interview",
+    "created": "Interview created",
+    "updated": "Interview updated",
+    "deleted": "Interview deleted",
+    "empty": "No interviews yet for this application.",
+    "interviewersPlaceholder": "With whom",
+    "suggestInterviewing": "Move the application to \"Interviewing\"?",
+    "deleteTitle": "Delete the interview?",
+    "deleteConfirm": "This cannot be undone.",
+    "fields": {
+      "scheduledAt": "Date and time",
+      "duration": "Duration (minutes)",
+      "interviewers": "With whom",
+      "type": "Type",
+      "format": "Format",
+      "outcome": "Outcome"
+    },
+    "type": {
+      "screening": "Screening",
+      "technical": "Technical",
+      "hr": "HR",
+      "cultural": "Cultural",
+      "final": "Final",
+      "other": "Other"
+    },
+    "format": {
+      "online": "Online",
+      "onsite": "On-site",
+      "phone": "Phone"
+    },
+    "outcome": {
+      "pending": "Pending",
+      "passed": "Passed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "validation": {
+      "scheduledAtRequired": "Enter the date and time",
+      "durationNumber": "Whole numbers only"
+    }
+  },
+  "reminders": {
+    "title": "Reminders",
+    "new": "New reminder",
+    "newTitle": "New reminder",
+    "created": "Reminder created",
+    "empty": "No pending reminders for this application.",
+    "complete": "Mark as done",
+    "dismiss": "Dismiss",
+    "overdue": "Overdue",
+    "fields": {
+      "title": "Title",
+      "dueAt": "Due date"
+    },
+    "validation": {
+      "titleRequired": "Enter a title",
+      "dueAtRequired": "Enter the due date"
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "validation": "Some data is not valid.",
@@ -212,6 +275,8 @@
     "invalid_transition": "That status change is not allowed",
     "cannot_undo_initial_change": "Cannot undo the change that created the application",
     "changed_at_in_future": "The date cannot be in the future",
-    "changed_at_before_last_change": "The date cannot be earlier than the last change"
+    "changed_at_before_last_change": "The date cannot be earlier than the last change",
+    "reminders_limit_reached": "You have reached the maximum number of pending reminders",
+    "reminder_not_pending": "This reminder is no longer pending"
   }
 }

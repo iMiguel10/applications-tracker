@@ -196,6 +196,69 @@
       "nameRequired": "Indica el nombre"
     }
   },
+  "interviews": {
+    "title": "Entrevistas",
+    "new": "Nueva entrevista",
+    "newTitle": "Nueva entrevista",
+    "editTitle": "Editar entrevista",
+    "created": "Entrevista creada",
+    "updated": "Entrevista actualizada",
+    "deleted": "Entrevista borrada",
+    "empty": "Todavía no hay entrevistas para esta solicitud.",
+    "interviewersPlaceholder": "Con quién",
+    "suggestInterviewing": "¿Pasar la solicitud a «Entrevistas»?",
+    "deleteTitle": "¿Borrar la entrevista?",
+    "deleteConfirm": "Esta acción no se puede deshacer.",
+    "fields": {
+      "scheduledAt": "Fecha y hora",
+      "duration": "Duración (minutos)",
+      "interviewers": "Con quién",
+      "type": "Tipo",
+      "format": "Formato",
+      "outcome": "Resultado"
+    },
+    "type": {
+      "screening": "Screening",
+      "technical": "Técnica",
+      "hr": "RR. HH.",
+      "cultural": "Cultural",
+      "final": "Final",
+      "other": "Otra"
+    },
+    "format": {
+      "online": "Online",
+      "onsite": "Presencial",
+      "phone": "Teléfono"
+    },
+    "outcome": {
+      "pending": "Pendiente",
+      "passed": "Superada",
+      "failed": "No superada",
+      "cancelled": "Cancelada"
+    },
+    "validation": {
+      "scheduledAtRequired": "Indica la fecha y hora",
+      "durationNumber": "Solo números enteros"
+    }
+  },
+  "reminders": {
+    "title": "Recordatorios",
+    "new": "Nuevo recordatorio",
+    "newTitle": "Nuevo recordatorio",
+    "created": "Recordatorio creado",
+    "empty": "No hay recordatorios pendientes para esta solicitud.",
+    "complete": "Marcar como hecho",
+    "dismiss": "Descartar",
+    "overdue": "Vencido",
+    "fields": {
+      "title": "Título",
+      "dueAt": "Fecha límite"
+    },
+    "validation": {
+      "titleRequired": "Indica un título",
+      "dueAtRequired": "Indica la fecha límite"
+    }
+  },
   "errors": {
     "generic": "Algo ha fallado. Inténtalo de nuevo.",
     "validation": "Hay datos no válidos.",
@@ -212,6 +275,8 @@
     "invalid_transition": "Ese cambio de estado no está permitido",
     "cannot_undo_initial_change": "No se puede deshacer el cambio que creó la solicitud",
     "changed_at_in_future": "La fecha no puede ser futura",
-    "changed_at_before_last_change": "La fecha no puede ser anterior al último cambio"
+    "changed_at_before_last_change": "La fecha no puede ser anterior al último cambio",
+    "reminders_limit_reached": "Has alcanzado el máximo de recordatorios pendientes",
+    "reminder_not_pending": "Este recordatorio ya no está pendiente"
   }
 }

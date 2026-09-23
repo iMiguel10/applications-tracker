@@ -6,13 +6,14 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-23): F3 terminada.**
+> **Estado (2026-09-23): F4 terminada.**
 >
 > - **Existe:**
 >     - Entorno Docker, autenticación (F1) y documentación OpenAPI con referencia versionada.
 >     - F2: empresas y solicitudes completas, con CRUD, filtros, búsqueda, orden y paginación en la URL, archivado, cuotas y aislamiento entre usuarios (T2, T3), tanto en backend como en frontend.
 >     - F3: ciclo de vida completo. `domain/application_status.py` con la tabla `ALLOWED_TRANSITIONS`; `application_status_changes` (historial append-only, `seq` como orden real); `ApplicationStatusService` (cambiar y deshacer, con `SELECT … FOR UPDATE`); `allowed_transitions` en `ApplicationRead`; en el frontend, el diálogo de cambio de estado, la línea de tiempo del historial y deshacer.
-> - **No existe todavía:** entrevistas, recordatorios ni dashboard (F4 y F5). Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
+>     - F4: entrevistas y recordatorios. `interviews` (CRUD completo, hija de `applications`, sin `user_id` propio); `reminders` (raíz con `user_id`, FK compuesta opcional a `applications`, cuota de 500 **pendientes**); `services/notifications/` con `NotificationChannel` e `InAppChannel` (no-op, costura de RF-53); solo crear/listar/completar/descartar para recordatorios, sin editar ni borrar (ninguna RF de recordatorios lo pide). En el frontend, ambas secciones viven embebidas en el detalle de la solicitud, y la sugerencia de RF-42 (proponer `interviewing` al programar una entrevista) usa `allowed_transitions`. **Los recordatorios no tienen página ni ruta propias en F4** (decisión [0005](docs/decisiones/0005-recordatorios-sin-pagina-global-en-f4.md)): se crean y ven filtrados por solicitud; la API ya admite un listado global y un recordatorio suelto (`application_id` nulo), pensando en F5.
+> - **No existe todavía:** dashboard ni exportación CSV (F5), incluida la página global `/reminders` que agregaría los recordatorios de todas las solicitudes. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
 
 ## 2. Documentación
 
@@ -164,7 +165,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F1 | SuperTokens (core + BD), `users`, `get_current_user`, router protegido, login y registro, rutas protegidas |
 | ✔ F2 | Empresas y solicitudes: CRUD, filtros, paginación, archivado, pruebas de aislamiento, OpenAPI en docs |
 | ✔ F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |
-| F4 | Entrevistas y recordatorios (`in_app` + `NotificationChannel`) |
-| F5 | Dashboard y exportación CSV |
+| ✔ F4 | Entrevistas y recordatorios (`in_app` + `NotificationChannel`) |
+| F5 | Dashboard, exportación CSV y página global de recordatorios |
 | F6 | CI con GitHub Actions |
 | F7 | Preparación para despliegue |

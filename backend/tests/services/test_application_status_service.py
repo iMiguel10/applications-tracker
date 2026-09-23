@@ -1,5 +1,6 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -277,5 +278,5 @@ async def test_concurrent_status_changes_never_both_start_from_the_same_state():
     # Cadena lineal: el from_status de cada cambio es el to_status del siguiente
     # (más antiguo). Si las dos hubieran partido de "applied" a la vez, dos
     # entradas seguidas tendrían from_status="applied".
-    for later, earlier in zip(history, history[1:], strict=False):
+    for later, earlier in pairwise(history):
         assert later.from_status == earlier.to_status

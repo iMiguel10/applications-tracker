@@ -6,7 +6,9 @@ from app.api.v1.endpoints import (
     applications,
     companies,
     health,
+    interviews,
     me,
+    reminders,
 )
 from app.schemas.auth import UnauthorizedError
 
@@ -30,5 +32,7 @@ protected.include_router(me.router)
 protected.include_router(companies.router)
 protected.include_router(applications.router)
 protected.include_router(application_status_changes.router)
+protected.include_router(interviews.router)
+protected.include_router(reminders.router)
 
 router.include_router(protected)

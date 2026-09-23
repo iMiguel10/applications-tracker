@@ -50,6 +50,15 @@ OPENAPI_TAGS = [
         "description": "Empresas del usuario, reutilizables entre solicitudes.",
     },
     {"name": "Applications", "description": "Solicitudes a puestos de trabajo."},
+    {
+        "name": "Interviews",
+        "description": "Entrevistas de una solicitud: se anidan bajo /applications.",
+    },
+    {
+        "name": "Reminders",
+        "description": "Recordatorios del usuario, opcionalmente ligados a una "
+        "solicitud. En el MVP solo se muestran en la aplicación (RF-53).",
+    },
 ]
 
 SWAGGER_UI_PARAMETERS = {

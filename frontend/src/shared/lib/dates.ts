@@ -18,3 +18,23 @@ export function parseDateOnly(value: string | null | undefined): Date | undefine
 export function toDateOnly(date: Date): string {
   return format(date, DATE_ONLY_FORMAT);
 }
+
+const DATE_TIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm";
+
+/**
+ * Instante ISO (con zona) de la API → valor para `<input type="datetime-local">`,
+ * en la hora LOCAL del navegador (F4: entrevistas y recordatorios tienen hora,
+ * a diferencia de `applied_at`, que es solo un día).
+ */
+export function toDateTimeLocal(value: string): string {
+  return format(new Date(value), DATE_TIME_LOCAL_FORMAT);
+}
+
+/**
+ * Valor de `<input type="datetime-local">` (sin zona, "yyyy-MM-ddTHH:mm") → ISO
+ * en UTC. Sin zona explícita, `new Date(...)` lo interpreta como hora LOCAL, que es
+ * justo lo que muestra el input: no hace falta convertir a mano.
+ */
+export function datetimeLocalToIso(value: string): string {
+  return new Date(value).toISOString();
+}

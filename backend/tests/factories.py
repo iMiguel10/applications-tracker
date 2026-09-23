@@ -5,7 +5,7 @@ fallo apunte a lo que se prueba y no a la preparación.
 """
 
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
+from app.models.interview import Interview
+from app.models.reminder import Reminder
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.application_status_change_repository import (
     ApplicationStatusChangeRepository,
 )
 from app.repositories.company_repository import CompanyRepository
+from app.repositories.interview_repository import InterviewRepository
+from app.repositories.reminder_repository import ReminderRepository
 
 
 async def make_company(
@@ -77,3 +81,24 @@ async def make_status_change(
             note=note,
         )
     )
+
+
+async def make_interview(
+    session: AsyncSession, application: Application, **fields: Any
+) -> Interview:
+    values: dict[str, Any] = {
+        "scheduled_at": datetime.now(UTC) + timedelta(days=3),
+    } | fields
+    return await InterviewRepository(session).add(
+        Interview(application_id=application.id, **values)
+    )
+
+
+async def make_reminder(
+    session: AsyncSession, user_id: uuid.UUID, **fields: Any
+) -> Reminder:
+    values: dict[str, Any] = {
+        "title": "Hacer seguimiento",
+        "due_at": datetime.now(UTC) + timedelta(days=1),
+    } | fields
+    return await ReminderRepository(session).add(Reminder(user_id=user_id, **values))

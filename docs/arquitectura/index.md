@@ -264,8 +264,10 @@ No hay multi-tenancy de organizaciones, pero cada usuario es su propio inquilino
 Las pantallas con dificultad real:
 
 1. **Listado de solicitudes.** Los filtros, la ordenación y la página se sincronizan con la URL (A16). La query key incluye los filtros, así que cambiar un filtro es cambiar de query y la caché funciona sola.
-2. **Detalle de la solicitud.** Muestra la línea de tiempo del historial más las entrevistas. El diálogo de cambio de estado ofrece **solo** las `allowed_transitions` que llegan de la API (A8). Tras cambiar o deshacer, se invalidan el detalle, el listado y el dashboard.
+2. **Detalle de la solicitud.** Muestra la línea de tiempo del historial, las entrevistas y los recordatorios de esa solicitud. El diálogo de cambio de estado ofrece **solo** las `allowed_transitions` que llegan de la API (A8). Tras cambiar o deshacer, se invalidan el detalle, el listado y el dashboard. Al crear una entrevista sobre una solicitud en `applied` o `screening`, un toast propone (sin forzar) pasarla a `interviewing` (RF-42): comprueba `allowed_transitions`, no una regla propia.
 3. **Formulario de solicitud.** Tiene un combobox de empresa que permite crear una nueva sin salir del formulario (RF-13).
+
+**Recordatorios, solo embebidos en F4.** El frontend de F4 no tiene ruta ni página propia para `reminders` (`GET /reminders` acepta un listado global, sin filtrar por solicitud, pero nada la usa todavía): se crean y se listan filtrados por `application_id` desde el detalle de la solicitud. Es una acotación de alcance deliberada, no un olvido: ver [decisión 0005](../decisiones/0005-recordatorios-sin-pagina-global-en-f4.md). Le falta a F5, junto con el dashboard: la ruta `/reminders`, su entrada en `shared/config/navigation.ts` y la vista que cruce recordatorios de varias solicitudes (y de ninguna). El backend ya está listo para esa vista sin cambios.
 
 ## 10. Entorno y despliegue
 
