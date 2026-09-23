@@ -42,6 +42,12 @@ jobs:
   frontend:
     name: Frontend · lint, tipos, pruebas y build
     runs-on: ubuntu-latest
+    # npm run test/build corren fuera de Docker: aquí no hay compose.yml que
+    # inyecte VITE_API_URL desde .env, así que apiClient.ts (que exige la
+    # variable) rompería toda importación suya. El valor es el de .env.example;
+    # no se llama a una API real en las pruebas ni en el build.
+    env:
+      VITE_API_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
