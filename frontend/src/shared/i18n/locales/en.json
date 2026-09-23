@@ -42,6 +42,7 @@
     "created": "Application created",
     "updated": "Application updated",
     "deleted": "Application deleted",
+    "export": "Export CSV",
     "empty": "No applications yet. Create the first one with “New application”.",
     "searchPlaceholder": "Search position or company…",
     "companyPlaceholder": "Search or type a new company",
@@ -170,8 +171,10 @@
     }
   },
   "nav": {
+    "dashboard": "Dashboard",
     "applications": "Applications",
-    "companies": "Companies"
+    "companies": "Companies",
+    "reminders": "Reminders"
   },
   "companies": {
     "title": "Companies",
@@ -247,16 +250,60 @@
     "newTitle": "New reminder",
     "created": "Reminder created",
     "empty": "No pending reminders for this application.",
+    "emptyList": "No reminders match these filters.",
+    "noApplication": "Not linked to an application",
     "complete": "Mark as done",
     "dismiss": "Dismiss",
     "overdue": "Overdue",
+    "applicationPlaceholder": "Search an application (optional)",
     "fields": {
       "title": "Title",
-      "dueAt": "Due date"
+      "dueAt": "Due date",
+      "application": "Application"
+    },
+    "filters": {
+      "status": "Status",
+      "statusOptions": {
+        "pending": "Pending",
+        "done": "Done",
+        "dismissed": "Dismissed",
+        "all": "All"
+      }
     },
     "validation": {
       "titleRequired": "Enter a title",
       "dueAtRequired": "Enter the due date"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "statusBreakdown": {
+      "title": "Applications by status"
+    },
+    "weeklyApplications": {
+      "title": "Applications sent per week"
+    },
+    "responseRate": {
+      "title": "Response rate",
+      "description": "{{reached}} of {{sent}} sent applications reached screening or beyond",
+      "insufficientData": "Not enough data: fewer than {{min}} applications sent ({{sent}})"
+    },
+    "upcomingInterviews": {
+      "title": "Upcoming interviews",
+      "empty": "No upcoming interviews.",
+      "more": "And {{count}} more"
+    },
+    "pendingReminders": {
+      "title": "Pending reminders",
+      "empty": "No pending or overdue reminders.",
+      "viewAll": "View all",
+      "more": "And {{count}} more"
+    },
+    "staleApplications": {
+      "title": "No activity",
+      "empty": "No application has gone more than {{days}} days without activity.",
+      "sinceDays": "No activity for {{days}} days",
+      "more": "And {{count}} more"
     }
   },
   "errors": {

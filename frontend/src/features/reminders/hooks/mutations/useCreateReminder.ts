@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { reminderKeys } from "../../reminder.keys";
 import { reminderService } from "../../services/reminder.service";
 import type { ReminderFormValues } from "../../schemas/reminder.schema";
+import { invalidateAfterReminderChange } from "./invalidate";
 
-export function useCreateReminder(applicationId: string | null) {
+export function useCreateReminder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (values: ReminderFormValues) => reminderService.create(applicationId, values),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: reminderKeys.all }),
+    mutationFn: (values: ReminderFormValues) => reminderService.create(values),
+    onSuccess: () => invalidateAfterReminderChange(queryClient),
   });
 }

@@ -9,6 +9,7 @@ from app.schemas.user import CurrentUser
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
 from app.services.company_service import CompanyService
+from app.services.dashboard_service import DashboardService
 from app.services.interview_service import InterviewService
 from app.services.reminder_service import ReminderService
 from app.services.user_service import UserService
@@ -44,6 +45,12 @@ def get_application_status_service(
     db: AsyncSession = Depends(get_db),
 ) -> ApplicationStatusService:
     return ApplicationStatusService(db)
+
+
+def get_dashboard_service(
+    db: AsyncSession = Depends(get_db),
+) -> DashboardService:
+    return DashboardService(db)
 
 
 def get_company_service(

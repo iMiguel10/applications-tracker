@@ -146,3 +146,48 @@ async def test_archive_is_idempotent(db_session: AsyncSession, user: CurrentUser
 
     assert first is not None
     assert second == first
+
+
+@pytest.mark.asyncio
+async def test_export_csv_includes_archived_and_a_header_row(
+    db_session: AsyncSession, user: CurrentUser
+):
+    company = await make_company(db_session, user.id, "Acme")
+    await make_application(
+        db_session, user.id, company, position_title="Backend Developer"
+    )
+    await make_application(
+        db_session,
+        user.id,
+        company,
+        position_title="Archivada",
+        archived_at=datetime.now(UTC),
+    )
+
+    csv_text = await ApplicationService(db_session).export_csv(user.id)
+    lines = csv_text.strip().splitlines()
+
+    assert lines[0] == (
+        "position_title,company,status,applied_at,work_mode,source,origin,"
+        "location,job_url,salary_min,salary_max,salary_currency,notes,"
+        "archived_at,created_at,updated_at"
+    )
+    assert len(lines) == 3
+    assert "Backend Developer,Acme,applied" in lines[1]
+    assert "Archivada,Acme,applied" in lines[2]
+
+
+@pytest.mark.asyncio
+async def test_export_csv_only_includes_the_users_own_applications(
+    db_session: AsyncSession, user: CurrentUser, other_user: CurrentUser
+):
+    await make_application(db_session, other_user.id, position_title="Ajena")
+
+    csv_text = await ApplicationService(db_session).export_csv(user.id)
+    header = (
+        "position_title,company,status,applied_at,work_mode,source,origin,"
+        "location,job_url,salary_min,salary_max,salary_currency,notes,"
+        "archived_at,created_at,updated_at"
+    )
+
+    assert csv_text.strip().splitlines() == [header]

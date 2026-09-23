@@ -1,4 +1,4 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,7 @@ from app.repositories.application_repository import (
     ApplicationSort,
 )
 from app.schemas.user import CurrentUser
-from tests.factories import make_application, make_company
+from tests.factories import make_application, make_company, make_status_change
 
 
 async def _titles(
@@ -170,3 +170,134 @@ async def test_sort_by_company_name_ignores_case(
         "beta",
         "Gamma",
     ]
+
+
+# --- Dashboard (F5) y exportación ------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_count_by_status_excludes_archived(
+    db_session: AsyncSession, user: CurrentUser
+):
+    await make_application(db_session, user.id, status="applied")
+    await make_application(db_session, user.id, status="applied")
+    await make_application(db_session, user.id, status="saved", applied_at=None)
+    await make_application(
+        db_session,
+        user.id,
+        status="applied",
+        archived_at=datetime.now(UTC),
+    )
+
+    rows = await ApplicationRepository(db_session).count_by_status(user.id)
+
+    assert {status: count for status, count in rows} == {"applied": 2, "saved": 1}
+
+
+@pytest.mark.asyncio
+async def test_applications_per_week_groups_by_iso_week_and_includes_archived(
+    db_session: AsyncSession, user: CurrentUser
+):
+    # Semana ISO del 2026-09-07 (lunes) al 2026-09-13 (domingo).
+    await make_application(db_session, user.id, applied_at=date(2026, 9, 7))
+    await make_application(
+        db_session,
+        user.id,
+        applied_at=date(2026, 9, 13),
+        archived_at=datetime.now(UTC),
+    )
+    # Semana siguiente: no debe mezclarse con la anterior.
+    await make_application(db_session, user.id, applied_at=date(2026, 9, 14))
+
+    rows = await ApplicationRepository(db_session).applications_per_week(
+        user.id, since=date(2026, 9, 7)
+    )
+
+    assert {(week.date(), count) for week, count in rows} == {
+        (date(2026, 9, 7), 2),
+        (date(2026, 9, 14), 1),
+    }
+
+
+@pytest.mark.asyncio
+async def test_response_rate_counts_only_sent_applications_that_reached_screening(
+    db_session: AsyncSession, user: CurrentUser
+):
+    reached = await make_application(db_session, user.id, status="applied")
+    await make_status_change(db_session, reached, to_status="screening")
+    # Llegó a screening y luego la rechazaron: sigue contando como "alcanzada".
+    await make_status_change(db_session, reached, to_status="rejected")
+
+    await make_application(db_session, user.id, status="applied")  # nunca respondió
+    await make_application(db_session, user.id, status="saved", applied_at=None)
+
+    sent, reached_count = await ApplicationRepository(db_session).response_rate_counts(
+        user.id, reached_statuses=["screening", "interviewing", "offer", "accepted"]
+    )
+
+    assert (sent, reached_count) == (2, 1)
+
+
+@pytest.mark.asyncio
+async def test_list_stale_only_active_waiting_applications_past_the_cutoff(
+    db_session: AsyncSession, user: CurrentUser
+):
+    now = datetime.now(UTC)
+    stale = await make_application(
+        db_session,
+        user.id,
+        position_title="Stale",
+        status="applied",
+        last_activity_at=now - timedelta(days=20),
+    )
+    await make_application(
+        db_session,
+        user.id,
+        position_title="Recent",
+        status="applied",
+        last_activity_at=now - timedelta(days=1),
+    )
+    await make_application(
+        db_session,
+        user.id,
+        position_title="Saved, not waiting",
+        status="saved",
+        applied_at=None,
+        last_activity_at=now - timedelta(days=20),
+    )
+    await make_application(
+        db_session,
+        user.id,
+        position_title="Archived",
+        status="applied",
+        last_activity_at=now - timedelta(days=20),
+        archived_at=now,
+    )
+
+    items, total = await ApplicationRepository(db_session).list_stale(
+        user.id,
+        statuses=["applied", "screening", "interviewing", "offer"],
+        before=now - timedelta(days=14),
+        limit=10,
+    )
+
+    assert total == 1
+    assert [item.id for item in items] == [stale.id]
+
+
+@pytest.mark.asyncio
+async def test_list_all_includes_archived_and_only_the_users_own(
+    db_session: AsyncSession, user: CurrentUser, other_user: CurrentUser
+):
+    await make_application(db_session, user.id, position_title="Activa")
+    await make_application(
+        db_session,
+        user.id,
+        position_title="Archivada",
+        archived_at=datetime.now(UTC),
+    )
+    await make_application(db_session, other_user.id, position_title="Ajena")
+
+    items = await ApplicationRepository(db_session).list_all(user.id)
+
+    assert {item.position_title for item in items} == {"Activa", "Archivada"}

@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.api.v1.deps import get_application_service, get_current_user
 from app.schemas.application import (
@@ -55,6 +55,31 @@ async def create_application(
     `applications_limit_reached` al superar 5 000 solicitudes.
     """
     return ApplicationRead.model_validate(await service.create(current_user.id, data))
+
+
+@router.get(
+    "/export",
+    summary="Exportar las solicitudes a CSV",
+    responses={
+        200: {
+            "description": "CSV con todas las solicitudes del usuario.",
+            "content": {"text/csv": {"schema": {"type": "string"}}},
+        }
+    },
+)
+async def export_applications(
+    current_user: CurrentUser = Depends(get_current_user),
+    service: ApplicationService = Depends(get_application_service),
+) -> Response:
+    """Vuelca todas las solicitudes del usuario a CSV (RF-70), archivadas
+    incluidas: es un volcado completo, no la vista filtrada del listado. Antes de
+    `/{application_id}` para que `export` no se intente leer como un UUID."""
+    content = await service.export_csv(current_user.id)
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="applications.csv"'},
+    )
 
 
 @router.get(

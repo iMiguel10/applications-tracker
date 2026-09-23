@@ -60,3 +60,4 @@ nav:
       - "0004 — Secuencia en el historial": decisiones/0004-secuencia-para-ordenar-el-historial.md
       - "0005 — Recordatorios sin página global en F4": decisiones/0005-recordatorios-sin-pagina-global-en-f4.md
       - "0006 — CI antes que F5": decisiones/0006-ci-antes-que-f5.md
+      - "0007 — Recordatorios globales y recharts": decisiones/0007-recordatorios-globales-y-recharts.md

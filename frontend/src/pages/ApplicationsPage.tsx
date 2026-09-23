@@ -1,11 +1,14 @@
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 
-import { buttonVariants } from "@/shared/components/ui/button";
+import { errorMessageKey } from "@/shared/lib/errors";
+import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Pagination } from "@/shared/components/common/Pagination";
 import { ApplicationFilters } from "@/features/applications/components/ApplicationFilters";
 import { ApplicationsTable } from "@/features/applications/components/ApplicationsTable";
+import { useExportApplications } from "@/features/applications/hooks/mutations/useExportApplications";
 import { useApplications } from "@/features/applications/hooks/queries/useApplications";
 import {
   hasActiveFilters,
@@ -21,6 +24,7 @@ export function ApplicationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const params = parseListParams(searchParams);
   const { data, isLoading, isError } = useApplications(params);
+  const exportCsv = useExportApplications();
 
   const change = (changes: Partial<ApplicationListParams>) =>
     setSearchParams(serializeListParams(updateListParams(params, changes)));
@@ -29,10 +33,24 @@ export function ApplicationsPage() {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">{t("applications.title")}</h1>
-        <Link to="/applications/new" className={buttonVariants()}>
-          <Plus />
-          {t("applications.new")}
-        </Link>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={exportCsv.isPending}
+            onClick={() =>
+              exportCsv.mutate(undefined, {
+                onError: (error) => toast.error(t(errorMessageKey(error))),
+              })
+            }
+          >
+            <Download />
+            {t("applications.export")}
+          </Button>
+          <Link to="/applications/new" className={buttonVariants()}>
+            <Plus />
+            {t("applications.new")}
+          </Link>
+        </div>
       </div>
 
       <ApplicationFilters params={params} onChange={change} />

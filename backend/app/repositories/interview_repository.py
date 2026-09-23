@@ -1,9 +1,13 @@
 import uuid
+from collections.abc import Sequence
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import Row, Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.interview import InterviewOutcome
 from app.models.application import Application
+from app.models.company import Company
 from app.models.interview import Interview
 
 
@@ -48,6 +52,48 @@ class InterviewRepository:
             .order_by(Interview.scheduled_at)
         )
         return list(result.all())
+
+    async def list_upcoming(
+        self, user_id: uuid.UUID, *, after: datetime, limit: int
+    ) -> Sequence[Row[tuple[Interview, Application, Company]]]:
+        """RF-63: próximas entrevistas del usuario (cualquier solicitud), con la
+        solicitud y la empresa para mostrarlas sin una consulta por fila.
+
+        Sin relación declarada `Interview.application` (no hace falta fuera de
+        aquí): se hace explícito con un `select` de las tres tablas.
+        """
+        result = await self.session.execute(
+            self._upcoming(user_id, after=after)
+            .order_by(Interview.scheduled_at.asc())
+            .limit(limit)
+        )
+        return result.all()
+
+    async def count_upcoming(self, user_id: uuid.UUID, *, after: datetime) -> int:
+        """Total de próximas entrevistas, sin el límite de `list_upcoming` (para el
+        "N más" del widget del dashboard)."""
+        total = await self.session.scalar(
+            select(func.count()).select_from(
+                self._upcoming(user_id, after=after)
+                .with_only_columns(Interview.id)
+                .subquery()
+            )
+        )
+        return total or 0
+
+    def _upcoming(
+        self, user_id: uuid.UUID, *, after: datetime
+    ) -> Select[tuple[Interview, Application, Company]]:
+        return (
+            select(Interview, Application, Company)
+            .join(Application, Application.id == Interview.application_id)
+            .join(Company, Company.id == Application.company_id)
+            .where(
+                Application.user_id == user_id,
+                Interview.scheduled_at >= after,
+                Interview.outcome == InterviewOutcome.PENDING.value,
+            )
+        )
 
     async def save(self, interview: Interview) -> Interview:
         await self.session.flush()

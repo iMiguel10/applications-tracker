@@ -69,3 +69,54 @@ async def test_delete_removes_only_that_interview(
 
     remaining = await repository.list_for_application(user.id, application.id)
     assert [interview.id for interview in remaining] == [keep.id]
+
+
+@pytest.mark.asyncio
+async def test_list_upcoming_excludes_past_and_resolved_interviews(
+    db_session: AsyncSession, user: CurrentUser, other_user: CurrentUser
+):
+    now = datetime.now(UTC)
+    application = await make_application(db_session, user.id)
+    upcoming = await make_interview(
+        db_session, application, scheduled_at=now + timedelta(days=2)
+    )
+    await make_interview(
+        db_session,
+        application,
+        scheduled_at=now - timedelta(days=1),
+        outcome="passed",
+    )  # ya pasó
+    await make_interview(
+        db_session,
+        application,
+        scheduled_at=now + timedelta(days=5),
+        outcome="cancelled",
+    )  # resuelta, aunque en el futuro
+    others_application = await make_application(db_session, other_user.id)
+    await make_interview(
+        db_session, others_application, scheduled_at=now + timedelta(days=1)
+    )
+
+    rows = await InterviewRepository(db_session).list_upcoming(
+        user.id, after=now, limit=10
+    )
+
+    assert [interview.id for interview, _application, _company in rows] == [upcoming.id]
+
+
+@pytest.mark.asyncio
+async def test_list_upcoming_orders_by_scheduled_at_and_respects_limit(
+    db_session: AsyncSession, user: CurrentUser
+):
+    now = datetime.now(UTC)
+    application = await make_application(db_session, user.id)
+    await make_interview(db_session, application, scheduled_at=now + timedelta(days=5))
+    sooner = await make_interview(
+        db_session, application, scheduled_at=now + timedelta(days=1)
+    )
+
+    rows = await InterviewRepository(db_session).list_upcoming(
+        user.id, after=now, limit=1
+    )
+
+    assert [interview.id for interview, _application, _company in rows] == [sooner.id]

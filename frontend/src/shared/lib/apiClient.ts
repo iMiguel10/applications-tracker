@@ -27,6 +27,14 @@ type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
  * y reintenta. Refrescar también aquí provocaría refrescos duplicados, que
  * SuperTokens interpreta como robo de token y revoca la sesión (invariante 10).
  */
+async function throwIfError(response: Response): Promise<void> {
+  if (response.ok) return;
+  const data = await response.json().catch(() => null);
+  // Los 422 de validación de FastAPI traen `detail` como lista y sin `code`.
+  const message = typeof data?.detail === "string" ? data.detail : response.statusText;
+  throw new ApiError(response.status, message, data?.code ?? null);
+}
+
 async function request<T>(path: string, { body, headers, ...init }: RequestOptions = {}): Promise<T> {
   const response = await fetch(`${API_URL}/api/v1${path}`, {
     ...init,
@@ -39,12 +47,7 @@ async function request<T>(path: string, { body, headers, ...init }: RequestOptio
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    // Los 422 de validación de FastAPI traen `detail` como lista y sin `code`.
-    const message = typeof data?.detail === "string" ? data.detail : response.statusText;
-    throw new ApiError(response.status, message, data?.code ?? null);
-  }
+  await throwIfError(response);
 
   if (response.status === 204) {
     return undefined as T;
@@ -53,8 +56,16 @@ async function request<T>(path: string, { body, headers, ...init }: RequestOptio
   return response.json() as Promise<T>;
 }
 
+/** Para descargas (RF-70): el cuerpo no es JSON, así que se salta `request`. */
+async function requestBlob(path: string): Promise<Blob> {
+  const response = await fetch(`${API_URL}/api/v1${path}`, { credentials: "include" });
+  await throwIfError(response);
+  return response.blob();
+}
+
 export const apiClient = {
   get: <T>(path: string, init?: RequestOptions) => request<T>(path, { ...init, method: "GET" }),
+  getBlob: (path: string) => requestBlob(path),
   post: <T>(path: string, body?: unknown, init?: RequestOptions) =>
     request<T>(path, { ...init, method: "POST", body }),
   put: <T>(path: string, body?: unknown, init?: RequestOptions) =>

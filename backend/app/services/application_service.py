@@ -1,3 +1,5 @@
+import csv
+import io
 import uuid
 from datetime import UTC, date, datetime
 from typing import Any, cast
@@ -176,6 +178,68 @@ class ApplicationService:
     async def _ensure_company(self, user_id: uuid.UUID, company_id: uuid.UUID) -> None:
         if await self.companies.get(user_id, company_id) is None:
             raise NotFoundError("Company")
+
+    async def export_csv(self, user_id: uuid.UUID) -> str:
+        """RF-70: todas las solicitudes del usuario, archivadas incluidas. Códigos
+        en crudo (no las etiquetas de la UI) para que el fichero sea estable y, en
+        el futuro, reimportable (`origin=csv_import`, evolución documentada `[C]`)."""
+        applications = await self.applications.list_all(user_id)
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(_CSV_HEADER)
+        for application in applications:
+            writer.writerow(_csv_row(application))
+        return buffer.getvalue()
+
+
+_CSV_HEADER = [
+    "position_title",
+    "company",
+    "status",
+    "applied_at",
+    "work_mode",
+    "source",
+    "origin",
+    "location",
+    "job_url",
+    "salary_min",
+    "salary_max",
+    "salary_currency",
+    "notes",
+    "archived_at",
+    "created_at",
+    "updated_at",
+]
+
+
+def _csv_row(application: Application) -> list[str]:
+    return [
+        application.position_title,
+        application.company.name,
+        application.status,
+        _iso(application.applied_at),
+        application.work_mode or "",
+        application.source or "",
+        application.origin,
+        application.location or "",
+        application.job_url or "",
+        _str_or_empty(application.salary_min),
+        _str_or_empty(application.salary_max),
+        application.salary_currency,
+        application.notes or "",
+        _iso(application.archived_at),
+        _iso(application.created_at),
+        _iso(application.updated_at),
+    ]
+
+
+def _iso(value: date | datetime | None) -> str:
+    return value.isoformat() if value is not None else ""
+
+
+def _str_or_empty(value: int | None) -> str:
+    return str(value) if value is not None else ""
 
 
 def _today_utc() -> date:

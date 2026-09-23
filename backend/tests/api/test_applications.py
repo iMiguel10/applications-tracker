@@ -174,3 +174,32 @@ async def test_delete_application(
 
     assert deleted.status_code == 204
     assert again.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_export_returns_a_csv_attachment(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    await make_application(db_session, user.id, position_title="Backend Developer")
+
+    response = await client.get("/api/v1/applications/export")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert response.headers["content-disposition"] == (
+        'attachment; filename="applications.csv"'
+    )
+    lines = response.text.strip().splitlines()
+    assert lines[0].startswith("position_title,company,status")
+    assert "Backend Developer" in lines[1]
+
+
+@pytest.mark.asyncio
+async def test_export_does_not_leak_another_users_applications(
+    client: AsyncClient, db_session: AsyncSession, other_user: CurrentUser
+):
+    await make_application(db_session, other_user.id, position_title="Ajena")
+
+    response = await client.get("/api/v1/applications/export")
+
+    assert len(response.text.strip().splitlines()) == 1  # solo la cabecera

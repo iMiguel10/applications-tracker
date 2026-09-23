@@ -1,14 +1,15 @@
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Row, Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
 from app.models.application import Application
+from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
 from app.repositories.search import LIKE_ESCAPE, contains_pattern
 
@@ -171,3 +172,111 @@ class ApplicationRepository:
     async def delete(self, application: Application) -> None:
         await self.session.delete(application)
         await self.session.flush()
+
+    # --- Dashboard (F5, RF-60…66) y exportación (RF-70) --------------------------
+
+    async def count_by_status(
+        self, user_id: uuid.UUID
+    ) -> Sequence[Row[tuple[str, int]]]:
+        """RF-60: recuento por estado, excluidas las archivadas."""
+        result = await self.session.execute(
+            select(Application.status, func.count())
+            .where(Application.user_id == user_id, Application.archived_at.is_(None))
+            .group_by(Application.status)
+        )
+        return result.all()
+
+    async def applications_per_week(
+        self, user_id: uuid.UUID, *, since: date
+    ) -> Sequence[Row[tuple[datetime, int]]]:
+        """RF-61: envíos agrupados por semana (incluye archivadas: es histórico, no
+        una foto del estado actual)."""
+        week_start = func.date_trunc("week", Application.applied_at)
+        result = await self.session.execute(
+            select(week_start, func.count())
+            .where(Application.user_id == user_id, Application.applied_at >= since)
+            .group_by(week_start)
+        )
+        return result.all()
+
+    async def response_rate_counts(
+        self, user_id: uuid.UUID, *, reached_statuses: Sequence[str]
+    ) -> tuple[int, int]:
+        """RF-62: (enviadas, que llegaron a `reached_statuses` o más allá). Incluye
+        archivadas, igual que `applications_per_week`."""
+        sent = select(Application.id).where(
+            Application.user_id == user_id, Application.applied_at.is_not(None)
+        )
+        sent_count = await self.session.scalar(
+            select(func.count()).select_from(sent.subquery())
+        )
+
+        reached = (
+            select(Application.id)
+            .join(
+                ApplicationStatusChange,
+                ApplicationStatusChange.application_id == Application.id,
+            )
+            .where(
+                Application.user_id == user_id,
+                Application.applied_at.is_not(None),
+                ApplicationStatusChange.to_status.in_(reached_statuses),
+            )
+            .distinct()
+        )
+        reached_count = await self.session.scalar(
+            select(func.count()).select_from(reached.subquery())
+        )
+        return sent_count or 0, reached_count or 0
+
+    async def list_stale(
+        self,
+        user_id: uuid.UUID,
+        *,
+        statuses: Sequence[str],
+        before: datetime,
+        limit: int,
+    ) -> tuple[Sequence[Application], int]:
+        """RF-64: activas, en un estado "de espera" y sin actividad desde `before`,
+        de la más a la menos desatendida.
+
+        Anotado como `Sequence`, no `list`: dentro de esta clase, `list` a secas
+        resolvería al método `list` de más arriba (Python evalúa las anotaciones en
+        el espacio de nombres de la clase), no al tipo integrado.
+        """
+        query = (
+            select(Application)
+            .join(
+                Company,
+                (Company.id == Application.company_id)
+                & (Company.user_id == Application.user_id),
+            )
+            .where(
+                Application.user_id == user_id,
+                Application.archived_at.is_(None),
+                Application.status.in_(statuses),
+                Application.last_activity_at < before,
+            )
+        )
+        total = await self.session.scalar(
+            select(func.count()).select_from(
+                query.with_only_columns(Application.id).subquery()
+            )
+        )
+        result = await self.session.scalars(
+            query.options(contains_eager(Application.company))
+            .order_by(Application.last_activity_at.asc(), Application.id)
+            .limit(limit)
+        )
+        return list(result.all()), total or 0
+
+    async def list_all(self, user_id: uuid.UUID) -> Sequence[Application]:
+        """RF-70: todas las solicitudes del usuario, archivadas incluidas. La
+        exportación es un volcado completo, no la vista filtrada del listado."""
+        result = await self.session.scalars(
+            select(Application)
+            .options(joinedload(Application.company))
+            .where(Application.user_id == user_id)
+            .order_by(Application.created_at)
+        )
+        return result.all()

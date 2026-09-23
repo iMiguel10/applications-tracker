@@ -256,6 +256,18 @@ No hay multi-tenancy de organizaciones, pero cada usuario es su propio inquilino
 2. `get_current_user` llama a `verify_session()`; sin sesión, responde 401 (el frontend redirige al login).
 3. Obtiene o crea el usuario propio (§4) y entrega un objeto `CurrentUser(id, supertokens_user_id)` al endpoint.
 
+### Dashboard (RF-60…66)
+
+`GET /dashboard` responde con `DashboardService.get`, que agrega en una sola llamada el recuento por estado (RF-60, con los 8 estados presentes aunque estén a cero), los envíos por semana de las últimas 12 semanas (RF-61), la tasa de respuesta (RF-62, `null` si `sent_count` no llega a `MIN_SAMPLE_FOR_RATE = 5`, por RF-66), las próximas entrevistas y los recordatorios pendientes o vencidos (RF-63) y las solicitudes sin actividad (RF-64, `STALE_AFTER_DAYS = 14`). Es de solo lectura: no abre ninguna transacción de escritura. Cada lista trae un vistazo de 5 elementos (`WIDGET_LIST_LIMIT`) y su total; el listado completo de recordatorios, con sus acciones, vive en `/reminders`.
+
+> **Por qué unas métricas incluyen las solicitudes archivadas y otras no.** Las que retratan el **estado actual** de la búsqueda (recuento por estado, solicitudes sin actividad) **excluyen** las archivadas: archivar es la señal explícita del usuario de "esto ya no lo sigo", y mezclarlo con lo activo distorsionaría la foto de ahora mismo. Las que retratan **lo ocurrido** (envíos por semana, tasa de respuesta) **incluyen** las archivadas: que una solicitud se archivara después no borra que se enviara esa semana o que la empresa llegara a responder. La regla está en el docstring de `app/domain/dashboard.py`.
+
+RNF-11 (menos de 500 ms con 2 000 solicitudes) se cumple con varias consultas ligeras, ya cubiertas por los índices de §5 (`(user_id, status)`, `(user_id, last_activity_at)`, etc.), no con una única consulta SQL monolítica ni una tabla materializada.
+
+### Exportar a CSV (RF-70)
+
+`GET /applications/export` vuelca **todas** las solicitudes del usuario a CSV, archivadas incluidas: es un volcado completo, no la vista filtrada y paginada del listado. Está registrado en el router **antes** de `GET /applications/{application_id}`, para que `export` no se intente interpretar como un UUID. Las columnas usan los **códigos en crudo** de los enumerados (`status`, `work_mode`, `source`, `origin`), no las etiquetas traducidas de la UI, para que el fichero sea estable entre idiomas y, en el futuro, reimportable (`origin=csv_import`, evolución documentada en la [especificación](../producto/especificacion.md#7-matriz-de-entradas), `[C]`).
+
 ## 9. Frontend
 
 - El patrón de feature se hereda de `frontend_gestpro`. La diferencia es que los `services/` llaman a la API mediante `shared/lib/apiClient.ts` (con `credentials: "include"` al integrar SuperTokens) en vez de a Supabase.
@@ -267,7 +279,9 @@ Las pantallas con dificultad real:
 2. **Detalle de la solicitud.** Muestra la línea de tiempo del historial, las entrevistas y los recordatorios de esa solicitud. El diálogo de cambio de estado ofrece **solo** las `allowed_transitions` que llegan de la API (A8). Tras cambiar o deshacer, se invalidan el detalle, el listado y el dashboard. Al crear una entrevista sobre una solicitud en `applied` o `screening`, un toast propone (sin forzar) pasarla a `interviewing` (RF-42): comprueba `allowed_transitions`, no una regla propia.
 3. **Formulario de solicitud.** Tiene un combobox de empresa que permite crear una nueva sin salir del formulario (RF-13).
 
-**Recordatorios, solo embebidos en F4.** El frontend de F4 no tiene ruta ni página propia para `reminders` (`GET /reminders` acepta un listado global, sin filtrar por solicitud, pero nada la usa todavía): se crean y se listan filtrados por `application_id` desde el detalle de la solicitud. Es una acotación de alcance deliberada, no un olvido: ver [decisión 0005](../decisiones/0005-recordatorios-sin-pagina-global-en-f4.md). Le falta a F5, junto con el dashboard: la ruta `/reminders`, su entrada en `shared/config/navigation.ts` y la vista que cruce recordatorios de varias solicitudes (y de ninguna). El backend ya está listo para esa vista sin cambios.
+**Recordatorios: embebidos en F4, globales desde F5.** En F4 el frontend no tenía ruta ni página propia para `reminders`: se creaban y se listaban solo filtrados por `application_id`, desde el detalle de la solicitud. Fue una acotación de alcance deliberada, no un olvido: ver [decisión 0005](../decisiones/0005-recordatorios-sin-pagina-global-en-f4.md). F5 cerró ese hueco: `pages/RemindersPage.tsx` en `/reminders`, con su entrada en `shared/config/navigation.ts`, filtro por estado (URL, A16), paginación y crear/completar/descartar — el mismo alcance que ya tenía la API desde F4, sin editar ni borrar. `ReminderFormDialog` pasó de exigir siempre un `applicationId` fijo a aceptarlo opcional: si se omite (el listado global), ofrece un `FormAsyncCombobox` para ligar una solicitud o dejarlo sin ligar (RF-50). El backend no cambió: ya estaba listo para esta vista desde F4.
+
+**El dashboard es la página de inicio desde F5.** `/` redirige a `/dashboard`, que sustituye a `/applications` como primera pantalla tras iniciar sesión.
 
 ## 10. Entorno y despliegue
 

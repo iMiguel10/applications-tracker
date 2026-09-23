@@ -9,11 +9,11 @@ export const reminderService = {
   list: (params: ReminderListParams) =>
     apiClient.get<Page<Reminder>>(`/reminders${toQueryString({ ...params })}`),
 
-  create: (applicationId: string | null, values: ReminderFormValues) =>
+  create: (values: ReminderFormValues) =>
     apiClient.post<Reminder>("/reminders", {
       title: values.title,
       due_at: datetimeLocalToIso(values.due_at),
-      application_id: applicationId,
+      application_id: values.application_id || null,
     }),
 
   complete: (id: string) => apiClient.post<Reminder>(`/reminders/${id}/complete`),

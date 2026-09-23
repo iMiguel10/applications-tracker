@@ -7,9 +7,11 @@ import { ApplicationEditPage } from "../pages/ApplicationEditPage";
 import { ApplicationNewPage } from "../pages/ApplicationNewPage";
 import { ApplicationsPage } from "../pages/ApplicationsPage";
 import { CompaniesPage } from "../pages/CompaniesPage";
+import { DashboardPage } from "../pages/DashboardPage";
 import { HealthPage } from "../pages/HealthPage";
 import { LoginPage } from "../pages/LoginPage";
 import { RegisterPage } from "../pages/RegisterPage";
+import { RemindersPage } from "../pages/RemindersPage";
 import { redirectIfAuthenticatedLoader, requireAuthLoader } from "./AuthLoaders";
 
 // Toda ruta con loader declara HydrateFallback: es lo que se pinta en la primera
@@ -36,12 +38,14 @@ export const router = createBrowserRouter([
     loader: requireAuthLoader,
     HydrateFallback: PageFallback,
     children: [
-      { path: "/", element: <Navigate to="/applications" replace /> },
+      { path: "/", element: <Navigate to="/dashboard" replace /> },
+      { path: "/dashboard", element: <DashboardPage /> },
       { path: "/applications", element: <ApplicationsPage /> },
       { path: "/applications/new", element: <ApplicationNewPage /> },
       { path: "/applications/:applicationId", element: <ApplicationDetailPage /> },
       { path: "/applications/:applicationId/edit", element: <ApplicationEditPage /> },
       { path: "/companies", element: <CompaniesPage /> },
+      { path: "/reminders", element: <RemindersPage /> },
     ],
   },
 ]);

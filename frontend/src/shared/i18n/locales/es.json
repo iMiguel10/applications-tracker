@@ -42,6 +42,7 @@
     "created": "Solicitud creada",
     "updated": "Solicitud actualizada",
     "deleted": "Solicitud borrada",
+    "export": "Exportar CSV",
     "empty": "Todavía no hay solicitudes. Crea la primera con «Nueva solicitud».",
     "searchPlaceholder": "Buscar puesto o empresa…",
     "companyPlaceholder": "Busca o escribe una empresa nueva",
@@ -170,8 +171,10 @@
     }
   },
   "nav": {
+    "dashboard": "Dashboard",
     "applications": "Solicitudes",
-    "companies": "Empresas"
+    "companies": "Empresas",
+    "reminders": "Recordatorios"
   },
   "companies": {
     "title": "Empresas",
@@ -247,16 +250,60 @@
     "newTitle": "Nuevo recordatorio",
     "created": "Recordatorio creado",
     "empty": "No hay recordatorios pendientes para esta solicitud.",
+    "emptyList": "No hay recordatorios con estos filtros.",
+    "noApplication": "Sin solicitud asociada",
     "complete": "Marcar como hecho",
     "dismiss": "Descartar",
     "overdue": "Vencido",
+    "applicationPlaceholder": "Buscar una solicitud (opcional)",
     "fields": {
       "title": "Título",
-      "dueAt": "Fecha límite"
+      "dueAt": "Fecha límite",
+      "application": "Solicitud"
+    },
+    "filters": {
+      "status": "Estado",
+      "statusOptions": {
+        "pending": "Pendientes",
+        "done": "Hechos",
+        "dismissed": "Descartados",
+        "all": "Todos"
+      }
     },
     "validation": {
       "titleRequired": "Indica un título",
       "dueAtRequired": "Indica la fecha límite"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "statusBreakdown": {
+      "title": "Solicitudes por estado"
+    },
+    "weeklyApplications": {
+      "title": "Envíos por semana"
+    },
+    "responseRate": {
+      "title": "Tasa de respuesta",
+      "description": "{{reached}} de {{sent}} solicitudes enviadas llegaron a selección o más allá",
+      "insufficientData": "Datos insuficientes: menos de {{min}} solicitudes enviadas ({{sent}})"
+    },
+    "upcomingInterviews": {
+      "title": "Próximas entrevistas",
+      "empty": "No hay entrevistas próximas.",
+      "more": "Y {{count}} más"
+    },
+    "pendingReminders": {
+      "title": "Recordatorios pendientes",
+      "empty": "No hay recordatorios pendientes ni vencidos.",
+      "viewAll": "Ver todos",
+      "more": "Y {{count}} más"
+    },
+    "staleApplications": {
+      "title": "Sin actividad",
+      "empty": "Ninguna solicitud lleva más de {{days}} días sin actividad.",
+      "sinceDays": "Sin actividad desde hace {{days}} días",
+      "more": "Y {{count}} más"
     }
   },
   "errors": {

@@ -5,13 +5,21 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { errorMessageKey } from "@/shared/lib/errors";
-import { FormActions, FormInput } from "@/shared/components/form";
+import {
+  type AsyncComboboxOption,
+  FormActions,
+  FormAsyncCombobox,
+  FormInput,
+} from "@/shared/components/form";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
+import { applicationKeys } from "@/features/applications/application.keys";
+import { DEFAULT_LIST_PARAMS } from "@/features/applications/lib/listParams";
+import { applicationService } from "@/features/applications/services/application.service";
 import {
   emptyReminderForm,
   reminderSchema,
@@ -19,9 +27,23 @@ import {
 } from "../schemas/reminder.schema";
 import { useCreateReminder } from "../hooks/mutations/useCreateReminder";
 
+const APPLICATION_OPTIONS_KEY = [...applicationKeys.all, "options"] as const;
+
+async function searchApplications(q: string): Promise<AsyncComboboxOption[]> {
+  const page = await applicationService.list({ ...DEFAULT_LIST_PARAMS, limit: 20, q });
+  return page.items.map((application) => ({
+    value: application.id,
+    label: `${application.position_title} · ${application.company.name}`,
+  }));
+}
+
 interface ReminderFormDialogProps {
-  /** Solicitud a la que queda ligado el recordatorio (RF-50). `null`: sin ligar. */
-  applicationId: string | null;
+  /**
+   * Solicitud a la que queda ligado el recordatorio (RF-50). Fija (el detalle de
+   * la solicitud, F4) si se indica; si se omite, el formulario deja elegir una o
+   * dejarlo sin ligar (el listado global, F5).
+   */
+  applicationId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -32,7 +54,7 @@ export function ReminderFormDialog({
   onOpenChange,
 }: ReminderFormDialogProps) {
   const { t } = useTranslation();
-  const create = useCreateReminder(applicationId);
+  const create = useCreateReminder();
 
   const form = useForm<ReminderFormValues>({
     resolver: zodResolver(reminderSchema),
@@ -40,8 +62,10 @@ export function ReminderFormDialog({
   });
 
   useEffect(() => {
-    if (open) form.reset(emptyReminderForm);
-  }, [open, form]);
+    if (open) {
+      form.reset({ ...emptyReminderForm, application_id: applicationId ?? "" });
+    }
+  }, [open, applicationId, form]);
 
   const onSubmit = (values: ReminderFormValues) =>
     create.mutate(values, {
@@ -66,6 +90,16 @@ export function ReminderFormDialog({
             type="datetime-local"
             label={t("reminders.fields.dueAt")}
           />
+          {applicationId === undefined && (
+            <FormAsyncCombobox
+              form={form}
+              name="application_id"
+              label={t("reminders.fields.application")}
+              queryKey={APPLICATION_OPTIONS_KEY}
+              query={searchApplications}
+              placeholder={t("reminders.applicationPlaceholder")}
+            />
+          )}
           <FormActions
             loading={create.isPending}
             submitLabel={t("common.save")}

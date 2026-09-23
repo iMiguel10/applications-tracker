@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     application_status_changes,
     applications,
     companies,
+    dashboard,
     health,
     interviews,
     me,
@@ -34,5 +35,6 @@ protected.include_router(applications.router)
 protected.include_router(application_status_changes.router)
 protected.include_router(interviews.router)
 protected.include_router(reminders.router)
+protected.include_router(dashboard.router)
 
 router.include_router(protected)

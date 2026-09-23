@@ -46,4 +46,6 @@ export const applicationService = {
   unarchive: (id: string) => apiClient.post<Application>(`/applications/${id}/unarchive`),
 
   remove: (id: string) => apiClient.delete<void>(`/applications/${id}`),
+
+  exportCsv: () => apiClient.getBlob("/applications/export"),
 };

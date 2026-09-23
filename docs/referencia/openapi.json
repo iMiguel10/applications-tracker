@@ -1130,6 +1130,49 @@
         }
       }
     },
+    "/api/v1/applications/export": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Exportar las solicitudes a CSV",
+        "description": "Vuelca todas las solicitudes del usuario a CSV (RF-70), archivadas\nincluidas: es un volcado completo, no la vista filtrada del listado. Antes de\n`/{application_id}` para que `export` no se intente leer como un UUID.",
+        "operationId": "export_applications_api_v1_applications_export_get",
+        "responses": {
+          "200": {
+            "description": "CSV con todas las solicitudes del usuario.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/applications/{application_id}": {
       "get": {
         "tags": [
@@ -2477,6 +2520,46 @@
           }
         }
       }
+    },
+    "/api/v1/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Ver el dashboard",
+        "description": "Métricas del usuario en una sola petición (RNF-11): recuento de solicitudes\npor estado (RF-60), envíos por semana en las últimas 12 semanas (RF-61), tasa\nde respuesta (RF-62, `null` con menos de 5 solicitudes enviadas por RF-66),\npróximas entrevistas y recordatorios pendientes o vencidos (RF-63), y\nsolicitudes sin actividad (RF-64). Cada lista trae un vistazo (5 elementos) y\nsu total; el listado completo de recordatorios vive en `GET /reminders`.",
+        "operationId": "get_dashboard_api_v1_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -2936,6 +3019,37 @@
           "created_at"
         ],
         "title": "ApplicationStatusChangeRead"
+      },
+      "ApplicationSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position_title": {
+            "type": "string",
+            "title": "Position Title",
+            "examples": [
+              "Backend Developer"
+            ]
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanySummary"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position_title",
+          "company",
+          "status"
+        ],
+        "title": "ApplicationSummary",
+        "description": "Lo mínimo para identificar una solicitud desde un widget del dashboard; el\ndetalle completo está a un clic (RF-23)."
       },
       "ApplicationUpdate": {
         "properties": {
@@ -3446,6 +3560,82 @@
         "type": "object",
         "title": "CompanyUpdate",
         "description": "Actualización parcial: solo se modifican los campos enviados. Enviar `null`\nvacía un campo opcional."
+      },
+      "DashboardRead": {
+        "properties": {
+          "status_counts": {
+            "items": {
+              "$ref": "#/components/schemas/StatusCount"
+            },
+            "type": "array",
+            "title": "Status Counts"
+          },
+          "applications_per_week": {
+            "items": {
+              "$ref": "#/components/schemas/WeeklyApplications"
+            },
+            "type": "array",
+            "title": "Applications Per Week"
+          },
+          "response_rate": {
+            "$ref": "#/components/schemas/ResponseRate"
+          },
+          "upcoming_interviews": {
+            "items": {
+              "$ref": "#/components/schemas/UpcomingInterview"
+            },
+            "type": "array",
+            "title": "Upcoming Interviews"
+          },
+          "upcoming_interviews_total": {
+            "type": "integer",
+            "title": "Upcoming Interviews Total",
+            "description": "Total de próximas entrevistas; la lista solo trae un vistazo."
+          },
+          "pending_reminders": {
+            "items": {
+              "$ref": "#/components/schemas/ReminderRead"
+            },
+            "type": "array",
+            "title": "Pending Reminders"
+          },
+          "pending_reminders_total": {
+            "type": "integer",
+            "title": "Pending Reminders Total",
+            "description": "Total de recordatorios pendientes o vencidos; la lista solo trae un vistazo. El listado completo, con acciones, vive en /reminders."
+          },
+          "stale_applications": {
+            "items": {
+              "$ref": "#/components/schemas/StaleApplication"
+            },
+            "type": "array",
+            "title": "Stale Applications"
+          },
+          "stale_applications_total": {
+            "type": "integer",
+            "title": "Stale Applications Total",
+            "description": "Total de solicitudes sin actividad; la lista solo trae un vistazo."
+          },
+          "stale_after_days": {
+            "type": "integer",
+            "title": "Stale After Days",
+            "description": "Días sin actividad a partir de los cuales una solicitud entra en `stale_applications` (RF-64)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status_counts",
+          "applications_per_week",
+          "response_rate",
+          "upcoming_interviews",
+          "upcoming_interviews_total",
+          "pending_reminders",
+          "pending_reminders_total",
+          "stale_applications",
+          "stale_applications_total",
+          "stale_after_days"
+        ],
+        "title": "DashboardRead"
       },
       "ErrorResponse": {
         "properties": {
@@ -4152,6 +4342,80 @@
         ],
         "title": "ReminderStatus"
       },
+      "ResponseRate": {
+        "properties": {
+          "sent_count": {
+            "type": "integer",
+            "title": "Sent Count"
+          },
+          "reached_count": {
+            "type": "integer",
+            "title": "Reached Count"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate",
+            "description": "Proporción entre 0 y 1, o `null` si `sent_count` es demasiado pequeño para ser representativo."
+          }
+        },
+        "type": "object",
+        "required": [
+          "sent_count",
+          "reached_count",
+          "rate"
+        ],
+        "title": "ResponseRate",
+        "description": "RF-62 y RF-66: siempre se indica sobre cuántas solicitudes se calcula, y\n`rate` es `null` con una base menor que `MIN_SAMPLE_FOR_RATE` (RF-66)."
+      },
+      "StaleApplication": {
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/ApplicationSummary"
+          },
+          "last_activity_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Activity At"
+          },
+          "days_since_activity": {
+            "type": "integer",
+            "title": "Days Since Activity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application",
+          "last_activity_at",
+          "days_since_activity"
+        ],
+        "title": "StaleApplication",
+        "description": "RF-64."
+      },
+      "StatusCount": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "count"
+        ],
+        "title": "StatusCount",
+        "description": "RF-60."
+      },
       "UnauthorizedError": {
         "properties": {
           "message": {
@@ -4166,6 +4430,53 @@
         ],
         "title": "UnauthorizedError",
         "description": "Respuesta 401 de SuperTokens: no hay sesión, o el token ha caducado o es inválido."
+      },
+      "UpcomingInterview": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At"
+          },
+          "interview_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterviewType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterviewFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "application": {
+            "$ref": "#/components/schemas/ApplicationSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "scheduled_at",
+          "interview_type",
+          "format",
+          "application"
+        ],
+        "title": "UpcomingInterview",
+        "description": "RF-63."
       },
       "ValidationError": {
         "properties": {
@@ -4206,6 +4517,26 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WeeklyApplications": {
+        "properties": {
+          "week_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Week Start"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week_start",
+          "count"
+        ],
+        "title": "WeeklyApplications",
+        "description": "RF-61. `week_start` es el lunes de esa semana ISO."
       },
       "WorkMode": {
         "type": "string",
