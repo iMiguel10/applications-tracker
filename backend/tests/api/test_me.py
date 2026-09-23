@@ -50,9 +50,7 @@ async def test_updating_preferences_only_changes_sent_fields(
     first = await client.patch("/api/v1/me/preferences", json={"language": "en"})
     assert first.json() == {"language": "en", "stale_after_days": 14}
 
-    second = await client.patch(
-        "/api/v1/me/preferences", json={"stale_after_days": 30}
-    )
+    second = await client.patch("/api/v1/me/preferences", json={"stale_after_days": 30})
     assert second.json() == {"language": "en", "stale_after_days": 30}
 
 

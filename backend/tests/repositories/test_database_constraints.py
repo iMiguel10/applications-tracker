@@ -276,9 +276,7 @@ async def test_unknown_language_preference_is_rejected(db_session: AsyncSession)
 @pytest.mark.asyncio
 async def test_stale_after_days_out_of_range_is_rejected(db_session: AsyncSession):
     with pytest.raises(IntegrityError):
-        db_session.add(
-            User(supertokens_user_id="st-bad-threshold", stale_after_days=0)
-        )
+        db_session.add(User(supertokens_user_id="st-bad-threshold", stale_after_days=0))
         await db_session.flush()
     await db_session.rollback()
     await db_session.rollback()

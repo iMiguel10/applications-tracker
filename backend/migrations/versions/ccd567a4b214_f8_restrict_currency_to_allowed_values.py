@@ -23,7 +23,9 @@ _CURRENCIES = "'EUR', 'USD', 'GBP', 'CHF'"
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.drop_constraint(op.f("ck_applications_salary_currency_iso"), "applications", type_="check")
+    op.drop_constraint(
+        op.f("ck_applications_salary_currency_iso"), "applications", type_="check"
+    )
     op.create_check_constraint(
         op.f("ck_applications_salary_currency"),
         "applications",
@@ -33,7 +35,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint(op.f("ck_applications_salary_currency"), "applications", type_="check")
+    op.drop_constraint(
+        op.f("ck_applications_salary_currency"), "applications", type_="check"
+    )
     op.create_check_constraint(
         op.f("ck_applications_salary_currency_iso"),
         "applications",
