@@ -5,14 +5,18 @@ fallo apunte a lo que se prueba y no a la preparación.
 """
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.application import Application
+from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
 from app.repositories.application_repository import ApplicationRepository
+from app.repositories.application_status_change_repository import (
+    ApplicationStatusChangeRepository,
+)
 from app.repositories.company_repository import CompanyRepository
 
 
@@ -32,12 +36,44 @@ async def make_application(
     company: Company | None = None,
     **fields: Any,
 ) -> Application:
+    """Crea una solicitud con su cambio inicial de historial (from_status NULL),
+    igual que ApplicationService.create (invariante 4)."""
     company = company or await make_company(session, user_id)
     values: dict[str, Any] = {
         "position_title": "Backend Developer",
         "status": "applied",
         "applied_at": date(2026, 9, 1),
     } | fields
-    return await ApplicationRepository(session).add(
+    application = await ApplicationRepository(session).add(
         Application(user_id=user_id, company_id=company.id, **values)
+    )
+    await make_status_change(
+        session, application, from_status=None, to_status=values["status"]
+    )
+    return application
+
+
+async def make_status_change(
+    session: AsyncSession,
+    application: Application,
+    to_status: str,
+    from_status: str | None = "",
+    changed_at: datetime | None = None,
+    note: str | None = None,
+) -> ApplicationStatusChange:
+    """Añade un cambio al historial de `application` sin pasar por
+    ApplicationStatusService (para preparar un historial concreto en el test).
+
+    `from_status=""` (el valor por defecto, distinto de None) toma el estado
+    actual de `application` como origen; pásalo explícitamente a None para el
+    cambio inicial.
+    """
+    return await ApplicationStatusChangeRepository(session).add(
+        ApplicationStatusChange(
+            application_id=application.id,
+            from_status=application.status if from_status == "" else from_status,
+            to_status=to_status,
+            changed_at=changed_at or datetime.now(UTC),
+            note=note,
+        )
     )

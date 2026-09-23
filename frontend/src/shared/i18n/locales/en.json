@@ -19,6 +19,7 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
+    "view": "View details",
     "selectDate": "Pick a date",
     "noResults": "No results with these filters.",
     "createOption": "Create “{{label}}”",
@@ -53,11 +54,22 @@
     "deleteTitle": "Delete the application?",
     "deleteConfirm": "It will be deleted for good. To just hide it from the list, archive it.",
     "timestamps": "Created {{created}} · updated {{updated}}",
+    "changeStatus": "Change status",
+    "changeStatusTitle": "Change the application's status",
+    "changedAtNow": "Now",
+    "statusChanged": "Status updated",
+    "history": "Status history",
+    "undoLast": "Undo last change",
+    "undoLastTitle": "Undo the last status change?",
+    "undoLastConfirm": "That change will be removed from the history and the application will go back to its previous status.",
+    "statusChangeUndone": "Status change undone",
     "fields": {
       "company": "Company",
       "position": "Position",
       "status": "Status",
       "initialStatus": "Status",
+      "newStatus": "New status",
+      "changedAt": "When it happened",
       "appliedAt": "Applied on",
       "location": "Location",
       "workMode": "Work mode",
@@ -127,7 +139,8 @@
       "companyRequired": "Choose or create a company",
       "positionRequired": "Enter the position",
       "salaryNumber": "Whole numbers only",
-      "currency": "3-letter code, e.g. EUR"
+      "currency": "3-letter code, e.g. EUR",
+      "statusRequired": "Choose a status"
     }
   },
   "auth": {
@@ -195,6 +208,10 @@
     "applied_at_required": "A sent application needs an application date",
     "name_required": "The name is required",
     "position_title_required": "The position is required",
-    "company_required": "The company is required"
+    "company_required": "The company is required",
+    "invalid_transition": "That status change is not allowed",
+    "cannot_undo_initial_change": "Cannot undo the change that created the application",
+    "changed_at_in_future": "The date cannot be in the future",
+    "changed_at_before_last_change": "The date cannot be earlier than the last change"
   }
 }

@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { Archive, ArchiveRestore, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  ExternalLink,
+  Pencil,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -9,7 +16,9 @@ import { formatDateOnly, formatDateTime, formatSalaryRange } from "@/shared/lib/
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { ApplicationStatusBadge } from "@/features/applications/components/ApplicationStatusBadge";
+import { ChangeStatusDialog } from "@/features/applications/components/ChangeStatusDialog";
 import { DeleteApplicationDialog } from "@/features/applications/components/DeleteApplicationDialog";
+import { StatusHistoryTimeline } from "@/features/applications/components/StatusHistoryTimeline";
 import { useApplication } from "@/features/applications/hooks/queries/useApplication";
 import { useSetArchived } from "@/features/applications/hooks/mutations/useSetArchived";
 
@@ -29,6 +38,7 @@ export function ApplicationDetailPage() {
   const { data: application, isLoading, isError } = useApplication(applicationId);
   const setArchived = useSetArchived();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [changeStatusOpen, setChangeStatusOpen] = useState(false);
 
   if (isLoading) return <p className="text-muted-foreground">{t("common.loading")}</p>;
   if (isError || !application) return <p className="text-destructive">{t("errors.not_found")}</p>;
@@ -60,6 +70,12 @@ export function ApplicationDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {application.allowed_transitions.length > 0 && (
+            <Button variant="outline" onClick={() => setChangeStatusOpen(true)}>
+              <RefreshCw />
+              {t("applications.changeStatus")}
+            </Button>
+          )}
           <Link
             to={`/applications/${application.id}/edit`}
             className={buttonVariants({ variant: "outline" })}
@@ -129,6 +145,13 @@ export function ApplicationDetailPage() {
         })}
       </p>
 
+      <StatusHistoryTimeline applicationId={application.id} />
+
+      <ChangeStatusDialog
+        application={application}
+        open={changeStatusOpen}
+        onOpenChange={setChangeStatusOpen}
+      />
       <DeleteApplicationDialog
         application={application}
         open={deleteOpen}

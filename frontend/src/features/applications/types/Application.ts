@@ -43,6 +43,10 @@ export interface Application {
   source: ApplicationSource | null;
   origin: "manual";
   status: ApplicationStatus;
+  /** Transiciones disponibles desde el estado actual (decisión A8): la única
+   * fuente de verdad de qué ofrecer en el diálogo de cambio de estado. Vacío en
+   * un estado final. */
+  allowed_transitions: ApplicationStatus[];
   /** Fecha sin hora, "yyyy-MM-dd". */
   applied_at: string | null;
   salary_min: number | null;

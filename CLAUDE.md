@@ -6,14 +6,13 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-22): F2 terminada.**
+> **Estado (2026-09-23): F3 terminada.**
 >
 > - **Existe:**
 >     - Entorno Docker, autenticación (F1) y documentación OpenAPI con referencia versionada.
 >     - F2: empresas y solicitudes completas, con CRUD, filtros, búsqueda, orden y paginación en la URL, archivado, cuotas y aislamiento entre usuarios (T2, T3), tanto en backend como en frontend.
->     - `domain/` solo con enums; no hay tabla de transiciones todavía.
-> - **El estado de una solicitud no se puede cambiar todavía:** se fija al crearla (`saved`/`applied`). Cambios de estado, historial y deshacer son F3. Hasta entonces **la invariante 5 no aplica**, porque no existe tabla de historial; la migración de F3 creará el cambio inicial de cada solicitud existente.
-> - **No existe todavía:** historial de estados, entrevistas, recordatorios ni dashboard. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
+>     - F3: ciclo de vida completo. `domain/application_status.py` con la tabla `ALLOWED_TRANSITIONS`; `application_status_changes` (historial append-only, `seq` como orden real); `ApplicationStatusService` (cambiar y deshacer, con `SELECT … FOR UPDATE`); `allowed_transitions` en `ApplicationRead`; en el frontend, el diálogo de cambio de estado, la línea de tiempo del historial y deshacer.
+> - **No existe todavía:** entrevistas, recordatorios ni dashboard (F4 y F5). Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
 
 ## 2. Documentación
 
@@ -113,7 +112,7 @@ Violarlas es un fallo, no una diferencia de criterio.
 2. Un recurso de otro usuario responde **404**, nunca 403.
 3. `applications.status` es igual al `to_status` del cambio del historial con el **`seq` más alto** ([0004](docs/decisiones/0004-secuencia-para-ordenar-el-historial.md)). Nunca se ordena por fechas.
 4. El estado solo cambia vía `ApplicationStatusService`, con `SELECT … FOR UPDATE`. `PATCH /applications/{id}` no acepta `status`.
-5. Toda solicitud tiene al menos un cambio en su historial (el inicial). *Desde F3: en F2 aún no existe el historial.*
+5. Toda solicitud tiene al menos un cambio en su historial (el inicial).
 6. Las transacciones las confirma el service; un repository nunca hace `commit`.
 7. Las reglas de transición y la política de contraseñas viven **solo en el backend**. El frontend usa `allowed_transitions` y los `FIELD_ERROR` de SuperTokens.
 8. Todo endpoint protegido depende de `get_current_user`; ninguno usa `verify_session()` directamente.
@@ -145,6 +144,7 @@ Violarlas es un fallo, no una diferencia de criterio.
 - **Modelo nuevo invisible para Alembic.** Si no se importa en `app/models/__init__.py`, autogenerate no lo ve y genera un `drop_table`.
 - **Tests y `commit`.** No abras sesiones propias en los tests: usa el fixture `db_session` (transacción externa + savepoints) o `client`, que sustituye `get_db` por esa sesión. Una sesión aparte confirmaría datos de verdad en `db-test`.
 - **shadcn genera `import { cn } from "cn"`.** Es el paquete oficial `shadcn-ui/cn`; `@/shared/lib/utils` lo reexporta. No lo cambies a mano en los componentes generados.
+- **`changed_at` exige zona horaria, pero el selector de fecha solo captura un día.** El schema (`AwareDatetime`) rechaza con 422 un datetime "naive", y `FormDatePicker` (heredado de F2) solo devuelve `"yyyy-MM-dd"`. Combinar ese día con medianoche local haría que elegir "hoy" cayera antes del último cambio ya registrado (que tiene la hora real de "ahora") y el backend lo rechazaría con 422 `changed_at_before_last_change`, de forma confusa para quien solo quería decir "ahora mismo". `applicationStatusChangeService.toChangedAt()` combina el día elegido con la **hora local actual**, no medianoche; probado en `applicationStatusChange.service.test.ts`.
 
 ## 9. Agentes
 
@@ -163,7 +163,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F0 | Esqueleto vertical desechable: crear y listar solicitudes sin auth, atravesando todas las capas |
 | ✔ F1 | SuperTokens (core + BD), `users`, `get_current_user`, router protegido, login y registro, rutas protegidas |
 | ✔ F2 | Empresas y solicitudes: CRUD, filtros, paginación, archivado, pruebas de aislamiento, OpenAPI en docs |
-| F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |
+| ✔ F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |
 | F4 | Entrevistas y recordatorios (`in_app` + `NotificationChannel`) |
 | F5 | Dashboard y exportación CSV |
 | F6 | CI con GitHub Actions |

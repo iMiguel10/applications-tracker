@@ -6,4 +6,5 @@ export const applicationKeys = {
   list: (params: ApplicationListParams) => [...applicationKeys.lists(), params] as const,
   details: () => [...applicationKeys.all, "detail"] as const,
   detail: (id: string) => [...applicationKeys.details(), id] as const,
+  history: (id: string) => [...applicationKeys.detail(id), "history"] as const,
 };

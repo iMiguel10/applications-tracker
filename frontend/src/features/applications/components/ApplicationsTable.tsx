@@ -1,8 +1,9 @@
-import { Archive } from "lucide-react";
+import { Archive, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { formatDateOnly } from "@/shared/lib/format";
+import { buttonVariants } from "@/shared/components/ui/button";
 import {
   Table,
   TableBody,
@@ -26,6 +27,7 @@ export function ApplicationsTable({ applications }: { applications: Application[
           <TableHead>{t("applications.fields.status")}</TableHead>
           <TableHead>{t("applications.fields.appliedAt")}</TableHead>
           <TableHead>{t("applications.fields.workMode")}</TableHead>
+          <TableHead className="w-12" />
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -49,6 +51,15 @@ export function ApplicationsTable({ applications }: { applications: Application[
             <TableCell>{formatDateOnly(application.applied_at, i18n.language)}</TableCell>
             <TableCell>
               {application.work_mode ? t(`applications.workMode.${application.work_mode}`) : "—"}
+            </TableCell>
+            <TableCell>
+              <Link
+                to={`/applications/${application.id}`}
+                className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+                aria-label={t("common.view")}
+              >
+                <Eye />
+              </Link>
             </TableCell>
           </TableRow>
         ))}

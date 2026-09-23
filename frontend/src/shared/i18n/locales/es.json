@@ -19,6 +19,7 @@
     "cancel": "Cancelar",
     "edit": "Editar",
     "delete": "Borrar",
+    "view": "Ver detalle",
     "selectDate": "Elegir fecha",
     "noResults": "No hay resultados con estos filtros.",
     "createOption": "Crear «{{label}}»",
@@ -53,11 +54,22 @@
     "deleteTitle": "¿Borrar la solicitud?",
     "deleteConfirm": "Se borrará definitivamente. Si solo quieres ocultarla del listado, archívala.",
     "timestamps": "Creada el {{created}} · actualizada el {{updated}}",
+    "changeStatus": "Cambiar estado",
+    "changeStatusTitle": "Cambiar el estado de la solicitud",
+    "changedAtNow": "Ahora",
+    "statusChanged": "Estado actualizado",
+    "history": "Historial de estados",
+    "undoLast": "Deshacer último cambio",
+    "undoLastTitle": "¿Deshacer el último cambio de estado?",
+    "undoLastConfirm": "Se eliminará ese cambio del historial y la solicitud volverá al estado anterior.",
+    "statusChangeUndone": "Cambio de estado deshecho",
     "fields": {
       "company": "Empresa",
       "position": "Puesto",
       "status": "Estado",
       "initialStatus": "Estado",
+      "newStatus": "Nuevo estado",
+      "changedAt": "Cuándo ocurrió",
       "appliedAt": "Fecha de envío",
       "location": "Ubicación",
       "workMode": "Modalidad",
@@ -127,7 +139,8 @@
       "companyRequired": "Elige o crea una empresa",
       "positionRequired": "Indica el puesto",
       "salaryNumber": "Solo números enteros",
-      "currency": "Código de 3 letras, p. ej. EUR"
+      "currency": "Código de 3 letras, p. ej. EUR",
+      "statusRequired": "Elige un estado"
     }
   },
   "auth": {
@@ -195,6 +208,10 @@
     "applied_at_required": "Una solicitud enviada necesita fecha de envío",
     "name_required": "El nombre es obligatorio",
     "position_title_required": "El puesto es obligatorio",
-    "company_required": "La empresa es obligatoria"
+    "company_required": "La empresa es obligatoria",
+    "invalid_transition": "Ese cambio de estado no está permitido",
+    "cannot_undo_initial_change": "No se puede deshacer el cambio que creó la solicitud",
+    "changed_at_in_future": "La fecha no puede ser futura",
+    "changed_at_before_last_change": "La fecha no puede ser anterior al último cambio"
   }
 }

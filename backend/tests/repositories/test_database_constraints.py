@@ -4,14 +4,18 @@ Estas pruebas saltan los services a propósito: insertan directamente con los
 repositories para comprobar que la BD es la última línea de defensa.
 """
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.application import Application
+from app.models.application_status_change import ApplicationStatusChange
 from app.repositories.application_repository import ApplicationRepository
+from app.repositories.application_status_change_repository import (
+    ApplicationStatusChangeRepository,
+)
 from app.schemas.user import CurrentUser
 from tests.factories import make_application, make_company
 
@@ -135,3 +139,40 @@ async def test_currency_must_be_iso_code(db_session: AsyncSession, user: Current
             salary_currency="eur",
         ),
     )
+
+
+@pytest.mark.asyncio
+async def test_unknown_to_status_in_history_is_rejected(
+    db_session: AsyncSession, user: CurrentUser
+):
+    application = await make_application(db_session, user.id)
+
+    with pytest.raises(IntegrityError):
+        await ApplicationStatusChangeRepository(db_session).add(
+            ApplicationStatusChange(
+                application_id=application.id,
+                from_status="applied",
+                to_status="ghosted",
+                changed_at=datetime.now(UTC),
+            )
+        )
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_history_note_over_max_length_is_rejected(
+    db_session: AsyncSession, user: CurrentUser
+):
+    application = await make_application(db_session, user.id)
+
+    with pytest.raises(IntegrityError):
+        await ApplicationStatusChangeRepository(db_session).add(
+            ApplicationStatusChange(
+                application_id=application.id,
+                from_status="applied",
+                to_status="screening",
+                changed_at=datetime.now(UTC),
+                note="x" * 5001,
+            )
+        )
+    await db_session.rollback()

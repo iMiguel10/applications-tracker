@@ -1,9 +1,10 @@
-"""Estados de una solicitud (especificación §6). Reglas puras, sin I/O.
+"""Estados de una solicitud y su máquina de transiciones (especificación §6).
 
-F2 solo define los estados y con cuáles se puede crear una solicitud. La tabla de
-transiciones y allowed_transitions() llegan en F3.
+Reglas puras, sin I/O: la usan services (para validar) y schemas (para exponer
+`allowed_transitions` en la API, decisión A8).
 """
 
+from collections.abc import Mapping
 from enum import StrEnum
 
 
@@ -27,3 +28,51 @@ INITIAL_STATUSES = frozenset({ApplicationStatus.SAVED, ApplicationStatus.APPLIED
 STATUSES_WITHOUT_APPLIED_AT = frozenset(
     {ApplicationStatus.SAVED, ApplicationStatus.WITHDRAWN}
 )
+
+# Tabla completa de transiciones permitidas (especificación §6). El orden de cada
+# tupla es el que se ofrece en el desplegable del frontend: no es alfabético, sigue
+# el orden "natural" del proceso (avanzar antes que descartar o retirarse).
+ALLOWED_TRANSITIONS: Mapping[ApplicationStatus, tuple[ApplicationStatus, ...]] = {
+    ApplicationStatus.SAVED: (
+        ApplicationStatus.APPLIED,
+        ApplicationStatus.WITHDRAWN,
+    ),
+    ApplicationStatus.APPLIED: (
+        ApplicationStatus.SCREENING,
+        ApplicationStatus.INTERVIEWING,
+        ApplicationStatus.REJECTED,
+        ApplicationStatus.WITHDRAWN,
+    ),
+    ApplicationStatus.SCREENING: (
+        ApplicationStatus.INTERVIEWING,
+        ApplicationStatus.REJECTED,
+        ApplicationStatus.WITHDRAWN,
+    ),
+    ApplicationStatus.INTERVIEWING: (
+        ApplicationStatus.OFFER,
+        ApplicationStatus.REJECTED,
+        ApplicationStatus.WITHDRAWN,
+    ),
+    ApplicationStatus.OFFER: (
+        ApplicationStatus.ACCEPTED,
+        ApplicationStatus.REJECTED,
+        ApplicationStatus.WITHDRAWN,
+    ),
+    # Estados finales (regla 3 de la especificación): sin salida.
+    ApplicationStatus.ACCEPTED: (),
+    ApplicationStatus.REJECTED: (),
+    ApplicationStatus.WITHDRAWN: (),
+}
+
+
+def allowed_transitions(
+    from_status: ApplicationStatus,
+) -> tuple[ApplicationStatus, ...]:
+    """Transiciones disponibles desde `from_status`, en el orden a mostrar (A8)."""
+    return ALLOWED_TRANSITIONS[from_status]
+
+
+def is_transition_allowed(
+    from_status: ApplicationStatus, to_status: ApplicationStatus
+) -> bool:
+    return to_status in ALLOWED_TRANSITIONS[from_status]

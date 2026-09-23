@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends
 
 from app.api.v1.deps import get_current_user
-from app.api.v1.endpoints import applications, companies, health, me
+from app.api.v1.endpoints import (
+    application_status_changes,
+    applications,
+    companies,
+    health,
+    me,
+)
 from app.schemas.auth import UnauthorizedError
 
 router = APIRouter()
@@ -23,5 +29,6 @@ protected = APIRouter(
 protected.include_router(me.router)
 protected.include_router(companies.router)
 protected.include_router(applications.router)
+protected.include_router(application_status_changes.router)
 
 router.include_router(protected)

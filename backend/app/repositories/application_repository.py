@@ -61,6 +61,20 @@ class ApplicationRepository:
             .execution_options(populate_existing=True)
         )
 
+    async def get_for_update(
+        self, user_id: uuid.UUID, application_id: uuid.UUID
+    ) -> Application | None:
+        """Como `get`, pero bloquea la fila (`SELECT … FOR UPDATE`) para serializar
+        cambios de estado concurrentes (arquitectura §8). Sin `joinedload`: quien
+        cambia de estado no necesita la empresa, y bloquear a través de un LEFT JOIN
+        fallaría en Postgres si la relación fuera opcional.
+        """
+        return await self.session.scalar(
+            select(Application)
+            .where(Application.user_id == user_id, Application.id == application_id)
+            .with_for_update()
+        )
+
     async def count(self, user_id: uuid.UUID) -> int:
         total = await self.session.scalar(
             select(func.count())

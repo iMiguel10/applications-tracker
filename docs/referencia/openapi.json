@@ -1488,6 +1488,254 @@
           }
         }
       }
+    },
+    "/api/v1/applications/{application_id}/status-changes": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Ver el historial de estados",
+        "description": "Historial completo de la solicitud (RF-23), del cambio más reciente al más\nantiguo (orden por `seq`, no por fecha: ver `changed_at` frente a `created_at`\nen la arquitectura).",
+        "operationId": "list_status_changes_api_v1_applications__application_id__status_changes_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationStatusChangeRead"
+                  },
+                  "title": "Response List Status Changes Api V1 Applications  Application Id  Status Changes Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Cambiar el estado de una solicitud",
+        "description": "Registra una transición del ciclo de vida (RF-30…33).\n\nSolo se permiten las transiciones de la especificación §6; cualquier otra\nresponde 409 `invalid_transition`. Si la nueva situación es `applied` y la\nsolicitud no tenía fecha de envío, se fija a la de `changed_at`. 422\n`changed_at_in_future` o `changed_at_before_last_change` si la fecha no encaja\nentre el último cambio y ahora.",
+        "operationId": "change_status_api_v1_applications__application_id__status_changes_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationStatusChangeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{application_id}/status-changes/last": {
+      "delete": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Deshacer el último cambio de estado",
+        "description": "Elimina el último cambio del historial y restaura el estado anterior (RF-34),\npara corregir un error sin dejar rastro. 409 `cannot_undo_initial_change` si el\núnico cambio que queda es el que creó la solicitud.",
+        "operationId": "undo_last_status_change_api_v1_applications__application_id__status_changes_last_delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1791,6 +2039,14 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "allowed_transitions": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationStatus"
+            },
+            "type": "array",
+            "title": "Allowed Transitions",
+            "readOnly": true
           }
         },
         "type": "object",
@@ -1812,7 +2068,8 @@
           "archived_at",
           "last_activity_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "allowed_transitions"
         ],
         "title": "ApplicationRead"
       },
@@ -1843,6 +2100,101 @@
           "withdrawn"
         ],
         "title": "ApplicationStatus"
+      },
+      "ApplicationStatusChangeCreate": {
+        "properties": {
+          "to_status": {
+            "$ref": "#/components/schemas/ApplicationStatus",
+            "description": "Debe estar entre las `allowed_transitions` de la solicitud."
+          },
+          "changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed At",
+            "description": "Cuándo ocurrió de verdad. Por defecto, ahora. Puede ser una fecha pasada, pero nunca anterior al último cambio ni posterior a ahora."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Máximo 5 000 caracteres."
+          }
+        },
+        "type": "object",
+        "required": [
+          "to_status"
+        ],
+        "title": "ApplicationStatusChangeCreate",
+        "description": "Cuerpo de `POST /applications/{id}/status-changes` (RF-30)."
+      },
+      "ApplicationStatusChangeRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "from_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` en el cambio inicial, que crea la solicitud."
+          },
+          "to_status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Cuándo se registró en el sistema. Informativo: el orden real del historial no se expone (es `seq`, una columna interna)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "from_status",
+          "to_status",
+          "changed_at",
+          "note",
+          "created_at"
+        ],
+        "title": "ApplicationStatusChangeRead"
       },
       "ApplicationUpdate": {
         "properties": {

@@ -30,6 +30,13 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("DELETE", "/api/v1/applications/{application_id}", None),
     ("POST", "/api/v1/applications/{application_id}/archive", None),
     ("POST", "/api/v1/applications/{application_id}/unarchive", None),
+    ("GET", "/api/v1/applications/{application_id}/status-changes", None),
+    (
+        "POST",
+        "/api/v1/applications/{application_id}/status-changes",
+        {"to_status": "applied"},
+    ),
+    ("DELETE", "/api/v1/applications/{application_id}/status-changes/last", None),
 ]
 
 

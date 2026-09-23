@@ -11,10 +11,14 @@ from app.domain.application_status import (
     ApplicationStatus,
 )
 from app.models.application import Application
+from app.models.application_status_change import ApplicationStatusChange
 from app.repositories.application_repository import (
     ApplicationFilters,
     ApplicationRepository,
     ApplicationSort,
+)
+from app.repositories.application_status_change_repository import (
+    ApplicationStatusChangeRepository,
 )
 from app.repositories.company_repository import CompanyRepository
 from app.schemas.application import (
@@ -33,14 +37,16 @@ _ARCHIVED_FILTER: dict[str, bool | None] = {
 class ApplicationService:
     """Reglas de negocio de las solicitudes. Dueño de la transacción: es quien hace commit.
 
-    El estado NO se cambia aquí: solo se fija al crear (saved/applied). Los cambios
-    de estado, el historial y deshacer son ApplicationStatusService (F3).
+    El estado NO se cambia aquí: solo se fija al crear (saved/applied), junto con el
+    cambio inicial de su historial (arquitectura §4). Cambiar de estado, deshacer y
+    leer el historial son ApplicationStatusService.
     """
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.applications = ApplicationRepository(session)
         self.companies = CompanyRepository(session)
+        self.status_changes = ApplicationStatusChangeRepository(session)
 
     async def list(
         self, user_id: uuid.UUID, query: ApplicationListQuery
@@ -88,6 +94,16 @@ class ApplicationService:
             user_id=user_id, origin=ApplicationOrigin.MANUAL.value, **fields
         )
         await self.applications.add(application)
+        # Invariante 4: ninguna solicitud existe sin su cambio inicial en el
+        # historial (arquitectura §4). from_status NULL lo distingue de un cambio real.
+        await self.status_changes.add(
+            ApplicationStatusChange(
+                application_id=application.id,
+                from_status=None,
+                to_status=application.status,
+                changed_at=datetime.now(UTC),
+            )
+        )
         await self.session.commit()
         # Recarga con la empresa (la relación es lazy="raise").
         return await self.get(user_id, application.id)

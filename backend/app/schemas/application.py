@@ -8,6 +8,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    computed_field,
     model_validator,
 )
 
@@ -17,7 +18,7 @@ from app.domain.application import (
     ApplicationSource,
     WorkMode,
 )
-from app.domain.application_status import ApplicationStatus
+from app.domain.application_status import ApplicationStatus, allowed_transitions
 from app.schemas.common import (
     OptionalNotes,
     OptionalShortText,
@@ -123,6 +124,13 @@ class ApplicationRead(BaseModel):
     )
     created_at: datetime
     updated_at: datetime
+
+    # computed_field: no es una columna, se deriva de domain/ en cada respuesta
+    # (decisión A8). Así el frontend nunca decide qué transiciones ofrecer.
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def allowed_transitions(self) -> tuple[ApplicationStatus, ...]:
+        return allowed_transitions(self.status)
 
 
 ArchivedFilter = Literal["active", "archived", "all"]
