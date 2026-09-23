@@ -11,17 +11,17 @@ import type { ApplicationStatus } from "@/features/applications/types/Applicatio
 import { ChartTooltip } from "./ChartTooltip";
 import type { StatusCount } from "../types/Dashboard";
 
-// Un color por estado, en el orden "natural" del proceso (igual que el resto de la
-// interfaz), no uno por serie: aquí solo hay una serie (el recuento).
+// Los mismos tokens que ApplicationStatusBadge, no los genéricos --chart-*: así una
+// barra y una insignia del mismo estado siempre coinciden.
 const COLORS: Record<ApplicationStatus, string> = {
-  saved: "var(--color-chart-1)",
-  applied: "var(--color-chart-2)",
-  screening: "var(--color-chart-2)",
-  interviewing: "var(--color-chart-3)",
-  offer: "var(--color-chart-4)",
-  accepted: "var(--color-chart-4)",
-  rejected: "var(--color-chart-5)",
-  withdrawn: "var(--color-chart-5)",
+  saved: "var(--color-status-saved)",
+  applied: "var(--color-status-applied)",
+  screening: "var(--color-status-screening)",
+  interviewing: "var(--color-status-interviewing)",
+  offer: "var(--color-success)",
+  accepted: "var(--color-success)",
+  rejected: "var(--color-destructive)",
+  withdrawn: "var(--color-muted-foreground)",
 };
 
 export function StatusBreakdownCard({ statusCounts }: { statusCounts: StatusCount[] }) {

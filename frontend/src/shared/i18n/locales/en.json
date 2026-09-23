@@ -177,12 +177,17 @@
     "saved": "Preferences saved",
     "fields": {
       "language": "Interface language",
-      "staleAfterDays": "Flag applications with no activity after (days)"
+      "staleAfterDays": "Flag applications with no activity after (days)",
+      "theme": "Theme"
     },
     "language": {
       "followBrowser": "Follow the browser language",
       "es": "Español",
       "en": "English"
+    },
+    "theme": {
+      "light": "Light",
+      "dark": "Dark"
     },
     "validation": {
       "staleAfterDays": "Must be a number between 1 and 90"
@@ -194,7 +199,8 @@
     "companies": "Companies",
     "reminders": "Reminders",
     "preferences": "Preferences",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "theme": "Switch between light and dark theme"
   },
   "companies": {
     "title": "Companies",

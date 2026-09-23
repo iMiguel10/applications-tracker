@@ -7,6 +7,7 @@ import i18n from "@/shared/i18n/i18n";
 import { cn } from "@/shared/lib/utils";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
+import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { NAV_ITEMS } from "@/shared/config/navigation";
 import { LANGUAGES, type Language } from "@/features/auth/types/Auth";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
@@ -51,9 +52,11 @@ export function AppLayout() {
     <div className="min-h-screen">
       <header className="border-b">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <span className="flex items-center gap-2 font-semibold">
+          <span className="flex shrink-0 items-center gap-2.5">
             <img src="/brand/logo.png" alt="" className="size-7" />
-            {t("app.name")}
+            <span className="bg-gradient-to-r from-chart-1 to-chart-2 bg-clip-text text-lg font-semibold tracking-tight text-transparent whitespace-nowrap">
+              {t("app.name")}
+            </span>
           </span>
 
           {/* Escritorio (>= lg): navegación y cuenta en línea. */}
@@ -67,6 +70,7 @@ export function AppLayout() {
           </nav>
           <div className="hidden items-center gap-3 text-sm lg:flex">
             {me?.email && <span className="text-muted-foreground">{me.email}</span>}
+            <ThemeToggle />
             <NavLink
               to="/preferences"
               aria-label={t("nav.preferences")}
@@ -113,6 +117,7 @@ export function AppLayout() {
                 {me?.email && (
                   <p className="truncate px-3 pb-1 text-xs text-muted-foreground">{me.email}</p>
                 )}
+                <ThemeToggle className="w-full px-3 py-1.5" />
                 <NavLink
                   to="/preferences"
                   className={navLinkClass}

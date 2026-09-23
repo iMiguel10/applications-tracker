@@ -7,6 +7,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import { queryClient } from "@/shared/lib/queryClient";
+import { ThemeProvider } from "@/app/providers/ThemeProvider";
 
 import App from "./App.tsx";
 
@@ -15,9 +16,11 @@ import "./styles/global.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <App />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

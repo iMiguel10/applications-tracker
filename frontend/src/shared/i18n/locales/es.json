@@ -177,12 +177,17 @@
     "saved": "Preferencias guardadas",
     "fields": {
       "language": "Idioma de la interfaz",
-      "staleAfterDays": "Avisar de solicitudes sin actividad tras (días)"
+      "staleAfterDays": "Avisar de solicitudes sin actividad tras (días)",
+      "theme": "Tema"
     },
     "language": {
       "followBrowser": "Seguir el idioma del navegador",
       "es": "Español",
       "en": "English"
+    },
+    "theme": {
+      "light": "Claro",
+      "dark": "Oscuro"
     },
     "validation": {
       "staleAfterDays": "Debe ser un número entre 1 y 90"
@@ -194,7 +199,8 @@
     "companies": "Empresas",
     "reminders": "Recordatorios",
     "preferences": "Preferencias",
-    "openMenu": "Abrir menú"
+    "openMenu": "Abrir menú",
+    "theme": "Cambiar entre tema claro y oscuro"
   },
   "companies": {
     "title": "Empresas",

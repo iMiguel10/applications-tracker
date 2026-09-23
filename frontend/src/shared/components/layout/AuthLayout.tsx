@@ -1,14 +1,16 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useForceLightTheme } from "@/app/providers/useForceLightTheme";
+
 // El mismo recorrido que ya cuenta la app (RF-30…), no una ilustración genérica:
 // la vitrina de un cuaderno de bitácora de búsqueda de empleo es su propio progreso.
 // Misma familia de color que las insignias de estado reales (ApplicationStatusBadge),
-// en su versión viva: aquí no hace falta la variante "legible sobre blanco".
+// tomada de los mismos tokens: aquí no hace falta la variante "legible sobre blanco".
 const PIPELINE = [
-  { status: "applied", color: "var(--color-chart-1)" },
-  { status: "interviewing", color: "var(--color-chart-2)" },
-  { status: "offer", color: "#f59e0b" },
+  { status: "applied", color: "var(--color-status-applied)" },
+  { status: "interviewing", color: "var(--color-status-interviewing)" },
+  { status: "offer", color: "var(--color-success)" },
   { status: "accepted", color: "var(--color-success)" },
 ] as const;
 
@@ -43,9 +45,13 @@ interface AuthLayoutProps {
 }
 
 /** Marco compartido de login y registro: panel de marca en escritorio, cabecera
- * compacta en móvil. */
+ * compacta en móvil. Siempre en claro (F8.4): el panel de marca es oscuro fijo y el
+ * formulario está pensado para leerse junto a él, así que el tema del usuario no se
+ * aplica aquí (`useForceLightTheme`) — de lo contrario los dos paneles se funden en
+ * modo oscuro y el contraste que sostiene el diseño desaparece. */
 export function AuthLayout({ title, children, footer }: AuthLayoutProps) {
   const { t } = useTranslation();
+  useForceLightTheme();
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">

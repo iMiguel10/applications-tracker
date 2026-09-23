@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/brand/logo.png" />
     <title>Applications Tracker</title>
+    <script>
+      // Aplica el tema guardado antes del primer pintado: sin esto, la app siempre
+      // arrancaría en claro y saltaría a oscuro un instante después (FOUC). Login y
+      // registro se saltan esto a propósito: siempre van en claro (AuthLayout,
+      // useForceLightTheme), así que aplicar oscuro aquí solo provocaría el parpadeo
+      // contrario nada más montar React.
+      (function () {
+        try {
+          if (location.pathname === "/login" || location.pathname === "/register") return;
+          var stored = localStorage.getItem("theme");
+          var dark =
+            stored === "dark" ||
+            (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

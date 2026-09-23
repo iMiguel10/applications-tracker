@@ -24,7 +24,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-success-text: var(--success-text);
   --color-success: var(--success);
-  --color-status-offer: var(--status-offer);
+  --color-status-saved: var(--status-saved);
   --color-status-interviewing: var(--status-interviewing);
   --color-status-screening: var(--status-screening);
   --color-status-applied: var(--status-applied);
@@ -54,106 +54,102 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-/* Paleta de marca (F8.3): Primary #0B1220, Accent #3B82F6 / #8B5CF6, Success #14B8A6,
-   Background #E5E7EB. `--primary`/`--ring` usan un azul #2563EB (un tono más oscuro
-   que el accent #3B82F6 de partida): con blanco encima, el accent literal solo da
-   3.68:1 de contraste, por debajo del mínimo WCAG AA (4.5:1) para texto — este tono
-   es el más claro de la misma familia que sí lo cumple (5.17:1), así que los botones
-   ganan color sin perder legibilidad. Mismo criterio para las etapas de una
-   solicitud (`--status-*`) y para `--success-text`: cada uno es el tono más vivo de
-   su familia que aún pasa 4.5:1 sobre blanco, para las insignias en "tinta suave"
-   (fondo al 10% + texto del mismo color). `--brand` es el panel oscuro de login y
-   registro (siempre el primary original, con independencia del color de los botones).
-   Medido con la fórmula de luminancia relativa de WCAG 2.1 (script propio en F8.3). */
+/* Paleta de marca (F8.4, indigo + slate/zinc): Primary #4F46E5 en claro / #818CF8 en
+   oscuro, neutros slate en claro y zinc en oscuro — cada tema tiene sus propios
+   valores, no es una simple inversión. Las etapas de una solicitud toman el color de
+   familia que pide cada una (Enviada índigo, En revisión violeta, Entrevistas sky,
+   Oferta/Aceptada esmeralda vía `--success`, Descartada rojo vía `--destructive`,
+   Retirada slate vía `--muted`) y "Guardada" usa ámbar: es la única que de verdad
+   está "pendiente" de una acción del usuario (enviarla). Las insignias siguen en
+   "tinta suave" (fondo al 10% + texto del mismo color): cada tono de texto es el más
+   vivo de su familia que aún pasa 4.5:1 de contraste sobre `--card`/`--background`
+   (fórmula de luminancia relativa de WCAG 2.1, heredada de F8.3). `--brand` es el
+   panel oscuro de login y registro: un índigo profundo fijo, igual en ambos temas. */
 :root {
   --radius: 0.625rem;
-  --background: #e5e7eb;
-  --foreground: #0b1220;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #0b1220;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #0b1220;
-  --primary: #2563eb;
+  --popover-foreground: #0f172a;
+  --primary: #4f46e5;
   --primary-foreground: #f8fafc;
-  --secondary: #e5e7eb;
-  --secondary-foreground: #0b1220;
-  --muted: #e5e7eb;
-  --muted-foreground: #525b66;
-  --accent: #dbeafe;
-  --accent-foreground: #1e3a8a;
-  --destructive: oklch(0.577 0.245 27.325);
-  --success: #14b8a6;
-  --success-foreground: #0b1220;
-  --success-text: #0f766e;
-  --border: #d1d5db;
-  --input: #d1d5db;
-  --ring: #2563eb;
-  --chart-1: #3b82f6;
-  --chart-2: #8b5cf6;
-  --chart-3: #14b8a6;
-  --chart-4: #60a5fa;
-  --chart-5: #a78bfa;
-  --brand: #0b1220;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #eef2ff;
+  --accent-foreground: #4338ca;
+  --destructive: #dc2626;
+  --success: #10b981;
+  --success-foreground: #f8fafc;
+  --success-text: #047857;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #4f46e5;
+  --chart-1: #4f46e5;
+  --chart-2: #7c3aed;
+  --chart-3: #0ea5e9;
+  --chart-4: #10b981;
+  --chart-5: #f59e0b;
+  --brand: #1e1b4b;
   --brand-foreground: #f8fafc;
-  /* Etapas del ciclo de vida de una solicitud (arquitectura §6): una progresión de
-     color con sentido narrativo, azul → índigo → violeta → ámbar, antes de cerrar en
-     éxito (verde) o descarte (rojo). "Guardada" y "Retirada" quedan neutras: aún no
-     ha empezado o ya no está en juego. */
-  --status-applied: #2563eb;
-  --status-screening: #4f46e5;
-  --status-interviewing: #7c3aed;
-  --status-offer: #b45309;
-  --sidebar: #0b1220;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #2563eb;
+  --status-saved: #b45309;
+  --status-applied: #4f46e5;
+  --status-screening: #7c3aed;
+  --status-interviewing: #0369a1;
+  --sidebar: #f8fafc;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #4f46e5;
   --sidebar-primary-foreground: #f8fafc;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #2563eb;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #4f46e5;
 }
 
 .dark {
-  --background: #0b1220;
-  --foreground: #e5e7eb;
-  --card: #111827;
-  --card-foreground: #e5e7eb;
-  --popover: #111827;
-  --popover-foreground: #e5e7eb;
-  --primary: #2563eb;
-  --primary-foreground: #f8fafc;
-  --secondary: #1e293b;
-  --secondary-foreground: #e5e7eb;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e3a8a;
-  --accent-foreground: #e5e7eb;
-  --destructive: oklch(0.704 0.191 22.216);
-  --success: #14b8a6;
-  --success-foreground: #0b1220;
-  --success-text: #2dd4bf;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: #2563eb;
-  --chart-1: #3b82f6;
-  --chart-2: #8b5cf6;
-  --chart-3: #14b8a6;
-  --chart-4: #60a5fa;
-  --chart-5: #a78bfa;
-  --brand: #0b1220;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111113;
+  --card-foreground: #fafafa;
+  --popover: #111113;
+  --popover-foreground: #fafafa;
+  --primary: #818cf8;
+  --primary-foreground: #09090b;
+  --secondary: #18181b;
+  --secondary-foreground: #fafafa;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #1e1b4b;
+  --accent-foreground: #c7d2fe;
+  --destructive: #f87171;
+  --success: #34d399;
+  --success-foreground: #052e16;
+  --success-text: #34d399;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #818cf8;
+  --chart-1: #818cf8;
+  --chart-2: #a78bfa;
+  --chart-3: #38bdf8;
+  --chart-4: #34d399;
+  --chart-5: #fbbf24;
+  --brand: #1e1b4b;
   --brand-foreground: #f8fafc;
-  --status-applied: #60a5fa;
-  --status-screening: #818cf8;
-  --status-interviewing: #a78bfa;
-  --status-offer: #fbbf24;
-  --sidebar: #0b1220;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #2563eb;
-  --sidebar-primary-foreground: #f8fafc;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #f8fafc;
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #2563eb;
+  --status-saved: #fbbf24;
+  --status-applied: #818cf8;
+  --status-screening: #a78bfa;
+  --status-interviewing: #38bdf8;
+  --sidebar: #09090b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #818cf8;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #818cf8;
 }
 
 @layer base {

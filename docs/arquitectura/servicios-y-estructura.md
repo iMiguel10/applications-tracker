@@ -181,7 +181,7 @@ Dirección de dependencias: `endpoints → services → repositories → models`
 ```
 frontend/src/
 ├── main.tsx, App.tsx          importa PRIMERO shared/lib/supertokens; QueryClient + RouterProvider + Toaster
-├── app/providers/             providers globales (vacío: la sesión la gestionan el SDK y TanStack Query, ver autenticación §4)
+├── app/providers/             ThemeProvider (F8.4): tema claro/oscuro en localStorage, no en el backend — la sesión sigue gestionándola el SDK y TanStack Query (ver autenticación §4)
 ├── features/
 │   ├── auth/                  login, registro, logout, /me; lib/safeRedirect (F1)
 │   ├── companies/             (F2)
