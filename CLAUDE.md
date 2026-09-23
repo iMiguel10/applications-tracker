@@ -6,13 +6,16 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-23): F4 terminada.**
+> **Estado (2026-09-23): F4 y F6 terminadas; F5 sigue pendiente.**
+>
+> F6 (CI) se construyó antes que F5 (dashboard y exportación CSV) por decisión explícita del usuario, no porque F5 ya no haga falta: F5 sigue en la lista, sin empezar.
 >
 > - **Existe:**
 >     - Entorno Docker, autenticación (F1) y documentación OpenAPI con referencia versionada.
 >     - F2: empresas y solicitudes completas, con CRUD, filtros, búsqueda, orden y paginación en la URL, archivado, cuotas y aislamiento entre usuarios (T2, T3), tanto en backend como en frontend.
 >     - F3: ciclo de vida completo. `domain/application_status.py` con la tabla `ALLOWED_TRANSITIONS`; `application_status_changes` (historial append-only, `seq` como orden real); `ApplicationStatusService` (cambiar y deshacer, con `SELECT … FOR UPDATE`); `allowed_transitions` en `ApplicationRead`; en el frontend, el diálogo de cambio de estado, la línea de tiempo del historial y deshacer.
 >     - F4: entrevistas y recordatorios. `interviews` (CRUD completo, hija de `applications`, sin `user_id` propio); `reminders` (raíz con `user_id`, FK compuesta opcional a `applications`, cuota de 500 **pendientes**); `services/notifications/` con `NotificationChannel` e `InAppChannel` (no-op, costura de RF-53); solo crear/listar/completar/descartar para recordatorios, sin editar ni borrar (ninguna RF de recordatorios lo pide). En el frontend, ambas secciones viven embebidas en el detalle de la solicitud, y la sugerencia de RF-42 (proponer `interviewing` al programar una entrevista) usa `allowed_transitions`. **Los recordatorios no tienen página ni ruta propias en F4** (decisión [0005](docs/decisiones/0005-recordatorios-sin-pagina-global-en-f4.md)): se crean y ven filtrados por solicitud; la API ya admite un listado global y un recordatorio suelto (`application_id` nulo), pensando en F5.
+>     - F6: integración continua. `.github/workflows/ci.yml`, 4 jobs en cada push/PR a `main`: `backend-lint` (ruff + mypy, nativo con `uv`, sin Docker), `backend-tests` (`compose.test.yml`, 215 tests), `frontend` (eslint, `tsc -b`, vitest, build) y `docs` (`mkdocs build --strict`). `.env.test.example` es la plantilla versionada de `.env.test`, antes inexistente.
 > - **No existe todavía:** dashboard ni exportación CSV (F5), incluida la página global `/reminders` que agregaría los recordatorios de todas las solicitudes. Lo que este documento dice de esas piezas es la **norma a seguir** al construirlas.
 
 ## 2. Documentación
@@ -60,6 +63,7 @@ docker compose exec api uv add <paquete>                                   # nun
 docker compose exec api python -m app.scripts.export_openapi               # tras cambiar endpoints/schemas, mismo commit
 
 # Tests del backend (BD aislada)
+cp .env.test.example .env.test                                             # primera vez
 docker compose -f compose.test.yml up --build --abort-on-container-exit --exit-code-from api-test
 docker compose -f compose.test.yml down -v
 
@@ -167,6 +171,6 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F3 | Ciclo de vida: historial, transiciones, deshacer, `allowed_transitions` |
 | ✔ F4 | Entrevistas y recordatorios (`in_app` + `NotificationChannel`) |
 | F5 | Dashboard, exportación CSV y página global de recordatorios |
-| F6 | CI con GitHub Actions |
+| ✔ F6 | CI con GitHub Actions (construida antes que F5, a petición explícita del usuario; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md)) |
 | F7 | Preparación para despliegue |
 | F8 | Revisión final: funcionalidades faltantes, mejoras pendientes y diseño de la UI |

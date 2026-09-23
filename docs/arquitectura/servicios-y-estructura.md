@@ -289,3 +289,16 @@ Las tres reglas contra el envejecimiento:
 - El `README.md` es el escaparate: qué resuelve, una captura, las decisiones destacadas y cómo arrancarlo con un comando. Se lee en dos minutos.
 - Este sitio es la referencia para quien trabaja dentro.
 - Nada se duplica entre los dos: el README enlaza aquí.
+
+## 7. Integración continua (F6)
+
+`.github/workflows/ci.yml` corre en cada `push` y `pull_request` contra `main`, con `concurrency` para cancelar la ejecución anterior del mismo ref. Cuatro jobs independientes:
+
+| Job | Qué hace | Por qué así |
+|---|---|---|
+| `backend-lint` | `uv sync --frozen`, `ruff check`, `ruff format --check`, `mypy app tests` | Nativo con `astral-sh/setup-uv`, **sin Docker**: es el feedback más rápido y no necesita levantar contenedores para detectar un error de tipos o de estilo |
+| `backend-tests` | `compose.test.yml` completo (`api-test`, `db-test`, SuperTokens de prueba…), la suite de pytest | **Con Docker Compose**, para tener paridad exacta con desarrollo: misma imagen, mismas migraciones al arrancar, el core real de SuperTokens (necesario para la prueba de humo T7) |
+| `frontend` | `npm ci`, eslint, `tsc -b`, vitest, `npm run build` | Nativo con `actions/setup-node`, igual de rápido que `backend-lint` |
+| `docs` | `docker compose run --rm docs build --strict` | **Con Docker Compose**: la imagen de MkDocs Material fijada a la 9 vive ahí, no como dependencia adicional del runner |
+
+`.env.test.example` (nuevo en F6, versionado) es la plantilla de `.env.test`, paralela a `.env.example`. El job `backend-tests` la copia con `cp .env.test.example .env.test` antes de levantar `compose.test.yml`; sin ella, un clon nuevo del repositorio (incluido el runner de CI) no podía ejecutar los tests del backend sin crear el fichero a mano.

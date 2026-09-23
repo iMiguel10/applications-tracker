@@ -44,7 +44,11 @@ async def test_default_status_filter_is_pending(
     now = datetime.now(UTC)
     await make_reminder(db_session, user.id, title="Pendiente", due_at=now)
     await make_reminder(
-        db_session, user.id, title="Hecho", status="done", due_at=now + timedelta(days=1)
+        db_session,
+        user.id,
+        title="Hecho",
+        status="done",
+        due_at=now + timedelta(days=1),
     )
 
     assert await _titles(db_session, user, ReminderFilters(statuses=["pending"])) == [
