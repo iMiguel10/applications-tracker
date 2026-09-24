@@ -502,7 +502,7 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 |---|---|---|
 | `VALKEY_URL` **[construido]** | Cola (SAQ) y rate limit | No arranca: es infraestructura obligatoria |
 | `FILES_ROOT` **[construido]** | Raíz del almacén de ficheros (`/data/files`) | No arranca |
-| `PUBLIC_APP_URL` | Enlaces en los emails y en el feed ICS | No arranca |
+| ~~`PUBLIC_APP_URL`~~ | Descartada al construir F11: los enlaces de los emails y del feed ICS usan `WEBSITE_DOMAIN`, que ya existe desde F1 y es la que usa SuperTokens para los suyos ([autenticación §8](autenticacion.md#entrega-de-los-emails)) | — |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY` (`none`, `starttls`, `tls`), `SMTP_USERNAME`, `SMTP_PASSWORD`, `EMAIL_FROM`, `SMTP_TIMEOUT_SECONDS` (30 por defecto) **[construido]** | Servidor de correo (RNF-34). Con `SMTP_HOST`, `EMAIL_FROM` es obligatorio: si falta, no arranca | Arranca **sin email**: las funciones dependientes aparecen como no disponibles |
 | `APP_SECRET` | Firma de los enlaces de baja de avisos | No arranca |
 | `AI_KEYS_ENCRYPTION_KEYS` | Claves maestras de Fernet, separadas por comas; la primera cifra y todas descifran (rotación, A34) | Las claves propias de IA quedan desactivadas |

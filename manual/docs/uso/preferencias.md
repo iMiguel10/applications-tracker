@@ -16,3 +16,11 @@ Los cambios de idioma y de días se guardan con **Guardar**.
 El **tema** también se cambia con el botón de sol y luna de la barra superior. Se guarda en el navegador, no en la cuenta: puedes tener el tema oscuro en el ordenador y el claro en el móvil.
 
 El número de días decide qué solicitudes aparecen en el bloque **Sin actividad** del [Dashboard](dashboard.md).
+
+## Cambiar la contraseña
+
+En la tarjeta **Contraseña**, pulsa **Enviar enlace para cambiarla**. Recibirás en el email de tu cuenta el mismo enlace que para [recuperar la contraseña](primeros-pasos.md#si-olvidas-la-contraseña): ábrelo, elige la contraseña nueva y pulsa **Guardar contraseña**.
+
+No se pide la contraseña actual: cambiarla exige tener acceso a tu correo, así que alguien con una sesión tuya abierta no puede cambiártela. Al guardarla **se cierran todas tus sesiones**, también la que tenías abierta, y vuelves a entrar con la nueva.
+
+Si la instalación no envía emails, la tarjeta lo dice en lugar del botón.

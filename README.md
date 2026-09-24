@@ -21,7 +21,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 ---
 
 > [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción; sus funcionalidades, todavía no. La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y la primera de sus funcionalidades (F11) está en marcha: ya se puede recuperar o cambiar la contraseña por email. La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Contenido
 
@@ -54,13 +54,13 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidos la infraestructura (F9) y el manual de producción (F10); las funcionalidades, todavía no.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidos la infraestructura (F9) y el manual de producción (F10), y F11 está en construcción.
 
 | Fase | Contenido |
 |---|---|
 | ✔ F9 | Infraestructura nueva: cola de trabajos, generación de PDF, almacenamiento de ficheros y email |
 | ✔ F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
-| F11 | Recuperación de contraseña, verificación de email, límites visibles y rate limiting |
+| F11 | Recuperación de contraseña (hecha), verificación de email, límites visibles y rate limiting |
 | F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad |
 | F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
 | F14 | Perfil profesional y generación de CVs con varios diseños |

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="{{ language }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color:#18181b;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:8px;">
+<tr><td style="background:#1e1b4b;color:#ffffff;padding:16px 24px;border-radius:8px 8px 0 0;font-size:16px;font-weight:bold;">Applications Tracker</td></tr>
+<tr><td style="padding:24px;font-size:15px;line-height:1.6;">
+{% block content %}{% endblock %}
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

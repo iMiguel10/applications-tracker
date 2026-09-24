@@ -76,6 +76,57 @@ class AuthStatusOk(BaseModel):
     status: Literal["OK"]
 
 
+class EmailField(BaseModel):
+    id: Literal["email"]
+    value: str
+
+
+class PasswordField(BaseModel):
+    id: Literal["password"]
+    value: str
+
+
+class PasswordResetTokenRequest(BaseModel):
+    """Cuerpo para pedir el email de recuperación."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{"formFields": [{"id": "email", "value": "ana@example.com"}]}]
+        }
+    )
+
+    formFields: list[EmailField] = Field(description="Un solo campo: `email`.")
+
+
+class PasswordResetRequest(BaseModel):
+    """Cuerpo para guardar la contraseña nueva con el token del enlace."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "method": "token",
+                    "token": "<token del enlace>",
+                    "formFields": [{"id": "password", "value": "nueva-clave-42"}],
+                }
+            ]
+        }
+    )
+
+    method: Literal["token"]
+    token: str = Field(
+        description="El parámetro `token` del enlace del email. Sirve una sola vez "
+        "y caduca a la hora."
+    )
+    formFields: list[PasswordField] = Field(description="Un solo campo: `password`.")
+
+
+class AuthResetInvalidToken(BaseModel):
+    """El token ya se usó, ha caducado o no existe: hay que pedir otro enlace."""
+
+    status: Literal["RESET_PASSWORD_INVALID_TOKEN_ERROR"]
+
+
 class UnauthorizedError(BaseModel):
     """Respuesta 401 de SuperTokens: no hay sesión, o el token ha caducado o es inválido."""
 

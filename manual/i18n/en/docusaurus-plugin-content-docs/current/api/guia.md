@@ -49,6 +49,19 @@ Responses from `/auth/signup` and `/auth/signin` are **always 200**. The result 
 
 Signing out revokes the refresh token immediately. An access token already issued stays valid until it expires, 5 minutes at most.
 
+### Recover a password
+
+Two calls, without a session:
+
+1. `POST /auth/user/password/reset/token` with `{"formFields":[{"id":"email","value":"…"}]}`. It sends an email with a link to `<the web application>/reset-password?token=…&tenantId=…`. It answers **`OK` whether or not the account exists**, so it cannot be used to find out whether an email is registered.
+2. `POST /auth/user/password/reset` with `{"method":"token","token":"<token from the link>","formFields":[{"id":"password","value":"…"}]}`. The token works **only once** and expires after an hour: if it is not valid, `status` is `RESET_PASSWORD_INVALID_TOKEN_ERROR`.
+
+Changing the password **revokes every session of the user**: any refresh tokens an integration held stop working and it has to sign in again.
+
+### Installation capabilities
+
+`GET /api/v1/meta` is public and says what this installation offers. Today it only includes `email_enabled`: with `false` there is no email server, and requesting a recovery answers the same but sends nothing.
+
 ## Errors
 
 Application errors always have this shape:

@@ -16,6 +16,7 @@ from app.db.session import async_session_factory
 from app.infra.email import build_email_sender
 from app.infra.pdf.weasyprint_renderer import WeasyPrintRenderer
 from app.infra.storage import LocalFileStorage
+from app.jobs.auth_emails import send_password_reset_email
 from app.jobs.context import WorkerContext
 
 # Al importar, como en main.py: SAQ registra el arranque del worker antes de
@@ -35,9 +36,7 @@ async def startup(ctx: WorkerContext) -> None:
 
 settings = {
     "queue": Queue.from_url(config.valkey_url),
-    # Sin trabajos todavía: los primeros llegan en F11 (emails de verificación y
-    # de recuperación de contraseña, autenticacion.md §8).
-    "functions": [],
+    "functions": [send_password_reset_email],
     "startup": startup,
     "concurrency": 10,
 }

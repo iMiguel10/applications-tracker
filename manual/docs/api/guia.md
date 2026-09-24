@@ -45,6 +45,19 @@ Las respuestas de `/auth/signup` y `/auth/signin` son **siempre 200**. El result
 
 Cerrar sesión revoca el refresh token al momento. Un access token ya emitido sigue siendo válido hasta que caduca, como mucho 5 minutos.
 
+### Recuperar la contraseña
+
+Son dos llamadas, sin sesión:
+
+1. `POST /auth/user/password/reset/token` con `{"formFields":[{"id":"email","value":"…"}]}`. Envía un email con un enlace a `<la aplicación web>/reset-password?token=…&tenantId=…`. Responde **`OK` exista o no la cuenta**, así que no sirve para saber si un email está registrado.
+2. `POST /auth/user/password/reset` con `{"method":"token","token":"<token del enlace>","formFields":[{"id":"password","value":"…"}]}`. El token sirve **una sola vez** y caduca a la hora: si no vale, `status` es `RESET_PASSWORD_INVALID_TOKEN_ERROR`.
+
+Al cambiar la contraseña **se revocan todas las sesiones del usuario**: los refresh tokens que tuviera una integración dejan de servir y hay que volver a iniciar sesión.
+
+### Capacidades de la instalación
+
+`GET /api/v1/meta` es público y dice qué ofrece esta instalación. Hoy solo incluye `email_enabled`: con `false` no hay servidor de correo, y pedir la recuperación responde igual pero no envía nada.
+
 ## Errores
 
 Los errores de la aplicación tienen siempre esta forma:

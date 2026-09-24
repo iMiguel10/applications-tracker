@@ -3,23 +3,17 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 
-import i18n from "@/shared/i18n/i18n";
+import i18n, { browserLanguage } from "@/shared/i18n/i18n";
 import { cn } from "@/shared/lib/utils";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { NAV_ITEMS } from "@/shared/config/navigation";
-import { LANGUAGES, type Language } from "@/features/auth/types/Auth";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
 import { useSignOut } from "@/features/auth/hooks/mutations/useSignOut";
 
 const I18NEXT_LNG_STORAGE_KEY = "i18nextLng";
-
-function detectBrowserLanguage(): Language {
-  const short = navigator.language.split("-")[0];
-  return (LANGUAGES as readonly string[]).includes(short) ? (short as Language) : "es";
-}
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -36,15 +30,15 @@ export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Preferencia guardada (F8): "null" significa seguir el navegador, así que se
-  // limpia la caché de i18next para que vuelva a detectarlo, no que se quede en
-  // el último idioma elegido antes de "olvidarlo".
+  // limpia la caché de i18next para que no se quede en el último idioma de la
+  // cuenta. "El navegador" incluye lo elegido en el selector del login (F11).
   useEffect(() => {
     if (!preferences) return;
     if (preferences.language) {
       void i18n.changeLanguage(preferences.language);
     } else {
       localStorage.removeItem(I18NEXT_LNG_STORAGE_KEY);
-      void i18n.changeLanguage(detectBrowserLanguage());
+      void i18n.changeLanguage(browserLanguage());
     }
   }, [preferences]);
 

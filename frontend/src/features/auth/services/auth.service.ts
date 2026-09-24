@@ -2,7 +2,7 @@ import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import Session from "supertokens-web-js/recipe/session";
 
 import { apiClient } from "@/shared/lib/apiClient";
-import type { AuthField, AuthResult, Me } from "../types/Auth";
+import type { AuthField, AuthResult, Me, ResetPasswordResult } from "../types/Auth";
 import type { LoginFormValues } from "../schemas/auth.schema";
 
 type SdkResponse =
@@ -43,6 +43,37 @@ export const authService = {
 
   signUp: async (values: LoginFormValues): Promise<AuthResult> =>
     toAuthResult(await EmailPassword.signUp({ formFields: formFields(values) })),
+
+  /**
+   * Pide el email de recuperación. El backend responde lo mismo exista o no la
+   * cuenta (T9), así que "ok" solo significa "petición aceptada".
+   */
+  sendPasswordResetEmail: async (email: string): Promise<"ok" | "error"> => {
+    const response = await EmailPassword.sendPasswordResetEmail({
+      formFields: [{ id: "email", value: email }],
+    });
+    return response.status === "OK" ? "ok" : "error";
+  },
+
+  /**
+   * Guarda la contraseña nueva. El SDK lee el `token` y el `tenantId` de la URL
+   * del enlace: no se construye la llamada a mano (autenticación §8).
+   */
+  submitNewPassword: async (password: string): Promise<ResetPasswordResult> => {
+    const response = await EmailPassword.submitNewPassword({
+      formFields: [{ id: "password", value: password }],
+    });
+    switch (response.status) {
+      case "OK":
+        return { status: "ok" };
+      case "RESET_PASSWORD_INVALID_TOKEN_ERROR":
+        return { status: "invalid_link" };
+      case "FIELD_ERROR":
+        return { status: "password_policy" };
+      default:
+        return { status: "error" };
+    }
+  },
 
   signOut: () => Session.signOut(),
 

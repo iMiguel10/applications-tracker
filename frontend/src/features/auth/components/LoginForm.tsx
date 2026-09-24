@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Button } from "@/shared/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
 import { loginSchema, type LoginFormValues } from "../schemas/auth.schema";
 import { useSignIn } from "../hooks/mutations/useSignIn";
+import { useMeta } from "@/features/meta/hooks/queries/useMeta";
 import { safeRedirect } from "../lib/safeRedirect";
 
 export function LoginForm() {
@@ -16,6 +17,8 @@ export function LoginForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const signIn = useSignIn();
+  // Sin SMTP no hay recuperación posible: el enlace solo aparece si hay correo.
+  const emailEnabled = useMeta().data?.email_enabled === true;
 
   const {
     register,
@@ -60,7 +63,17 @@ export function LoginForm() {
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor="password">{t("auth.fields.password")}</Label>
+        <div className="flex items-baseline justify-between gap-2">
+          <Label htmlFor="password">{t("auth.fields.password")}</Label>
+          {emailEnabled && (
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              {t("auth.forgotPassword.link")}
+            </Link>
+          )}
+        </div>
         <Input
           id="password"
           type="password"

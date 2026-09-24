@@ -124,11 +124,12 @@ Usuario
 
 - **RF-01** Registro con email y contraseña.
 - **RF-02** Inicio y cierre de sesión. La sesión se mantiene al recargar.
-- **RF-03** `[F11]` Recuperación de contraseña por email. Fuera del MVP; entra en la v2. El enlace es de un solo uso y caduca. La respuesta al pedirlo es **la misma exista o no la cuenta**, para no revelar qué emails están registrados.
+- **RF-03** `[F11]` Recuperación de contraseña por email. Fuera del MVP; entra en la v2. El enlace es de un solo uso y caduca. La respuesta al pedirlo es **la misma exista o no la cuenta**, para no revelar qué emails están registrados. Con sesión iniciada, las preferencias ofrecen el mismo enlace, enviado a la dirección de la cuenta, para **cambiar la contraseña** (añadido al construir F11 a petición del usuario). Cambiarla exige así acceso al correo, no solo una sesión abierta, y no hay una segunda vía que mantener.
 - **RF-04** Cada usuario solo accede a sus propios datos. Un recurso ajeno responde igual que uno inexistente (404).
 - **RF-05** `[F11]` Verificación de email: tras registrarse se envía un enlace de verificación, que se puede reenviar. La aplicación **se puede usar sin verificar**; un aviso visible recuerda hacerlo.
 - **RF-06** `[F11]` Las funciones con coste —IA, subir o generar ficheros, recibir emails de notificación— exigen email verificado. La API responde con un código estable (`email_not_verified`) y la interfaz explica qué hacer, en lugar de ocultar la función.
 - **RF-07** `[F11]` Zona horaria del usuario como preferencia de cuenta, detectada del navegador al registrarse. La necesitan los emails programados (RF-81, RF-82) y el calendario.
+- **RF-08** `[F11]` Las pantallas de acceso (inicio de sesión, registro y recuperación) tienen un selector de idioma, que se recuerda en el navegador. Una cuenta con el idioma sin fijar sigue lo elegido ahí; una con idioma fijado usa el suyo al entrar. Los emails que se piden sin sesión salen en el idioma que se ve en pantalla (añadido al construir F11 a petición del usuario).
 
 ### Empresas (RF-10…)
 

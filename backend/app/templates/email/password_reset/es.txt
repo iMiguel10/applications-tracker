@@ -1,0 +1,10 @@
+{% set subject = "Restablece tu contraseña de Applications Tracker" -%}
+Hola:
+
+Alguien (seguramente tú) ha pedido restablecer la contraseña de tu cuenta de Applications Tracker. Para elegir una nueva, abre este enlace:
+
+{{ link }}
+
+El enlace caduca en {{ expires_in_minutes }} minutos y solo sirve una vez. Al cambiar la contraseña se cerrarán todas las sesiones abiertas.
+
+Si no lo has pedido tú, ignora este email: tu contraseña no cambia.

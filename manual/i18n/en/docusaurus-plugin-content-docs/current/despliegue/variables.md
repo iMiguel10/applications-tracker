@@ -40,6 +40,8 @@ docker compose up -d --force-recreate
 | `API_DOMAIN` | Yes | Public URL of the API, for example `https://api.yourdomain.com` |
 | `WEBSITE_DOMAIN` | Yes | Public URL of the web application, for example `https://yourdomain.com` |
 
+`WEBSITE_DOMAIN` is also the start of the **links in emails** (password recovery): in production it must be the public address, never the development one.
+
 `API_DOMAIN` and `WEBSITE_DOMAIN` decide which site the session cookies belong to. They must match **exactly** the addresses users type in the browser: `localhost` and `127.0.0.1` are different sites for a browser, and if they don't match, signing in seems not to work, without any error.
 
 ## Web application

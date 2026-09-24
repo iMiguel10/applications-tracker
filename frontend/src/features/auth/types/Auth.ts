@@ -23,3 +23,12 @@ export type AuthResult =
   | { status: "wrong_credentials" }
   | { status: "field_errors"; fields: AuthField[] }
   | { status: "error" };
+
+/** Resultado de guardar la contraseña nueva con el enlace del email. */
+export type ResetPasswordResult =
+  | { status: "ok" }
+  /** Enlace ya usado, caducado o manipulado: hay que pedir otro. */
+  | { status: "invalid_link" }
+  /** No cumple la política de contraseñas del backend (invariante 7). */
+  | { status: "password_policy" }
+  | { status: "error" };

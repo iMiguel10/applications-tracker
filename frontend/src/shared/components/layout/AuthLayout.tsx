@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useForceLightTheme } from "@/app/providers/useForceLightTheme";
+import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 import { AuthShowcase } from "./AuthShowcase";
 
 interface AuthLayoutProps {
@@ -90,7 +91,8 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
         </div>
       </div>
 
-      <main className="flex flex-col justify-center overflow-y-auto px-6 py-12 sm:px-12 lg:px-16">
+      <main className="relative flex flex-col justify-center overflow-y-auto px-6 py-12 sm:px-12 lg:px-16">
+        <LanguageSwitcher className="absolute top-4 right-4 sm:right-6" />
         <div className="mx-auto w-full max-w-sm">
           {/* Dentro del bloque del formulario: así queda alineado con él a cualquier ancho. */}
           <span className="mb-12 flex items-center gap-2.5 lg:hidden">

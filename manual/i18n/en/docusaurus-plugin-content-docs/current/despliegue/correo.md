@@ -5,9 +5,17 @@ sidebar_label: Email
 
 The application sends email through an **SMTP** server of your choice: your email provider's or a sending service (Brevo, Amazon SES, Mailgun, Gmail with an app password…). It does not depend on any particular one.
 
-:::note Today
-No feature of the application sends email yet. Configuring it now gets the installation ready for when they arrive (password recovery, reminder and interview notifications), and you can already check it with the test email below.
-:::
+## Which emails it sends
+
+| Email | When |
+|---|---|
+| Recover or change the password | The user asks for it from the sign-in screen or from Preferences |
+
+They go out in the account language (or, if it is not set, in the one shown on screen), in Spanish or English.
+
+- **The `worker` service sends them**, not the API: if `worker` is stopped, emails wait in the queue and go out when it starts. Its logs (`docker compose logs worker`) record every send and every failure, with the user id and without the address.
+- **Email links use `WEBSITE_DOMAIN`.** If it keeps the development value (`http://localhost:5173`), emails arrive fine but their link leads nowhere. See [Variables](variables.md).
+- **Without SMTP the application works the same:** it does not offer to recover or change the password, and says so on screen.
 
 ## Variables
 

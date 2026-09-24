@@ -174,7 +174,8 @@
     "fields": {
       "email": "Email",
       "password": "Password",
-      "confirmPassword": "Repeat the password"
+      "confirmPassword": "Repeat the password",
+      "newPassword": "New password"
     },
     "validation": {
       "emailRequired": "Enter your email",
@@ -187,6 +188,23 @@
       "emailRejected": "This email is not valid or is already registered",
       "passwordPolicy": "The password must be at least 8 characters long and include letters and numbers",
       "generic": "Something went wrong. Please try again."
+    },
+    "forgotPassword": {
+      "link": "Forgot your password?",
+      "title": "Recover your password",
+      "subtitle": "We will send you a link to choose a new password.",
+      "submit": "Send link",
+      "sent": "If there is an account with {{email}}, we have sent it a link to choose a new password. It expires in 1 hour; if you don’t see it, check your spam folder.",
+      "unavailable": "This installation doesn’t send emails, so the password can’t be recovered from here. Ask whoever runs it for help.",
+      "backToLogin": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "subtitle": "Saving it signs you out of every open session.",
+      "submit": "Save password",
+      "success": "Password saved. Sign in with the new one.",
+      "invalidLink": "This link isn’t valid: it was already used, it expired or it is incomplete. Each link works only once.",
+      "requestNew": "Request a new link"
     }
   },
   "preferences": {
@@ -220,6 +238,13 @@
       "confirmLabel": "Type {{email}} to confirm",
       "confirmButton": "Delete account permanently",
       "deletedToast": "Account deleted"
+    },
+    "password": {
+      "title": "Password",
+      "description": "We will send {{email}} a link to choose a new password. Saving it signs you out of every session, this one included.",
+      "send": "Send link to change it",
+      "sent": "Link sent to {{email}}. It expires in 1 hour; if you don’t see it, check your spam folder.",
+      "unavailable": "This installation doesn’t send emails, so the password can’t be changed from here. Ask whoever runs it for help."
     }
   },
   "nav": {
@@ -231,7 +256,8 @@
     "openMenu": "Open menu",
     "theme": "Switch between light and dark theme",
     "skipToContent": "Skip to content",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "language": "Language"
   },
   "companies": {
     "title": "Companies",

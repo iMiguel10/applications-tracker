@@ -9,14 +9,20 @@ from app.api.v1.endpoints import (
     health,
     interviews,
     me,
+    meta,
     reminders,
 )
 from app.schemas.auth import UnauthorizedError
 
 router = APIRouter()
 
-# Públicas.
-router.include_router(health.router)
+# Lo único que responde sin sesión. La prueba T1 (test_auth_protection.py) guarda
+# la misma lista: un endpoint público nuevo exige tocarla, y por tanto revisarlo.
+public = APIRouter()
+public.include_router(health.router)
+public.include_router(meta.router)
+
+router.include_router(public)
 
 # Todo lo que se incluye aquí exige sesión (invariante 8). Un endpoint nuevo queda
 # protegido por construcción, sin depender de acordarse de añadir la dependencia.

@@ -1,0 +1,10 @@
+{% set subject = "Reset your Applications Tracker password" -%}
+Hi,
+
+Someone (probably you) asked to reset the password of your Applications Tracker account. To choose a new one, open this link:
+
+{{ link }}
+
+The link expires in {{ expires_in_minutes }} minutes and works only once. Changing your password signs out every open session.
+
+If you didn't ask for this, ignore this email: your password stays the same.

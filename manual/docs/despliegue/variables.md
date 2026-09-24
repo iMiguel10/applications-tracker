@@ -40,6 +40,8 @@ docker compose up -d --force-recreate
 | `API_DOMAIN` | Sí | URL pública de la API, por ejemplo `https://api.tudominio.com` |
 | `WEBSITE_DOMAIN` | Sí | URL pública de la aplicación web, por ejemplo `https://tudominio.com` |
 
+`WEBSITE_DOMAIN` es también el comienzo de los **enlaces de los emails** (recuperar la contraseña): en producción tiene que ser la dirección pública, nunca la de desarrollo.
+
 `API_DOMAIN` y `WEBSITE_DOMAIN` deciden a qué sitio pertenecen las cookies de sesión. Tienen que coincidir **exactamente** con las direcciones que escribe el usuario en el navegador: `localhost` y `127.0.0.1` son sitios distintos para el navegador, y si no coinciden el inicio de sesión parece no funcionar, sin ningún error.
 
 ## Aplicación web

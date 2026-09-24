@@ -238,7 +238,7 @@ La prueba T7 necesita el core de SuperTokens, así que `compose.test.yml` incorp
 |---|---|---|
 | **Recuperación de contraseña** (RF-03) | **Diseñada para la v2 (F11)**, ver [§8](#8-ampliacion-de-la-v2-verificacion-y-recuperacion) | La receta `emailpassword` ya la incluye. |
 | Verificación de email | **Diseñada para la v2 (F11)**, ver [§8](#8-ampliacion-de-la-v2-verificacion-y-recuperacion) | Receta `emailverification` de SuperTokens, sin cambios en nuestro modelo |
-| Cambiar email o contraseña | `[C]` | API de SuperTokens. Como `users` no copia el email, no hay nada que sincronizar. |
+| Cambiar email o contraseña | Contraseña: **desde F11**, con el enlace de recuperación enviado a la dirección de la cuenta desde las preferencias (RF-03). Email: `[C]` | API de SuperTokens. Como `users` no copia el email, no hay nada que sincronizar. |
 | Login social (Google…) | `[C]` | Receta `thirdparty`. El usuario propio se enlaza por `supertokens_user_id` igual que ahora. |
 | Limitar intentos de login | **Diseñado para la v2 (F11)**: rate limit por IP y por email en `/auth/*` ([límites y abuso](limites-y-abuso.md#2-rate-limiting-rnf-04)), además del proxy de F7 | — |
 | MFA | Evolución documentada, no se construye | Recetas de SuperTokens |
@@ -249,7 +249,7 @@ Registro con enumeración de emails: `FIELD_ERROR` "email ya registrado" revela 
 
 ## 8. Ampliación de la v2: verificación y recuperación
 
-> Estado: **diseño, sin construir** (F11). Los nombres de recetas, overrides y *claims* de esta sección se comprueban contra la versión del SDK al construir F11, como se hizo en F1 con el resto del documento.
+> Estado: **en construcción** (F11). Construida la **recuperación de contraseña**, comprobada contra `supertokens-python` 0.31.3; la verificación de email sigue siendo diseño. Los nombres de su receta y su *claim* se comprobarán contra el SDK al construirla.
 
 ### Recetas
 
@@ -264,6 +264,16 @@ Registro con enumeración de emails: `FIELD_ERROR` "email ya registrado" revela 
 
 Las dos recetas envían sus emails a través de **nuestro** `EmailSender` (A37), sustituyendo su entrega por defecto: mismas plantillas, mismo idioma de la cuenta y el mismo SMTP de RNF-34. La entrega **encola** el envío en el `worker` y vuelve enseguida; si el encolado falla, se registra y el usuario puede volver a pedirlo.
 
+**Construido para la recuperación (F11):**
+
+- `core/auth_emails.py`: `QueuedPasswordResetEmail` es el servicio de `email_delivery` de `emailpassword` (`EmailDeliveryConfig(service=…)`). Encola `send_password_reset_email` con un intento (`max_attempts=1`) y, si Valkey no responde, registra el error sin cambiar la respuesta. La cola la recibe `init_supertokens(job_queue=…)` como función, porque se crea después, en el `lifespan`. El `worker` inicializa el SDK sin cola: allí la entrega lanza un error, porque nunca atiende `/auth/*`.
+- `jobs/auth_emails.py` → `services/auth_email_service.py`: pide al core el email y el enlace, elige el idioma y envía con `EmailSender`. Un fallo del envío se registra con el id del usuario, sin la dirección, y no se reintenta: el usuario puede volver a pedirlo. Sin SMTP no se llega a generar el token.
+- **Idioma:** el de la cuenta (`users.language`). Si no lo fijó, el primero soportado del `Accept-Language` de la petición que pidió el email, que viaja en el trabajo. Si no hay ninguno, español. Es el mismo orden que sigue la interfaz. El frontend fija esa cabecera con el idioma **de la interfaz** (`preAPIHook` de `EmailPassword` en `shared/lib/supertokens.ts`) y no deja la del sistema, porque en las pantallas de acceso se puede elegir otro idioma (RF-08).
+- **Plantillas:** `templates/email/<tipo>/<idioma>.txt` y `.html` (A36), renderizadas con `infra/email/templates.py`. El asunto es un `{% set subject %}` de la plantilla de texto, así que cada traducción está entera en su carpeta.
+- `website_base_path="/"` en `appInfo`: solo sirve para construir estos enlaces, y así apuntan a `/reset-password` junto a `/login`, no a `/auth/reset-password`.
+
+> **Trampa — el token de recuperación, escrito en Valkey.** SuperTokens entrega a su servicio de email el enlace ya hecho, con el token dentro. Pasarlo tal cual como argumento del trabajo lo dejaría en Valkey, que guarda los trabajos en disco (`appendonly`) y conserva un tiempo los ya terminados. Ese token da acceso a la cuenta durante una hora. El trabajo lleva solo ids (`supertokens_user_id`, `tenant_id`) y el `worker` genera **otro** enlace al enviar (`create_reset_password_link`). El primero nunca sale del proceso de la API y caduca solo. Una prueba comprueba que los argumentos del trabajo son exactamente esos ids y el idioma.
+
 Los enlaces los construye SuperTokens a partir del `website_domain` de su `appInfo` y apuntan a rutas del frontend, que la v2 añade:
 
 | Ruta del frontend | Qué hace |
@@ -272,7 +282,7 @@ Los enlaces los construye SuperTokens a partir del `website_domain` de su `appIn
 | `/verify-email?token=…` | Consume el token al cargar y muestra el resultado |
 | `/forgot-password` | Pide el enlace de recuperación (oculto si `email_enabled = false`) |
 
-> **Trampa — enlaces que apuntan a `localhost` en producción.** El dominio de los enlaces sale de la configuración de SuperTokens (`website_domain`), no de la petición. Si en producción se queda el valor de desarrollo, todos los emails llegan bien pero con un enlace a `http://localhost:5173` que no lleva a ninguna parte, y desde el servidor todo parece funcionar. En la v2, `website_domain` se toma de `PUBLIC_APP_URL`, la misma variable que usan el resto de emails, y el manual de despliegue lo marca como obligatorio.
+> **Trampa — enlaces que apuntan a `localhost` en producción.** El dominio de los enlaces sale de la configuración de SuperTokens (`website_domain`), no de la petición. Si en producción se queda el valor de desarrollo, todos los emails llegan bien pero con un enlace a `http://localhost:5173` que no lleva a ninguna parte, y desde el servidor todo parece funcionar. En la v2, todos los enlaces de los emails (también los de las notificaciones y el feed ICS) salen de `WEBSITE_DOMAIN`, la misma variable que ya alimenta el `website_domain` de SuperTokens desde F1, y el manual de despliegue lo marca como obligatorio. (El diseño preveía una variable aparte, `PUBLIC_APP_URL`; al construir F11 se descartó: tendría siempre el mismo valor, y si alguna vez no coincidieran, los enlaces de SuperTokens y los nuestros apuntarían a sitios distintos.)
 
 > **Trampa — el enlace lleva más de un parámetro.** Los enlaces de SuperTokens incluyen, además del `token`, un `tenantId`. Una página que lea solo el `token` y construya a mano la llamada de consumo pierde el otro parámetro y el consumo falla. Las páginas usan las funciones de `supertokens-web-js`, que leen la URL completa.
 
@@ -284,6 +294,8 @@ Los enlaces los construye SuperTokens a partir del `website_domain` de su `appIn
 4. **Después de cambiarla, se revocan todas las sesiones del usuario.**
 
 > **Trampa — recuperar la contraseña no echa al intruso.** Por defecto, cambiar la contraseña no cierra las demás sesiones. Si alguien robó una sesión y la víctima, al notarlo, recupera su contraseña, el intruso sigue dentro. El backend sustituye la función de recuperación para revocar **todas** las sesiones del usuario al completarla. Aun así, un access token ya emitido sigue siendo válido hasta 5 minutos ([decisión 0002](../decisiones/0002-access-token-de-5-minutos.md)), igual que tras un logout; lo que se corta es la renovación.
+>
+> Construido como override de la API `password_reset_post` (`revoke_sessions_after_password_reset` en `core/auth_emails.py`), que llama a `revoke_all_sessions_for_user` cuando el resultado es `OK`. Al construirlo se comprobó que la trampa es real: sin el override, la sesión copiada **se renueva** (200) después de cambiar la contraseña, y la prueba T11 se pone en rojo. En el frontend, tras guardar la contraseña también se cierra la sesión local, si la hay, para que este navegador no aparente seguir dentro durante esos 5 minutos.
 
 ### Verificación de email (RF-05, RF-06)
 
@@ -311,5 +323,5 @@ Las recetas se inicializan igual, pero la entrega no envía nada (la implementac
 | T11 | Tras recuperar la contraseña, el refresco de una sesión anterior falla | Se revocan las sesiones |
 | T12 | Verificar el email por otra vía y llamar a una función con coste con el token antiguo: funciona sin renovar la sesión | El *claim* se vuelve a consultar ante un "no" |
 | T13 | Una función con coste con el email sin verificar → `403 email_not_verified`; el resto de la API sigue respondiendo | `OPTIONAL` + dependencia del backend |
-| T14 | Los enlaces de los emails de recuperación y verificación empiezan por `PUBLIC_APP_URL` | Dominio de los enlaces |
+| T14 | Los enlaces de los emails de recuperación y verificación empiezan por `WEBSITE_DOMAIN` | Dominio de los enlaces |
 | T15 | Con la entrega de prueba, el email de verificación sale en el idioma de la cuenta | Un solo canal de email con i18n |

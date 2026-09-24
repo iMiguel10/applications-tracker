@@ -5,9 +5,17 @@ sidebar_label: Correo
 
 La aplicación envía el correo a través de un servidor **SMTP** que eliges tú: el de tu proveedor de correo o un servicio de envío (Brevo, Amazon SES, Mailgun, Gmail con contraseña de aplicación…). No depende de ninguno en concreto.
 
-:::note Hoy
-Por ahora ninguna función de la aplicación envía emails. Configurar el correo deja la instalación preparada para cuando lleguen (recuperar la contraseña, avisos de recordatorios y entrevistas), y ya se puede comprobar con el email de prueba de abajo.
-:::
+## Qué emails envía
+
+| Email | Cuándo |
+|---|---|
+| Recuperar o cambiar la contraseña | Lo pide el usuario desde el inicio de sesión o desde Preferencias |
+
+Salen en el idioma de la cuenta (o, si no lo ha fijado, en el que ve en pantalla), en español o en inglés.
+
+- **Los envía el servicio `worker`**, no la API: si el `worker` está parado, los emails se quedan en cola y salen cuando arranca. En sus registros (`docker compose logs worker`) queda cada envío y cada fallo, con el id del usuario y sin la dirección.
+- **Los enlaces de los emails usan `WEBSITE_DOMAIN`.** Si se queda con el valor de desarrollo (`http://localhost:5173`), los emails llegan bien, pero su enlace no lleva a ninguna parte. Ver [Variables](variables.md).
+- **Sin SMTP la aplicación funciona igual:** no ofrece recuperar ni cambiar la contraseña, y lo dice en pantalla.
 
 ## Variables
 

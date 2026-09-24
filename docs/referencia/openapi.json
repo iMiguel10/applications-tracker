@@ -197,6 +197,109 @@
         }
       }
     },
+    "/auth/user/password/reset/token": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Pedir el email de recuperación de contraseña",
+        "description": "Envía al email indicado un enlace para elegir una contraseña nueva.\n\nResponde **200 `OK` exista o no una cuenta con ese email**: la respuesta no\nrevela qué emails están registrados. Solo un email con formato no válido da\n`FIELD_ERROR`. El enlace lleva a\n`WEBSITE_DOMAIN/reset-password?token=…&tenantId=…`, caduca a la hora y sirve\nuna sola vez. Si la instalación no tiene correo (`GET /api/v1/meta` →\n`email_enabled: false`), responde igual y no se envía nada.",
+        "operationId": "password_reset_token_auth_user_password_reset_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthStatusOk"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuthFieldError"
+                    }
+                  ],
+                  "title": "Response Password Reset Token Auth User Password Reset Token Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/user/password/reset": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Guardar la contraseña nueva",
+        "description": "Cambia la contraseña con el token del enlace del email y **cierra todas las\nsesiones** del usuario: ninguna se puede renovar después. Un access token ya\nemitido sigue siendo válido hasta que caduca (5 minutos como máximo).\n\nResponde siempre **200**: el resultado va en `status`. `FIELD_ERROR` indica\nuna contraseña que no cumple la política (la misma que al registrarse).",
+        "operationId": "password_reset_auth_user_password_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthStatusOk"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuthResetInvalidToken"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AuthFieldError"
+                    }
+                  ],
+                  "title": "Response Password Reset Auth User Password Reset Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/signout": {
       "post": {
         "tags": [
@@ -336,6 +439,28 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HealthRead"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meta": {
+      "get": {
+        "tags": [
+          "Meta"
+        ],
+        "summary": "Capacidades de la instalación",
+        "description": "Qué ofrece esta instalación, para que un cliente adapte su interfaz antes de\niniciar sesión (por ejemplo, ocultar \"¿Olvidaste tu contraseña?\" sin correo).\n\nPúblico: no requiere sesión. Solo contiene configuración, nunca datos de\nusuarios.",
+        "operationId": "meta_api_v1_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaRead"
                 }
               }
             }
@@ -3411,6 +3536,21 @@
         ],
         "title": "AuthOk"
       },
+      "AuthResetInvalidToken": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "RESET_PASSWORD_INVALID_TOKEN_ERROR",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AuthResetInvalidToken",
+        "description": "El token ya se usó, ha caducado o no existe: hay que pedir otro enlace."
+      },
       "AuthStatusOk": {
         "properties": {
           "status": {
@@ -3770,6 +3910,25 @@
           "stale_after_days"
         ],
         "title": "DashboardRead"
+      },
+      "EmailField": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "email",
+            "title": "Id"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value"
+        ],
+        "title": "EmailField"
       },
       "ErrorResponse": {
         "properties": {
@@ -4199,6 +4358,23 @@
         ],
         "title": "MeRead"
       },
+      "MetaRead": {
+        "properties": {
+          "email_enabled": {
+            "type": "boolean",
+            "title": "Email Enabled",
+            "description": "`true` si esta instalación tiene un servidor de correo configurado. Sin él no se envían emails: la recuperación de contraseña y la verificación de email no están disponibles.",
+            "examples": [
+              true
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "email_enabled"
+        ],
+        "title": "MetaRead"
+      },
       "Page_ApplicationRead_": {
         "properties": {
           "items": {
@@ -4321,6 +4497,95 @@
           "pages"
         ],
         "title": "Page[ReminderRead]"
+      },
+      "PasswordField": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "password",
+            "title": "Id"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value"
+        ],
+        "title": "PasswordField"
+      },
+      "PasswordResetRequest": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "const": "token",
+            "title": "Method"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "El parámetro `token` del enlace del email. Sirve una sola vez y caduca a la hora."
+          },
+          "formFields": {
+            "items": {
+              "$ref": "#/components/schemas/PasswordField"
+            },
+            "type": "array",
+            "title": "Formfields",
+            "description": "Un solo campo: `password`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "token",
+          "formFields"
+        ],
+        "title": "PasswordResetRequest",
+        "description": "Cuerpo para guardar la contraseña nueva con el token del enlace.",
+        "examples": [
+          {
+            "formFields": [
+              {
+                "id": "password",
+                "value": "nueva-clave-42"
+              }
+            ],
+            "method": "token",
+            "token": "<token del enlace>"
+          }
+        ]
+      },
+      "PasswordResetTokenRequest": {
+        "properties": {
+          "formFields": {
+            "items": {
+              "$ref": "#/components/schemas/EmailField"
+            },
+            "type": "array",
+            "title": "Formfields",
+            "description": "Un solo campo: `email`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "formFields"
+        ],
+        "title": "PasswordResetTokenRequest",
+        "description": "Cuerpo para pedir el email de recuperación.",
+        "examples": [
+          {
+            "formFields": [
+              {
+                "id": "email",
+                "value": "ana@example.com"
+              }
+            ]
+          }
+        ]
       },
       "PreferencesRead": {
         "properties": {
@@ -4770,6 +5035,10 @@
     {
       "name": "Health",
       "description": "Estado de la API y de la base de datos. Público."
+    },
+    {
+      "name": "Meta",
+      "description": "Capacidades de la instalación (por ejemplo, si envía emails). Público."
     },
     {
       "name": "Me",

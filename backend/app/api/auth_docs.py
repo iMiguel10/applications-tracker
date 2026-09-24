@@ -15,8 +15,11 @@ from app.schemas.auth import (
     AuthCredentials,
     AuthFieldError,
     AuthOk,
+    AuthResetInvalidToken,
     AuthStatusOk,
     AuthWrongCredentials,
+    PasswordResetRequest,
+    PasswordResetTokenRequest,
     UnauthorizedError,
 )
 
@@ -87,6 +90,40 @@ async def signin(body: AuthCredentials, st_auth_mode: AuthMode = None) -> NoRetu
     Responde siempre **200**: el resultado va en `status`. Para usar el resto de
     la API desde Swagger o una integración, toma la cabecera de respuesta
     `st-access-token` y envíala como `Authorization: Bearer <token>`.
+    """
+    _served_by_middleware()
+
+
+@router.post(
+    "/user/password/reset/token",
+    summary="Pedir el email de recuperación de contraseña",
+    response_model=AuthStatusOk | AuthFieldError,
+)
+async def password_reset_token(body: PasswordResetTokenRequest) -> NoReturn:
+    """Envía al email indicado un enlace para elegir una contraseña nueva.
+
+    Responde **200 `OK` exista o no una cuenta con ese email**: la respuesta no
+    revela qué emails están registrados. Solo un email con formato no válido da
+    `FIELD_ERROR`. El enlace lleva a
+    `WEBSITE_DOMAIN/reset-password?token=…&tenantId=…`, caduca a la hora y sirve
+    una sola vez. Si la instalación no tiene correo (`GET /api/v1/meta` →
+    `email_enabled: false`), responde igual y no se envía nada.
+    """
+    _served_by_middleware()
+
+
+@router.post(
+    "/user/password/reset",
+    summary="Guardar la contraseña nueva",
+    response_model=AuthStatusOk | AuthResetInvalidToken | AuthFieldError,
+)
+async def password_reset(body: PasswordResetRequest) -> NoReturn:
+    """Cambia la contraseña con el token del enlace del email y **cierra todas las
+    sesiones** del usuario: ninguna se puede renovar después. Un access token ya
+    emitido sigue siendo válido hasta que caduca (5 minutos como máximo).
+
+    Responde siempre **200**: el resultado va en `status`. `FIELD_ERROR` indica
+    una contraseña que no cumple la política (la misma que al registrarse).
     """
     _served_by_middleware()
 

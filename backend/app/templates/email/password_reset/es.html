@@ -1,0 +1,9 @@
+{% extends "_layout.html" %}
+{% block content %}
+<p style="margin:0 0 16px;">Hola:</p>
+<p style="margin:0 0 16px;">Alguien (seguramente tú) ha pedido restablecer la contraseña de tu cuenta de Applications Tracker.</p>
+<p style="margin:0 0 24px;"><a href="{{ link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">Elegir una contraseña nueva</a></p>
+<p style="margin:0 0 16px;">El enlace caduca en {{ expires_in_minutes }} minutos y solo sirve una vez. Al cambiar la contraseña se cerrarán todas las sesiones abiertas.</p>
+<p style="margin:0 0 16px;">Si no lo has pedido tú, ignora este email: tu contraseña no cambia.</p>
+<p style="margin:0;font-size:13px;color:#52525b;">Si el botón no funciona, copia este enlace en el navegador:<br><a href="{{ link }}" style="color:#4f46e5;word-break:break-all;">{{ link }}</a></p>
+{% endblock %}

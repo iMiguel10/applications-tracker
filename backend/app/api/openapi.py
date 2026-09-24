@@ -44,6 +44,11 @@ OPENAPI_TAGS = [
         "name": "Health",
         "description": "Estado de la API y de la base de datos. Público.",
     },
+    {
+        "name": "Meta",
+        "description": "Capacidades de la instalación (por ejemplo, si envía "
+        "emails). Público.",
+    },
     {"name": "Me", "description": "Usuario de la sesión actual."},
     {
         "name": "Companies",

@@ -5,7 +5,9 @@ from httpx import AsyncClient
 
 from app.main import app
 
-PUBLIC_PATHS = {"/api/v1/health"}
+# Lista blanca de lo que responde sin sesión (limites-y-abuso.md §4). Escrita aquí,
+# no leída del router `public`: añadir un endpoint público exige tocar la prueba.
+PUBLIC_PATHS = {"/api/v1/health", "/api/v1/meta"}
 DUMMY_ID = "00000000-0000-0000-0000-000000000000"
 HTTP_METHODS = {"get", "post", "put", "patch", "delete"}
 
@@ -45,7 +47,15 @@ async def test_protected_route_without_session_returns_401(
 
 
 @pytest.mark.asyncio
-async def test_health_is_public(anonymous_client: AsyncClient):
-    response = await anonymous_client.get("/api/v1/health")
+@pytest.mark.parametrize("path", sorted(PUBLIC_PATHS))
+async def test_public_paths_are_exactly_the_whitelist(
+    anonymous_client: AsyncClient, path: str
+):
+    # L7: junto con la prueba de arriba, la lista es exacta. Toda ruta que no está
+    # en ella exige sesión, y toda la que está existe y responde sin sesión (una
+    # entrada obsoleta no dejaría pasar en silencio una ruta nueva con ese nombre).
+    assert path in app.openapi()["paths"]
+
+    response = await anonymous_client.get(path)
 
     assert response.status_code == 200

@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/components/ui/card";
+import { ChangePasswordCard } from "@/features/auth/components/ChangePasswordCard";
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog";
 import { PreferencesForm } from "@/features/auth/components/PreferencesForm";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
@@ -46,34 +47,37 @@ export function PreferencesPage() {
         </div>
 
         {me?.email && (
-          <Card className="ring-destructive/25">
-            <CardHeader>
-              <CardTitle>{t("account.delete.title")}</CardTitle>
-              <CardDescription>
-                <Trans
-                  i18nKey="account.delete.description"
-                  components={{
-                    link: (
-                      <Link
-                        to="/applications"
-                        className="font-medium text-foreground underline underline-offset-4"
-                      />
-                    ),
-                  }}
-                />
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="outline"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 />
-                {t("account.delete.openButton")}
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6">
+            <ChangePasswordCard email={me.email} />
+            <Card className="ring-destructive/25">
+              <CardHeader>
+                <CardTitle>{t("account.delete.title")}</CardTitle>
+                <CardDescription>
+                  <Trans
+                    i18nKey="account.delete.description"
+                    components={{
+                      link: (
+                        <Link
+                          to="/applications"
+                          className="font-medium text-foreground underline underline-offset-4"
+                        />
+                      ),
+                    }}
+                  />
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 />
+                  {t("account.delete.openButton")}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
 

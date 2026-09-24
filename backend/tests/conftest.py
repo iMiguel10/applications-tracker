@@ -10,9 +10,11 @@ from sqlalchemy.pool import NullPool
 from app.api.v1.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
+from app.infra.queue import InMemoryJobQueue
 from app.main import app
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import CurrentUser
+from tests.auth_helpers import BASE_URL, HEADERS
 
 # NullPool: pytest-asyncio usa un event loop por test y una conexión de asyncpg
 # no puede reutilizarse en otro loop. Sin pool, cada test abre la suya.
@@ -88,6 +90,27 @@ def as_user() -> Callable[[CurrentUser], None]:
         app.dependency_overrides[get_current_user] = lambda: current_user
 
     return _as_user
+
+
+@pytest_asyncio.fixture
+async def real_auth_client(
+    db_session: AsyncSession,
+) -> AsyncGenerator[AsyncClient, None]:
+    """Cliente contra el core real de SuperTokens (supertokens-test), con la sesión
+    de verdad: nada de `as_user`. Lo que se encola va a una `InMemoryJobQueue`
+    (`app.state.job_queue`): sin lifespan en las pruebas, no hay cola real."""
+
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.state.job_queue = InMemoryJobQueue()
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url=BASE_URL, headers=HEADERS
+    ) as client:
+        yield client
+    app.dependency_overrides.clear()
+    del app.state.job_queue
 
 
 @pytest_asyncio.fixture

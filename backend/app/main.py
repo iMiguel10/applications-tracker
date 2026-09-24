@@ -24,10 +24,17 @@ from app.core.exception_handlers import (
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
 from app.core.supertokens import init_supertokens
-from app.infra.queue import SaqJobQueue
+from app.infra.queue import JobQueue, SaqJobQueue
+
+
+def _job_queue() -> JobQueue:
+    # La cola existe desde el lifespan; SuperTokens la pide al encolar un email.
+    queue: JobQueue = app.state.job_queue
+    return queue
+
 
 setup_logging()
-init_supertokens()
+init_supertokens(job_queue=_job_queue)
 
 
 @asynccontextmanager
