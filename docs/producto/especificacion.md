@@ -1,6 +1,6 @@
 # Especificación de producto
 
-> Estado: v1 (MVP, F0–F8) construida · **v2** especificada y diseñada el 2026-09-24; construida F9 (infraestructura), el resto pendiente
+> Estado: v1 (MVP, F0–F8) construida · **v2** especificada y diseñada el 2026-09-24; construidas F9 (infraestructura) y F10 (manual de producción), el resto pendiente
 
 !!! info "Cómo leer este documento"
     La **v1** (MVP) está construida: sus requisitos describen lo que existe. La **v2** (fases F9–F17) está especificada pero **no construida**; sus requisitos llevan la fase en la que se construyen, por ejemplo `[F12]`. Una sola fuente de verdad para las dos, con la numeración continua.
@@ -455,7 +455,7 @@ Cada fase se define por el riesgo que quita de en medio. Van en orden de depende
 | Fase | Contenido | Qué riesgo reduce o qué enseña |
 |---|---|---|
 | **F9 — Esqueleto vertical de la v2** *(desechable)* · ✔ construida y retirada el 2026-09-24 | Un solo camino de punta a punta con toda la infraestructura nueva: un endpoint encola un trabajo → el `worker` genera un PDF trivial → lo guarda en el almacén de ficheros → envía por email (Mailpit) un aviso con el enlace de descarga. Sin interfaz bonita ni reglas de negocio. | Descubre dónde duele antes de construir encima: dependencias de sistema del generador de PDF dentro de la imagen, cola y worker en Docker, almacén de ficheros en un volumen compartido, SMTP. Lo más probable que falle, y lo más caro de descubrir a mitad de una feature. |
-| **F10 — Documentación de producción** | Sitio Docusaurus (es + en) con sus tres partes (RNF-33): manual de uso de lo que ya existe (MVP), referencia de la API generada del OpenAPI con su guía de integración, y la estructura del manual de despliegue, que se completa en F7. El agente documentador pasa a mantener los dos sitios. | Montarlo **antes** que las features hace que cada una llegue ya con su página de manual, en vez de acumular deuda. |
+| **F10 — Documentación de producción** · ✔ construida el 2026-09-24 | Sitio Docusaurus (es + en) con sus tres partes (RNF-33): manual de uso de lo que ya existe (MVP), referencia de la API generada del OpenAPI con su guía de integración, y la estructura del manual de despliegue, que se completa en F7. El agente documentador pasa a mantener los dos sitios. | Montarlo **antes** que las features hace que cada una llegue ya con su página de manual, en vez de acumular deuda. |
 | **F11 — Cuenta, límites y protección** | Recuperación de contraseña (RF-03), verificación de email (RF-05, RF-06), zona horaria (RF-07), límites ampliados con consumo y restante visibles (RF-140…144) y rate limiting (RNF-04). | Con registro abierto, es lo que hay que tener antes de exponer nada con coste. |
 | **F12 — Notificaciones por email** | Los cuatro tipos (RF-80…87), preferencias y desactivación con un clic. | Trabajo programado e idempotencia: "nunca dos veces" es la parte difícil. |
 | **F13 — Biblioteca de documentos** | Subida de PDFs, biblioteca, asociación a solicitudes, descripción de la oferta (RF-27, RF-28, RF-90…94). | Manejo seguro de ficheros subidos por usuarios (RNF-05) y consistencia entre base de datos y almacén (RNF-41). |

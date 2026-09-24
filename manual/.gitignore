@@ -1,0 +1,9 @@
+node_modules/
+build/
+.docusaurus/
+.cache-loader/
+
+# Referencia de la API: se genera de docs/referencia/openapi.json en cada start y
+# build. No se versiona: la única fuente del contrato es el OpenAPI del backend.
+docs/api/referencia/
+.openapi/

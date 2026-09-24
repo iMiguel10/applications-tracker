@@ -51,7 +51,7 @@ Nunca copies texto de un sitio al otro: si los dos necesitan lo mismo, uno lo ex
 
 1. **Solo lo que existe.** Igual que `guias/` y `referencia/` en `docs/`: una funcionalidad de la v2 entra en el manual cuando está construida, no cuando está diseñada. Si `manual/` todavía no existe (antes de F10), no lo crees: dilo en el informe.
 2. **Tareas, no pantallas.** "Adaptar el CV a una oferta", no "La página de IA tiene tres botones". Una página por tarea envejece mucho menos que una por pantalla.
-3. **Los dos idiomas en el mismo commit.** El español es el original, en `manual/docs/`; el inglés va en `manual/i18n/en/`, con la misma estructura. Una página que existe en un idioma y no en el otro es un fallo, no un pendiente.
+3. **Los dos idiomas en el mismo commit.** El español es el original, en `manual/docs/`; el inglés va en `manual/i18n/en/`, con la misma estructura (`manual/i18n/en/docusaurus-plugin-content-docs/current/`). Una página que existe en un idioma y no en el otro es un fallo, no un pendiente. `npm run check-i18n` lo comprueba. Los nombres de botones y campos se copian de `frontend/src/shared/i18n/locales/{es,en}.json`, para que coincidan con la pantalla en cada idioma.
 4. **La referencia de la API se genera** de `docs/referencia/openapi.json` con el plugin de OpenAPI, y su salida no se versiona. Si le falta información, va al endpoint o al schema del backend, nunca a una página escrita a mano.
 5. **Despliegue verificable.** Cada paso del manual de despliegue es un comando o una configuración concreta, con lo que debe verse si ha ido bien. Alguien técnico tiene que poder desplegar leyendo solo esa sección.
 
@@ -135,7 +135,8 @@ Comprueba que los sitios compilan sin avisos ni enlaces rotos:
 
 ```bash
 docker compose run --rm docs build --strict
-docker compose run --rm manual npm run build     # desde F10
+docker compose run --rm --no-deps manual npm run check-i18n   # cada página en es y en
+docker compose run --rm --no-deps manual npm run build        # los dos idiomas
 ```
 
 Si no puedes ejecutar alguno, dilo en el informe en vez de darlo por bueno.

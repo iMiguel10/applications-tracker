@@ -72,3 +72,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose run --rm docs build --strict
+
+  # Documentación de producción (Docusaurus, es + en). Nativo con Node, como el
+  # frontend: el build genera la referencia de la API desde
+  # docs/referencia/openapi.json y falla ante enlaces rotos.
+  manual:
+    name: Manual · traducciones, build y tipos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: manual/package-lock.json
+      - run: npm ci
+        working-directory: manual
+      - run: npm run check-i18n
+        working-directory: manual
+      - run: npm run build
+        working-directory: manual
+      # Después del build: sidebars.ts importa la referencia que genera.
+      - run: npm run typecheck
+        working-directory: manual

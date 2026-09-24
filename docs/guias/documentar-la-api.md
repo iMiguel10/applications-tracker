@@ -12,6 +12,7 @@ La documentación de la API **es el esquema OpenAPI que genera FastAPI** a parti
 | <http://localhost:8000/redoc> | ReDoc: la misma información en formato de lectura |
 | <http://localhost:8000/openapi.json> | El esquema en crudo, para generar clientes o importarlo en Postman/Insomnia |
 | [Referencia de la API](../referencia/api.md) de este sitio | Copia versionada (`docs/referencia/openapi.json`), de solo lectura, disponible sin levantar la API |
+| Referencia del manual (<http://localhost:3001/api/guia>) | La misma, generada por Docusaurus para quien integra, con ejemplos de código y una URL base editable |
 
 ## Autenticarse
 
@@ -35,27 +36,7 @@ El access token **caduca a los 5 minutos** ([decisión 0002](../decisiones/0002-
 
 ### Desde una integración
 
-```bash
-# 1. Login en modo cabecera: los tokens llegan en las cabeceras de respuesta
-curl -si -X POST http://localhost:8000/auth/signin \
-  -H 'Content-Type: application/json' -H 'st-auth-mode: header' \
-  -d '{"formFields":[{"id":"email","value":"ana@example.com"},{"id":"password","value":"secreto123"}]}'
-#    → st-access-token: eyJ...   st-refresh-token: tOb...
-
-# 2. Llamadas a la API con el access token
-curl -s http://localhost:8000/api/v1/me -H "Authorization: Bearer $ACCESS_TOKEN"
-
-# 3. Al recibir 401, renovar con el refresh token (devuelve un par NUEVO)
-curl -si -X POST http://localhost:8000/auth/session/refresh \
-  -H 'st-auth-mode: header' -H "Authorization: Bearer $REFRESH_TOKEN"
-
-# 4. Cerrar sesión
-curl -s -X POST http://localhost:8000/auth/signout -H "Authorization: Bearer $ACCESS_TOKEN"
-```
-
-> **Trampa — el refresh token solo vale una vez.** Cada `POST /auth/session/refresh` devuelve **también un refresh token nuevo**, y el anterior queda invalidado. Si una integración guarda el primero y lo reutiliza, SuperTokens interpreta el reúso como un **robo de token** y revoca la sesión entera. Lo mismo pasa si dos procesos de la misma integración refrescan a la vez con el mismo token. Regla: tras cada refresco, sustituir los **dos** tokens guardados, y que refresque un solo proceso cada vez.
-
-Las respuestas de `/auth/signup` y `/auth/signin` son **siempre 200**: el resultado va en `status` (`OK`, `WRONG_CREDENTIALS_ERROR`, `FIELD_ERROR`). Una integración debe comprobar `status`, no el código HTTP.
+La guía para quien integra otro sistema está en el **manual de producción**, sección API (`manual/docs/api/guia.md`; <http://localhost:3001/api/guia> en local): inicio de sesión en modo cabecera, renovación del token (que **rota en cada uso**: reutilizar uno revoca la sesión), formato de los errores, paginación y fechas. Vive allí, en español y en inglés, porque su público es quien integra, no quien mantiene el código.
 
 ## Cómo se documenta un endpoint
 

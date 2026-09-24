@@ -1,7 +1,7 @@
 # 0010 — Docusaurus para la documentación de producción
 
 - **Fecha:** 2026-09-24
-- **Estado:** propuesta (se acepta al construir F10)
+- **Estado:** aceptada (construida en F10, 2026-09-24)
 
 ## Contexto
 
@@ -23,3 +23,9 @@ Se añade un segundo sitio con Docusaurus en `manual/`, con i18n (es, en) y la r
 - Dos sitios que mantener, uno en dos idiomas (R14). El agente documentador los mantiene en el mismo commit que el código.
 - La referencia de la API sigue sin escribirse a mano: los dos sitios la generan del mismo contrato.
 - El CI construye también el manual; su tiempo de build se vigila.
+
+## Al construirla (F10)
+
+- La referencia se genera de una **copia derivada** del contrato (`manual/scripts/prepare-openapi.mjs`), que solo añade un servidor con la URL de la API como variable editable. El contrato del backend no declara `servers` para que Swagger siga llamando a su propio origen; sin ellos, el plugin escribía los ejemplos contra el origen del manual. La copia no se versiona: la fuente sigue siendo una.
+- `npm run check-i18n` falla si una página existe en un solo idioma: Docusaurus no lo detecta, porque muestra el original cuando falta la traducción.
+- Los textos del tema de OpenAPI ("Request", "Responses"…) no los extrae `write-translations`, porque viven en el paquete compilado: están traducidos a mano en `manual/i18n/es/code.json`.

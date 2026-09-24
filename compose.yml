@@ -128,6 +128,21 @@ services:
       - ./mkdocs.yml:/docs/mkdocs.yml:ro
       - ./docs:/docs/docs:ro
 
+  # Documentación de PRODUCCIÓN (Docusaurus, es + en; decisión 0010), en
+  # http://localhost:3001. La referencia de la API se genera al arrancar desde
+  # docs/referencia/openapi.json, montado en la misma ruta relativa que en el host.
+  # El servidor de desarrollo sirve un solo idioma: ver manual/README.md.
+  manual:
+    build:
+      context: ./manual
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./manual:/app
+      - /app/node_modules
+      - ./docs/referencia:/docs/referencia:ro
+
   frontend:
     build:
       context: ./frontend

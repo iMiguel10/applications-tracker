@@ -21,7 +21,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 ---
 
 > [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) ya está construida, y sus funcionalidades, todavía no. La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción; sus funcionalidades, todavía no. La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Contenido
 
@@ -43,7 +43,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 | | |
 |---|---|
-| **Solicitudes y empresas** | Alta, edición, archivado y borrado. Listado con búsqueda, filtros (estado, empresa, modalidad, fuente, fechas), orden y paginación **en la URL**, así que un filtro se puede compartir o recuperar con el botón atrás. Empresas reutilizables entre solicitudes, creables sin salir del formulario. |
+| **Solicitudes y empresas** | Alta, edición, archivado y borrado. Listado con búsqueda, filtros (estado, modalidad, fuente, archivadas; y por empresa desde su ficha), orden y paginación **en la URL**, así que un filtro se puede compartir o recuperar con el botón atrás. Empresas reutilizables entre solicitudes, creables sin salir del formulario. |
 | **Ciclo de vida** | Cada solicitud recorre una máquina de estados (guardada → enviada → en revisión → entrevistas → oferta → aceptada, o descartada / retirada). Cada cambio queda en un historial con la fecha en que ocurrió de verdad, y el último se puede **deshacer**. |
 | **Entrevistas y recordatorios** | Entrevistas por solicitud (tipo, formato, resultado) y recordatorios con fecha límite, ligados o no a una solicitud, con avisos de vencidos. |
 | **Dashboard** | Solicitudes por estado, envíos por semana, tasa de respuesta, próximas entrevistas, recordatorios pendientes y solicitudes sin actividad. |
@@ -54,12 +54,12 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento está construida la infraestructura (F9); las funcionalidades, todavía no.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidos la infraestructura (F9) y el manual de producción (F10); las funcionalidades, todavía no.
 
 | Fase | Contenido |
 |---|---|
 | ✔ F9 | Infraestructura nueva: cola de trabajos, generación de PDF, almacenamiento de ficheros y email |
-| F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
+| ✔ F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
 | F11 | Recuperación de contraseña, verificación de email, límites visibles y rate limiting |
 | F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad |
 | F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
@@ -106,7 +106,8 @@ Cada decisión, con la alternativa descartada y el porqué, está en la [documen
 | **Frontend** | React 19 · TypeScript · Vite · TanStack Query · react-hook-form + zod · Tailwind CSS v4 · shadcn/ui · i18next · Recharts |
 | **Infraestructura** | Docker · Docker Compose |
 | **Calidad** | pytest · Vitest + Testing Library · ruff · mypy · ESLint · GitHub Actions |
-| **Documentación** | MkDocs Material · Mermaid · OpenAPI |
+| **Segundo plano** | SAQ sobre Valkey · WeasyPrint · aiosmtplib |
+| **Documentación** | MkDocs Material (desarrollo) · Docusaurus (producción, es + en) · Mermaid · OpenAPI |
 
 ## Puesta en marcha
 
@@ -131,6 +132,8 @@ La primera vez se construyen las imágenes y el backend aplica las migraciones a
 | Aplicación | http://localhost:5173 |
 | API (OpenAPI interactivo) | http://localhost:8000/docs |
 | Documentación de desarrollo | http://localhost:8001 |
+| Manual de uso, despliegue y API | http://localhost:3001 |
+| Correo capturado (Mailpit) | http://localhost:8025 |
 
 Crea una cuenta desde la pantalla de registro y ya puedes empezar a registrar solicitudes.
 
@@ -149,6 +152,10 @@ Toda la configuración va en variables de entorno (`.env`, a partir de [`.env.ex
 | `API_DOMAIN`, `WEBSITE_DOMAIN` | Dominios de la API y del frontend, para las cookies de sesión |
 | `CORS_ORIGINS` | Orígenes permitidos por la API |
 | `VITE_API_URL` | URL de la API que usa el frontend |
+| `VALKEY_URL`, `FILES_ROOT` | Cola de trabajos y almacén de ficheros |
+| `SMTP_*`, `EMAIL_FROM` | Servidor de correo (opcional: sin él, la aplicación no envía emails). En desarrollo, Mailpit |
+
+Qué hace cada una, cuáles son obligatorias y qué pasa si faltan está en el [manual de despliegue](manual/docs/despliegue/variables.md).
 
 Los secretos nunca se versionan: `.env` y `.env.test` están en `.gitignore`.
 
@@ -184,11 +191,14 @@ docker compose -f compose.test.yml down -v
 - **Autenticación:** una prueba de humo contra el core real de SuperTokens.
 - **Rendimiento:** un script mide el listado y el dashboard con 2 000 solicitudes por usuario contra su presupuesto (300 ms y 500 ms en p95).
 
-La integración continua ([`ci.yml`](.github/workflows/ci.yml)) corre en cada push y pull request con cuatro jobs: lint y tipos del backend, tests del backend, frontend (lint, tipos, tests y build) y construcción estricta de la documentación.
+La integración continua ([`ci.yml`](.github/workflows/ci.yml)) corre en cada push y pull request con cinco jobs: lint y tipos del backend, tests del backend, frontend (lint, tipos, tests y build), construcción estricta de la documentación de desarrollo y construcción del manual (con la comprobación de que cada página existe en los dos idiomas).
 
 ## Documentación
 
-La documentación de desarrollo vive en [`docs/`](docs/) y se publica con MkDocs (`http://localhost:8001` en local):
+Hay dos sitios, cada uno para un público:
+
+- **Manual** ([`manual/`](manual/), Docusaurus, `http://localhost:3001` en local), en español y en inglés, para quien **usa**, **despliega** o **se integra** con la aplicación: una página por tarea, el despliegue paso a paso y la referencia de la API generada del contrato OpenAPI.
+- **Documentación de desarrollo** ([`docs/`](docs/), MkDocs, `http://localhost:8001`), para quien trabaja en el código:
 
 | Sección | Contenido |
 |---|---|
@@ -197,10 +207,10 @@ La documentación de desarrollo vive en [`docs/`](docs/) y se publica con MkDocs
 | [Servicios y estructura](docs/arquitectura/servicios-y-estructura.md) | Servicios, estructura de carpetas y reglas de capas |
 | [Autenticación](docs/arquitectura/autenticacion.md) | Integración con SuperTokens y sus trampas |
 | [Arquitectura de la v2](docs/arquitectura/v2.md) | Diseño de la siguiente versión, con sus documentos por tema |
-| [Guía de la API](docs/guias/documentar-la-api.md) | Cómo probar la API e integrarse con ella (autenticación Bearer) |
+| [Guía de la API](docs/guias/documentar-la-api.md) | Cómo se documenta un endpoint y cómo probar la API desde Swagger |
 | [Decisiones](docs/decisiones/index.md) | Bitácora de los cambios de rumbo durante el desarrollo |
 
-La referencia completa de la API está en `http://localhost:8000/docs` y, versionada, en [`docs/referencia/openapi.json`](docs/referencia/openapi.json).
+La referencia completa de la API está en el manual, en `http://localhost:8000/docs` y, versionada, en [`docs/referencia/openapi.json`](docs/referencia/openapi.json): las tres salen del mismo contrato.
 
 ## Estructura del repositorio
 
@@ -212,6 +222,8 @@ applications-tracker/
 │   │   ├── services/        reglas de negocio y transacciones
 │   │   ├── repositories/    todo el acceso a datos
 │   │   ├── domain/          reglas puras: estados y transiciones
+│   │   ├── infra/           cola, correo, ficheros y PDF, cada uno tras una interfaz
+│   │   ├── jobs/            trabajos del worker (segundo plano)
 │   │   ├── models/          tablas SQLAlchemy
 │   │   └── schemas/         entrada y salida (Pydantic)
 │   ├── migrations/          migraciones de Alembic
@@ -222,6 +234,7 @@ applications-tracker/
 │       ├── pages/           una página por ruta
 │       └── shared/          UI, formularios, layout, i18n y utilidades
 ├── docs/                    documentación de desarrollo (MkDocs)
+├── manual/                  manual de uso, despliegue y API (Docusaurus, es + en)
 ├── .github/workflows/       integración continua
 ├── compose.yml              entorno de desarrollo
 └── compose.test.yml         entorno de pruebas del backend

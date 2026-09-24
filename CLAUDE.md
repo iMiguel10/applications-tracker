@@ -6,7 +6,7 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-24): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada, y su infraestructura (F9) construida: correo, cola con `worker`, almacén de ficheros y PDF. Ninguna funcionalidad de la v2 la usa todavía (llegan desde F11). F7 (despliegue) espera a que haya un VPS.**
+> **Estado (2026-09-24): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada, su infraestructura (F9) construida (correo, cola con `worker`, almacén de ficheros y PDF) y su manual de producción (F10) en `manual/`. Ninguna funcionalidad de la v2 existe todavía (llegan desde F11). F7 (despliegue) espera a que haya un VPS.**
 >
 > F6 (CI) se construyó antes que F5 (dashboard y exportación CSV) por decisión explícita del usuario, no porque F5 no hiciera falta; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md). F8 (revisión final) se construyó a su vez antes que F7 por otra decisión explícita del usuario: con el MVP funcional completo (F0–F6), tenía más sentido cerrar la revisión mientras el diseño estaba fresco que dejarla para después de desplegar. F7 cambia de contenido: ya no es "preparación para despliegue" sino la **puesta en producción real**, y sigue sin empezar.
 >
@@ -24,9 +24,10 @@ Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candi
 >         - **Ficheros:** el volumen `files_data` (montado en `/data/files` en `api` y `worker`) y `app/infra/storage/` (`FileStorage` con `LocalFileStorage`: escritura atómica, claves encerradas en la raíz y límite de tamaño contado al escribir).
 >         - **PDF:** `app/infra/pdf/` (`PdfRenderer`; `WeasyPrintRenderer` con Jinja2 y `TemplateOnlyFetcher` contra SSRF, en `weasyprint_renderer.py`, que solo importa el `worker`) y las librerías de sistema de WeasyPrint en la imagen.
 >         - **Sin usar todavía:** el `worker` arranca sin trabajos registrados (los primeros llegan en F11: emails de verificación y de recuperación de contraseña), y `get_job_queue` y `get_file_storage` de `deps.py` no los usa aún ningún endpoint. Ningún código de la aplicación envía emails ni genera PDFs.
+>     - F10, manual de producción: `manual/` (Docusaurus 3.10, español por defecto e inglés en `i18n/en/`) con uso (una página por tarea del MVP), despliegue (servicios, variables, correo, copias de seguridad; la receta de producción llega con F7) y API (guía de integración + referencia generada del OpenAPI). Servicio `manual` (3001) y job `manual` en la CI.
 > - **No existe todavía:**
 >     - F7, la puesta en producción real (orden invertido a petición del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md)), en espera de servidor.
->     - **Las funcionalidades de la v2** (F10–F17): el manual de Docusaurus (`manual/`), notificaciones por email, perfil y CVs, IA, Kanban, calendario y rate limiting. Solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
+>     - **Las funcionalidades de la v2** (F11–F17): notificaciones por email, perfil y CVs, IA, Kanban, calendario y rate limiting. Solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
 
 ## 2. Documentación
 
@@ -43,7 +44,7 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `docs/decisiones/` | Bitácora de cambios de rumbo durante el desarrollo, con plantilla |
 | `docs/arquitectura/v2.md` | **v2 (diseño; construida solo la infraestructura de F9):** decisiones A18–A42, modelo de datos, flujos, consistencia entre almacenes e invariantes 9–18 |
 | `docs/arquitectura/{segundo-plano,ficheros,ia,limites-y-abuso}.md` | **v2:** cada tema con sus trampas y sus pruebas adversas (B, D, I, L); la ampliación de autenticación está en `autenticacion.md` §8 (T9–T15) |
-| `manual/` | **Desde F10 (no existe todavía):** documentación de producción en Docusaurus, es + en: despliegue, manual de uso y referencia de la API ([0010](docs/decisiones/0010-docusaurus-para-la-documentacion-de-produccion.md)) |
+| `manual/` | Documentación de **producción** en Docusaurus, es + en: manual de uso, despliegue y API (guía + referencia generada del OpenAPI). Reglas en `manual/README.md` ([0010](docs/decisiones/0010-docusaurus-para-la-documentacion-de-produccion.md)) |
 
 **Si el código y un documento no coinciden, no se corrige el documento sin más.** Primero se averigua si el diseño evolucionó (y se actualiza el documento dejando constancia) o si la implementación se lo saltó (y entonces es un fallo del código).
 
@@ -58,11 +59,12 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `supertokens`, `supertokens-db` | — | Core de auth **fijado a 12.2.0** (debe implementar la CDI de `supertokens-python`), con **su propia** instancia de Postgres; no se publican puertos. Access token de 5 min ([0002](docs/decisiones/0002-access-token-de-5-minutos.md)). |
 | `valkey` | — | Valkey 9.1 (Redis libre): cola de SAQ y, desde F11, rate limit. Sin puertos publicados. `VALKEY_URL` es obligatoria: sin ella `api` no arranca |
 | `worker` | — | Misma imagen, código y `.env` que `api`, con otro comando: `saq --quiet app.worker.settings` envuelto en `watchfiles` (se reinicia solo al cambiar un `.py`). No aplica migraciones |
+| `manual` | 3001 | Docusaurus (manual de producción). El servidor de desarrollo sirve **un solo idioma** (español); el inglés se arranca aparte con `--locale en` |
 | `mailpit` | 8025 | **Solo desarrollo** (F9). Captura todo el correo (SMTP interno en `mailpit:1025`) y no envía nada fuera. En producción el SMTP lo configura quien despliega con `SMTP_*` y `EMAIL_FROM`; sin `SMTP_HOST`, la app arranca y no envía emails (RNF-34). |
 
 Usa siempre `localhost` y nunca `127.0.0.1` (ver trampas).
 
-**Servicios de la v2, diseñados y todavía sin construir:** `manual` (Docusaurus, 3001). El volumen `files_data` ya existe. Detalle en `docs/arquitectura/servicios-y-estructura.md` §8.
+Todos los servicios de la v2 ya existen. Detalle en `docs/arquitectura/servicios-y-estructura.md` §8.
 
 ## 4. Comandos
 
@@ -98,6 +100,8 @@ docker compose exec frontend npx shadcn add <componente>                   # ver
 
 # Documentación
 docker compose run --rm docs build --strict                                # falla ante enlaces rotos
+docker compose run --rm --no-deps manual npm run check-i18n               # cada página del manual en es y en
+docker compose run --rm --no-deps manual npm run build                    # manual completo (los dos idiomas); falla ante enlaces rotos
 ```
 
 ## 5. Estructura y capas
@@ -176,6 +180,9 @@ La v2 añade los invariantes 9–18 de `docs/arquitectura/v2.md` §8 (Postgres m
 - **shadcn genera `import { cn } from "cn"`.** Es el paquete oficial `shadcn-ui/cn`; `@/shared/lib/utils` lo reexporta. No lo cambies a mano en los componentes generados.
 - **Pestaña oculta durante una verificación en vivo con navegador automatizado.** Con la pestaña en segundo plano, el navegador pausa `requestAnimationFrame` (así que una animación de cierre de diálogo no termina de correr) y TanStack Query deja de reintentar hasta que vuelve el foco. Un diálogo que parece no cerrarse o una petición que parece colgada puede ser solo eso, no un bug: mantén la pestaña visible al verificar.
 - **En SAQ, `retries` cuenta intentos totales, no reintentos.** Un trabajo se repite mientras `retries > attempts`, y `attempts` ya vale 1 tras el primero: `retries=1` (el valor por defecto) es un solo intento y `retries=0` significa lo mismo. Por eso `JobQueue.enqueue` habla de `max_attempts`. Y SAQ mezcla en el mismo `**kwargs` sus opciones (`timeout`, `key`…) y los argumentos de la función: `SaqJobQueue` pasa los argumentos en `kwargs=` para que no se confundan.
+- **El manual es otro sitio con otro público.** Cada cambio que ve el usuario, que toca el despliegue o que cambia una convención de la API actualiza `manual/` en español **y** en inglés en el mismo commit (tabla en `.claude/agents/docs-writer.md`). `npm run check-i18n` falla si una página existe en un solo idioma. Los nombres de botones se copian de `frontend/src/shared/i18n/locales/`. Nunca se copia texto entre `docs/` y `manual/`: uno explica y el otro enlaza.
+- **La referencia de la API del manual sale de una copia derivada.** `manual/scripts/prepare-openapi.mjs` copia `docs/referencia/openapi.json` añadiendo un servidor `{apiUrl}`: el contrato del backend no declara `servers` (Swagger debe llamar a su propio origen) y sin ellos los ejemplos apuntaban al manual. No edites la copia ni la salida (`.openapi/`, `docs/api/referencia/`): se regeneran en cada `start` y `build`.
+- **Textos del tema de OpenAPI.** `write-translations` no los extrae (viven en el paquete compilado): su traducción al español está a mano en `manual/i18n/es/code.json`. Y no versiones los JSON de la barra lateral de la API que genera `write-translations`: son una copia del OpenAPI que envejece.
 - **WeasyPrint solo en el `worker`.** `app.infra.pdf` exporta solo la interfaz; la implementación (`app.infra.pdf.weasyprint_renderer`) la importa `worker.py`. WeasyPrint no publica tipos: sus imports llevan `# type: ignore[import-untyped]`.
 - **La cola de SAQ se crea dentro del event loop** (el `lifespan` de `main.py`, o una por prueba), nunca al importar un módulo de la API: guarda primitivas de `asyncio` que quedan ligadas al primer loop que las usa, y en los tests (un loop por prueba) fallaría desde la segunda.
 - **Encolar puede fallar después del commit.** Con Valkey caído, encolar tarda unos 4 s y lanza `QueueUnavailableError`. Un service que encola tras confirmar una fila `pending` no debe convertir eso en un 500: la fila ya existe y el barrido de pendientes la reencola (v2 §3). El `worker` sí se recupera solo cuando Valkey vuelve, y los trabajos encolados sobreviven a un reinicio de Valkey (`--appendonly yes`).
@@ -205,7 +212,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F8 | Revisión final: auditoría de funcionalidades (sin huecos), preferencias de usuario, moneda cerrada, script de rendimiento, borrado de cuenta y diseño de la interfaz (paleta, tema claro/oscuro, adaptable, accesibilidad, estados de carga/vacío/error). Construida antes que F7, a petición explícita del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md) |
 | F7 | Puesta en producción real: `compose.prod.yml`, Nginx, variables de producción y despliegue efectivo. **En espera** hasta que haya un VPS; incluirá los servicios de la v2 que ya estén construidos |
 | ✔ F9 | **v2.** Infraestructura: correo (Mailpit + `EmailSender`), cola (Valkey + SAQ + `worker`), almacén (`files_data` + `FileStorage`) y PDF (WeasyPrint), validados con un esqueleto vertical desechable (cola → `worker` → PDF → disco → email) que ya se retiró |
-| F10 | **v2.** Documentación de producción en Docusaurus (`manual/`, es + en) y documentador ampliado a los dos sitios |
+| ✔ F10 | **v2.** Documentación de producción en Docusaurus (`manual/`, es + en): uso, despliegue y API, con el job `manual` en la CI |
 | F11 | **v2.** Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
 | F12 | **v2.** Notificaciones por email (cuatro tipos, nunca dos veces por el mismo motivo) |
 | F13 | **v2.** Biblioteca de documentos (CVs y cartas en PDF) y descripción de la oferta |

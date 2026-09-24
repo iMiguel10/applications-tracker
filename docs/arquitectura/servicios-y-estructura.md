@@ -308,7 +308,7 @@ Las tres reglas contra el envejecimiento:
 
 ## 8. Ampliación de la v2
 
-> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora (F9): `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`.
+> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora: en F9, `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`; en F10, `manual` y su job de CI.
 
 ### 8.1 Servicios
 
@@ -317,7 +317,7 @@ Las tres reglas contra el envejecimiento:
 | `valkey` **[construido]** | `valkey/valkey:9.1-alpine` | — | Cola de SAQ y contadores de rate limit (A18, A28) | F9 |
 | `worker` **[construido]** | `./backend`, la **misma imagen** que `api` | — | Trabajos (PDF, IA, emails) y barridos programados | F9 |
 | `mailpit` **[construido]** | `axllent/mailpit:v1.31` | 8025 (interfaz web) | Captura todos los emails en desarrollo; SMTP interno en el 1025 | F9 |
-| `manual` | `./manual/Dockerfile.dev` (node 24) | 3001 | Documentación de producción (Docusaurus) con recarga en vivo | F10 |
+| `manual` **[construido]** | `./manual/Dockerfile.dev` (node 24) | 3001 | Documentación de producción (Docusaurus) con recarga en vivo (`--poll`, como el frontend). Sirve **un solo idioma**: el inglés se arranca con `--locale en` (ver `manual/README.md`) | F10 |
 | `valkey-test` **[construido]** | como `valkey`, en `tmpfs` | — | Rate limit y cola en la suite de pytest | F9 |
 
 Volumen nuevo: **`files_data`** **[construido]**, montado en `/data/files` en `api` **y** `worker` (A21). Es el almacén de los PDFs. La imagen crea `/data/files` con dueño `appuser` antes de montarlo ([ficheros §3](ficheros.md#3-escribir-y-leer-en-disco)).
@@ -472,22 +472,25 @@ frontend/src/features/
 
 Las reglas de capas del frontend no cambian: `services/` sigue siendo la única capa que usa `apiClient`.
 
-### 8.5 Documentación de producción (`manual/`)
+### 8.5 Documentación de producción (`manual/`) [construido en F10]
 
 ```
 manual/
-├── package.json, docusaurus.config.ts, sidebars.ts
+├── package.json, docusaurus.config.ts, sidebars.ts   Docusaurus 3.10 y docusaurus-plugin-openapi-docs 5.2, fijados
 ├── Dockerfile.dev
+├── scripts/                    prepare-openapi.mjs (copia derivada del contrato) y check-i18n.mjs
 ├── docs/                       español, idioma por defecto
 │   ├── uso/                    manual de uso por tareas (RNF-33)
-│   ├── despliegue/             requisitos, variables, primer arranque, SMTP, backups, actualizaciones
+│   ├── despliegue/             visión general, requisitos, variables, correo y copias de seguridad; la receta de
+│   │                           producción (compose, proxy, HTTPS) llega con F7
 │   └── api/
-│       ├── guia.md             integración: Bearer, errores, paginación, límites, rate limit, /auth/*
+│       ├── guia.md             integración: Bearer, errores, paginación, fechas, límites y CORS (rate limit: F11)
 │       └── referencia/         GENERADA desde ../docs/referencia/openapi.json (no se versiona)
-└── i18n/en/                    traducción al inglés de uso/, despliegue/ y api/guia.md
+├── i18n/en/                    traducción al inglés de uso/, despliegue/ y api/guia.md, y los textos de navegación
+└── i18n/es/code.json           textos del tema de OpenAPI en español (write-translations no los extrae)
 ```
 
-- La referencia de la API la genera `docusaurus-plugin-openapi-docs` a partir del **mismo** `openapi.json` que ya versiona el backend. Se regenera en cada build y no se versiona la salida: una sola fuente del contrato.
+- La referencia de la API la genera `docusaurus-plugin-openapi-docs` a partir del **mismo** `openapi.json` que ya versiona el backend. Se regenera en cada `start` y `build` y no se versiona la salida: una sola fuente del contrato. Antes de generarla, `prepare-openapi.mjs` deriva una copia con un servidor `{apiUrl}` editable (por defecto `http://localhost:8000`): sin él, los ejemplos apuntaban al origen del manual. El panel para enviar peticiones está oculto (CORS y sesiones mezcladas); para probar, Swagger en la API. Los ejemplos de código empiezan por curl.
 - La referencia generada sale en el idioma de los docstrings del backend (español) también en la versión inglesa del sitio. Traducirla exigiría dos contratos OpenAPI: no se hace, y la guía de integración en inglés lo explica.
 - En producción (F7), el manual se construye como estático y lo sirve el mismo Nginx que el frontend (por ejemplo, en `/manual`).
 
@@ -537,7 +540,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | Job | Cambio |
 |---|---|
 | `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
-| `manual` | **[nuevo]** `npm ci` y `npm run build` en `manual/`, que falla ante enlaces rotos, igual que `mkdocs build --strict` |
+| `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
 
 ### 8.9 Decisiones cerradas de la v2

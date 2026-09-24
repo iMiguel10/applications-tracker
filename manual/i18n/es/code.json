@@ -1,0 +1,152 @@
+{
+  "theme.openapi.auth.bearerToken": {
+    "message": "Token Bearer"
+  },
+  "theme.openapi.auth.password": {
+    "message": "Contraseña"
+  },
+  "theme.openapi.auth.securityScheme": {
+    "message": "Esquema de seguridad"
+  },
+  "theme.openapi.auth.username": {
+    "message": "Usuario"
+  },
+  "theme.openapi.body.exampleFromSchema": {
+    "message": "Ejemplo (según el esquema)"
+  },
+  "theme.openapi.export.button": {
+    "message": "Exportar"
+  },
+  "theme.openapi.export.openapiSpec": {
+    "message": "Especificación OpenAPI"
+  },
+  "theme.openapi.form.fieldRequired": {
+    "message": "Este campo es obligatorio"
+  },
+  "theme.openapi.formFileUpload.clearButton": {
+    "message": "Quitar"
+  },
+  "theme.openapi.paramArray.addItem": {
+    "message": "Añadir elemento"
+  },
+  "theme.openapi.paramOptions.hideOptional": {
+    "message": "Ocultar parámetros opcionales"
+  },
+  "theme.openapi.paramOptions.showOptional": {
+    "message": "Mostrar parámetros opcionales"
+  },
+  "theme.openapi.paramsDetails.parametersTitle": {
+    "message": "Parámetros de {type}"
+  },
+  "theme.openapi.request.accept.title": {
+    "message": "Accept"
+  },
+  "theme.openapi.request.auth.title": {
+    "message": "Autenticación"
+  },
+  "theme.openapi.request.baseUrl.title": {
+    "message": "URL base"
+  },
+  "theme.openapi.request.body.title": {
+    "message": "Cuerpo"
+  },
+  "theme.openapi.request.collapseAll": {
+    "message": "Plegar todo"
+  },
+  "theme.openapi.request.expandAll": {
+    "message": "Desplegar todo"
+  },
+  "theme.openapi.request.parameters.title": {
+    "message": "Parámetros"
+  },
+  "theme.openapi.request.requiredLabel": {
+    "message": "obligatorio"
+  },
+  "theme.openapi.request.title": {
+    "message": "Petición"
+  },
+  "theme.openapi.response.title": {
+    "message": "Respuesta"
+  },
+  "theme.openapi.response.headersTab": {
+    "message": "Cabeceras"
+  },
+  "theme.openapi.response.clear": {
+    "message": "Limpiar"
+  },
+  "theme.openapi.responseExamples.autoExample": {
+    "message": "Ejemplo (automático)"
+  },
+  "theme.openapi.responseExamples.example": {
+    "message": "Ejemplo"
+  },
+  "theme.openapi.schema.expansion.all": {
+    "message": "Todo"
+  },
+  "theme.openapi.schema.expansion.button": {
+    "message": "Profundidad del esquema"
+  },
+  "theme.openapi.schema.expansion.depthOption": {
+    "message": "Desplegar hasta el nivel {depth}"
+  },
+  "theme.openapi.schema.expansion.menu": {
+    "message": "Opciones de profundidad del esquema"
+  },
+  "theme.openapi.schema.noSchema": {
+    "message": "Sin esquema"
+  },
+  "theme.openapi.schemaItem.characters": {
+    "message": "caracteres"
+  },
+  "theme.openapi.schemaItem.constantValue": {
+    "message": "Valor constante:"
+  },
+  "theme.openapi.schemaItem.defaultValue": {
+    "message": "Valor por defecto:"
+  },
+  "theme.openapi.schemaItem.deprecated": {
+    "message": "obsoleto"
+  },
+  "theme.openapi.schemaItem.description": {
+    "message": "Descripción:"
+  },
+  "theme.openapi.schemaItem.enumDescription": {
+    "message": "Descripción"
+  },
+  "theme.openapi.schemaItem.enumValue": {
+    "message": "Valor"
+  },
+  "theme.openapi.schemaItem.example": {
+    "message": "Ejemplo:"
+  },
+  "theme.openapi.schemaItem.examples": {
+    "message": "Ejemplos:"
+  },
+  "theme.openapi.schemaItem.expression": {
+    "message": "El valor debe cumplir la expresión regular"
+  },
+  "theme.openapi.schemaItem.nonEmpty": {
+    "message": "no vacío"
+  },
+  "theme.openapi.schemaItem.nullable": {
+    "message": "admite null"
+  },
+  "theme.openapi.schemaItem.possibleValues": {
+    "message": "Valores posibles:"
+  },
+  "theme.openapi.schemaItem.required": {
+    "message": "obligatorio"
+  },
+  "theme.openapi.securitySchemes.authorization": {
+    "message": "Autorización:"
+  },
+  "theme.openapi.statusCodes.responseHeaders": {
+    "message": "Cabeceras de la respuesta"
+  },
+  "theme.openapi.statusCodes.schemaTitle": {
+    "message": "Esquema"
+  },
+  "theme.openapi.tabs.responses.label": {
+    "message": "Respuestas"
+  }
+}

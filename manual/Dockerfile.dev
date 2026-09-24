@@ -1,0 +1,16 @@
+FROM node:24-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY . .
+
+EXPOSE 3000
+
+# --poll: los bind mounts de Docker en Windows no propagan eventos de fichero; sin
+# sondeo no hay recarga en vivo (lo mismo que usePolling en el frontend).
+# El servidor de desarrollo sirve UN idioma cada vez (ver manual/README.md).
+CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--port", "3000", "--poll", "1000"]

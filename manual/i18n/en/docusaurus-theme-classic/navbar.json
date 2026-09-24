@@ -1,0 +1,14 @@
+{
+  "item.label.Uso": {
+    "message": "Usage"
+  },
+  "item.label.Despliegue": {
+    "message": "Deployment"
+  },
+  "item.label.API": {
+    "message": "API"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub"
+  }
+}
