@@ -50,7 +50,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b">
+      <header className="border-b bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <span className="flex shrink-0 items-center gap-2.5">
             <img src="/brand/logo.png" alt="" className="size-7" />

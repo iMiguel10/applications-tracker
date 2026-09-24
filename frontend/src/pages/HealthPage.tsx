@@ -18,7 +18,7 @@ export function HealthPage() {
       {isError && <p className="text-destructive">{t("health.error")}</p>}
 
       {data && (
-        <dl className="grid grid-cols-2 gap-y-2 rounded-lg border p-4 text-sm">
+        <dl className="grid grid-cols-2 gap-y-2 rounded-lg border bg-card p-4 text-sm">
           <dt className="text-muted-foreground">{t("health.api")}</dt>
           <dd className="font-medium">{data.status}</dd>
           <dt className="text-muted-foreground">{t("health.database")}</dt>

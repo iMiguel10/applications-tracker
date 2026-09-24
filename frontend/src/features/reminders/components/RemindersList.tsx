@@ -31,7 +31,7 @@ export function RemindersList({ reminders, showApplication = true }: RemindersLi
         return (
           <li
             key={reminder.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3"
           >
             <div className="grid gap-1">
               <span className="font-medium">{reminder.title}</span>

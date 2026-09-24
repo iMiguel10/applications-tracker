@@ -57,7 +57,7 @@ export function InterviewsSection({ application, onSuggestInterviewing }: Interv
           {interviews.map((interview) => (
             <li
               key={interview.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3"
             >
               <div className="grid gap-1">
                 <div className="flex flex-wrap items-center gap-2">

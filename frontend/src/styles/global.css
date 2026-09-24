@@ -64,10 +64,17 @@
    "tinta suave" (fondo al 10% + texto del mismo color): cada tono de texto es el más
    vivo de su familia que aún pasa 4.5:1 de contraste sobre `--card`/`--background`
    (fórmula de luminancia relativa de WCAG 2.1, heredada de F8.3). `--brand` es el
-   panel oscuro de login y registro: un índigo profundo fijo, igual en ambos temas. */
+   panel oscuro de login y registro: un índigo profundo fijo, igual en ambos temas.
+
+   Fondo frente a tarjeta: con #F8FAFC/#FFFFFF (1.05:1) y #09090B/#111113 las tarjetas
+   no se distinguían del fondo. Ahora el fondo es slate-100 en claro (1.10:1 frente al
+   blanco) y la tarjeta zinc-900 en oscuro. Con el fondo más oscuro, los textos de las
+   insignias se midieron también sobre él (no solo sobre la tarjeta): ámbar, violeta,
+   esmeralda y rojo bajan un tono para seguir en 4.5:1 en ambos sitios. Ámbar (4.39:1)
+   y rojo (4.13:1) ya fallaban antes sobre la tarjeta blanca. */
 :root {
   --radius: 0.625rem;
-  --background: #f8fafc;
+  --background: #f1f5f9;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -78,13 +85,13 @@
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #556377;
   --accent: #eef2ff;
   --accent-foreground: #4338ca;
-  --destructive: #dc2626;
+  --destructive: #b91c1c;
   --success: #10b981;
   --success-foreground: #f8fafc;
-  --success-text: #047857;
+  --success-text: #036c4e;
   --border: #e2e8f0;
   --input: #e2e8f0;
   --ring: #4f46e5;
@@ -95,9 +102,9 @@
   --chart-5: #f59e0b;
   --brand: #1e1b4b;
   --brand-foreground: #f8fafc;
-  --status-saved: #b45309;
+  --status-saved: #a3480a;
   --status-applied: #4f46e5;
-  --status-screening: #7c3aed;
+  --status-screening: #6d28d9;
   --status-interviewing: #0369a1;
   --sidebar: #f8fafc;
   --sidebar-foreground: #0f172a;
@@ -112,15 +119,15 @@
 .dark {
   --background: #09090b;
   --foreground: #fafafa;
-  --card: #111113;
+  --card: #18181b;
   --card-foreground: #fafafa;
-  --popover: #111113;
+  --popover: #18181b;
   --popover-foreground: #fafafa;
   --primary: #818cf8;
   --primary-foreground: #09090b;
-  --secondary: #18181b;
+  --secondary: #27272a;
   --secondary-foreground: #fafafa;
-  --muted: #18181b;
+  --muted: #27272a;
   --muted-foreground: #a1a1aa;
   --accent: #1e1b4b;
   --accent-foreground: #c7d2fe;
