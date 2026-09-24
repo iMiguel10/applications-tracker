@@ -6,7 +6,7 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-24): F4, F5, F6 y F8 terminadas.**
+> **Estado (2026-09-24): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada, pero NO construida. F7 (despliegue) espera a que haya un VPS.**
 >
 > F6 (CI) se construyó antes que F5 (dashboard y exportación CSV) por decisión explícita del usuario, no porque F5 no hiciera falta; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md). F8 (revisión final) se construyó a su vez antes que F7 por otra decisión explícita del usuario: con el MVP funcional completo (F0–F6), tenía más sentido cerrar la revisión mientras el diseño estaba fresco que dejarla para después de desplegar. F7 cambia de contenido: ya no es "preparación para despliegue" sino la **puesta en producción real**, y sigue sin empezar.
 >
@@ -18,7 +18,9 @@ Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candi
 >     - F5: dashboard y exportación CSV. `GET /dashboard` (`app/domain/dashboard.py`, `app/services/dashboard_service.py`, `app/schemas/dashboard.py`) agrega en una sola respuesta el recuento por estado (RF-60), los envíos por semana en las últimas 12 semanas (RF-61), la tasa de respuesta (RF-62, `null` con menos de 5 solicitudes enviadas por RF-66), las próximas entrevistas y los recordatorios pendientes o vencidos (RF-63) y las solicitudes sin actividad (RF-64); cada lista trae un vistazo de 5 elementos y su total. Las métricas de **estado actual** excluyen las solicitudes archivadas y las que retratan **lo ocurrido** las incluyen (detalle en `docs/arquitectura/index.md`). `GET /applications/export` (RF-70) vuelca a CSV todas las solicitudes del usuario, archivadas incluidas, con los códigos en crudo de los enumerados; registrado antes de `/{application_id}` en el router para que `export` no se lea como un UUID. En el frontend, `features/dashboard/` (seis widgets, `recharts` como dependencia nueva) y `pages/DashboardPage.tsx`, que sustituye a `/applications` como página de inicio (`/` redirige a `/dashboard`); `pages/RemindersPage.tsx` en `/reminders` cierra el hueco que dejó la decisión [0005](docs/decisiones/0005-recordatorios-sin-pagina-global-en-f4.md) (filtro por estado en la URL, paginación, crear/completar/descartar, mismo alcance que ya tenía la API); `ReminderFormDialog` ya no exige un `applicationId` fijo: si se omite, deja elegir la solicitud o dejar el recordatorio sin ligar (RF-50). Botón "Exportar CSV" en `ApplicationsPage` vía `apiClient.getBlob()` y `shared/lib/download.ts`.
 >     - F6: integración continua. `.github/workflows/ci.yml`, 4 jobs en cada push/PR a `main`: `backend-lint` (ruff + mypy, nativo con `uv`, sin Docker), `backend-tests` (`compose.test.yml`, 258 tests), `frontend` (eslint, `tsc -b`, vitest, build) y `docs` (`mkdocs build --strict`). `.env.test.example` es la plantilla versionada de `.env.test`, antes inexistente.
 >     - F8: revisión final. F8.1 auditó la especificación completa frente al código y no encontró huecos. F8.2 (funcionalidad): `GET/PATCH /me/preferences` (idioma y umbral de "sin actividad" de RF-64, entre 1 y 90 días); moneda del salario como lista cerrada EUR/USD/GBP/CHF (antes texto libre, R5); `app/scripts/check_performance.py` para medir RNF-10/RNF-11 a mano; auditoría de mensajes de error y de pruebas adversas; y borrado de cuenta (`DELETE /me`, RNF-40), que estaba pospuesto `[C]` y se decidió construir aquí ([0008](docs/decisiones/0008-borrado-de-cuenta-en-f8.md)). F8.3 (diseño de la interfaz): logo y paleta indigo/slate/zinc con contraste WCAG AA medido en los colores de estado; tema claro/oscuro por navegador (`app/providers/ThemeProvider.tsx`, no en la cuenta); diseño adaptable con menú hamburguesa por debajo de `lg`; diálogos que caben en pantalla; login y registro rediseñados (`AuthLayout` + `AuthShowcase`); gráficas con `ResponsiveContainer` y tooltip propio; estados de carga, vacío y error comunes (`shared/components/common/{EmptyState,ErrorState,Skeletons}.tsx`, y `ApplicationLoadError` para separar un 404 de otro fallo); formularios, detalle y preferencias a ancho completo dentro de `Card`; accesibilidad (`aria-describedby` en cada error de campo, `<html lang>` sincronizado con i18next, título de pestaña por página con `shared/hooks/useDocumentTitle.ts`, enlace "Saltar al contenido" y landmarks); y `queryClient` sin reintentos en los 4xx.
-> - **No existe todavía:** nada del alcance descrito en la especificación (F0–F6 y F8 están completas). Queda F7, que ya no es "preparación para despliegue" sino la puesta en producción real (orden invertido a petición del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md)).
+> - **No existe todavía:**
+>     - F7, la puesta en producción real (orden invertido a petición del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md)), en espera de servidor.
+>     - **Toda la v2** (F9–F17): cola y `worker`, Valkey, Mailpit, ficheros, emails, perfil y CVs, IA, Kanban, calendario, rate limiting y el manual de Docusaurus (`manual/`). Solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
 
 ## 2. Documentación
 
@@ -33,6 +35,9 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `docs/guias/documentar-la-api.md` | Cómo se documenta un endpoint, cómo probar desde Swagger y cómo integrarse (Bearer) |
 | `docs/referencia/openapi.json` | Copia **generada** del OpenAPI (no se edita a mano) que publica la referencia del sitio |
 | `docs/decisiones/` | Bitácora de cambios de rumbo durante el desarrollo, con plantilla |
+| `docs/arquitectura/v2.md` | **v2 (diseño, sin construir):** decisiones A18–A42, modelo de datos, flujos, consistencia entre almacenes e invariantes 9–18 |
+| `docs/arquitectura/{segundo-plano,ficheros,ia,limites-y-abuso}.md` | **v2:** cada tema con sus trampas y sus pruebas adversas (B, D, I, L); la ampliación de autenticación está en `autenticacion.md` §8 (T9–T15) |
+| `manual/` | **Desde F10 (no existe todavía):** documentación de producción en Docusaurus, es + en: despliegue, manual de uso y referencia de la API ([0010](docs/decisiones/0010-docusaurus-para-la-documentacion-de-produccion.md)) |
 
 **Si el código y un documento no coinciden, no se corrige el documento sin más.** Primero se averigua si el diseño evolucionó (y se actualiza el documento dejando constancia) o si la implementación se lo saltó (y entonces es un fallo del código).
 
@@ -47,6 +52,8 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `supertokens`, `supertokens-db` | — | Core de auth **fijado a 12.2.0** (debe implementar la CDI de `supertokens-python`), con **su propia** instancia de Postgres; no se publican puertos. Access token de 5 min ([0002](docs/decisiones/0002-access-token-de-5-minutos.md)). |
 
 Usa siempre `localhost` y nunca `127.0.0.1` (ver trampas).
+
+**Servicios de la v2, diseñados y todavía sin construir:** `valkey` (cola SAQ y rate limit), `worker` (misma imagen que `api`), `mailpit` (emails en desarrollo, 8025), `manual` (Docusaurus, 3001) y el volumen `files_data`. Detalle en `docs/arquitectura/servicios-y-estructura.md` §8.
 
 ## 4. Comandos
 
@@ -95,6 +102,8 @@ docker compose run --rm docs build --strict                                # fal
 
 **Regla única:** *si habla con la BD, vive en `repositories/`; si decide, vive en `services/` o `domain/`.*
 
+**En la v2** la regla se amplía (servicios y estructura §8.3): lo que habla con otro sistema externo (disco, Valkey, SMTP, IA, PDF) vive en `infra/` detrás de una interfaz, y los trabajos del `worker` son funciones finas en `jobs/` que solo llaman a un service. Esas carpetas no existen hasta F9.
+
 Patrón para un recurso nuevo en el backend: `domain/` (si tiene reglas) → `models/` → migración (revisada) → `repositories/` → `schemas/` → `services/` → `endpoints/` + `router.py` → pruebas de repository, service y API (incluida la de aislamiento) → documentación.
 
 **Frontend (feature-based, heredado de `frontend_gestpro`):** `features/<f>/types` → `schemas` (zod, mensajes = claves i18n) → `services` (única capa que usa `apiClient`) → `<f>.keys.ts` → `hooks/queries` y `hooks/mutations` → `components` → `pages/` → `routes/Router.tsx` → `shared/config/navigation.ts` → claves en `es.json` **y** `en.json`.
@@ -126,6 +135,8 @@ Violarlas es un fallo, no una diferencia de criterio.
 8. Todo endpoint protegido depende de `get_current_user`; ninguno usa `verify_session()` directamente.
 9. `users` no copia datos de identidad (ni email ni nombre): se piden a SuperTokens.
 10. Solo el SDK de SuperTokens refresca la sesión; `apiClient` no gestiona el 401.
+
+La v2 añade los invariantes 9–18 de `docs/arquitectura/v2.md` §8 (Postgres manda, encolar tras el commit, un email por motivo, nunca pasar de la clave propia a la de la plataforma…). Se copian aquí al construir la fase que los hace efectivos.
 
 ## 8. Trampas conocidas
 
@@ -161,8 +172,8 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 
 | Agente | Cuándo |
 |---|---|
-| `docs-writer` | Al cerrar una feature, un endpoint o una migración, o si el código parece haber divergido del diseño |
-| `qa-verifier` | Antes de dar por terminado un bloque de trabajo: tipos, estilo, tests (incluidos los adversos) y verificación en vivo |
+| `docs-writer` | Al cerrar una feature, un endpoint o una migración, o si el código parece haber divergido del diseño. Mantiene `docs/` (desarrollo) y, desde F10, `manual/` (producción, es + en) en el mismo commit que el código |
+| `qa-verifier` | Antes de dar por terminado un bloque de trabajo: tipos, estilo, tests (incluidos los adversos, también los de la v2 de cada documento de tema) y verificación en vivo |
 
 ## 10. Fases
 
@@ -177,4 +188,13 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F5 | Dashboard (`GET /dashboard`), exportación CSV (`GET /applications/export`) y página global de recordatorios (`/reminders`) |
 | ✔ F6 | CI con GitHub Actions (construida antes que F5, a petición explícita del usuario; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md)) |
 | ✔ F8 | Revisión final: auditoría de funcionalidades (sin huecos), preferencias de usuario, moneda cerrada, script de rendimiento, borrado de cuenta y diseño de la interfaz (paleta, tema claro/oscuro, adaptable, accesibilidad, estados de carga/vacío/error). Construida antes que F7, a petición explícita del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md) |
-| F7 | Puesta en producción real: `compose.prod.yml`, Nginx, variables de producción y despliegue efectivo |
+| F7 | Puesta en producción real: `compose.prod.yml`, Nginx, variables de producción y despliegue efectivo. **En espera** hasta que haya un VPS; incluirá los servicios de la v2 que ya estén construidos |
+| F9 | **v2.** Esqueleto vertical desechable: cola → `worker` → PDF → disco → email (Mailpit) |
+| F10 | **v2.** Documentación de producción en Docusaurus (`manual/`, es + en) y documentador ampliado a los dos sitios |
+| F11 | **v2.** Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
+| F12 | **v2.** Notificaciones por email (cuatro tipos, nunca dos veces por el mismo motivo) |
+| F13 | **v2.** Biblioteca de documentos (CVs y cartas en PDF) y descripción de la oferta |
+| F14 | **v2.** Perfil profesional y CVs generados con plantillas |
+| F15 | **v2.** IA: CV y carta adaptados, cuota gratuita fija y claves propias de proveedores habilitados |
+| F16 | **v2.** Tablero Kanban |
+| F17 | **v2.** Calendario y suscripción ICS |

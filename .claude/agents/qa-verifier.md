@@ -13,6 +13,7 @@ Lee:
 - `docs/arquitectura/index.md` §11 (pruebas) y §13 (invariantes).
 - `docs/arquitectura/autenticacion.md` §6 (pruebas adversas T1–T8).
 - `docs/producto/especificacion.md` §6 (reglas de transición), si el trabajo toca estados.
+- En la v2, la sección de pruebas del documento del tema que toque el trabajo: `docs/arquitectura/segundo-plano.md` (B1–B12), `ficheros.md` (D1–D11), `ia.md` (I1–I12), `limites-y-abuso.md` (L1–L10) y `autenticacion.md` §8 (T9–T15).
 
 Contienen las comprobaciones que este proyecto considera imprescindibles.
 
@@ -49,7 +50,8 @@ docker compose exec frontend npm run test
 
 - Las pruebas del backend corren contra un Postgres real y aislado (`db-test`), cada una dentro de una transacción que se revierte.
 - Las de API sustituyen `get_current_user` con `dependency_overrides`; solo la prueba de humo de auth usa el core real de SuperTokens.
-- Nada de red externa.
+- Nada de red externa: **ni proveedores de IA ni un SMTP real**. En la v2, la IA se prueba con `FakeLLMProvider` y el email con `RecordingEmailSender` (RNF-23); una prueba que llame a un proveedor real gasta dinero y falla sin conexión.
+- En la v2, `compose.test.yml` añade `valkey-test`, y los ficheros van a un directorio temporal por prueba.
 
 ### 3. Verificación viva
 
@@ -60,6 +62,11 @@ Las pruebas en verde no demuestran que la aplicación arranque. Comprueba tambi�
 - El flujo real de punta a punta, en `http://localhost:5173` (nunca `127.0.0.1`): registrarse → iniciar sesión → crear una empresa y una solicitud → cambiar su estado → ver el historial → deshacer → cerrar sesión, y comprobar que no queda ningún dato visible. Recorre la parte que exista en la fase actual.
 - La consola del navegador está limpia y ninguna petición a la API falla por CORS.
 - La migración nueva se aplica en limpio (`docker compose down -v && docker compose up --build`) y, si tiene `downgrade`, se revierte (`alembic downgrade -1`).
+- **Desde F9:** el `worker` y `valkey` están en marcha (`docker compose ps`) y el `worker` no se reinicia en bucle. El `worker` no recarga el código: tras cambiar un trabajo o un service, `docker compose restart worker` antes de probar, o estarás probando el código anterior.
+- **Desde F9:** los emails se ven en Mailpit (`http://localhost:8025`), con el idioma y los enlaces correctos, y **ninguno repetido**.
+- **Desde F10:** el manual compila en los dos idiomas (`docker compose run --rm manual npm run build`).
+
+Si el navegador está automatizado y la pestaña está oculta, TanStack Query pausa los reintentos y `requestAnimationFrame` no corre (los diálogos no terminan de cerrarse): comprueba el DOM antes de reportarlo como fallo (`CLAUDE.md` §8).
 
 ## Las pruebas que este proyecto no puede permitirse no tener
 
@@ -79,6 +86,12 @@ Si trabajas sobre alguna de estas áreas y la prueba no existe, **escríbela**:
 | CORS | La respuesta de `POST /auth/signin` desde el origen permitido lleva `Access-Control-Allow-Origin`; un origen no permitido no recibe cabeceras |
 | Logout | Tras el logout la sesión está revocada (401) y la caché de TanStack Query está vacía |
 | Límites | Notas de más de 5 000 caracteres, `limit` de más de 100 y `salary_min` mayor que `salary_max` se rechazan |
+| **v2 · Trabajos** | Encolar dos veces es inocuo; un trabajo con el `user_id` de otro no toca la fila (B1, B2) |
+| **v2 · Emails** | Nunca dos emails por el mismo motivo, ni con barridos simultáneos ni con fallos ambiguos del SMTP (B3–B6) |
+| **v2 · Ficheros** | Tipo por contenido, tamaño real, cuota con bloqueo, huérfanos sin filas rotas y ninguna petición de red desde las plantillas (D1–D9) |
+| **v2 · IA** | Referencias inventadas o ajenas → `invalid`; nunca se pasa a la clave de la plataforma; la clave del usuario no aparece en respuestas ni logs; la cuota aguanta peticiones simultáneas (I1–I8) |
+| **v2 · Superficie pública** | Las rutas sin sesión son exactamente la lista blanca; el rate limit de `/auth/*` no rompe el login (L4, L7) |
+| **v2 · Cuenta** | La recuperación no revela qué emails existen y revoca las sesiones; verificar en otro dispositivo se refleja sin renovar la sesión (T9–T12) |
 
 ## Cómo escribes pruebas
 
