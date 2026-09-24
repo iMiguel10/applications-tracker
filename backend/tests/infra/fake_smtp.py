@@ -13,7 +13,9 @@ from typing import Literal, Self
 
 Behavior = Literal[
     "accept",
+    "silent",  # acepta la conexión TCP y nunca saluda
     "reject_rcpt",
+    "drop_at_rcpt",  # corta la conexión al recibir RCPT, antes de DATA
     "reject_data",
     "drop_after_data",
     "hang_after_data",
@@ -61,6 +63,8 @@ class FakeSmtpServer:
         def reply(line: str) -> None:
             writer.write(f"{line}\r\n".encode())
 
+        if self.behavior == "silent":
+            await asyncio.sleep(3600)
         reply("220 fake ESMTP")
         while line := await reader.readline():
             command = line[:4].upper()
@@ -74,6 +78,9 @@ class FakeSmtpServer:
             elif command == b"MAIL":
                 reply("250 OK")
             elif command == b"RCPT":
+                if self.behavior == "drop_at_rcpt":
+                    writer.close()
+                    return
                 address = line.decode().split(":", 1)[1].split(">")[0].strip(" <")
                 if self.behavior != "reject_rcpt":
                     self.recipients.append(address)

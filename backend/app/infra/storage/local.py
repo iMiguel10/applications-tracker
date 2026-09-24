@@ -83,7 +83,10 @@ class LocalFileStorage:
         await asyncio.to_thread(path.unlink, missing_ok=True)
 
     async def delete_prefix(self, prefix: str) -> None:
-        path = self._resolve(prefix.rstrip("/"))
+        # Sin quitar barras finales: "users//" (lo que deja un id vacío en
+        # f"users/{user_id}/") se quedaría en "users" y borraría a todos. Una
+        # barra final es un segmento vacío y se rechaza como en cualquier clave.
+        path = self._resolve(prefix)
         await asyncio.to_thread(_remove_tree, path)
 
     def _resolve(self, key: str) -> Path:

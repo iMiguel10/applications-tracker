@@ -108,6 +108,70 @@ async def test_symlink_pointing_outside_the_root_is_rejected(tmp_path: Path) -> 
 
 
 @pytest.mark.asyncio
+async def test_symlink_pointing_outside_cannot_be_read_or_deleted(
+    tmp_path: Path,
+) -> None:
+    """D7 en las operaciones que tocan ficheros ya existentes: leer o borrar a
+    través de un enlace hacia fuera no alcanza el fichero de fuera."""
+    root = tmp_path / "files"
+    outside = tmp_path / "fuera"
+    root.mkdir()
+    outside.mkdir()
+    (outside / "ajeno.pdf").write_bytes(b"de otro sistema")
+    (root / "users").symlink_to(outside, target_is_directory=True)
+    storage = LocalFileStorage(root)
+
+    with pytest.raises(InvalidStorageKeyError):
+        await storage.open("users/ajeno.pdf")
+    with pytest.raises(InvalidStorageKeyError):
+        await storage.delete("users/ajeno.pdf")
+    with pytest.raises(InvalidStorageKeyError):
+        await storage.delete_prefix("users")
+
+    assert (outside / "ajeno.pdf").read_bytes() == b"de otro sistema"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "prefix",
+    ["", "/", ".", "..", "users/..", "users/u-1/..", ".tmp", "/etc"],
+)
+async def test_delete_prefix_never_wipes_the_root_or_escapes_it(
+    tmp_path: Path, prefix: str
+) -> None:
+    """`delete_prefix` es la operación más destructiva del almacén (borrado de
+    cuenta, D11): un prefijo vacío, relativo hacia arriba o absoluto no puede
+    vaciar la raíz ni borrar fuera de ella."""
+    root = tmp_path / "files"
+    storage = LocalFileStorage(root)
+    await storage.put("users/u-1/documents/a.pdf", chunks(b"a"))
+    await storage.put("users/u-2/documents/b.pdf", chunks(b"b"))
+    (tmp_path / "vecino.txt").write_bytes(b"fuera de la raiz")
+
+    with pytest.raises(InvalidStorageKeyError):
+        await storage.delete_prefix(prefix)
+
+    assert await read_all(storage, "users/u-1/documents/a.pdf") == b"a"
+    assert await read_all(storage, "users/u-2/documents/b.pdf") == b"b"
+    assert (tmp_path / "vecino.txt").exists()
+
+
+@pytest.mark.asyncio
+async def test_delete_prefix_with_an_empty_segment_is_rejected(tmp_path: Path) -> None:
+    """Una clave con `//` (un segmento vacío) es inválida (ficheros §3). En un
+    prefijo es justo lo que deja un id vacío en `users/{user_id}/`: si se
+    aceptara quitando las barras, borraría los ficheros de todos los usuarios."""
+    storage = LocalFileStorage(tmp_path)
+    await storage.put("users/u-1/documents/a.pdf", chunks(b"a"))
+    await storage.put("users/u-2/documents/b.pdf", chunks(b"b"))
+
+    with pytest.raises(InvalidStorageKeyError):
+        await storage.delete_prefix("users//")
+
+    assert await read_all(storage, "users/u-2/documents/b.pdf") == b"b"
+
+
+@pytest.mark.asyncio
 async def test_exceeding_max_bytes_writes_nothing(tmp_path: Path) -> None:
     """Base de D2: se cuenta mientras se escribe y no queda ni el fichero ni el
     temporal."""

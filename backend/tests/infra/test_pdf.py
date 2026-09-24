@@ -115,6 +115,64 @@ async def test_no_network_request_from_the_template(
     assert counting_server.requests == []
 
 
+# Cada uno de estos HTML produce una petición con el fetcher por defecto de
+# WeasyPrint 70 (comprobado a mano al escribir la prueba): no son vectores
+# teóricos. `{url}` es el servidor que cuenta las peticiones.
+MORE_NETWORK_VECTORS = {
+    "css_import": '<style>@import url("{url}/import.css");</style><p>x</p>',
+    "attachment": '<link rel="attachment" href="{url}/adjunto.bin"><p>x</p>',
+    "anchor_attachment": '<a rel="attachment" href="{url}/adjunto.bin">a</a>',
+    "object": '<object data="{url}/objeto.png" type="image/png"></object>',
+    "embed": '<embed src="{url}/embed.png" type="image/png">',
+    "svg_image": (
+        '<svg width="10" height="10">'
+        '<image href="{url}/svg.png" width="10" height="10"/></svg>'
+    ),
+    "base_href": '<base href="{url}/"><img src="relativa.png">',
+    "list_style_image": (
+        '<ul style="list-style-image: url({url}/vineta.png)"><li>x</li></ul>'
+    ),
+    "content_url": (
+        '<style>p::before {{ content: url("{url}/antes.png"); }}</style><p>x</p>'
+    ),
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("vector", MORE_NETWORK_VECTORS)
+async def test_no_network_request_from_other_resource_kinds(
+    tmp_path: Path, counting_server: CountingServer, vector: str
+) -> None:
+    """D9 más allá de imágenes, hojas de estilo, fuentes y fondos: todo recurso
+    que WeasyPrint sabe descargar pasa por el mismo fetcher."""
+    html = MORE_NETWORK_VECTORS[vector].format(url=counting_server.url)
+    template = write_template(tmp_path / "design", html)
+
+    pdf = await WeasyPrintRenderer().render(template, {})
+
+    assert pdf.startswith(b"%PDF-")
+    assert counting_server.requests == []
+
+
+@pytest.mark.asyncio
+async def test_local_file_outside_the_template_is_not_embedded(
+    tmp_path: Path,
+) -> None:
+    """`<link rel="attachment">` incrusta el fichero enlazado dentro del PDF: con
+    una ruta `file://` fuera de la plantilla sería leer ficheros del worker y
+    entregarlos al usuario. Con el fetcher por defecto sí se incrusta."""
+    secret = tmp_path / "secreto.txt"
+    secret.write_text("no debe salir", encoding="utf-8")
+    template = write_template(
+        tmp_path / "design",
+        f'<link rel="attachment" href="{secret.as_uri()}"><p>x</p>',
+    )
+
+    pdf = await WeasyPrintRenderer().render(template, {})
+
+    assert b"/EmbeddedFile" not in pdf
+
+
 def test_fetcher_serves_only_files_inside_the_template(tmp_path: Path) -> None:
     template = write_template(tmp_path / "design", "<p></p>", "p {}")
     (tmp_path / "secreto.txt").write_text("fuera", encoding="utf-8")

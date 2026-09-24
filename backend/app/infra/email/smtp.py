@@ -50,7 +50,13 @@ class SmtpEmailSender:
         return True
 
     async def send(self, email: OutgoingEmail) -> None:
-        message = self._build_message(email)
+        try:
+            message = self._build_message(email)
+        except ValueError as exc:
+            # Un salto de línea en el asunto, el destinatario o una cabecera: la
+            # librería estándar lo rechaza (así no hay inyección de cabeceras), y
+            # aquí se clasifica como lo que es, un email que no salió.
+            raise EmailNotSentError(f"mensaje inválido: {exc}") from exc
 
         client = aiosmtplib.SMTP(
             hostname=self._host,

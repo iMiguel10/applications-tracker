@@ -9,7 +9,7 @@
 | Almacén | `FileStorage` con una implementación de disco local (A21) | `infra/storage/` |
 | Volumen | `files_data`, montado en `/data/files` en `api` y `worker` | `compose.yml` |
 | Biblioteca | Tabla `documents` y `DocumentService` (RF-90…94) | `repositories/`, `services/` |
-| Generación | WeasyPrint + plantillas Jinja2 (A24, A25) | `infra/pdf.py`, `templates/cv/`, `templates/cover_letter/` |
+| Generación | WeasyPrint + plantillas Jinja2 (A24, A25) | `infra/pdf/` (construido en F9), `templates/cv/`, `templates/cover_letter/` |
 
 `FileStorage` es deliberadamente pequeña: `put(key, chunks, max_bytes=None) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)` e `iter_keys()`. Construidas en F9 todas menos `iter_keys()`, que llega en F13 con su único consumidor, el barrido de huérfanos. `put` cuenta los bytes mientras escribe y corta con `FileTooLargeError` al pasar de `max_bytes`, sin dejar nada escrito: la subida (§2, paso 2) no necesita contar por su cuenta. Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
 
@@ -122,7 +122,7 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 | D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado | RF-93 |
 | D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes | Orden de escritura y margen del barrido |
 | D7 | Una clave con `../` es rechazada por `LocalFileStorage`, y también una clave válida que atraviesa un enlace simbólico hacia fuera **[construida en F9]** | Rutas encerradas en la raíz |
-| D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[probada en el esqueleto de F9]** | Cabeceras |
+| D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[probada en el esqueleto de F9, ya retirado; vuelve con la descarga de F13]** | Cabeceras |
 | D9 | Una plantilla de prueba con `<img src="http://…">` no produce ninguna petición de red **[construida en F9]**: un servidor HTTP local cuenta cero peticiones con imágenes, hojas de estilo, fuentes y fondos externos | El `url_fetcher` contra SSRF |
 | D10 | El texto extraído de un CV generado con un diseño apto para ATS sale en orden de lectura | RF-105 |
 | D11 | Borrar la cuenta borra `users/{user_id}/`; si falla, el barrido lo limpia | RNF-41 |

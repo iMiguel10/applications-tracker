@@ -10,7 +10,6 @@ from app.api.v1.endpoints import (
     interviews,
     me,
     reminders,
-    spike,
 )
 from app.schemas.auth import UnauthorizedError
 
@@ -37,6 +36,5 @@ protected.include_router(application_status_changes.router)
 protected.include_router(interviews.router)
 protected.include_router(reminders.router)
 protected.include_router(dashboard.router)
-protected.include_router(spike.router)  # DESECHABLE (F9)
 
 router.include_router(protected)

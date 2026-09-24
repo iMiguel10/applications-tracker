@@ -48,6 +48,6 @@ class FileStorage(Protocol):
         ...
 
     async def delete_prefix(self, prefix: str) -> None:
-        """Borra todo lo que cuelga de `prefix` (p. ej. `users/{user_id}`). No falla
-        si no existe."""
+        """Borra todo lo que cuelga de `prefix` (p. ej. `users/{user_id}`, sin barra
+        final). No falla si no existe."""
         ...

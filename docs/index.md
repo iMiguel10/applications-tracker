@@ -3,7 +3,7 @@
 Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y el próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
 !!! warning "Estado"
-    En desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes), F3 (ciclo de vida: historial de estados, transiciones y deshacer), F4 (entrevistas y recordatorios), F5 (dashboard, exportación CSV y listado global de recordatorios), F6 (integración continua) y F8 (revisión final); sigue pendiente F7, ahora la puesta en producción real, en espera de servidor. La **v2** (F9–F17: CVs, IA, emails, calendario…) está especificada y diseñada, pero no construida. F6 se construyó antes que F5 por decisión explícita ([0006](decisiones/0006-ci-antes-que-f5.md)), no porque F5 ya no hiciera falta, y F8 se construyó antes que F7 por otra decisión explícita ([0009](decisiones/0009-f8-antes-que-f7.md)).
+    En desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes), F3 (ciclo de vida: historial de estados, transiciones y deshacer), F4 (entrevistas y recordatorios), F5 (dashboard, exportación CSV y listado global de recordatorios), F6 (integración continua) y F8 (revisión final); sigue pendiente F7, ahora la puesta en producción real, en espera de servidor. La **v2** (F9–F17: CVs, IA, emails, calendario…) está especificada y diseñada; de ella está construida F9, la infraestructura (correo, cola de trabajos con su worker, almacén de ficheros y generación de PDF), que todavía no usa ninguna funcionalidad. F6 se construyó antes que F5 por decisión explícita ([0006](decisiones/0006-ci-antes-que-f5.md)), no porque F5 ya no hiciera falta, y F8 se construyó antes que F7 por otra decisión explícita ([0009](decisiones/0009-f8-antes-que-f7.md)).
 
 ## En una página
 
@@ -21,7 +21,7 @@ Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada c
 - [Arquitectura](arquitectura/index.md): las decisiones con sus alternativas descartadas, el modelo de datos, los flujos y las invariantes.
 - [Servicios y estructura](arquitectura/servicios-y-estructura.md): qué corre en Docker, cómo se organiza el código y qué puede hacer cada capa.
 - [Autenticación](arquitectura/autenticacion.md): la integración con SuperTokens y sus trampas.
-- [Arquitectura de la v2](arquitectura/v2.md): el diseño de la siguiente versión, con un documento por tema (segundo plano y emails, ficheros, IA, límites y abuso). Todavía sin construir.
+- [Arquitectura de la v2](arquitectura/v2.md): el diseño de la siguiente versión, con un documento por tema (segundo plano y emails, ficheros, IA, límites y abuso). Construida la infraestructura (F9); las funcionalidades, todavía no.
 - [Decisiones](decisiones/index.md): la bitácora de cambios de rumbo durante el desarrollo.
 
 ## Las tres ideas que sostienen el diseño

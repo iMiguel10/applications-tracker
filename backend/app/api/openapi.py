@@ -59,11 +59,6 @@ OPENAPI_TAGS = [
         "description": "Recordatorios del usuario, opcionalmente ligados a una "
         "solicitud. En el MVP solo se muestran en la aplicación (RF-53).",
     },
-    {
-        "name": "Spike",
-        "description": "Temporal (F9): esqueleto vertical de la v2. Se retira al "
-        "cerrar la fase.",
-    },
 ]
 
 SWAGGER_UI_PARAMETERS = {

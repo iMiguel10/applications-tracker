@@ -15,7 +15,6 @@ from app.services.company_service import CompanyService
 from app.services.dashboard_service import DashboardService
 from app.services.interview_service import InterviewService
 from app.services.reminder_service import ReminderService
-from app.services.spike_service import SpikeService
 from app.services.user_service import UserService
 
 # Esquemas de seguridad SOLO para el OpenAPI: hacen que Swagger muestre el botón
@@ -85,13 +84,6 @@ def get_reminder_service(
     db: AsyncSession = Depends(get_db),
 ) -> ReminderService:
     return ReminderService(db)
-
-
-def get_spike_service(
-    queue: JobQueue = Depends(get_job_queue),
-    storage: FileStorage = Depends(get_file_storage),
-) -> SpikeService:
-    return SpikeService(queue, storage)
 
 
 def get_user_service(

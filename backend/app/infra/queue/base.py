@@ -26,7 +26,8 @@ class JobQueue(Protocol):
         **kwargs: JobArg,
     ) -> bool:
         """Encola `job` con `kwargs`. `max_attempts` cuenta el primer intento:
-        1 = nunca se reintenta. Con `key`, si ya hay un trabajo con esa clave en
-        la cola, no se encola otro y devuelve False. Lanza QueueUnavailableError
-        si la cola no responde."""
+        1 = nunca se reintenta. Con `key`, devuelve False sin encolar si ya hay un
+        trabajo con esa clave, o si se abortó uno con esa clave hace unos segundos
+        (SAQ guarda esa marca sin distinguir colas). Lanza QueueUnavailableError si
+        la cola no responde."""
         ...

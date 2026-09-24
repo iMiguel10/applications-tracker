@@ -17,7 +17,6 @@ from app.infra.email import build_email_sender
 from app.infra.pdf.weasyprint_renderer import WeasyPrintRenderer
 from app.infra.storage import LocalFileStorage
 from app.jobs.context import WorkerContext
-from app.jobs.spike import generate_spike_pdf
 
 # Al importar, como en main.py: SAQ registra el arranque del worker antes de
 # llamar a startup(), y sin logging configurado esas líneas no salen.
@@ -32,12 +31,13 @@ async def startup(ctx: WorkerContext) -> None:
     ctx["email_sender"] = build_email_sender(config)
     ctx["storage"] = LocalFileStorage(config.files_root)
     ctx["pdf_renderer"] = WeasyPrintRenderer()
-    ctx["api_url"] = config.api_domain
 
 
 settings = {
     "queue": Queue.from_url(config.valkey_url),
-    "functions": [generate_spike_pdf],
+    # Sin trabajos todavía: los primeros llegan en F11 (emails de verificación y
+    # de recuperación de contraseña, autenticacion.md §8).
+    "functions": [],
     "startup": startup,
     "concurrency": 10,
 }

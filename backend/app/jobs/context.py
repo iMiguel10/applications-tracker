@@ -15,4 +15,3 @@ class WorkerContext(Context, total=False):
     email_sender: EmailSender
     storage: FileStorage
     pdf_renderer: PdfRenderer
-    api_url: str

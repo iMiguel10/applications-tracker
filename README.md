@@ -21,7 +21,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 ---
 
 > [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada, pero no construida**. La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) ya está construida, y sus funcionalidades, todavía no. La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Contenido
 
@@ -54,11 +54,11 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). Nada de esto está construido todavía.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento está construida la infraestructura (F9); las funcionalidades, todavía no.
 
 | Fase | Contenido |
 |---|---|
-| F9 | Esqueleto vertical de la infraestructura nueva: cola de trabajos, generación de PDF, almacenamiento de ficheros y email |
+| ✔ F9 | Infraestructura nueva: cola de trabajos, generación de PDF, almacenamiento de ficheros y email |
 | F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
 | F11 | Recuperación de contraseña, verificación de email, límites visibles y rate limiting |
 | F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad |

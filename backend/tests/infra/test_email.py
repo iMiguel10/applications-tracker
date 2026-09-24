@@ -4,6 +4,7 @@ La clasificación de fallos es la base de "nunca dos veces" (RF-87): lo que con
 seguridad no salió se puede reintentar; lo ambiguo, no (segundo plano §4).
 """
 
+import contextlib
 import socket
 
 import pytest
@@ -105,6 +106,72 @@ async def test_connection_lost_after_data_is_unknown() -> None:
     async with FakeSmtpServer("drop_after_data") as server:
         with pytest.raises(EmailDeliveryUnknownError):
             await make_sender(server.port).send(EMAIL)
+
+
+@pytest.mark.asyncio
+async def test_server_that_never_greets_is_not_sent_rather_than_unknown() -> None:
+    """B5 a nivel de infra: un timeout ANTES de DATA (aquí, esperando el saludo)
+    no puede haber entregado nada, así que es un "no enviado" reintentable y no un
+    resultado desconocido, que se perdería sin reintentar."""
+    async with FakeSmtpServer("silent") as server:
+        with pytest.raises(EmailNotSentError) as exc_info:
+            await make_sender(server.port, timeout=0.5).send(EMAIL)
+
+    assert not isinstance(exc_info.value, EmailDeliveryUnknownError)
+
+
+@pytest.mark.asyncio
+async def test_connection_lost_before_data_is_not_sent_rather_than_unknown() -> None:
+    """Un corte antes de transmitir el mensaje (al enviar RCPT) es la frontera
+    contraria a B4: con seguridad no salió nada."""
+    async with FakeSmtpServer("drop_at_rcpt") as server:
+        with pytest.raises(EmailNotSentError) as exc_info:
+            await make_sender(server.port).send(EMAIL)
+
+    assert not isinstance(exc_info.value, EmailDeliveryUnknownError)
+    assert server.messages == []
+
+
+LINE_BREAK_EMAILS = {
+    "subject": OutgoingEmail(
+        to="ana@example.com", subject="Hola\r\nBcc: victima@example.com", text="x"
+    ),
+    "to": OutgoingEmail(
+        to="ana@example.com\r\nBcc: victima@example.com", subject="Hola", text="x"
+    ),
+    "header": OutgoingEmail(
+        to="ana@example.com",
+        subject="Hola",
+        text="x",
+        headers={"List-Unsubscribe": "<https://x>\r\nBcc: victima@example.com"},
+    ),
+}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("field", LINE_BREAK_EMAILS)
+async def test_line_break_in_a_header_cannot_inject_a_recipient(field: str) -> None:
+    """El título de un recordatorio (lo escribe el usuario) acabará en el asunto:
+    un salto de línea no puede inyectar cabeceras ni destinatarios."""
+    async with FakeSmtpServer() as server:
+        # Rechazarlo o sanearlo, ambos valen aquí: la clasificación del error es
+        # la prueba siguiente. Lo que no vale es que la inyección llegue.
+        with contextlib.suppress(Exception):
+            await make_sender(server.port).send(LINE_BREAK_EMAILS[field])
+
+    assert [r for r in server.recipients if "victima" in r] == []
+    assert [m for m in server.messages if m["Bcc"] is not None] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("field", LINE_BREAK_EMAILS)
+async def test_line_break_in_a_header_is_classified_as_not_sent(field: str) -> None:
+    """Contrato de `EmailSender`: todo fallo es un `EmailError` que dice si es
+    seguro reintentar (segundo plano §4). Un error sin clasificar llegaría al
+    trabajo de F12 como una excepción cualquiera, igual que el caso SMTPUTF8."""
+    async with FakeSmtpServer() as server:
+        with pytest.raises(EmailNotSentError):
+            await make_sender(server.port).send(LINE_BREAK_EMAILS[field])
 
 
 @pytest.mark.asyncio
