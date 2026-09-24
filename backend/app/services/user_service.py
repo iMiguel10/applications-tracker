@@ -45,3 +45,12 @@ class UserService:
         await self.users.save(user)
         await self.session.commit()
         return PreferencesRead.model_validate(user)
+
+    async def delete_account(self, current_user: CurrentUser) -> None:
+        """Borra todos los datos propios y después la identidad en SuperTokens
+        (arquitectura §4). En este orden, un fallo a mitad deja una identidad sin
+        datos, que puede volver a entrar y reintentarlo; al revés quedarían datos
+        huérfanos que nadie podría reclamar ni borrar."""
+        await self.users.delete(current_user.id)
+        await self.session.commit()
+        await self.identities.delete(current_user.supertokens_user_id)

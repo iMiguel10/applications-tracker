@@ -1,4 +1,4 @@
-from supertokens_python.asyncio import get_user
+from supertokens_python.asyncio import delete_user, get_user
 
 
 class IdentityRepository:
@@ -13,3 +13,7 @@ class IdentityRepository:
         if user is None or not user.emails:
             return None
         return user.emails[0]
+
+    async def delete(self, supertokens_user_id: str) -> None:
+        """Borra la identidad y sus sesiones en el core (credenciales incluidas)."""
+        await delete_user(supertokens_user_id)

@@ -381,6 +381,37 @@
             "CookieAuth": []
           }
         ]
+      },
+      "delete": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Elimina la cuenta del usuario actual",
+        "description": "Borra de forma irreversible la cuenta y todos sus datos (RNF-40): empresas,\nsolicitudes con su historial, entrevistas, recordatorios y preferencias, y\ndespués la identidad en SuperTokens (credenciales y sesiones).\n\nUn access token ya emitido sigue validándose sin consultar al core hasta que\ncaduca (máximo 5 minutos): el cliente debe cerrar sesión justo después.",
+        "operationId": "delete_me_api_v1_me_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
       }
     },
     "/api/v1/me/preferences": {

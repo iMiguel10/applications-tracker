@@ -12,9 +12,11 @@ Calibración:
 |---|---|
 | **Con rigor** | Modelo de datos, ciclo de vida de la solicitud, aislamiento de datos entre usuarios, arquitectura en capas, autenticación, pruebas (incluidas las adversas). |
 | **Barato con la costura puesta** | Recordatorios (solo en la app, con canal preparado para email y otros medios), origen de la solicitud (solo manual, preparado para importación), exportación de datos. |
-| **Pospuesto `[C]`** | Todo lo propio de producto comercial: planes y facturación, textos legales, borrado de cuenta con retención, administración de usuarios, SLAs y guardia, analítica de uso. |
+| **Pospuesto `[C]`** | Todo lo propio de producto comercial: planes y facturación, textos legales, periodo de gracia antes de purgar una cuenta borrada, administración de usuarios, SLAs y guardia, analítica de uso. |
 
 Lo marcado con **`[C]`** está considerado y descartado para el MVP, no olvidado.
+
+> **Cambio de alcance (F8, 2026-09-24):** el borrado de cuenta (RNF-40) estaba pospuesto `[C]` en este borrador y pasó a construirse dentro de F8, a petición explícita del usuario. Solo entra el borrado **inmediato y completo**; el periodo de gracia antes de purgar de verdad (permitir deshacer un borrado por error) sigue pospuesto, ver la fila de arriba. Detalle en [decisión 0008](../decisiones/0008-borrado-de-cuenta-en-f8.md).
 
 ## 1. Visión
 
@@ -246,7 +248,7 @@ Requisitos derivados:
 
 **Cumplimiento**
 
-- **RNF-40** Borrado de cuenta y de todos sus datos `[C]`. La costura es que todos los datos cuelgan del usuario con `ON DELETE CASCADE`.
+- **RNF-40** Borrado de cuenta y de todos sus datos. Implementado en F8: `DELETE /me` borra primero la fila de `users` (todo lo demás cae por `ON DELETE CASCADE`) y, ya confirmado ese borrado, la identidad en SuperTokens (credenciales y sesiones). Es un borrado **inmediato**, sin periodo de gracia: retener los datos un tiempo antes de purgarlos de verdad sigue pospuesto `[C]` (ver [decisión 0008](../decisiones/0008-borrado-de-cuenta-en-f8.md)).
 
 ## 10. Límites y cuotas
 
@@ -283,7 +285,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | Recordatorios por email, Telegram, push… | Campo `channel` en el recordatorio y campo `sent_at`. El envío pasa por una interfaz `NotificationChannel` en services, con una única implementación `in_app` que no hace nada. Un canal nuevo es una implementación nueva más un worker que recorra los pendientes. |
 | Importación CSV / extracción desde URL | Campo `origin` en la solicitud. La creación pasa siempre por `ApplicationService.create`, así que un importador reutiliza validación y reglas. |
 | API pública, CLI | Toda la lógica vive en services; los endpoints solo validan y delegan. |
-| Borrado de cuenta (RGPD) | Todo cuelga de `user_id` con `ON DELETE CASCADE`. |
+| Periodo de gracia tras borrar una cuenta | El borrado inmediato (RNF-40) ya usa `ON DELETE CASCADE` desde `users`; un periodo de gracia añadiría un estado "pendiente de purgar" antes de ese borrado, no una costura nueva. |
 | Login social | SuperTokens añade recetas sin cambiar el modelo: el usuario propio se enlaza por `supertokens_user_id`. |
 
 ## 13. Riesgos y decisiones abiertas

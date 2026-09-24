@@ -49,4 +49,6 @@ export const authService = {
   sessionExists: () => Session.doesSessionExist(),
 
   getMe: () => apiClient.get<Me>("/me"),
+
+  deleteAccount: () => apiClient.delete<void>("/me"),
 };

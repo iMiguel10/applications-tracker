@@ -199,6 +199,18 @@
       "staleAfterDays": "Debe ser un número entre 1 y 90"
     }
   },
+  "account": {
+    "delete": {
+      "title": "Eliminar cuenta",
+      "description": "Se borrarán para siempre tu cuenta y todos tus datos: solicitudes con su historial, empresas, entrevistas y recordatorios. Si quieres conservarlos, exporta antes tus solicitudes en CSV desde <link>Solicitudes</link>.",
+      "openButton": "Eliminar cuenta",
+      "dialogTitle": "¿Eliminar tu cuenta?",
+      "dialogDescription": "Esta acción no se puede deshacer. Se borrarán todos tus datos y se cerrará tu sesión.",
+      "confirmLabel": "Escribe {{email}} para confirmar",
+      "confirmButton": "Eliminar cuenta definitivamente",
+      "deletedToast": "Cuenta eliminada"
+    }
+  },
   "nav": {
     "dashboard": "Dashboard",
     "applications": "Solicitudes",

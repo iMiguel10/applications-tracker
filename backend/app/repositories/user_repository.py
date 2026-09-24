@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +23,10 @@ class UserRepository:
         """Envía a la BD los cambios de un usuario ya cargado (UPDATE)."""
         await self.session.flush()
         return user
+
+    async def delete(self, user_id: uuid.UUID) -> None:
+        """Borra el usuario; sus datos caen con él por `ON DELETE CASCADE` (RNF-40)."""
+        await self.session.execute(delete(User).where(User.id == user_id))
 
     async def get_or_create(self, supertokens_user_id: str) -> User:
         """Devuelve el usuario propio, creándolo si no existe. Idempotente.

@@ -102,7 +102,7 @@ Hay dos pares de datos duplicados. Para cada uno se fija cuál manda.
 | Escritura | `get_current_user` hace un `INSERT … ON CONFLICT (supertokens_user_id) DO NOTHING` y después lee. Es idempotente y seguro ante peticiones concurrentes del mismo usuario recién registrado. |
 | Si falla | Una petición que no consigue crear el usuario propio devuelve 500 y la siguiente lo reintenta: no hay estado roto que reparar. |
 | Email | **No se copia**, así que no hay nada que sincronizar. Quien lo necesite (la cabecera de la UI, el futuro canal de email) lo pide a SuperTokens con `get_user(supertokens_user_id)` en ese momento. |
-| Borrado | `[C]`. Primero se borran los datos propios y después el usuario de SuperTokens, porque al revés quedarían datos huérfanos imposibles de reclamar. |
+| Borrado | Implementado en F8 (`DELETE /me`, `UserService.delete_account`). Primero se borran los datos propios (`UserRepository.delete()`, todo lo demás cae por `ON DELETE CASCADE`) y se confirma esa transacción; solo entonces se borra el usuario de SuperTokens (`IdentityRepository.delete()`), porque al revés quedarían datos huérfanos imposibles de reclamar. Es borrado inmediato: el periodo de gracia antes de purgar de verdad sigue `[C]` (ver [decisión 0008](../decisiones/0008-borrado-de-cuenta-en-f8.md)). |
 
 ## 5. Modelo de datos
 

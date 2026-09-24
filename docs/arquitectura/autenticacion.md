@@ -144,8 +144,11 @@ La invariante 8 no depende de acordarse de añadir la dependencia en cada endpoi
 | `POST /auth/session/refresh` | Middleware | Rota los tokens (la llama el SDK, nunca nuestro código) |
 | `GET /auth/signup/email/exists` | Middleware | Comprueba si un email ya está registrado |
 | `GET /api/v1/me` | Nuestro endpoint | Devuelve `{id, email}`. El email se pide a SuperTokens en ese momento (A12). |
+| `DELETE /api/v1/me` | Nuestro endpoint | Borra la cuenta (RNF-40, F8): primero los datos propios, después la identidad en SuperTokens. Ver la trampa más abajo. |
 
 Las rutas `/auth/*` aparecen en el OpenAPI (`/docs`) gracias a `app/api/auth_docs.py`, un router que las declara **solo para documentarlas**: el middleware responde antes de que la petición llegue a él. `get_current_user` declara además los esquemas `BearerAuth` y `CookieAuth` (con `auto_error=False`, así que no validan nada) para que Swagger muestre *Authorize* y el candado en cada ruta protegida.
+
+> **Trampa — borrar la cuenta no invalida al instante el access token ya emitido.** Es la misma trampa que el logout (§6, T7): `verify_session()` valida el access token sin consultar al core, así que una copia sigue sirviendo hasta que caduca (máximo 5 minutos, [decisión 0002](../decisiones/0002-access-token-de-5-minutos.md)). Si llegase una petición con ese token durante esos minutos, `get_current_user` volvería a ejecutar `get_or_create` y crearía una fila nueva y vacía en `users` para un `supertokens_user_id` que ya no existe en SuperTokens: inofensivo (no hay ninguna identidad real detrás, y esa fila cae si algún día se repite el borrado), pero real. Por eso el frontend cierra la sesión del navegador justo después de borrar la cuenta, en la misma mutación: no evita el token ya emitido, pero corta cualquier reintento posterior con él.
 
 ## 4. Frontend
 
@@ -237,7 +240,6 @@ La prueba T7 necesita el core de SuperTokens, así que `compose.test.yml` incorp
 | Verificación de email | `[C]` | Receta `emailverification` de SuperTokens, sin cambios en nuestro modelo |
 | Cambiar email o contraseña | `[C]` | API de SuperTokens. Como `users` no copia el email, no hay nada que sincronizar. |
 | Login social (Google…) | `[C]` | Receta `thirdparty`. El usuario propio se enlaza por `supertokens_user_id` igual que ahora. |
-| Borrado de cuenta | `[C]` | `ON DELETE CASCADE` desde `users`, y después el borrado en SuperTokens (arquitectura §4) |
 | Limitar intentos de login | `[C]` | Limitación por IP en el proxy de producción (F7) |
 | MFA | Evolución documentada, no se construye | Recetas de SuperTokens |
 
