@@ -154,6 +154,12 @@
     "signUpTitle": "Create your account",
     "noAccount": "No account yet?",
     "haveAccount": "Already have an account?",
+    "signInSubtitle": "Pick up your applications where you left off.",
+    "signUpSubtitle": "Log every application and follow how it moves forward.",
+    "showcase": {
+      "nextStep": "Next step",
+      "reminder": "Prepare the take-home test, {{date}}"
+    },
     "fields": {
       "email": "Email",
       "password": "Password",

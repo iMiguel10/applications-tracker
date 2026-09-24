@@ -9,10 +9,14 @@ export function RegisterPage() {
   return (
     <AuthLayout
       title={t("auth.signUpTitle")}
+      subtitle={t("auth.signUpSubtitle")}
       footer={
         <p className="text-sm text-muted-foreground">
           {t("auth.haveAccount")}{" "}
-          <Link to="/login" className="font-medium text-foreground underline">
+          <Link
+            to="/login"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             {t("auth.signIn")}
           </Link>
         </p>

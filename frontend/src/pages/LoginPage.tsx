@@ -9,10 +9,14 @@ export function LoginPage() {
   return (
     <AuthLayout
       title={t("auth.signInTitle")}
+      subtitle={t("auth.signInSubtitle")}
       footer={
         <p className="text-sm text-muted-foreground">
           {t("auth.noAccount")}{" "}
-          <Link to="/register" className="font-medium text-foreground underline">
+          <Link
+            to="/register"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             {t("auth.signUp")}
           </Link>
         </p>

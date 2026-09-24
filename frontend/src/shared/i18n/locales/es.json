@@ -154,6 +154,12 @@
     "signUpTitle": "Crea tu cuenta",
     "noAccount": "¿No tienes cuenta?",
     "haveAccount": "¿Ya tienes cuenta?",
+    "signInSubtitle": "Retoma tus candidaturas donde las dejaste.",
+    "signUpSubtitle": "Registra cada candidatura y sigue cómo avanza.",
+    "showcase": {
+      "nextStep": "Próximo paso",
+      "reminder": "Preparar la prueba técnica, {{date}}"
+    },
     "fields": {
       "email": "Email",
       "password": "Contraseña",
