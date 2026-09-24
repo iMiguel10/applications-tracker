@@ -48,6 +48,11 @@ nav:
       - arquitectura/index.md
       - Servicios y estructura: arquitectura/servicios-y-estructura.md
       - Autenticación: arquitectura/autenticacion.md
+      - Arquitectura de la v2: arquitectura/v2.md
+      - "v2: trabajo en segundo plano y emails": arquitectura/segundo-plano.md
+      - "v2: ficheros y PDF": arquitectura/ficheros.md
+      - "v2: IA": arquitectura/ia.md
+      - "v2: límites y abuso": arquitectura/limites-y-abuso.md
   - Guías:
       - Documentar y usar la API: guias/documentar-la-api.md
   - Referencia:
@@ -63,3 +68,4 @@ nav:
       - "0007 — Recordatorios globales y recharts": decisiones/0007-recordatorios-globales-y-recharts.md
       - "0008 — Borrado de cuenta en F8": decisiones/0008-borrado-de-cuenta-en-f8.md
       - "0009 — F8 antes que F7": decisiones/0009-f8-antes-que-f7.md
+      - "0010 — Docusaurus para producción": decisiones/0010-docusaurus-para-la-documentacion-de-produccion.md

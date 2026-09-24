@@ -236,13 +236,80 @@ La prueba T7 necesita el core de SuperTokens, así que `compose.test.yml` incorp
 
 | Funcionalidad | Estado | Costura que lo permitirá |
 |---|---|---|
-| **Recuperación de contraseña** (RF-03) | `[C]`. **La más cercana**: es lo primero que se echa en falta en uso real | La receta `emailpassword` ya la incluye. Solo falta configurar el envío de email (Mailpit en desarrollo) y dos pantallas. |
-| Verificación de email | `[C]` | Receta `emailverification` de SuperTokens, sin cambios en nuestro modelo |
+| **Recuperación de contraseña** (RF-03) | **Diseñada para la v2 (F11)**, ver [§8](#8-ampliacion-de-la-v2-verificacion-y-recuperacion) | La receta `emailpassword` ya la incluye. |
+| Verificación de email | **Diseñada para la v2 (F11)**, ver [§8](#8-ampliacion-de-la-v2-verificacion-y-recuperacion) | Receta `emailverification` de SuperTokens, sin cambios en nuestro modelo |
 | Cambiar email o contraseña | `[C]` | API de SuperTokens. Como `users` no copia el email, no hay nada que sincronizar. |
 | Login social (Google…) | `[C]` | Receta `thirdparty`. El usuario propio se enlaza por `supertokens_user_id` igual que ahora. |
-| Limitar intentos de login | `[C]` | Limitación por IP en el proxy de producción (F7) |
+| Limitar intentos de login | **Diseñado para la v2 (F11)**: rate limit por IP y por email en `/auth/*` ([límites y abuso](limites-y-abuso.md#2-rate-limiting-rnf-04)), además del proxy de F7 | — |
 | MFA | Evolución documentada, no se construye | Recetas de SuperTokens |
 
 Registro con enumeración de emails: `FIELD_ERROR` "email ya registrado" revela que una dirección tiene cuenta. Es el comportamiento estándar del registro y se acepta para el MVP.
 
 **Dependencia con script de instalación denegado.** `supertokens-web-js` trae `browser-tabs-lock`, el bloqueo entre pestañas que coordina el refresco. Su `postinstall` solo imprime un mensaje de agradecimiento, así que está denegado en `package.json` (`"allowScripts": {"browser-tabs-lock": false}`). npm moderno no ejecuta scripts de instalación sin aprobación explícita.
+
+## 8. Ampliación de la v2: verificación y recuperación
+
+> Estado: **diseño, sin construir** (F11). Los nombres de recetas, overrides y *claims* de esta sección se comprueban contra la versión del SDK al construir F11, como se hizo en F1 con el resto del documento.
+
+### Recetas
+
+| Receta | Modo | Qué aporta |
+|---|---|---|
+| `emailpassword` (ya existe) | — | La recuperación de contraseña viene incluida: generar el enlace y consumirlo |
+| `emailverification` **[nuevo]** | `OPTIONAL` (A38) | Enviar el enlace, consumirlo y el *claim* `EmailVerificationClaim` en la sesión |
+
+`OPTIONAL` significa que la sesión es válida esté o no verificado el email. Lo que exige verificación lo decide **nuestro backend** endpoint por endpoint, con `require_verified_email` (RF-06).
+
+### Entrega de los emails
+
+Las dos recetas envían sus emails a través de **nuestro** `EmailSender` (A37), sustituyendo su entrega por defecto: mismas plantillas, mismo idioma de la cuenta y el mismo SMTP de RNF-34. La entrega **encola** el envío en el `worker` y vuelve enseguida; si el encolado falla, se registra y el usuario puede volver a pedirlo.
+
+Los enlaces los construye SuperTokens a partir del `website_domain` de su `appInfo` y apuntan a rutas del frontend, que la v2 añade:
+
+| Ruta del frontend | Qué hace |
+|---|---|
+| `/reset-password?token=…` | Formulario de contraseña nueva; consume el token |
+| `/verify-email?token=…` | Consume el token al cargar y muestra el resultado |
+| `/forgot-password` | Pide el enlace de recuperación (oculto si `email_enabled = false`) |
+
+> **Trampa — enlaces que apuntan a `localhost` en producción.** El dominio de los enlaces sale de la configuración de SuperTokens (`website_domain`), no de la petición. Si en producción se queda el valor de desarrollo, todos los emails llegan bien pero con un enlace a `http://localhost:5173` que no lleva a ninguna parte, y desde el servidor todo parece funcionar. En la v2, `website_domain` se toma de `PUBLIC_APP_URL`, la misma variable que usan el resto de emails, y el manual de despliegue lo marca como obligatorio.
+
+> **Trampa — el enlace lleva más de un parámetro.** Los enlaces de SuperTokens incluyen, además del `token`, un `tenantId`. Una página que lea solo el `token` y construya a mano la llamada de consumo pierde el otro parámetro y el consumo falla. Las páginas usan las funciones de `supertokens-web-js`, que leen la URL completa.
+
+### Recuperación de contraseña (RF-03)
+
+1. `/forgot-password` → el SDK pide el enlace. **La respuesta es la misma exista o no la cuenta**: no se puede usar para averiguar qué emails están registrados. El registro sí lo revela (§7), y eso se sigue aceptando: esconderlo en un sitio y no en el otro no protege nada, pero no revelarlo aquí evita que la recuperación sea un oráculo **sin rate limit de registro**.
+2. El token es de **un solo uso** y caduca (1 hora por defecto en el core).
+3. Al consumirlo, la contraseña nueva pasa la misma política que el registro (`FIELD_ERROR`).
+4. **Después de cambiarla, se revocan todas las sesiones del usuario.**
+
+> **Trampa — recuperar la contraseña no echa al intruso.** Por defecto, cambiar la contraseña no cierra las demás sesiones. Si alguien robó una sesión y la víctima, al notarlo, recupera su contraseña, el intruso sigue dentro. El backend sustituye la función de recuperación para revocar **todas** las sesiones del usuario al completarla. Aun así, un access token ya emitido sigue siendo válido hasta 5 minutos ([decisión 0002](../decisiones/0002-access-token-de-5-minutos.md)), igual que tras un logout; lo que se corta es la renovación.
+
+### Verificación de email (RF-05, RF-06)
+
+- **Envío automático al registrarse**: el backend lo dispara tras el registro, sin depender de que el frontend lo pida, para que cualquier cliente de la API lo reciba igual.
+- **Reenvío**: desde el aviso de la interfaz, con rate limit ([límites y abuso §2](limites-y-abuso.md#2-rate-limiting-rnf-04)).
+- **Cuentas anteriores a la v2**: nacieron sin verificar. No se las bloquea (el modo es `OPTIONAL`): ven el aviso y verifican cuando quieran.
+
+**`require_verified_email`** es una dependencia de `deps.py` construida sobre la sesión que ya obtiene `get_current_user`, así que se mantiene el invariante 8 (ningún endpoint llama a `verify_session()` directamente). Lee el *claim* y, si dice "no verificado", vuelve a pedírselo al core antes de responder `403 email_not_verified`.
+
+> **Trampa — verificado, pero la sesión dice que no.** El estado de verificación viaja **dentro del access token** como un *claim*, calculado cuando se emitió. Si el usuario verifica su email desde el móvil, la sesión del ordenador sigue llevando "no verificado" hasta que se renueva el token, y las funciones con coste le responden `email_not_verified` justo después de haber verificado. Dos medidas:
+>
+> - en el backend, `require_verified_email` no se fía de un "no" del token y vuelve a consultar al core antes de rechazar (un "sí" sí se da por bueno);
+> - en el frontend, tras verificar en esa misma sesión, se fuerza la actualización del *claim*.
+
+### Sin SMTP configurado
+
+Las recetas se inicializan igual, pero la entrega no envía nada (la implementación desactivada de `EmailSender`) y `GET /api/v1/meta` publica `email_enabled = false`. El frontend oculta "¿olvidaste tu contraseña?" y el aviso de verificación explica que esta instalación no envía emails. Si alguien llama a la API de recuperación directamente, recibe la misma respuesta de siempre y ningún email: es inevitable y no filtra nada.
+
+### Pruebas adversas nuevas
+
+| # | Prueba | Qué demuestra |
+|---|---|---|
+| T9 | Pedir la recuperación para un email registrado y para uno que no existe da exactamente la misma respuesta | Sin oráculo de cuentas |
+| T10 | Usar dos veces el mismo token de recuperación: la segunda falla | Un solo uso |
+| T11 | Tras recuperar la contraseña, el refresco de una sesión anterior falla | Se revocan las sesiones |
+| T12 | Verificar el email por otra vía y llamar a una función con coste con el token antiguo: funciona sin renovar la sesión | El *claim* se vuelve a consultar ante un "no" |
+| T13 | Una función con coste con el email sin verificar → `403 email_not_verified`; el resto de la API sigue respondiendo | `OPTIONAL` + dependencia del backend |
+| T14 | Los enlaces de los emails de recuperación y verificación empiezan por `PUBLIC_APP_URL` | Dominio de los enlaces |
+| T15 | Con la entrega de prueba, el email de verificación sale en el idioma de la cuenta | Un solo canal de email con i18n |

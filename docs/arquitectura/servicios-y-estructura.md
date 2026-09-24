@@ -1,6 +1,6 @@
 # Servicios y estructura
 
-> Estado: **borrador v1** · Fecha: 2026-09-22 · Depende de la [arquitectura](index.md)
+> Estado: **v1 construida; ampliación v2 en diseño (§8)** · Fecha: 2026-09-22 · Depende de la [arquitectura](index.md)
 >
 > Convenciones heredadas de `task-manager-api` (backend y Docker) y `frontend_gestpro` (frontend), analizados el 2026-09-21.
 > Las desviaciones van marcadas como **[nuevo]**.
@@ -305,3 +305,249 @@ Las tres reglas contra el envejecimiento:
 | `docs` | `docker compose run --rm docs build --strict` | **Con Docker Compose**: la imagen de MkDocs Material fijada a la 9 vive ahí, no como dependencia adicional del runner |
 
 `.env.test.example` (nuevo en F6, versionado) es la plantilla de `.env.test`, paralela a `.env.example`. El job `backend-tests` la copia con `cp .env.test.example .env.test` antes de levantar `compose.test.yml`; sin ella, un clon nuevo del repositorio (incluido el runner de CI) no podía ejecutar los tests del backend sin crear el fichero a mano.
+
+## 8. Ampliación de la v2
+
+> Estado: **diseño, sin construir** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**.
+
+### 8.1 Servicios
+
+| Servicio | Imagen u origen | Puerto en el host | Para qué | Fase |
+|---|---|---|---|---|
+| `valkey` | `valkey/valkey:8.1-alpine` (versión fijada) | — | Cola de SAQ y contadores de rate limit (A18, A28) | F9 |
+| `worker` | `./backend`, la **misma imagen** que `api` | — | Trabajos (PDF, IA, emails) y barridos programados | F9 |
+| `mailpit` | `axllent/mailpit` (versión fijada) | 8025 (interfaz web) | Captura todos los emails en desarrollo; SMTP interno en el 1025 | F9 |
+| `manual` | `./manual/Dockerfile.dev` (node 24) | 3001 | Documentación de producción (Docusaurus) con recarga en vivo | F10 |
+| `valkey-test` | como `valkey`, en `tmpfs` | — | Rate limit y cola en la suite de pytest | F9 |
+
+Volumen nuevo: **`files_data`**, montado en `/data/files` en `api` **y** `worker` (A21). Es el almacén de los PDFs.
+
+Aclaraciones:
+
+- **`worker` es `api` con otro comando.** Comparte imagen, volúmenes (código, `.venv`, `files_data`) y `env_file`. Así un trabajo usa exactamente los mismos services, modelos y dependencias que un endpoint, y no hay una segunda imagen que mantener. Depende de `db`, `valkey` y `supertokens` (los barridos de notificaciones piden el email del usuario a SuperTokens, A12).
+- **Valkey no publica puerto**, igual que el core de SuperTokens. Guarda la cola en disco (`--appendonly yes` sobre el volumen `valkey_data`) para que reiniciar el contenedor no pierda los trabajos encolados; aun así, si se pierden, el barrido de la [arquitectura §3](v2.md#3-consistencia-entre-almacenes) los reencola.
+- **`mailpit` es solo de desarrollo.** En producción no hay servicio de correo: el SMTP lo configura quien despliega (RNF-34), y sin configurar la aplicación arranca igual.
+- **No hay servicio de ficheros**: es un volumen (A21). La copia de seguridad de una instalación pasa a ser `pg_dump` de las dos bases de datos **más** una copia de `files_data`.
+
+Fragmento de `compose.yml` (se conservan las convenciones de la v1: healthchecks, `depends_on` con `service_healthy`, volúmenes con nombre y versiones fijadas):
+
+```yaml
+  valkey:
+    image: valkey/valkey:8.1-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  worker:
+    build:
+      context: ./backend
+    command: saq app.worker.settings
+    volumes:
+      - ./backend:/app
+      - api_venv:/app/.venv
+      - files_data:/data/files
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      supertokens:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:v1.27   # fijar la versión vigente al construir F9
+    ports:
+      - "8025:8025"
+
+  api:
+    volumes:
+      - files_data:/data/files      # además de los volúmenes que ya tiene
+    depends_on:
+      valkey:
+        condition: service_healthy
+```
+
+> **Trampa — el `worker` no recarga el código.** `api` arranca con `--reload`; el `worker` no, porque SAQ no lo trae. Tras cambiar el código de un trabajo o de un service que usa, hay que reiniciarlo con `docker compose restart worker`. En desarrollo se puede envolver el comando con `watchfiles` para que se reinicie solo.
+
+> **Trampa — las migraciones las aplica solo `api`.** El `entrypoint.sh` que aplica `alembic upgrade head` se queda en `api`. Si el `worker` arrancara también con él, dos procesos migrarían a la vez. El `worker` no usa ese entrypoint: si arranca antes de que termine la migración, sus primeros trabajos fallan y se reintentan.
+
+### 8.2 Estructura del repositorio
+
+```
+applications-tracker/
+├── compose.yml                 + valkey, worker, mailpit, manual; volúmenes files_data y valkey_data
+├── compose.test.yml            + valkey-test
+├── docs/                       MkDocs: documentación de DESARROLLO (sin cambios de estructura)
+├── manual/                     [nuevo] Docusaurus: documentación de PRODUCCIÓN (F10)
+├── backend/
+├── frontend/
+└── .claude/agents/             el documentador pasa a mantener docs/ y manual/ (F10)
+```
+
+### 8.3 Backend
+
+```
+backend/app/
+├── worker.py                   [nuevo] configuración de SAQ: cola, funciones y tareas programadas. Solo cablea.
+├── jobs/                       [nuevo] funciones de trabajo: abren sesión, construyen el service y lo llaman
+│   ├── documents.py            generar PDF (F13, F14)
+│   ├── ai.py                   propuesta de CV o carta (F15)
+│   ├── notifications.py        barridos de avisos y envío (F12)
+│   └── maintenance.py          ficheros huérfanos, reencolar pendientes atascados, reclamos sin resultado
+├── infra/                      [nuevo] adaptadores a sistemas externos, cada uno detrás de una interfaz
+│   ├── queue/                  JobQueue · SaqJobQueue · InMemoryJobQueue (pruebas)
+│   ├── storage/                FileStorage · LocalFileStorage
+│   ├── email/                  EmailSender · SmtpEmailSender · RecordingEmailSender (pruebas)
+│   ├── llm/                    LLMProvider · adapters/<proveedor>.py · FakeLLMProvider (pruebas)
+│   │   └── prompts/            prompts versionados (A33): cv_tailoring/v1.md, cover_letter/v1.md
+│   ├── pdf.py                  render con WeasyPrint
+│   ├── crypto.py               Fernet/MultiFernet para las claves de IA de los usuarios (A34)
+│   └── rate_limit.py           `limits` sobre Valkey
+├── templates/                  [nuevo]
+│   ├── cv/<diseño>/            template.html, style.css, manifest.json y fuentes (A25)
+│   ├── cover_letter/<diseño>/
+│   └── email/<tipo>/           <idioma>.html y <idioma>.txt (A36)
+├── domain/                     + notifications.py (tipos y claves de deduplicación), limits.py (LimitKey),
+│                                 profile.py (enumerados del perfil), ai.py (esquema de la propuesta)
+├── repositories/               + document, profile, ai_proposal, ai_provider_key, ai_consent,
+│                                 notification_delivery, calendar_feed, user_limit_override
+├── services/                   + document_service, profile_service, cv_generation_service,
+│                                 ai_proposal_service, ai_key_service, notification_service,
+│                                 limit_service, calendar_service
+│   └── notifications/          + email.py: EmailChannel (segunda implementación de NotificationChannel)
+├── api/v1/
+│   ├── router.py               + router `public` con la lista blanca (calendario, baja de avisos)
+│   ├── deps.py                 + fábricas de infra, require_verified_email, rate_limit(...)
+│   └── endpoints/              + documents, profile, ai, usage, calendar, notifications
+└── scripts/                    + set_user_limit.py (RF-143)
+```
+
+#### Reglas de capas (ampliación)
+
+| Capa | Puede | No puede |
+|---|---|---|
+| `infra/` | Hablar con **un** sistema externo (disco, Valkey, SMTP, proveedor de IA, WeasyPrint) y traducir sus errores a excepciones propias | Conocer modelos SQLAlchemy o la BD · decidir reglas de negocio · importar `services/` |
+| `jobs/` | Abrir una sesión de BD, construir el service con sus dependencias de `infra/` y llamar a **un** método del service | Contener reglas de negocio · ejecutar SQL · hacer `commit` (lo hace el service, invariante 6) |
+| `worker.py` | Registrar funciones de `jobs/` y tareas programadas | Cualquier lógica |
+| `services/` | Todo lo de la v1 **y** usar interfaces de `infra/` recibidas en el constructor, y **encolar después del commit** (invariante 11) | Importar implementaciones concretas de `infra/` (`SmtpEmailSender`, un adaptador de IA): solo sus interfaces |
+| `templates/` | Presentación con Jinja2: formato de fechas, bucles, condicionales de maquetación | Lógica que decida qué contenido va (eso lo decide el service al preparar los datos) |
+| `endpoints/` | Todo lo de la v1 y declarar `rate_limit(...)` y `require_verified_email` como dependencias | Usar `infra/` directamente |
+
+**La regla que lo resume, ampliada:** *si algo habla con la base de datos o con SuperTokens, vive en `repositories/`; si habla con cualquier otro sistema externo, vive en `infra/` detrás de una interfaz; si algo decide, vive en `services/` o `domain/`.*
+
+Dirección de dependencias: `endpoints / jobs → services → repositories + interfaces de infra`. Las implementaciones de `infra/` solo se eligen en `deps.py` (para la API) y en `worker.py` (para el worker), según la configuración. En las pruebas se pasan las implementaciones de prueba (`InMemoryJobQueue`, `RecordingEmailSender`, `FakeLLMProvider`).
+
+### 8.4 Frontend
+
+```
+frontend/src/features/
+├── documents/          [nuevo] biblioteca, subida, visor PDF (iframe sobre un blob: sin pdf.js)
+├── profile/            [nuevo] editor del perfil por secciones, con orden por arrastre
+├── cv-generation/      [nuevo] elegir diseño y secciones; estado pendiente → listo
+├── ai/                 [nuevo] propuesta, revisión lado a lado (RF-118), carencias, claves y consentimiento
+├── board/              [nuevo] tablero Kanban (dnd-kit)
+├── calendar/           [nuevo] vista mensual y semanal propia (date-fns), suscripción ICS
+├── usage/              [nuevo] página de uso y el aviso de consumo que se muestra donde se gasta (RF-144)
+└── auth/               + recuperar contraseña, verificación de email, preferencias de notificación y zona horaria
+```
+
+| Tema | Convención |
+|---|---|
+| Recursos pendientes | **[nuevo]** Una query cuyo recurso está `pending`, `queued` o `running` usa `refetchInterval` hasta que cambia de estado. Una única utilidad decide el intervalo a partir del estado, para que ninguna pantalla se quede consultando indefinidamente. |
+| Funciones con coste | **[nuevo]** El código `email_not_verified` (y los de cuota y rate limit) se traduce con el mismo `errorMessageKey`, y un componente común explica qué hacer (verificar, esperar, añadir una clave) en lugar de un aviso genérico. |
+| Calendario | **[nuevo]** Rejilla propia con `date-fns`: hay pocos eventos y ya se tiene `date-fns`. Una librería de calendario completa (FullCalendar, react-big-calendar) pesaría más que la propia vista. |
+| Arrastrar y soltar | **[nuevo]** `@dnd-kit` en el tablero y en el orden de los elementos del perfil: soporta teclado y pantallas táctiles (RF-123). |
+| Visor de PDF | **[nuevo]** `apiClient.getBlob()` (ya existe para el CSV) más `URL.createObjectURL` en un `iframe`, que se libera al desmontar. |
+
+Las reglas de capas del frontend no cambian: `services/` sigue siendo la única capa que usa `apiClient`.
+
+### 8.5 Documentación de producción (`manual/`)
+
+```
+manual/
+├── package.json, docusaurus.config.ts, sidebars.ts
+├── Dockerfile.dev
+├── docs/                       español, idioma por defecto
+│   ├── uso/                    manual de uso por tareas (RNF-33)
+│   ├── despliegue/             requisitos, variables, primer arranque, SMTP, backups, actualizaciones
+│   └── api/
+│       ├── guia.md             integración: Bearer, errores, paginación, límites, rate limit, /auth/*
+│       └── referencia/         GENERADA desde ../docs/referencia/openapi.json (no se versiona)
+└── i18n/en/                    traducción al inglés de uso/, despliegue/ y api/guia.md
+```
+
+- La referencia de la API la genera `docusaurus-plugin-openapi-docs` a partir del **mismo** `openapi.json` que ya versiona el backend. Se regenera en cada build y no se versiona la salida: una sola fuente del contrato.
+- La referencia generada sale en el idioma de los docstrings del backend (español) también en la versión inglesa del sitio. Traducirla exigiría dos contratos OpenAPI: no se hace, y la guía de integración en inglés lo explica.
+- En producción (F7), el manual se construye como estático y lo sirve el mismo Nginx que el frontend (por ejemplo, en `/manual`).
+
+### 8.6 Variables de entorno nuevas
+
+Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna tiene un valor real versionado (RNF-03).
+
+| Variable | Para qué | Si falta |
+|---|---|---|
+| `VALKEY_URL` | Cola (SAQ) y rate limit | No arranca: es infraestructura obligatoria |
+| `FILES_ROOT` | Raíz del almacén de ficheros (`/data/files`) | No arranca |
+| `PUBLIC_APP_URL` | Enlaces en los emails y en el feed ICS | No arranca |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY` (`none`, `starttls`, `tls`), `SMTP_USERNAME`, `SMTP_PASSWORD`, `EMAIL_FROM` | Servidor de correo (RNF-34) | Arranca **sin email**: se registra al iniciar y las funciones dependientes aparecen como no disponibles |
+| `APP_SECRET` | Firma de los enlaces de baja de avisos | No arranca |
+| `AI_KEYS_ENCRYPTION_KEYS` | Claves maestras de Fernet, separadas por comas; la primera cifra y todas descifran (rotación, A34) | Las claves propias de IA quedan desactivadas |
+| `AI_ENABLED_PROVIDERS` | Proveedores que se ofrecen a los usuarios (RF-151) | Ninguno: no se pueden añadir claves propias |
+| `AI_MODEL_<PROVIDER>` | Modelo que usa cada proveedor habilitado | Ese proveedor no se habilita |
+| `AI_PLATFORM_PROVIDER`, `AI_PLATFORM_API_KEY` | Clave de la plataforma para la cuota gratuita | Sin cuota gratuita: solo claves propias |
+| `AI_FREE_USES`, `AI_MONTHLY_SPEND_CAP` | Cuota gratuita por cuenta y tope de gasto global (RF-150, RF-155) | Valores por defecto de la configuración |
+| `TRUSTED_PROXIES` | IPs de los proxies cuyo `X-Forwarded-For` se acepta | Ninguna: se usa la IP de la conexión |
+| `LIMIT_*` | Valores globales de los límites por usuario (RF-140) | Los de §10 de la especificación |
+
+### 8.7 Convenciones nuevas del backend
+
+| Tema | Convención |
+|---|---|
+| Trabajos | **[nuevo]** Cada trabajo recibe solo ids (`document_id`, `user_id`), carga la fila filtrando por los dos y **termina sin hacer nada** si ya no está pendiente. Así encolar dos veces, o reencolar desde un barrido, es inocuo. |
+| Encolar | **[nuevo]** Solo después del `commit` (invariante 11), con un método del service que confirma y luego encola; nunca dentro de la transacción. |
+| Tareas programadas | **[nuevo]** Las funciones de barrido reciben "ahora" como parámetro: el `worker` pasa el reloj real y las pruebas, una fecha fija. |
+| Endpoints públicos | **[nuevo]** Se registran en el router `public`; la prueba T1 compara la lista de rutas sin sesión con una lista blanca escrita en el propio test. |
+| Plantillas | **[nuevo]** Los CVs llevan sus fuentes dentro de la carpeta del diseño (`@font-face` con ficheros locales): el PDF sale igual en cualquier máquina y no depende de las fuentes instaladas en la imagen. |
+| Prompts | **[nuevo]** Un fichero por versión (`v1.md`, `v2.md`); cambiar un prompt es añadir una versión nueva, no editar la anterior, para que las propuestas guardadas sigan explicándose (A33). |
+| Pruebas | **[nuevo]** Ninguna prueba automática habla con un proveedor de IA ni con un SMTP real. Las implementaciones de prueba de `infra/` son parte del código, no mocks improvisados en cada test. |
+| Códigos de error nuevos | `email_not_verified`, `email_unavailable`, `rate_limited`, `storage_limit_reached`, `invalid_file_type`, `file_too_large`, `document_in_use`, `profile_incomplete`, `job_description_missing`, `ai_consent_required`, `ai_free_quota_exhausted`, `ai_global_cap_reached`, `ai_provider_auth`, `ai_provider_quota`, `ai_provider_unavailable`, `ai_proposal_invalid`, además del patrón existente `<recurso>_limit_reached` |
+
+Dependencias nuevas previstas (versiones fijadas al añadirlas, siempre con `docker compose exec api uv add`):
+
+- **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `icalendar`, `pypdf` (comprobar que un PDF subido se abre, sin renderizarlo), `python-multipart` (subidas) y el SDK de cada proveedor de IA habilitado.
+- **Imagen del backend:** las librerías de sistema de WeasyPrint (Pango, HarfBuzz). Lo valida F9 (R9).
+- **Frontend:** `@dnd-kit/core` y `@dnd-kit/sortable`.
+- **Manual:** Docusaurus y `docusaurus-plugin-openapi-docs`, con versiones fijadas (mismo criterio que MkDocs, R4).
+
+### 8.8 Integración continua
+
+| Job | Cambio |
+|---|---|
+| `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
+| `manual` | **[nuevo]** `npm ci` y `npm run build` en `manual/`, que falla ante enlaces rotos, igual que `mkdocs build --strict` |
+| `docs` | Sin cambios |
+
+### 8.9 Decisiones cerradas de la v2
+
+Confirmadas con el usuario durante el diseño (2026-09-24), a continuación de las de la v1:
+
+| # | Decisión | Regla derivada |
+|---|---|---|
+| 12 | Registro abierto | Límites, rate limiting y verificación son defensas reales |
+| 13 | Verificación exigida solo para lo que tiene coste | `require_verified_email` en IA, ficheros y emails; el resto de la app funciona sin verificar |
+| 14 | Biblioteca de documentos reutilizable | La solicitud referencia documentos; un documento en uso no se borra, se archiva |
+| 15 | IA: ajuste guiado en un paso, con revisión | Sin chat; la propuesta se valida y se revisa antes de generar |
+| 16 | IA: cuota gratuita fija sin renovación y después clave propia de un proveedor habilitado | Nunca se pasa en silencio a la clave de la plataforma |
+| 17 | Cuatro tipos de email, cada uno desactivable | Reclamar antes de enviar; nunca dos veces |
+| 18 | SMTP configurado por quien despliega, con variables de entorno | Sin SMTP, la aplicación arranca y lo que depende del email aparece como no disponible |
+| 19 | Documentación de producción en Docusaurus, es + en, con despliegue, uso y API | Referencia de la API generada del mismo OpenAPI; el documentador mantiene los dos sitios |
+| 20 | Límites con consumo y restante visibles | También donde se gasta, con aviso al 80 % |
+| 21 | Ficheros en disco local | Volumen compartido por `api` y `worker`; S3 como implementación futura de `FileStorage` |
+| 22 | Valkey para la cola y el rate limit | SAQ sobre Valkey; la cola podría pasar a Postgres cambiando la URL |

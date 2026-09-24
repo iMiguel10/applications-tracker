@@ -1,6 +1,8 @@
 # Arquitectura
 
-> Estado: **borrador v1** · Fecha: 2026-09-22 · Depende de la [especificación de producto](../producto/especificacion.md)
+> Estado: **v1 construida** · Fecha: 2026-09-22 · Depende de la [especificación de producto](../producto/especificacion.md)
+>
+> La v2 (F9–F17) se diseña en [Arquitectura de la v2](v2.md), que continúa estas decisiones desde A18 sin repetirlas.
 
 ## 1. Decisiones
 
@@ -22,7 +24,7 @@
 | A14 | Paginación | `page`/`limit` con `total` y `pages` (heredado de la plantilla) | **Keyset/cursor**: con un máximo de 5 000 filas por usuario, `OFFSET` no es un problema, y el paginado numerado es el que espera un listado. |
 | A15 | Búsqueda de texto | `ILIKE` sobre puesto y nombre de empresa | **`pg_trgm` o búsqueda full-text**: innecesario a este volumen (ver RNF-10, validado en F8 con `app/scripts/check_performance.py`: p95 = 9.9 ms con 2 000 solicitudes, muy por debajo del presupuesto de 300 ms). Se reconsiderará solo si mediciones futuras lo piden. |
 | A16 | Estado de filtros del listado | Parámetros de la URL | **Estado local**: se pierde al recargar, no se puede compartir un enlace y el botón atrás no funciona. |
-| A17 | Documentación | MkDocs Material fijado a la versión 9, con diagramas Mermaid y referencia de la API generada desde OpenAPI | **Docusaurus**: metería un segundo ecosistema Node solo para documentar. **Wiki externa**: se separa del código y envejece. |
+| A17 | Documentación | MkDocs Material fijado a la versión 9, con diagramas Mermaid y referencia de la API generada desde OpenAPI | **Docusaurus**: metería un segundo ecosistema Node solo para documentar. **Wiki externa**: se separa del código y envejece. *Acotada en la v2 a la documentación de desarrollo: la de producción usa Docusaurus (A42, [0010](../decisiones/0010-docusaurus-para-la-documentacion-de-produccion.md)).* |
 
 > **Aclaraciones:**
 >
