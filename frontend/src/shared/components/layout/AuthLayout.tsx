@@ -90,7 +90,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
         </div>
       </div>
 
-      <div className="flex flex-col justify-center overflow-y-auto px-6 py-12 sm:px-12 lg:px-16">
+      <main className="flex flex-col justify-center overflow-y-auto px-6 py-12 sm:px-12 lg:px-16">
         <div className="mx-auto w-full max-w-sm">
           {/* Dentro del bloque del formulario: así queda alineado con él a cualquier ancho. */}
           <span className="mb-12 flex items-center gap-2.5 lg:hidden">
@@ -104,7 +104,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
           <div className="mt-8">{children}</div>
           <div className="mt-8 border-t pt-6">{footer}</div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

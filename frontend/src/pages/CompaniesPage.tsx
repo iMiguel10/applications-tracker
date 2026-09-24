@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Building2, Plus, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { EmptyState } from "@/shared/components/common/EmptyState";
+import { ErrorState } from "@/shared/components/common/ErrorState";
 import { Pagination } from "@/shared/components/common/Pagination";
+import { TableSkeleton } from "@/shared/components/common/Skeletons";
 import { SearchInput } from "@/shared/components/common/SearchInput";
 import { CompaniesTable } from "@/features/companies/components/CompaniesTable";
 import { CompanyFormDialog } from "@/features/companies/components/CompanyFormDialog";
@@ -17,6 +21,7 @@ const PAGE_SIZE = 20;
 
 export function CompaniesPage() {
   const { t } = useTranslation();
+  useDocumentTitle(t("companies.title"));
   // Búsqueda y página en la URL (decisión A16): sobreviven a recargar y al botón atrás.
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
@@ -26,7 +31,11 @@ export function CompaniesPage() {
   const [editing, setEditing] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState<Company | null>(null);
 
-  const { data, isLoading, isError } = useCompanies({ page, limit: PAGE_SIZE, q: q || undefined });
+  const { data, isLoading, isError, isFetching, refetch } = useCompanies({
+    page,
+    limit: PAGE_SIZE,
+    q: q || undefined,
+  });
 
   const setParams = (next: { q?: string; page?: number }) => {
     const params = new URLSearchParams(searchParams);
@@ -67,11 +76,29 @@ export function CompaniesPage() {
         placeholder={t("companies.searchPlaceholder")}
       />
 
-      {isLoading && <p className="text-muted-foreground">{t("common.loading")}</p>}
-      {isError && <p className="text-destructive">{t("errors.generic")}</p>}
-      {data && data.total === 0 && (
-        <p className="text-muted-foreground">{t(q ? "common.noResults" : "companies.empty")}</p>
-      )}
+      {isLoading && <TableSkeleton columns={4} />}
+      {isError && <ErrorState onRetry={() => refetch()} retrying={isFetching} />}
+      {data &&
+        data.total === 0 &&
+        (q ? (
+          <EmptyState
+            icon={SearchX}
+            title={t("common.noResultsTitle")}
+            description={t("companies.noSearchResults", { q })}
+          />
+        ) : (
+          <EmptyState
+            icon={Building2}
+            title={t("companies.emptyTitle")}
+            description={t("companies.emptyDescription")}
+            action={
+              <Button onClick={openCreate}>
+                <Plus />
+                {t("companies.new")}
+              </Button>
+            }
+          />
+        ))}
       {data && data.total > 0 && (
         <>
           <Card className="py-0">

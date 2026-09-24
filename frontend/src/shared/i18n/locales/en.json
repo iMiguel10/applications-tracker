@@ -34,7 +34,15 @@
       "tooLong": "Too long",
       "url": "Must start with http:// or https://",
       "notesTooLong": "5,000 characters maximum"
-    }
+    },
+    "retry": "Try again",
+    "noResultsTitle": "No results",
+    "loadError": {
+      "title": "Couldn’t load this",
+      "description": "Check your connection and try again."
+    },
+    "selectDateTime": "Pick a date and time",
+    "time": "Time"
   },
   "applications": {
     "title": "Applications",
@@ -46,7 +54,6 @@
     "updated": "Application updated",
     "deleted": "Application deleted",
     "export": "Export CSV",
-    "empty": "No applications yet. Create the first one with “New application”.",
     "searchPlaceholder": "Search position or company…",
     "companyPlaceholder": "Search or type a new company",
     "appliedAtToday": "Today",
@@ -144,7 +151,11 @@
       "positionRequired": "Enter the position",
       "salaryNumber": "Whole numbers only",
       "statusRequired": "Choose a status"
-    }
+    },
+    "emptyTitle": "No applications yet",
+    "emptyDescription": "Add the first one and follow how it moves forward from here.",
+    "notFound": "This application doesn’t exist or was deleted.",
+    "backToList": "Back to applications"
   },
   "auth": {
     "signIn": "Sign in",
@@ -218,7 +229,9 @@
     "reminders": "Reminders",
     "preferences": "Preferences",
     "openMenu": "Open menu",
-    "theme": "Switch between light and dark theme"
+    "theme": "Switch between light and dark theme",
+    "skipToContent": "Skip to content",
+    "main": "Main navigation"
   },
   "companies": {
     "title": "Companies",
@@ -228,7 +241,6 @@
     "created": "Company created",
     "updated": "Company updated",
     "deleted": "Company deleted",
-    "empty": "No companies yet. They are created when you add an application, or here.",
     "searchPlaceholder": "Search companies…",
     "applicationsCount": "Applications",
     "deleteTitle": "Delete “{{name}}”?",
@@ -241,7 +253,10 @@
     },
     "validation": {
       "nameRequired": "Enter the name"
-    }
+    },
+    "emptyTitle": "No companies yet",
+    "emptyDescription": "They are created when you add an application, or you can add them here.",
+    "noSearchResults": "No company matches “{{q}}”."
   },
   "interviews": {
     "title": "Interviews",
@@ -317,7 +332,9 @@
     "validation": {
       "titleRequired": "Enter a title",
       "dueAtRequired": "Enter the due date"
-    }
+    },
+    "emptyPendingTitle": "No pending reminders",
+    "emptyPendingDescription": "Create one so you don’t forget the next step of an application."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -350,6 +367,10 @@
       "empty": "No application has gone more than {{days}} days without activity.",
       "sinceDays": "No activity for {{days}} days",
       "more": "And {{count}} more"
+    },
+    "welcome": {
+      "title": "Start by adding your first application",
+      "description": "This is where you’ll see how many applications you have, where each one stands and what’s pending."
     }
   },
   "errors": {

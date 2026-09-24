@@ -68,6 +68,7 @@ export function FormSelect<T extends FieldValues>({
           className={className ?? "w-full"}
           onBlur={field.onBlur}
           aria-invalid={!!error}
+          aria-describedby={error ? `${String(name)}-error` : undefined}
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
@@ -80,7 +81,7 @@ export function FormSelect<T extends FieldValues>({
         </SelectContent>
       </Select>
 
-      {error && <p className="text-sm text-destructive">{t(error.message ?? "")}</p>}
+      {error && <p id={`${String(name)}-error`} className="text-sm text-destructive">{t(error.message ?? "")}</p>}
     </div>
   );
 }

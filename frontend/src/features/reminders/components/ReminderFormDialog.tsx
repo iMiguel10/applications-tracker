@@ -9,6 +9,7 @@ import {
   type AsyncComboboxOption,
   FormActions,
   FormAsyncCombobox,
+  FormDateTimePicker,
   FormInput,
 } from "@/shared/components/form";
 import {
@@ -84,10 +85,9 @@ export function ReminderFormDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
           <FormInput form={form} name="title" label={t("reminders.fields.title")} />
-          <FormInput
+          <FormDateTimePicker
             form={form}
             name="due_at"
-            type="datetime-local"
             label={t("reminders.fields.dueAt")}
           />
           {applicationId === undefined && (

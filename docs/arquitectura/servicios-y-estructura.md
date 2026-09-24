@@ -193,9 +193,10 @@ frontend/src/
 ├── pages/                     una página por ruta
 ├── routes/                    Router.tsx + AuthLoaders.ts
 ├── shared/
-│   ├── components/{ui,form,common,layout}
+│   ├── components/{ui,form,layout}
+│   │   └── common/            EmptyState, ErrorState, Skeletons, PageFallback, Pagination, SearchInput (F8)
 │   ├── config/navigation.ts
-│   ├── hooks/                 useDebounce…
+│   ├── hooks/                 useDebounce, useDocumentTitle (F8)
 │   ├── i18n/                  i18n.ts + locales/{es,en}.json
 │   └── lib/                   apiClient.ts, queryClient.ts, supertokens.ts (F1), utils.ts
 ├── styles/global.css
@@ -244,6 +245,8 @@ features/<feature>/
 | Selects opcionales | Sin opción vacía | **[nuevo]** `FormSelect` con `emptyLabel`: guarda `null`, no `""` |
 | Popover / Dialog | `asChild` (Radix) | Base UI usa la prop `render`: `asChild` no hace nada y anida un botón dentro de otro |
 | Errores de la API en formularios | Aviso genérico | **[nuevo]** `errorMessageKey(error)` traduce por `code` (`errors.<code>`); si el código corresponde a un campo, se marca el campo con `setError` |
+| Estados de carga, vacío y error | Cada página los repetía a mano | **[nuevo] (F8)** `shared/components/common/{Skeletons,EmptyState,ErrorState}.tsx`, reutilizados en toda página que liste o cargue un recurso. Un 404 no es un error de red: `features/applications/components/ApplicationLoadError.tsx` lo distingue (invariante 2, recurso ajeno = inexistente) y ofrece volver al listado en vez de un botón de reintentar que nunca arreglaría nada |
+| Reintentos de TanStack Query | Los 4 intentos por defecto de la librería, también ante un 4xx | **[nuevo] (F8)** `shared/lib/queryClient.ts`: un 4xx no se reintenta (no se arregla insistiendo); solo los fallos de red o 5xx, y una sola vez |
 
 Se mantienen tal cual: shadcn/ui (`base-nova`) en `shared/components/ui` (añadidos con el CLI, nunca a mano), los wrappers de formulario de `shared/components/form`, el alias `@/`, i18n con claves y la configuración de TanStack Query.
 

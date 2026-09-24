@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { AuthLayout } from "@/shared/components/layout/AuthLayout";
 import { RegisterForm } from "@/features/auth/components/RegisterForm";
 
 export function RegisterPage() {
   const { t } = useTranslation();
+  useDocumentTitle(t("auth.signUpTitle"));
 
   return (
     <AuthLayout

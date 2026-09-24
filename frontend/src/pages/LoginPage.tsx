@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { AuthLayout } from "@/shared/components/layout/AuthLayout";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
 export function LoginPage() {
   const { t } = useTranslation();
+  useDocumentTitle(t("auth.signInTitle"));
 
   return (
     <AuthLayout

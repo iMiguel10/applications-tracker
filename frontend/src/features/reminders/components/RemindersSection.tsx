@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { BellRing, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/shared/components/ui/button";
+import { EmptyState } from "@/shared/components/common/EmptyState";
+import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { useReminders } from "../hooks/queries/useReminders";
 import { ReminderFormDialog } from "./ReminderFormDialog";
 import { RemindersList } from "./RemindersList";
@@ -29,9 +31,9 @@ export function RemindersSection({ applicationId }: { applicationId: string }) {
         </Button>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">{t("common.loading")}</p>}
+      {isLoading && <ListSkeleton />}
       {data && data.items.length === 0 && (
-        <p className="text-muted-foreground">{t("reminders.empty")}</p>
+        <EmptyState size="sm" icon={BellRing} title={t("reminders.empty")} />
       )}
       {data && data.items.length > 0 && (
         <RemindersList reminders={data.items} showApplication={false} />

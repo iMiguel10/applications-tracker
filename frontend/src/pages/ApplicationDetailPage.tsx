@@ -11,10 +11,13 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { errorMessageKey } from "@/shared/lib/errors";
 import { formatDateOnly, formatDateTime, formatSalaryRange } from "@/shared/lib/format";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { DetailSkeleton } from "@/shared/components/common/Skeletons";
+import { ApplicationLoadError } from "@/features/applications/components/ApplicationLoadError";
 import { ApplicationStatusBadge } from "@/features/applications/components/ApplicationStatusBadge";
 import { ChangeStatusDialog } from "@/features/applications/components/ChangeStatusDialog";
 import { DeleteApplicationDialog } from "@/features/applications/components/DeleteApplicationDialog";
@@ -37,13 +40,19 @@ export function ApplicationDetailPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { applicationId = "" } = useParams();
-  const { data: application, isLoading, isError } = useApplication(applicationId);
+  const { data: application, isLoading, error, isFetching, refetch } =
+    useApplication(applicationId);
+  useDocumentTitle(application?.position_title);
   const setArchived = useSetArchived();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [changeStatusOpen, setChangeStatusOpen] = useState(false);
 
-  if (isLoading) return <p className="text-muted-foreground">{t("common.loading")}</p>;
-  if (isError || !application) return <p className="text-destructive">{t("errors.not_found")}</p>;
+  if (isLoading) return <DetailSkeleton />;
+  if (!application) {
+    return (
+      <ApplicationLoadError error={error} onRetry={() => refetch()} retrying={isFetching} />
+    );
+  }
 
   const archived = !!application.archived_at;
   const lang = i18n.language;
@@ -59,7 +68,7 @@ export function ApplicationDetailPage() {
     );
 
   return (
-    <div className="grid max-w-3xl gap-6">
+    <div className="grid gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="grid gap-1">
           <p className="text-sm text-muted-foreground">{application.company.name}</p>
@@ -96,65 +105,70 @@ export function ApplicationDetailPage() {
         </div>
       </div>
 
-      <Card>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("applications.fields.appliedAt")}>
-              {formatDateOnly(application.applied_at, lang)}
-            </Field>
-            <Field label={t("applications.fields.location")}>{application.location}</Field>
-            <Field label={t("applications.fields.workMode")}>
-              {application.work_mode && t(`applications.workMode.${application.work_mode}`)}
-            </Field>
-            <Field label={t("applications.fields.source")}>
-              {application.source && t(`applications.source.${application.source}`)}
-            </Field>
-            <Field label={t("applications.fields.salary")}>
-              {formatSalaryRange(
-                application.salary_min,
-                application.salary_max,
-                application.salary_currency,
-                lang,
-              )}
-            </Field>
-            <Field label={t("applications.fields.jobUrl")}>
-              {application.job_url && (
-                <a
-                  href={application.job_url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 underline underline-offset-2"
-                >
-                  {new URL(application.job_url).hostname}
-                  <ExternalLink className="size-3.5" />
-                </a>
-              )}
-            </Field>
-          </dl>
-          {application.notes && (
-            <div className="mt-6 grid gap-1">
-              <p className="text-sm text-muted-foreground">{t("common.fields.notes")}</p>
-              <p className="whitespace-pre-wrap">{application.notes}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Escritorio: los datos a la izquierda; lo que cambia con el tiempo (historial,
+          entrevistas, recordatorios) en una columna a la derecha. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
+        <Card>
+          <CardContent>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              <Field label={t("applications.fields.appliedAt")}>
+                {formatDateOnly(application.applied_at, lang)}
+              </Field>
+              <Field label={t("applications.fields.location")}>{application.location}</Field>
+              <Field label={t("applications.fields.workMode")}>
+                {application.work_mode && t(`applications.workMode.${application.work_mode}`)}
+              </Field>
+              <Field label={t("applications.fields.source")}>
+                {application.source && t(`applications.source.${application.source}`)}
+              </Field>
+              <Field label={t("applications.fields.salary")}>
+                {formatSalaryRange(
+                  application.salary_min,
+                  application.salary_max,
+                  application.salary_currency,
+                  lang,
+                )}
+              </Field>
+              <Field label={t("applications.fields.jobUrl")}>
+                {application.job_url && (
+                  <a
+                    href={application.job_url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center gap-1 underline underline-offset-2"
+                  >
+                    {new URL(application.job_url).hostname}
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+              </Field>
+            </dl>
+            {application.notes && (
+              <div className="mt-6 grid gap-1">
+                <p className="text-sm text-muted-foreground">{t("common.fields.notes")}</p>
+                <p className="whitespace-pre-wrap">{application.notes}</p>
+              </div>
+            )}
+            <p className="mt-6 border-t pt-4 text-xs text-muted-foreground">
+              {t("applications.timestamps", {
+                created: formatDateTime(application.created_at, lang),
+                updated: formatDateTime(application.updated_at, lang),
+              })}
+            </p>
+          </CardContent>
+        </Card>
 
-      <p className="text-sm text-muted-foreground">
-        {t("applications.timestamps", {
-          created: formatDateTime(application.created_at, lang),
-          updated: formatDateTime(application.updated_at, lang),
-        })}
-      </p>
+        <div className="grid gap-6">
+          <StatusHistoryTimeline applicationId={application.id} />
 
-      <StatusHistoryTimeline applicationId={application.id} />
+          <InterviewsSection
+            application={application}
+            onSuggestInterviewing={() => setChangeStatusOpen(true)}
+          />
 
-      <InterviewsSection
-        application={application}
-        onSuggestInterviewing={() => setChangeStatusOpen(true)}
-      />
-
-      <RemindersSection applicationId={application.id} />
+          <RemindersSection applicationId={application.id} />
+        </div>
+      </div>
 
       <ChangeStatusDialog
         application={application}

@@ -53,10 +53,12 @@ export function FormTextarea<T extends FieldValues>({
         rows={rows}
         placeholder={placeholder}
         disabled={disabled}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${String(name)}-error` : undefined}
       />
 
       {error && (
-        <p className="text-sm text-destructive">
+        <p id={`${String(name)}-error`} className="text-sm text-destructive">
           {t(error.message ?? "")}
         </p>
       )}

@@ -131,6 +131,7 @@ export function FormAsyncCombobox<T extends FieldValues>({
           placeholder={placeholder}
           onBlur={field.onBlur}
           aria-invalid={!!error}
+          aria-describedby={error ? `${String(name)}-error` : undefined}
           className={className}
           triggerLabel={t("common.showOptions")}
           clearLabel={t("common.clearSelection")}
@@ -149,7 +150,7 @@ export function FormAsyncCombobox<T extends FieldValues>({
         </ComboboxContent>
       </Combobox>
 
-      {error && <p className="text-sm text-destructive">{t(error.message ?? "")}</p>}
+      {error && <p id={`${String(name)}-error`} className="text-sm text-destructive">{t(error.message ?? "")}</p>}
     </div>
   );
 }

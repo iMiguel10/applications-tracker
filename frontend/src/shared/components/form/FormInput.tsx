@@ -84,6 +84,7 @@ export function FormInput<T extends FieldValues>({
           autoComplete={autoComplete}
           inputMode={inputMode}
           aria-invalid={!!error}
+          aria-describedby={error ? `${String(name)}-error` : undefined}
           disabled={disabled}
           className={[
             startAdornment ? "pl-10" : "",
@@ -102,7 +103,7 @@ export function FormInput<T extends FieldValues>({
       </div>
 
       {error && (
-        <p className="text-sm text-destructive">
+        <p id={`${String(name)}-error`} className="text-sm text-destructive">
           {t(error.message ?? "")}
         </p>
       )}

@@ -3,7 +3,10 @@ import { Trash2 } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { Button } from "@/shared/components/ui/button";
+import { ErrorState } from "@/shared/components/common/ErrorState";
+import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import {
   Card,
   CardContent,
@@ -18,7 +21,8 @@ import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
 
 export function PreferencesPage() {
   const { t } = useTranslation();
-  const { data, isLoading, isError } = usePreferences();
+  useDocumentTitle(t("preferences.title"));
+  const { data, isLoading, isError, isFetching, refetch } = usePreferences();
   const { data: me } = useMe();
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -26,13 +30,23 @@ export function PreferencesPage() {
     <div className="grid gap-6">
       <h1 className="text-2xl font-semibold">{t("preferences.title")}</h1>
 
-      {isLoading && <p className="text-muted-foreground">{t("common.loading")}</p>}
-      {isError && <p className="text-destructive">{t("errors.generic")}</p>}
-      {data && <PreferencesForm preferences={data} />}
+      {/* Ajustes a la izquierda y acciones de cuenta a la derecha, como el resto de
+          páginas: ocupan el ancho completo en vez de una columna estrecha. */}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div>
+          {isLoading && <ListSkeleton rows={3} />}
+          {isError && <ErrorState onRetry={() => refetch()} retrying={isFetching} />}
+          {data && (
+            <Card>
+              <CardContent>
+                <PreferencesForm preferences={data} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-      {me?.email && (
-        <>
-          <Card className="mt-6 max-w-md ring-destructive/25">
+        {me?.email && (
+          <Card className="ring-destructive/25">
             <CardHeader>
               <CardTitle>{t("account.delete.title")}</CardTitle>
               <CardDescription>
@@ -60,8 +74,11 @@ export function PreferencesPage() {
               </Button>
             </CardContent>
           </Card>
-          <DeleteAccountDialog email={me.email} open={deleteOpen} onOpenChange={setDeleteOpen} />
-        </>
+        )}
+      </div>
+
+      {me?.email && (
+        <DeleteAccountDialog email={me.email} open={deleteOpen} onOpenChange={setDeleteOpen} />
       )}
     </div>
   );

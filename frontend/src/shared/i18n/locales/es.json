@@ -34,7 +34,15 @@
       "tooLong": "Demasiado largo",
       "url": "Debe empezar por http:// o https://",
       "notesTooLong": "Máximo 5 000 caracteres"
-    }
+    },
+    "retry": "Reintentar",
+    "noResultsTitle": "Sin resultados",
+    "loadError": {
+      "title": "No se ha podido cargar",
+      "description": "Comprueba tu conexión e inténtalo de nuevo."
+    },
+    "selectDateTime": "Elegir fecha y hora",
+    "time": "Hora"
   },
   "applications": {
     "title": "Solicitudes",
@@ -46,7 +54,6 @@
     "updated": "Solicitud actualizada",
     "deleted": "Solicitud borrada",
     "export": "Exportar CSV",
-    "empty": "Todavía no hay solicitudes. Crea la primera con «Nueva solicitud».",
     "searchPlaceholder": "Buscar puesto o empresa…",
     "companyPlaceholder": "Busca o escribe una empresa nueva",
     "appliedAtToday": "Hoy",
@@ -144,7 +151,11 @@
       "positionRequired": "Indica el puesto",
       "salaryNumber": "Solo números enteros",
       "statusRequired": "Elige un estado"
-    }
+    },
+    "emptyTitle": "Todavía no hay solicitudes",
+    "emptyDescription": "Registra la primera y sigue desde aquí cómo avanza.",
+    "notFound": "Esta solicitud no existe o se ha borrado.",
+    "backToList": "Volver a solicitudes"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -218,7 +229,9 @@
     "reminders": "Recordatorios",
     "preferences": "Preferencias",
     "openMenu": "Abrir menú",
-    "theme": "Cambiar entre tema claro y oscuro"
+    "theme": "Cambiar entre tema claro y oscuro",
+    "skipToContent": "Saltar al contenido",
+    "main": "Navegación principal"
   },
   "companies": {
     "title": "Empresas",
@@ -228,7 +241,6 @@
     "created": "Empresa creada",
     "updated": "Empresa actualizada",
     "deleted": "Empresa borrada",
-    "empty": "Todavía no hay empresas. Se crean al registrar una solicitud o desde aquí.",
     "searchPlaceholder": "Buscar empresa…",
     "applicationsCount": "Solicitudes",
     "deleteTitle": "¿Borrar «{{name}}»?",
@@ -241,7 +253,10 @@
     },
     "validation": {
       "nameRequired": "Indica el nombre"
-    }
+    },
+    "emptyTitle": "Todavía no hay empresas",
+    "emptyDescription": "Se crean solas al registrar una solicitud, o puedes añadirlas desde aquí.",
+    "noSearchResults": "Ninguna empresa coincide con «{{q}}»."
   },
   "interviews": {
     "title": "Entrevistas",
@@ -317,7 +332,9 @@
     "validation": {
       "titleRequired": "Indica un título",
       "dueAtRequired": "Indica la fecha límite"
-    }
+    },
+    "emptyPendingTitle": "No tienes recordatorios pendientes",
+    "emptyPendingDescription": "Crea uno para no olvidar el próximo paso de una candidatura."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -350,6 +367,10 @@
       "empty": "Ninguna solicitud lleva más de {{days}} días sin actividad.",
       "sinceDays": "Sin actividad desde hace {{days}} días",
       "more": "Y {{count}} más"
+    },
+    "welcome": {
+      "title": "Empieza registrando tu primera solicitud",
+      "description": "Aquí verás cuántas candidaturas llevas, en qué estado está cada una y qué tienes pendiente."
     }
   },
   "errors": {

@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import type { Application } from "@/features/applications/types/Application";
 import { formatDateTime } from "@/shared/lib/format";
 import { Button } from "@/shared/components/ui/button";
+import { EmptyState } from "@/shared/components/common/EmptyState";
+import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { useInterviews } from "../hooks/queries/useInterviews";
 import { InterviewFormDialog } from "./InterviewFormDialog";
 import { DeleteInterviewDialog } from "./DeleteInterviewDialog";
@@ -48,9 +50,9 @@ export function InterviewsSection({ application, onSuggestInterviewing }: Interv
         </Button>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">{t("common.loading")}</p>}
+      {isLoading && <ListSkeleton />}
       {interviews && interviews.length === 0 && (
-        <p className="text-muted-foreground">{t("interviews.empty")}</p>
+        <EmptyState size="sm" icon={CalendarClock} title={t("interviews.empty")} />
       )}
       {interviews && interviews.length > 0 && (
         <ul className="grid gap-2">

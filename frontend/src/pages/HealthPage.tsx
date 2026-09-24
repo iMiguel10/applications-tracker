@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
+import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { useHealth } from "@/features/health/hooks/queries/useHealth";
 
 // Página temporal de la Fase 1: comprueba la conexión frontend ↔ api ↔ db.
 export function HealthPage() {
   const { t } = useTranslation();
+  useDocumentTitle(t("health.title"));
   const { data, isLoading, isError } = useHealth();
 
   return (

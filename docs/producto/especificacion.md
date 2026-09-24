@@ -271,8 +271,10 @@ Requisitos derivados:
 | **F4 — Entrevistas y recordatorios** | CRUD de entrevistas, recordatorios `in_app` y avisos de vencidos. | Entidades hijas y la costura de canales. |
 | **F5 — Dashboard y exportación** | Métricas (RF-60…66) y CSV. | Consultas de agregación y rendimiento. |
 | **F6 — CI** | GitHub Actions: lint, tipos, tests y build. | Mantiene el verde de forma automática. |
-| **F7 — Preparación para despliegue** | `compose.prod.yml`, Nginx y variables de producción. | Paridad entre desarrollo y producción. |
+| **F7 — Puesta en producción** | `compose.prod.yml`, Nginx, variables de producción y despliegue efectivo. | Paridad entre desarrollo y producción, y el sistema accesible fuera de local. |
 | **F8 — Revisión final** | Con el MVP funcional completo: qué funcionalidades faltan, qué merece mejorarse (rendimiento, pruebas, mensajes de error…) y una revisión de diseño de la interfaz (consistencia visual, accesibilidad, estados vacíos y de carga). | Cierra el MVP con una pasada deliberada, en vez de darlo por terminado solo porque se agotó la lista de fases. |
+
+> **Orden de construcción (2026-09-24):** F8 se construyó antes que F7, a petición explícita del usuario, con el MVP funcional completo (F0–F6) ya cerrado; F7 dejó de ser "preparación para despliegue" y pasó a ser la puesta en producción real, todavía pendiente. Ver [decisión 0009](../decisiones/0009-f8-antes-que-f7.md). Esta tabla no se reordena: describe alcance, no el orden real de construcción (mismo criterio que [0006](../decisiones/0006-ci-antes-que-f5.md), cuando F6 se construyó antes que F5).
 
 **Evolución documentada que no se construye:** recordatorios por email y otros canales, importación CSV, extracción de datos desde la URL de la oferta, login social, etiquetas libres, adjuntos (CV y carta por solicitud), contactos de recruiters.
 

@@ -62,6 +62,7 @@ export function FormDatePicker<T extends FieldValues>({
               variant="outline"
               disabled={disabled}
               aria-invalid={!!error}
+              aria-describedby={error ? `${String(name)}-error` : undefined}
               className={cn(
                 "w-full justify-between text-left font-normal",
                 !selected && "text-muted-foreground",
@@ -85,7 +86,7 @@ export function FormDatePicker<T extends FieldValues>({
         </PopoverContent>
       </Popover>
 
-      {error && <p className="text-sm text-destructive">{t(error.message ?? "")}</p>}
+      {error && <p id={`${String(name)}-error`} className="text-sm text-destructive">{t(error.message ?? "")}</p>}
     </div>
   );
 }

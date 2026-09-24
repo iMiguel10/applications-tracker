@@ -6,7 +6,13 @@ import { toast } from "sonner";
 
 import { errorMessageKey } from "@/shared/lib/errors";
 import { toDateTimeLocal } from "@/shared/lib/dates";
-import { FormActions, FormInput, FormSelect, FormTextarea } from "@/shared/components/form";
+import {
+  FormActions,
+  FormDateTimePicker,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+} from "@/shared/components/form";
 import {
   Dialog,
   DialogContent,
@@ -106,10 +112,9 @@ export function InterviewFormDialog({
           <DialogTitle>{t(isEdit ? "interviews.editTitle" : "interviews.newTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
-          <FormInput
+          <FormDateTimePicker
             form={form}
             name="scheduled_at"
-            type="datetime-local"
             label={t("interviews.fields.scheduledAt")}
           />
           <FormInput

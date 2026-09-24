@@ -90,7 +90,11 @@ export function ApplicationForm({
   const status = useWatch({ control: form.control, name: "status" });
 
   return (
-    <form onSubmit={form.handleSubmit(submit)} className="grid gap-6" noValidate>
+    <form
+      onSubmit={form.handleSubmit(submit)}
+      className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:gap-x-10"
+      noValidate
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         <FormAsyncCombobox
           form={form}
@@ -145,26 +149,30 @@ export function ApplicationForm({
         />
       </div>
 
-      <fieldset className="grid gap-4 sm:grid-cols-3">
-        <legend className="mb-2 text-sm font-medium">{t("applications.fields.salary")}</legend>
-        <FormInput form={form} name="salary_min" inputMode="numeric" label={t("applications.fields.salaryMin")} />
-        <FormInput form={form} name="salary_max" inputMode="numeric" label={t("applications.fields.salaryMax")} />
-        <FormSelect
-          form={form}
-          name="salary_currency"
-          label={t("applications.fields.currency")}
-          options={CURRENCIES.map((value) => ({ value, label: value }))}
+      <div className="grid content-start gap-6">
+        <fieldset className="grid gap-4 sm:grid-cols-3">
+          <legend className="mb-2 text-sm font-medium">{t("applications.fields.salary")}</legend>
+          <FormInput form={form} name="salary_min" inputMode="numeric" label={t("applications.fields.salaryMin")} />
+          <FormInput form={form} name="salary_max" inputMode="numeric" label={t("applications.fields.salaryMax")} />
+          <FormSelect
+            form={form}
+            name="salary_currency"
+            label={t("applications.fields.currency")}
+            options={CURRENCIES.map((value) => ({ value, label: value }))}
+          />
+        </fieldset>
+
+        <FormTextarea form={form} name="notes" label={t("common.fields.notes")} rows={5} />
+      </div>
+
+      <div className="lg:col-span-2">
+        <FormActions
+          loading={submitting}
+          submitLabel={t(mode === "create" ? "applications.create" : "common.save")}
+          cancelLabel={t("common.cancel")}
+          onCancel={onCancel}
         />
-      </fieldset>
-
-      <FormTextarea form={form} name="notes" label={t("common.fields.notes")} rows={4} />
-
-      <FormActions
-        loading={submitting}
-        submitLabel={t(mode === "create" ? "applications.create" : "common.save")}
-        cancelLabel={t("common.cancel")}
-        onCancel={onCancel}
-      />
+      </div>
     </form>
   );
 }

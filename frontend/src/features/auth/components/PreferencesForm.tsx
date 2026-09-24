@@ -67,7 +67,7 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 max-w-md" noValidate>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6" noValidate>
       <ThemeField />
       <FormSelect
         form={form}

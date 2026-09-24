@@ -5,6 +5,12 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import es from "./locales/es.json";
 import en from "./locales/en.json";
 
+// `<html lang>` sigue al idioma de la interfaz: los lectores de pantalla eligen la
+// pronunciación por él (index.html arranca con "es").
+i18n.on("languageChanged", (language) => {
+  document.documentElement.lang = language;
+});
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)

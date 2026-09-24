@@ -51,10 +51,11 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? "email-error" : undefined}
           {...register("email")}
         />
         {errors.email?.message && (
-          <p className="text-sm text-destructive">{t(errors.email.message)}</p>
+          <p id="email-error" className="text-sm text-destructive">{t(errors.email.message)}</p>
         )}
       </div>
 
@@ -65,10 +66,11 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           aria-invalid={!!errors.password}
+          aria-describedby={errors.password ? "password-error" : undefined}
           {...register("password")}
         />
         {errors.password?.message && (
-          <p className="text-sm text-destructive">{t(errors.password.message)}</p>
+          <p id="password-error" className="text-sm text-destructive">{t(errors.password.message)}</p>
         )}
       </div>
 

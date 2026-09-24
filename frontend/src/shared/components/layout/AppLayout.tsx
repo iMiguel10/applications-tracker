@@ -23,7 +23,7 @@ function detectBrowserLanguage(): Language {
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
-    "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
+    "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50",
     isActive && "bg-muted font-medium text-foreground",
   );
 
@@ -50,6 +50,12 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
+      <a
+        href="#main-content"
+        className="sr-only rounded-md bg-card px-3 py-2 text-sm font-medium shadow-md ring-3 ring-ring/50 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"
+      >
+        {t("nav.skipToContent")}
+      </a>
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <span className="flex shrink-0 items-center gap-2.5">
@@ -60,7 +66,7 @@ export function AppLayout() {
           </span>
 
           {/* Escritorio (>= lg): navegación y cuenta en línea. */}
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav aria-label={t("nav.main")} className="hidden items-center gap-1 lg:flex">
             {NAV_ITEMS.map(({ to, labelKey, icon: Icon }) => (
               <NavLink key={to} to={to} className={navLinkClass}>
                 <Icon className="size-4" />
@@ -100,7 +106,7 @@ export function AppLayout() {
               <Menu className="size-4" />
             </PopoverTrigger>
             <PopoverContent align="end" className="w-64">
-              <nav className="flex flex-col gap-1">
+              <nav aria-label={t("nav.main")} className="flex flex-col gap-1">
                 {NAV_ITEMS.map(({ to, labelKey, icon: Icon }) => (
                   <NavLink
                     key={to}
@@ -142,7 +148,7 @@ export function AppLayout() {
           </Popover>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none">
         <Outlet />
       </main>
     </div>

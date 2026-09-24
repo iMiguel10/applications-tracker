@@ -3,7 +3,7 @@
 Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y el próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
 !!! warning "Estado"
-    En desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes), F3 (ciclo de vida: historial de estados, transiciones y deshacer), F4 (entrevistas y recordatorios), F5 (dashboard, exportación CSV y listado global de recordatorios) y F6 (integración continua); sigue pendiente F7, preparación para despliegue. F6 se construyó antes que F5 por decisión explícita ([0006](decisiones/0006-ci-antes-que-f5.md)), no porque F5 ya no hiciera falta.
+    En desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes), F3 (ciclo de vida: historial de estados, transiciones y deshacer), F4 (entrevistas y recordatorios), F5 (dashboard, exportación CSV y listado global de recordatorios), F6 (integración continua) y F8 (revisión final); sigue pendiente F7, ahora la puesta en producción real. F6 se construyó antes que F5 por decisión explícita ([0006](decisiones/0006-ci-antes-que-f5.md)), no porque F5 ya no hiciera falta, y F8 se construyó antes que F7 por otra decisión explícita ([0009](decisiones/0009-f8-antes-que-f7.md)).
 
 ## En una página
 
