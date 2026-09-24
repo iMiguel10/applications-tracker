@@ -1,5 +1,5 @@
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -158,3 +158,28 @@ async def test_invalid_preferences_are_rejected(
     response = await client.patch("/api/v1/me/preferences", json=payload)
 
     assert response.status_code == 422
+
+
+class UnreachableIdentities(FakeIdentities):
+    async def delete(self, supertokens_user_id: str) -> None:
+        raise ConnectionError("SuperTokens core unreachable")
+
+
+@pytest.mark.asyncio
+async def test_delete_account_reports_500_when_identity_store_fails_after_commit(
+    client: AsyncClient, user: CurrentUser, db_session: AsyncSession
+):
+    # El cliente no debe recibir un 204: sin él, el frontend no cierra sesión ni
+    # vacía la caché, y el usuario puede reintentar (la identidad sigue viva).
+    await make_application(db_session, user.id)
+    app.dependency_overrides[get_user_service] = lambda: UserService(
+        db_session, identities=UnreachableIdentities()
+    )
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as raw:
+        response = await raw.delete("/api/v1/me")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error"}
+    assert set((await _count_owned(db_session, user.id)).values()) == {0}

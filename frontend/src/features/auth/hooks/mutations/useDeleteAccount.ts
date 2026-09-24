@@ -19,5 +19,8 @@ export function useDeleteAccount() {
       queryClient.clear();
       navigate("/login", { replace: true });
     },
+    // Un fallo puede llegar después de borrar los datos propios (si falla SuperTokens,
+    // decisión 0008): se vuelve a pedir todo para no seguir mostrando datos borrados.
+    onError: () => queryClient.invalidateQueries(),
   });
 }

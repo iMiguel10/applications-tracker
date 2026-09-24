@@ -7,6 +7,7 @@ repositories para comprobar que la BD es la última línea de defensa.
 from datetime import UTC, date, datetime
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -280,3 +281,29 @@ async def test_stale_after_days_out_of_range_is_rejected(db_session: AsyncSessio
         await db_session.flush()
     await db_session.rollback()
     await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_every_foreign_key_to_users_or_applications_cascades_on_delete(
+    db_session: AsyncSession,
+):
+    # El borrado de cuenta (RNF-40, decisión 0008) solo borra la fila de users y
+    # confía en la cascada. Una tabla nueva con una FK sin ON DELETE CASCADE haría
+    # fallar DELETE /me (o dejaría huérfanos). Se lee del catálogo de la BD
+    # migrada, no de los modelos.
+    rows = (
+        await db_session.execute(
+            text(
+                """
+                SELECT conname, confrelid::regclass::text, confdeltype::text
+                FROM pg_constraint
+                WHERE contype = 'f'
+                  AND confrelid IN ('users'::regclass, 'applications'::regclass)
+                """
+            )
+        )
+    ).all()
+
+    assert len(rows) >= 5  # companies, applications, reminders x2, historial...
+    not_cascading = {name: rule for name, _, rule in rows if rule != "c"}
+    assert not_cascading == {}
