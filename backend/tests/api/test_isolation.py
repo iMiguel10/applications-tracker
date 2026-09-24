@@ -58,6 +58,12 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/api/v1/reminders/{reminder_id}/dismiss", None),
 ]
 
+# Rutas con id cuyo aislamiento se prueba en otro fichero, porque su recurso no es
+# una fila que este test sepa crear.
+COVERED_ELSEWHERE = {
+    ("GET", "/api/v1/spike/pdf/{file_id}"),  # DESECHABLE (F9): tests/api/test_spike.py
+}
+
 
 def test_every_id_route_is_covered():
     documented = {
@@ -66,7 +72,7 @@ def test_every_id_route_is_covered():
         if re.search(r"\{\w+_id\}", path)
         for method in operations
     }
-    covered = {(method, path) for method, path, _ in ID_OPERATIONS}
+    covered = {(method, path) for method, path, _ in ID_OPERATIONS} | COVERED_ELSEWHERE
 
     assert documented == covered
 

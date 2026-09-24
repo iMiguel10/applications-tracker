@@ -1,0 +1,13 @@
+@page {
+  size: A4;
+  margin: 2cm;
+}
+
+body {
+  font-family: sans-serif;
+  color: #1e1b4b;
+}
+
+h1 {
+  font-size: 18pt;
+}

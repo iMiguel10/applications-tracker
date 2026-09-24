@@ -14,6 +14,20 @@ RUN useradd --create-home --uid 1000 appuser \
     && mkdir /app \
     && chown appuser:appuser /app
 
+# Librerías de sistema de WeasyPrint (A24, R9): sin ellas, `import weasyprint`
+# falla al cargar libgobject. Las tipografías no se instalan aquí: viajan con cada
+# plantilla (ficheros §7), para que el PDF no dependa de la imagen.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Raíz del almacén de ficheros (A21). Se crea con dueño appuser ANTES de montar el
+# volumen: Docker copia el dueño del directorio de la imagen al crear un volumen
+# vacío. Sin esto el volumen nace de root y la primera escritura falla con
+# PermissionError (ficheros.md §3).
+RUN mkdir -p /data/files && chown appuser:appuser /data/files
+
 WORKDIR /app
 
 USER appuser

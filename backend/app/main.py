@@ -1,5 +1,9 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from saq import Queue
 from supertokens_python import get_all_cors_headers
 from supertokens_python.framework.fastapi import get_middleware
 
@@ -20,11 +24,27 @@ from app.core.exception_handlers import (
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
 from app.core.supertokens import init_supertokens
+from app.infra.queue import SaqJobQueue
 
 setup_logging()
 init_supertokens()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # La cola se crea aquí, dentro del event loop del servidor, y no al importar:
+    # SAQ guarda primitivas de asyncio que quedan ligadas al primer loop que las usa.
+    queue = Queue.from_url(settings.valkey_url)
+    await queue.connect()
+    app.state.job_queue = SaqJobQueue(queue)
+    try:
+        yield
+    finally:
+        await queue.disconnect()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title=API_TITLE,
     description=API_DESCRIPTION,
     version=API_VERSION,

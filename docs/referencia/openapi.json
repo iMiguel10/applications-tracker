@@ -2689,6 +2689,104 @@
           }
         ]
       }
+    },
+    "/api/v1/spike/pdf": {
+      "post": {
+        "tags": [
+          "Spike"
+        ],
+        "summary": "Encola la generación de un PDF de prueba (F9, desechable)",
+        "description": "Encola un trabajo que el worker ejecuta aparte: genera un PDF, lo guarda en\nel almacén de ficheros y envía un email al usuario con el enlace de descarga.\nResponde 202 sin esperar. Temporal: se retira al cerrar F9.",
+        "operationId": "request_spike_pdf_api_v1_spike_pdf_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpikePdfRequested"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/spike/pdf/{file_id}": {
+      "get": {
+        "tags": [
+          "Spike"
+        ],
+        "summary": "Descarga el PDF de prueba (F9, desechable)",
+        "description": "Devuelve el PDF generado por `POST /spike/pdf`. 404 si todavía no existe o\nsi es de otro usuario. Temporal: se retira al cerrar F9.",
+        "operationId": "download_spike_pdf_api_v1_spike_pdf__file_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4574,6 +4672,20 @@
         "title": "ResponseRate",
         "description": "RF-62 y RF-66: siempre se indica sobre cuántas solicitudes se calcula, y\n`rate` es `null` con una base menor que `MIN_SAMPLE_FOR_RATE` (RF-66)."
       },
+      "SpikePdfRequested": {
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "File Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_id"
+        ],
+        "title": "SpikePdfRequested"
+      },
       "StaleApplication": {
         "properties": {
           "application": {
@@ -4790,6 +4902,10 @@
     {
       "name": "Reminders",
       "description": "Recordatorios del usuario, opcionalmente ligados a una solicitud. En el MVP solo se muestran en la aplicación (RF-53)."
+    },
+    {
+      "name": "Spike",
+      "description": "Temporal (F9): esqueleto vertical de la v2. Se retira al cerrar la fase."
     }
   ]
 }

@@ -1,10 +1,13 @@
-from fastapi import Depends, Security
+from fastapi import Depends, Request, Security
 from fastapi.security import APIKeyCookie, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.framework.fastapi import verify_session
 
+from app.core.config import settings
 from app.db.session import get_db
+from app.infra.queue import JobQueue
+from app.infra.storage import FileStorage, LocalFileStorage
 from app.schemas.user import CurrentUser
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
@@ -12,6 +15,7 @@ from app.services.company_service import CompanyService
 from app.services.dashboard_service import DashboardService
 from app.services.interview_service import InterviewService
 from app.services.reminder_service import ReminderService
+from app.services.spike_service import SpikeService
 from app.services.user_service import UserService
 
 # Esquemas de seguridad SOLO para el OpenAPI: hacen que Swagger muestre el botón
@@ -31,6 +35,18 @@ cookie_scheme = APIKeyCookie(
     auto_error=False,
 )
 SECURITY_SCHEMES = [Security(bearer_scheme), Security(cookie_scheme)]
+
+
+# Fábricas de infra: la implementación concreta se elige al arrancar (lifespan de
+# main.py) y aquí solo se entrega. En las pruebas se sustituyen con overrides.
+def get_job_queue(request: Request) -> JobQueue:
+    queue: JobQueue = request.app.state.job_queue
+    return queue
+
+
+def get_file_storage() -> FileStorage:
+    # Sin estado: construirlo por petición no cuesta nada.
+    return LocalFileStorage(settings.files_root)
 
 
 # Fábricas de services: una instancia por petición, con la sesión de esa petición.
@@ -69,6 +85,13 @@ def get_reminder_service(
     db: AsyncSession = Depends(get_db),
 ) -> ReminderService:
     return ReminderService(db)
+
+
+def get_spike_service(
+    queue: JobQueue = Depends(get_job_queue),
+    storage: FileStorage = Depends(get_file_storage),
+) -> SpikeService:
+    return SpikeService(queue, storage)
 
 
 def get_user_service(

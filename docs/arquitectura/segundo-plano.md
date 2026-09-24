@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, sin construir** (F9, F12) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), y `EmailSender` (§4 y §5) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -28,20 +28,41 @@ async def generate_document(ctx, *, document_id: str, user_id: str) -> None:
 
 - La sesión se abre en el trabajo; el `commit` lo hace el service (invariante 6).
 - El service carga la fila **por id y `user_id`** y, si ya no está pendiente, **termina sin hacer nada**. Eso hace inocuo encolar dos veces o reencolar desde un barrido.
-- Las dependencias de `infra/` (almacén, generador de PDF, proveedor de IA, email) las crea `worker.py` una vez al arrancar y viajan en el `ctx`.
+- Las dependencias de `infra/` (almacén, generador de PDF, proveedor de IA, email) las crea `worker.py` una vez al arrancar (`startup`) y viajan en el `ctx`, tipado como `WorkerContext` (`jobs/context.py`) para que mypy compruebe cada clave.
+- `startup` también inicializa el SDK de SuperTokens: los trabajos piden el email del destinatario al core (A12), y el SDK no está inicializado en un proceso que no sea la API.
+- En la API, la cola se crea en el `lifespan` de `main.py` y `deps.get_job_queue` la entrega. No se crea al importar: SAQ guarda primitivas de `asyncio` que quedan ligadas al primer event loop que las usa.
 
 ### Tiempos y reintentos por tipo de trabajo
 
-| Trabajo | Timeout del trabajo | Reintentos de la cola | Si se queda atascado |
+| Trabajo | Timeout del trabajo | Intentos en la cola (`max_attempts`) | Si se queda atascado |
 |---|---|---|---|
-| Generar PDF | 60 s | 2 | El barrido lo **reencola**: generar es gratis e idempotente |
-| Propuesta de IA | 180 s (y el cliente HTTP del proveedor, 150 s) | **0** | El barrido lo marca `failed` (`ai_interrupted`), **no** lo reencola |
-| Enviar un email | 30 s | **0** | Lo decide la máquina de estados de las entregas (§4) |
-| Barridos | 50 s | 0 | Se vuelven a ejecutar en la siguiente pasada |
+| Generar PDF | 60 s | 3 | El barrido lo **reencola**: generar es gratis e idempotente |
+| Propuesta de IA | 180 s (y el cliente HTTP del proveedor, 150 s) | **1** | El barrido lo marca `failed` (`ai_interrupted`), **no** lo reencola |
+| Enviar un email | 30 s | **1** | Lo decide la máquina de estados de las entregas (§4) |
+| Barridos | 50 s | 1 | Se vuelven a ejecutar en la siguiente pasada |
 
-> **Trampa — los reintentos de la cola rompen "nunca dos veces".** Si un trabajo de email falla por un corte de red *después* de que el servidor aceptara el mensaje, un reintento automático de la cola lo enviaría otra vez. Por eso los trabajos de email y de IA tienen `retries = 0` en la cola, y quien decide si se reintenta es el código que sabe **dónde** falló.
+> **Trampa — los reintentos de la cola rompen "nunca dos veces".** Si un trabajo de email falla por un corte de red *después* de que el servidor aceptara el mensaje, un reintento automático de la cola lo enviaría otra vez. Por eso los trabajos de email y de IA tienen **un solo intento** en la cola (`max_attempts=1`), y quien decide si se reintenta es el código que sabe **dónde** falló.
+
+> **Trampa — en SAQ, `retries` son intentos, no reintentos** (descubierto en F9). SAQ repite un trabajo mientras `retries > attempts`, y `attempts` ya vale 1 al empezar el primero: `retries=1`, su valor por defecto, es **un solo intento**, y `retries=0` significa lo mismo. Pedir "0 reintentos" o "2 reintentos" con esa palabra da un número equivocado. `JobQueue.enqueue` habla de `max_attempts` (el primer intento incluido) y `SaqJobQueue` lo traduce.
+
+> **Trampa — opciones y argumentos en el mismo saco.** `Queue.enqueue` de SAQ reparte su `**kwargs`: lo que se llama como un campo de `Job` (`timeout`, `key`, `retries`, `scheduled`…) es una opción del trabajo y el resto, argumento de la función. Un trabajo con un argumento llamado `timeout` perdería el argumento y cambiaría su timeout sin avisar. `SaqJobQueue` pasa siempre los argumentos en `kwargs=`, y una prueba lo comprueba.
+
+> **Trampa — encolar falla después del commit** (descubierto en F9). Con Valkey caído, encolar tarda unos 4 s y lanza un error. `SaqJobQueue` lo traduce a `QueueUnavailableError` para que el service decida, y lo correcto tras confirmar una fila `pending` es **registrarlo y responder igual**: la fila ya existe y el barrido de pendientes la reencola ([arquitectura §3](v2.md#3-consistencia-entre-almacenes)). Convertirlo en un 500 haría que el usuario lo repitiera y dejara dos filas. El `worker` sí se recupera solo cuando Valkey vuelve, y lo encolado sobrevive a un reinicio de Valkey gracias a `--appendonly yes`.
 
 > **Trampa — el timeout del trabajo más corto que el de la llamada.** Si la cola corta el trabajo a los 60 s mientras el cliente HTTP espera 120 s al proveedor de IA, el trabajo muere a mitad de una llamada que el proveedor **sí** va a cobrar, y la fila se queda en `running`. Si luego un barrido la reencolara, se pagaría dos veces. Regla: el timeout del cliente HTTP es siempre menor que el del trabajo, y las propuestas de IA atascadas se marcan como fallidas en vez de reencolarse. El usuario puede volver a pedirla a mano.
+
+### Cuántos workers
+
+**Decisión (F9): un solo proceso `worker` para todos los trabajos**, con `concurrency: 10`. Casi todos los trabajos pasan el tiempo esperando (SMTP, proveedor de IA, BD), y un proceso asíncrono lleva diez a la vez. El PDF, que sí calcula, se genera en un hilo para no parar a los demás, y lo medido en F9 muestra que se reparte bien entre núcleos ([ficheros §7](ficheros.md#fuentes)).
+
+Se descartó **un worker por tipo de trabajo**: cuatro o cinco procesos casi siempre ociosos, a unos 150–180 MB cada uno, en un VPS de 2–4 GB. Se revisa si aparece alguna de estas señales:
+
+| Señal | Qué se hace |
+|---|---|
+| Emails o barridos que llegan con retraso mientras hay propuestas de IA o PDFs en marcha | **Dos colas y dos procesos**: ligeros (email, barridos) y pesados (PDF, IA). Es el mismo servicio de compose con otra configuración de SAQ; los services no cambian, solo a qué cola encola cada tipo |
+| Propuestas de IA que esperan hueco (los 10 ocupados durante minutos) | Subir la concurrencia de la cola de IA: es espera, no cálculo. El límite pasa a ser el del proveedor |
+| PDFs que tardan en salir con carga real | Más procesos para los pesados (`saq --workers N`), hasta los núcleos del VPS |
+| Varios servidores | S3 como segunda implementación de `FileStorage` (A21) |
 
 ## 3. Barridos programados
 
@@ -88,6 +109,12 @@ stateDiagram-v2
 
 > **Trampa — "mejor esfuerzo con reintentos" y "nunca dos veces" tiran en direcciones opuestas.** Reintentar lo que falló es justo lo que produce duplicados cuando el fallo fue ambiguo: el servidor recibió el mensaje, pero la confirmación no llegó. La salida es clasificar **dónde** falló. Si no se puede saber, se pierde el email, que es lo que la especificación acepta (RF-87).
 
+**Dónde está la frontera** (construido en F9). `SmtpEmailSender` no usa el envío de una sola llamada de `aiosmtplib`: conversa paso a paso (conexión y login, `MAIL`, `RCPT`, `DATA`) para saber en qué punto falló. Cualquier fallo antes de `DATA`, y cualquier **código de error** del servidor (también al final de `DATA`, que es un rechazo explícito), lanza `EmailNotSentError`: seguro reintentar. Un corte o un timeout durante `DATA` lanza `EmailDeliveryUnknownError`: no se reintenta. Las pruebas usan un servidor SMTP falso escrito a mano (`tests/infra/fake_smtp.py`) que falla justo en cada uno de esos puntos.
+
+Dos reglas más del envío: con `SMTP_SECURITY` en `starttls` o `tls`, si el servidor no ofrece cifrado **no se envía en claro** (falla como no enviado); y una dirección con caracteres no ASCII (`josé@…`) solo se envía si el servidor anuncia SMTPUTF8 (RFC 6531), y si no, es un "no enviado" más, no un error sin clasificar.
+
+> **Trampa — preguntar por las extensiones antes del saludo.** `aiosmtplib` envía el `EHLO` (el saludo en el que el servidor lista sus extensiones) de forma perezosa, con el primer comando. Justo después de conectar, sin login ni STARTTLS, la lista está vacía y `supports_extension("smtputf8")` responde que no aunque el servidor sí lo admita. `SmtpEmailSender` saluda explícitamente antes de consultarla.
+
 La `dedupe_key` define qué es "el mismo motivo":
 
 | Tipo | `dedupe_key` | Efecto |
@@ -119,7 +146,7 @@ El email del destinatario **no está en nuestra BD** (A12): el barrido lo pide a
 
 ### Sin SMTP configurado (RNF-34)
 
-`EmailSender` se construye a partir de la configuración. Sin `SMTP_HOST`, se usa una implementación **desactivada** que no envía nada, y la aplicación publica `email_enabled = false` en su endpoint de capacidades ([límites y abuso](limites-y-abuso.md#4-endpoints-publicos)). Los barridos de notificaciones ni se programan, y el frontend oculta la recuperación de contraseña y explica por qué no se pueden usar las funciones que exigen email verificado.
+`EmailSender` se construye a partir de la configuración (`build_email_sender`). Sin `SMTP_HOST`, se usa una implementación **desactivada** (`DisabledEmailSender`): su `enabled` es `False` y `send` **falla** con `EmailDisabledError` en lugar de descartar el email en silencio, para que quien llame sin consultar `enabled` no dé por enviado algo que no salió, y la aplicación publica `email_enabled = false` en su endpoint de capacidades ([límites y abuso](limites-y-abuso.md#4-endpoints-publicos)). Los barridos de notificaciones ni se programan, y el frontend oculta la recuperación de contraseña y explica por qué no se pueden usar las funciones que exigen email verificado.
 
 ### Emails de SuperTokens
 

@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, sin construir** (F9, F13, F14) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -11,7 +11,7 @@
 | Biblioteca | Tabla `documents` y `DocumentService` (RF-90…94) | `repositories/`, `services/` |
 | Generación | WeasyPrint + plantillas Jinja2 (A24, A25) | `infra/pdf.py`, `templates/cv/`, `templates/cover_letter/` |
 
-`FileStorage` es deliberadamente pequeña: `put(key, stream) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)` e `iter_keys()`. Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
+`FileStorage` es deliberadamente pequeña: `put(key, chunks, max_bytes=None) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)` e `iter_keys()`. Construidas en F9 todas menos `iter_keys()`, que llega en F13 con su único consumidor, el barrido de huérfanos. `put` cuenta los bytes mientras escribe y corta con `FileTooLargeError` al pasar de `max_bytes`, sin dejar nada escrito: la subida (§2, paso 2) no necesita contar por su cuenta. Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
 
 ## 2. Subir un documento
 
@@ -30,8 +30,9 @@
 
 ## 3. Escribir y leer en disco
 
-- **Escritura atómica.** Se escribe primero a `tmp/<uuid>.part`, dentro del **mismo volumen**, y se renombra con `os.replace` al destino. Un lector nunca ve un PDF a medias, y un proceso que muere a mitad deja un `.part` que el barrido de huérfanos borra.
-- **Rutas.** Las genera el servidor (A23). Aun así, `LocalFileStorage` resuelve cada ruta y rechaza cualquiera que, resuelta, salga de `FILES_ROOT`: una defensa más por si algún día una clave se construye mal.
+- **Escritura atómica.** Se escribe primero a `.tmp/<uuid>.part`, dentro del **mismo volumen**, se fuerza a disco (`fsync`: sin él, un corte de luz justo después del renombrado podría dejar el fichero con su nombre definitivo pero incompleto) y se renombra con `os.replace` al destino. Un lector nunca ve un PDF a medias, y un proceso que muere a mitad deja un `.part` que el barrido de huérfanos borra.
+- **Rutas.** Las genera el servidor (A23). Aun así, `LocalFileStorage` rechaza con `InvalidStorageKeyError` dos cosas: una clave con algún segmento fuera de `[A-Za-z0-9._-]` o que empiece por punto (eso deja fuera `..`, las rutas absolutas, `//`, las barras invertidas y el directorio `.tmp`), y cualquier ruta que, resuelta, salga de `FILES_ROOT`, lo que cubre también un enlace simbólico dentro del almacén que apunte fuera. Una defensa más por si algún día una clave se construye mal.
+- **Sin bloquear.** Todo el I/O de disco va a un hilo (`asyncio.to_thread`): leer o escribir un PDF no para el event loop de la API ni del `worker`.
 - **Permisos.** El volumen pertenece a `appuser` (uid 1000), igual que el resto de ficheros de la imagen.
 
 > **Trampa — el volumen nace con dueño `root`.** Un volumen con nombre que Docker crea vacío en un directorio que no existe en la imagen pertenece a `root`, y `appuser` no puede escribir en él: la primera subida falla con `PermissionError`. La imagen crea `/data/files` con dueño `appuser` **antes** de declararse el volumen, y Docker copia ese dueño la primera vez que lo crea.
@@ -94,13 +95,21 @@ templates/cv/<diseño>/
 - Tamaño A4 por defecto; el `manifest` puede declarar Carta (US Letter).
 - Se renderiza en el `worker`, nunca en una petición (RNF-12).
 
-> **Trampa — WeasyPrint descarga lo que le pidas.** Al renderizar, WeasyPrint sigue las URLs del HTML (imágenes, hojas de estilo, fuentes). Si una plantilla llegara a pintar como imagen una URL escrita por el usuario (el enlace a su web, un "logo"), el `worker` haría peticiones a donde el usuario quisiera, incluidos servicios internos de la red de Docker (`http://supertokens:3567`, `valkey:6379`). Es un SSRF de manual. `infra/pdf.py` usa un `url_fetcher` propio que **solo** sirve ficheros de la carpeta de la plantilla y rechaza todo lo demás. Los enlaces del usuario pueden aparecer como enlaces `<a>` del PDF, que WeasyPrint no descarga.
+> **Trampa — WeasyPrint descarga lo que le pidas.** Al renderizar, WeasyPrint sigue las URLs del HTML (imágenes, hojas de estilo, fuentes). Si una plantilla llegara a pintar como imagen una URL escrita por el usuario (el enlace a su web, un "logo"), el `worker` haría peticiones a donde el usuario quisiera, incluidos servicios internos de la red de Docker (`http://supertokens:3567`, `valkey:6379`). Es un SSRF de manual. `infra/pdf/weasyprint_renderer.py` usa un fetcher propio (`TemplateOnlyFetcher`, subclase del `URLFetcher` que WeasyPrint 70 pide heredar) que **solo** sirve ficheros de la carpeta de la plantilla y URLs `data:`, y rechaza todo lo demás sin abrir ninguna conexión; WeasyPrint sigue renderizando sin ese recurso. Los enlaces del usuario pueden aparecer como enlaces `<a>` del PDF, que WeasyPrint no descarga.
 
 > **Trampa — un diseño bonito que ningún ATS lee.** Maquetar a dos columnas con posicionamiento absoluto o poner el nombre y los datos en una imagen se ve bien, pero un ATS extrae el texto en un orden absurdo o no lo extrae. Los diseños marcados como aptos para ATS (RF-105) usan flujo normal de texto, y una prueba extrae el texto del PDF generado y comprueba que aparece en orden.
 
 ### Fuentes
 
-Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, en CI y en producción, y no depende de qué fuentes tenga instaladas la imagen. La imagen solo necesita las librerías de renderizado de WeasyPrint (Pango, HarfBuzz), que valida F9 (R9).
+Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, en CI y en producción, y no depende de qué fuentes tenga instaladas la imagen.
+
+**Lo que descubrió F9 (R9):**
+
+- Sin sus librerías de sistema, `import weasyprint` falla al cargar `libgobject`. La imagen instala `libpango-1.0-0`, `libpangoft2-1.0-0` y `libharfbuzz-subset0`.
+- La imagen **no** queda sin fuentes: `fontconfig`, que llega con Pango, depende de `fonts-dejavu-core`, y con él vienen DejaVu Sans, Serif y Mono. Es una ventaja: hacen de fuente de respaldo cuando la de un diseño no tiene un carácter, y el texto nunca sale vacío. Un diseño que pide `sans-serif` sin traer fuente propia sale en DejaVu Sans, incrustada solo con los caracteres usados.
+- Tiempos con la plantilla de prueba de F9 (una página, texto simple), dentro de la imagen: ~130 ms por PDF de uno en uno y ~25 ms por PDF con 20 a la vez en un proceso de 6 núcleos. Buena parte del trabajo ocurre en código C (Pango, HarfBuzz) que no bloquea al resto de hilos. El proceso llega a unos 180 MB. Un CV real maqueta mucho más en Python, así que F14 vuelve a medir con sus plantillas.
+- Se genera en un hilo (`asyncio.to_thread`) para que el `worker` siga atendiendo los demás trabajos mientras maqueta.
+- Jinja2 con `StrictUndefined`: una variable mal escrita en la plantilla hace fallar el PDF en vez de dejar un hueco en blanco que nadie ve hasta que el CV ya se ha enviado.
 
 ## 8. Pruebas que demuestran el diseño
 
@@ -112,9 +121,9 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 | D4 | La descarga de un documento de otro usuario → 404 | Aislamiento |
 | D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado | RF-93 |
 | D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes | Orden de escritura y margen del barrido |
-| D7 | Una clave con `../` es rechazada por `LocalFileStorage` | Rutas encerradas en la raíz |
-| D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto | Cabeceras |
-| D9 | Una plantilla de prueba con `<img src="http://…">` no produce ninguna petición de red | El `url_fetcher` contra SSRF |
+| D7 | Una clave con `../` es rechazada por `LocalFileStorage`, y también una clave válida que atraviesa un enlace simbólico hacia fuera **[construida en F9]** | Rutas encerradas en la raíz |
+| D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[probada en el esqueleto de F9]** | Cabeceras |
+| D9 | Una plantilla de prueba con `<img src="http://…">` no produce ninguna petición de red **[construida en F9]**: un servidor HTTP local cuenta cero peticiones con imágenes, hojas de estilo, fuentes y fondos externos | El `url_fetcher` contra SSRF |
 | D10 | El texto extraído de un CV generado con un diseño apto para ATS sale en orden de lectura | RF-105 |
 | D11 | Borrar la cuenta borra `users/{user_id}/`; si falla, el barrido lo limpia | RNF-41 |
 

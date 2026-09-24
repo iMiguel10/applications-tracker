@@ -6,7 +6,7 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-24): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada, pero NO construida. F7 (despliegue) espera a que haya un VPS.**
+> **Estado (2026-09-24): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada; F9 está en curso: existen el correo, la cola con su `worker`, el almacén de ficheros y la generación de PDF, unidos por un esqueleto desechable. F7 (despliegue) espera a que haya un VPS.**
 >
 > F6 (CI) se construyó antes que F5 (dashboard y exportación CSV) por decisión explícita del usuario, no porque F5 no hiciera falta; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md). F8 (revisión final) se construyó a su vez antes que F7 por otra decisión explícita del usuario: con el MVP funcional completo (F0–F6), tenía más sentido cerrar la revisión mientras el diseño estaba fresco que dejarla para después de desplegar. F7 cambia de contenido: ya no es "preparación para despliegue" sino la **puesta en producción real**, y sigue sin empezar.
 >
@@ -18,9 +18,15 @@ Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candi
 >     - F5: dashboard y exportación CSV. `GET /dashboard` (`app/domain/dashboard.py`, `app/services/dashboard_service.py`, `app/schemas/dashboard.py`) agrega en una sola respuesta el recuento por estado (RF-60), los envíos por semana en las últimas 12 semanas (RF-61), la tasa de respuesta (RF-62, `null` con menos de 5 solicitudes enviadas por RF-66), las próximas entrevistas y los recordatorios pendientes o vencidos (RF-63) y las solicitudes sin actividad (RF-64); cada lista trae un vistazo de 5 elementos y su total. Las métricas de **estado actual** excluyen las solicitudes archivadas y las que retratan **lo ocurrido** las incluyen (detalle en `docs/arquitectura/index.md`). `GET /applications/export` (RF-70) vuelca a CSV todas las solicitudes del usuario, archivadas incluidas, con los códigos en crudo de los enumerados; registrado antes de `/{application_id}` en el router para que `export` no se lea como un UUID. En el frontend, `features/dashboard/` (seis widgets, `recharts` como dependencia nueva) y `pages/DashboardPage.tsx`, que sustituye a `/applications` como página de inicio (`/` redirige a `/dashboard`); `pages/RemindersPage.tsx` en `/reminders` cierra el hueco que dejó la decisión [0005](docs/decisiones/0005-recordatorios-sin-pagina-global-en-f4.md) (filtro por estado en la URL, paginación, crear/completar/descartar, mismo alcance que ya tenía la API); `ReminderFormDialog` ya no exige un `applicationId` fijo: si se omite, deja elegir la solicitud o dejar el recordatorio sin ligar (RF-50). Botón "Exportar CSV" en `ApplicationsPage` vía `apiClient.getBlob()` y `shared/lib/download.ts`.
 >     - F6: integración continua. `.github/workflows/ci.yml`, 4 jobs en cada push/PR a `main`: `backend-lint` (ruff + mypy, nativo con `uv`, sin Docker), `backend-tests` (`compose.test.yml`, 258 tests), `frontend` (eslint, `tsc -b`, vitest, build) y `docs` (`mkdocs build --strict`). `.env.test.example` es la plantilla versionada de `.env.test`, antes inexistente.
 >     - F8: revisión final. F8.1 auditó la especificación completa frente al código y no encontró huecos. F8.2 (funcionalidad): `GET/PATCH /me/preferences` (idioma y umbral de "sin actividad" de RF-64, entre 1 y 90 días); moneda del salario como lista cerrada EUR/USD/GBP/CHF (antes texto libre, R5); `app/scripts/check_performance.py` para medir RNF-10/RNF-11 a mano; auditoría de mensajes de error y de pruebas adversas; y borrado de cuenta (`DELETE /me`, RNF-40), que estaba pospuesto `[C]` y se decidió construir aquí ([0008](docs/decisiones/0008-borrado-de-cuenta-en-f8.md)). F8.3 (diseño de la interfaz): logo y paleta indigo/slate/zinc con contraste WCAG AA medido en los colores de estado; tema claro/oscuro por navegador (`app/providers/ThemeProvider.tsx`, no en la cuenta); diseño adaptable con menú hamburguesa por debajo de `lg`; diálogos que caben en pantalla; login y registro rediseñados (`AuthLayout` + `AuthShowcase`); gráficas con `ResponsiveContainer` y tooltip propio; estados de carga, vacío y error comunes (`shared/components/common/{EmptyState,ErrorState,Skeletons}.tsx`, y `ApplicationLoadError` para separar un 404 de otro fallo); formularios, detalle y preferencias a ancho completo dentro de `Card`; accesibilidad (`aria-describedby` en cada error de campo, `<html lang>` sincronizado con i18next, título de pestaña por página con `shared/hooks/useDocumentTitle.ts`, enlace "Saltar al contenido" y landmarks); y `queryClient` sin reintentos en los 4xx.
+>     - F9 (en curso):
+>         - **Correo:** el servicio `mailpit` (solo desarrollo), `app/infra/email/` (`EmailSender` con las implementaciones SMTP, desactivada y de pruebas; la SMTP clasifica cada fallo en "no salió" o "no se sabe") y `app/scripts/send_test_email.py`.
+>         - **Cola:** los servicios `valkey` y `worker`, `app/infra/queue/` (`JobQueue` con `SaqJobQueue` e `InMemoryJobQueue`), `app/worker.py`, `app/jobs/` y la cola creada en el `lifespan` de `main.py` (`get_job_queue` en `deps.py`).
+>         - **Ficheros:** el volumen `files_data` (montado en `/data/files` en `api` y `worker`) y `app/infra/storage/` (`FileStorage` con `LocalFileStorage`: escritura atómica, claves encerradas en la raíz y límite de tamaño contado al escribir).
+>         - **PDF:** `app/infra/pdf/` (`PdfRenderer`; `WeasyPrintRenderer` con Jinja2 y `TemplateOnlyFetcher` contra SSRF, en `weasyprint_renderer.py`, que solo importa el `worker`) y las librerías de sistema de WeasyPrint en la imagen.
+>         - **Esqueleto desechable**, que se borra al cerrar F9: `POST /api/v1/spike/pdf` encola un trabajo con el que el `worker` genera un PDF, lo guarda en `files_data` y envía un email con el enlace a `GET /api/v1/spike/pdf/{file_id}` (`services/spike_service.py`, `jobs/spike.py`, `endpoints/spike.py`, `templates/spike/`, `tests/api/test_spike.py` y la línea `COVERED_ELSEWHERE` de `test_isolation.py`).
 > - **No existe todavía:**
 >     - F7, la puesta en producción real (orden invertido a petición del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md)), en espera de servidor.
->     - **Toda la v2** (F9–F17): cola y `worker`, Valkey, Mailpit, ficheros, emails, perfil y CVs, IA, Kanban, calendario, rate limiting y el manual de Docusaurus (`manual/`). Solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
+>     - **El resto de la v2** (F9–F17): notificaciones por email, perfil y CVs, IA, Kanban, calendario, rate limiting y el manual de Docusaurus (`manual/`). Solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
 
 ## 2. Documentación
 
@@ -51,9 +57,13 @@ Sitio MkDocs en `docs/` (servido en http://localhost:8001). Es la fuente de verd
 | `docs` | 8001 | MkDocs Material **fijado a la 9** (MkDocs 2.0 rompe plugins y temas) |
 | `supertokens`, `supertokens-db` | — | Core de auth **fijado a 12.2.0** (debe implementar la CDI de `supertokens-python`), con **su propia** instancia de Postgres; no se publican puertos. Access token de 5 min ([0002](docs/decisiones/0002-access-token-de-5-minutos.md)). |
 
+| `valkey` | — | Valkey 9.1 (Redis libre): cola de SAQ y, desde F11, rate limit. Sin puertos publicados. `VALKEY_URL` es obligatoria: sin ella `api` no arranca |
+| `worker` | — | Misma imagen, código y `.env` que `api`, con otro comando: `saq --quiet app.worker.settings` envuelto en `watchfiles` (se reinicia solo al cambiar un `.py`). No aplica migraciones |
+| `mailpit` | 8025 | **Solo desarrollo** (F9). Captura todo el correo (SMTP interno en `mailpit:1025`) y no envía nada fuera. En producción el SMTP lo configura quien despliega con `SMTP_*` y `EMAIL_FROM`; sin `SMTP_HOST`, la app arranca y no envía emails (RNF-34). |
+
 Usa siempre `localhost` y nunca `127.0.0.1` (ver trampas).
 
-**Servicios de la v2, diseñados y todavía sin construir:** `valkey` (cola SAQ y rate limit), `worker` (misma imagen que `api`), `mailpit` (emails en desarrollo, 8025), `manual` (Docusaurus, 3001) y el volumen `files_data`. Detalle en `docs/arquitectura/servicios-y-estructura.md` §8.
+**Servicios de la v2, diseñados y todavía sin construir:** `manual` (Docusaurus, 3001). El volumen `files_data` ya existe. Detalle en `docs/arquitectura/servicios-y-estructura.md` §8.
 
 ## 4. Comandos
 
@@ -71,6 +81,8 @@ docker compose exec api alembic upgrade head                               # tam
 docker compose exec api uv add <paquete>                                   # nunca uv/pip en el host
 docker compose exec api python -m app.scripts.export_openapi               # tras cambiar endpoints/schemas, mismo commit
 docker compose -f compose.test.yml run --rm api-test python -m app.scripts.check_performance   # RNF-10/RNF-11 a mano, no en CI
+docker compose exec api python -m app.scripts.send_test_email tu@example.com  # prueba el SMTP configurado (en desarrollo llega a Mailpit)
+docker compose logs -f worker                                              # trabajos procesados y sus errores
 
 # Tests del backend (BD aislada)
 cp .env.test.example .env.test                                             # primera vez
@@ -102,7 +114,7 @@ docker compose run --rm docs build --strict                                # fal
 
 **Regla única:** *si habla con la BD, vive en `repositories/`; si decide, vive en `services/` o `domain/`.*
 
-**En la v2** la regla se amplía (servicios y estructura §8.3): lo que habla con otro sistema externo (disco, Valkey, SMTP, IA, PDF) vive en `infra/` detrás de una interfaz, y los trabajos del `worker` son funciones finas en `jobs/` que solo llaman a un service. Esas carpetas no existen hasta F9.
+**En la v2** la regla se amplía (servicios y estructura §8.3): lo que habla con otro sistema externo (disco, Valkey, SMTP, IA, PDF) vive en `infra/` detrás de una interfaz, y los trabajos del `worker` son funciones finas en `jobs/` que solo llaman a un service. De `infra/` existen `email/`, `queue/`, `storage/` y `pdf/`. Las implementaciones de `infra/` se eligen en quien cablea (`build_email_sender(settings)`), nunca en un service.
 
 Patrón para un recurso nuevo en el backend: `domain/` (si tiene reglas) → `models/` → migración (revisada) → `repositories/` → `schemas/` → `services/` → `endpoints/` + `router.py` → pruebas de repository, service y API (incluida la de aislamiento) → documentación.
 
@@ -164,6 +176,10 @@ La v2 añade los invariantes 9–18 de `docs/arquitectura/v2.md` §8 (Postgres m
 - **Tests y `commit`.** No abras sesiones propias en los tests: usa el fixture `db_session` (transacción externa + savepoints) o `client`, que sustituye `get_db` por esa sesión. Una sesión aparte confirmaría datos de verdad en `db-test`.
 - **shadcn genera `import { cn } from "cn"`.** Es el paquete oficial `shadcn-ui/cn`; `@/shared/lib/utils` lo reexporta. No lo cambies a mano en los componentes generados.
 - **Pestaña oculta durante una verificación en vivo con navegador automatizado.** Con la pestaña en segundo plano, el navegador pausa `requestAnimationFrame` (así que una animación de cierre de diálogo no termina de correr) y TanStack Query deja de reintentar hasta que vuelve el foco. Un diálogo que parece no cerrarse o una petición que parece colgada puede ser solo eso, no un bug: mantén la pestaña visible al verificar.
+- **En SAQ, `retries` cuenta intentos totales, no reintentos.** Un trabajo se repite mientras `retries > attempts`, y `attempts` ya vale 1 tras el primero: `retries=1` (el valor por defecto) es un solo intento y `retries=0` significa lo mismo. Por eso `JobQueue.enqueue` habla de `max_attempts`. Y SAQ mezcla en el mismo `**kwargs` sus opciones (`timeout`, `key`…) y los argumentos de la función: `SaqJobQueue` pasa los argumentos en `kwargs=` para que no se confundan.
+- **WeasyPrint solo en el `worker`.** `app.infra.pdf` exporta solo la interfaz; la implementación (`app.infra.pdf.weasyprint_renderer`) la importa `worker.py`. WeasyPrint no publica tipos: sus imports llevan `# type: ignore[import-untyped]`.
+- **La cola de SAQ se crea dentro del event loop** (el `lifespan` de `main.py`, o una por prueba), nunca al importar un módulo de la API: guarda primitivas de `asyncio` que quedan ligadas al primer loop que las usa, y en los tests (un loop por prueba) fallaría desde la segunda.
+- **Encolar puede fallar después del commit.** Con Valkey caído, encolar tarda unos 4 s y lanza `QueueUnavailableError`. Un service que encola tras confirmar una fila `pending` no debe convertir eso en un 500: la fila ya existe y el barrido de pendientes la reencola (v2 §3). El `worker` sí se recupera solo cuando Valkey vuelve, y los trabajos encolados sobreviven a un reinicio de Valkey (`--appendonly yes`).
 - **`changed_at` exige zona horaria, pero el selector de fecha solo captura un día.** El schema (`AwareDatetime`) rechaza con 422 un datetime "naive", y `FormDatePicker` (heredado de F2) solo devuelve `"yyyy-MM-dd"`. Combinar ese día con medianoche local haría que elegir "hoy" cayera antes del último cambio ya registrado (que tiene la hora real de "ahora") y el backend lo rechazaría con 422 `changed_at_before_last_change`, de forma confusa para quien solo quería decir "ahora mismo". `applicationStatusChangeService.toChangedAt()` combina el día elegido con la **hora local actual**, no medianoche; probado en `applicationStatusChange.service.test.ts`.
 
 ## 9. Agentes
@@ -189,7 +205,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F6 | CI con GitHub Actions (construida antes que F5, a petición explícita del usuario; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md)) |
 | ✔ F8 | Revisión final: auditoría de funcionalidades (sin huecos), preferencias de usuario, moneda cerrada, script de rendimiento, borrado de cuenta y diseño de la interfaz (paleta, tema claro/oscuro, adaptable, accesibilidad, estados de carga/vacío/error). Construida antes que F7, a petición explícita del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md) |
 | F7 | Puesta en producción real: `compose.prod.yml`, Nginx, variables de producción y despliegue efectivo. **En espera** hasta que haya un VPS; incluirá los servicios de la v2 que ya estén construidos |
-| F9 | **v2.** Esqueleto vertical desechable: cola → `worker` → PDF → disco → email (Mailpit) |
+| F9 | **v2, en curso.** Esqueleto vertical desechable: cola → `worker` → PDF → disco → email (Mailpit). Hecho: el correo (Mailpit + `EmailSender`), la cola (Valkey + SAQ + `worker`), el almacén (`files_data` + `FileStorage`), el PDF (WeasyPrint) y el esqueleto que los une. Falta retirar el esqueleto |
 | F10 | **v2.** Documentación de producción en Docusaurus (`manual/`, es + en) y documentador ampliado a los dos sitios |
 | F11 | **v2.** Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
 | F12 | **v2.** Notificaciones por email (cuatro tipos, nunca dos veces por el mismo motivo) |

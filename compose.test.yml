@@ -16,6 +16,19 @@ services:
         condition: service_healthy
       supertokens-test:
         condition: service_healthy
+      valkey-test:
+        condition: service_healthy
+
+  # Valkey real para las pruebas de la cola (y del rate limit desde F11), sin disco.
+  valkey-test:
+    image: valkey/valkey:9.1-alpine
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   db-test:
     image: postgres:17

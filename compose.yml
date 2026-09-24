@@ -62,6 +62,8 @@ services:
       - api_venv:/app/.venv
       # Destino de app.scripts.export_openapi (referencia de la API del sitio).
       - ./docs/referencia:/reference
+      # Almacén de ficheros (A21), compartido con worker.
+      - files_data:/data/files
     env_file:
       - .env
     depends_on:
@@ -69,6 +71,53 @@ services:
         condition: service_healthy
       supertokens:
         condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  # Cola de trabajos (SAQ) y, desde F11, contadores de rate limit (A18, A28). Sin
+  # puertos publicados, como el core de SuperTokens. appendonly: reiniciar el
+  # contenedor no pierde los trabajos encolados.
+  valkey:
+    image: valkey/valkey:9.1-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Misma imagen, código, .venv y .env que api, con otro comando (servicios §8.1).
+  # NO usa entrypoint.sh: las migraciones las aplica solo api. SAQ no recarga el
+  # código, así que watchfiles reinicia el worker al cambiar cualquier .py de app/.
+  # --quiet: que SAQ no configure el logging (lo hace a nivel WARNING y antes de
+  # importar app.worker); así se aplica el de la app, igual que en api.
+  worker:
+    build:
+      context: ./backend
+    command: watchfiles --filter python "saq --quiet app.worker.settings" app
+    volumes:
+      - ./backend:/app
+      - api_venv:/app/.venv
+      - files_data:/data/files
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      supertokens:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  # Solo desarrollo: captura todo el correo (SMTP interno en mailpit:1025) y no
+  # envía nada fuera. Interfaz web en http://localhost:8025. En producción no hay
+  # servicio de correo: el SMTP lo configura quien despliega (RNF-34).
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - "8025:8025"
 
   docs:
     image: squidfunk/mkdocs-material:9
@@ -96,5 +145,7 @@ services:
 
 volumes:
   api_venv:
+  files_data:
   postgres_data:
   supertokens_data:
+  valkey_data:

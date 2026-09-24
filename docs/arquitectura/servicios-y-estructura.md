@@ -308,32 +308,32 @@ Las tres reglas contra el envejecimiento:
 
 ## 8. Ampliación de la v2
 
-> Estado: **diseño, sin construir** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**.
+> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora (F9): `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`.
 
 ### 8.1 Servicios
 
 | Servicio | Imagen u origen | Puerto en el host | Para qué | Fase |
 |---|---|---|---|---|
-| `valkey` | `valkey/valkey:8.1-alpine` (versión fijada) | — | Cola de SAQ y contadores de rate limit (A18, A28) | F9 |
-| `worker` | `./backend`, la **misma imagen** que `api` | — | Trabajos (PDF, IA, emails) y barridos programados | F9 |
-| `mailpit` | `axllent/mailpit` (versión fijada) | 8025 (interfaz web) | Captura todos los emails en desarrollo; SMTP interno en el 1025 | F9 |
+| `valkey` **[construido]** | `valkey/valkey:9.1-alpine` | — | Cola de SAQ y contadores de rate limit (A18, A28) | F9 |
+| `worker` **[construido]** | `./backend`, la **misma imagen** que `api` | — | Trabajos (PDF, IA, emails) y barridos programados | F9 |
+| `mailpit` **[construido]** | `axllent/mailpit:v1.31` | 8025 (interfaz web) | Captura todos los emails en desarrollo; SMTP interno en el 1025 | F9 |
 | `manual` | `./manual/Dockerfile.dev` (node 24) | 3001 | Documentación de producción (Docusaurus) con recarga en vivo | F10 |
-| `valkey-test` | como `valkey`, en `tmpfs` | — | Rate limit y cola en la suite de pytest | F9 |
+| `valkey-test` **[construido]** | como `valkey`, en `tmpfs` | — | Rate limit y cola en la suite de pytest | F9 |
 
-Volumen nuevo: **`files_data`**, montado en `/data/files` en `api` **y** `worker` (A21). Es el almacén de los PDFs.
+Volumen nuevo: **`files_data`** **[construido]**, montado en `/data/files` en `api` **y** `worker` (A21). Es el almacén de los PDFs. La imagen crea `/data/files` con dueño `appuser` antes de montarlo ([ficheros §3](ficheros.md#3-escribir-y-leer-en-disco)).
 
 Aclaraciones:
 
 - **`worker` es `api` con otro comando.** Comparte imagen, volúmenes (código, `.venv`, `files_data`) y `env_file`. Así un trabajo usa exactamente los mismos services, modelos y dependencias que un endpoint, y no hay una segunda imagen que mantener. Depende de `db`, `valkey` y `supertokens` (los barridos de notificaciones piden el email del usuario a SuperTokens, A12).
 - **Valkey no publica puerto**, igual que el core de SuperTokens. Guarda la cola en disco (`--appendonly yes` sobre el volumen `valkey_data`) para que reiniciar el contenedor no pierda los trabajos encolados; aun así, si se pierden, el barrido de la [arquitectura §3](v2.md#3-consistencia-entre-almacenes) los reencola.
-- **`mailpit` es solo de desarrollo.** En producción no hay servicio de correo: el SMTP lo configura quien despliega (RNF-34), y sin configurar la aplicación arranca igual.
+- **`mailpit` es solo de desarrollo.** En producción no hay servicio de correo: el SMTP lo configura quien despliega (RNF-34), y sin configurar la aplicación arranca igual. `python -m app.scripts.send_test_email <dirección>` envía un email de prueba con la configuración vigente: en desarrollo llega a Mailpit, y al desplegar sirve para comprobar el SMTP sin esperar a que la aplicación necesite enviar algo.
 - **No hay servicio de ficheros**: es un volumen (A21). La copia de seguridad de una instalación pasa a ser `pg_dump` de las dos bases de datos **más** una copia de `files_data`.
 
 Fragmento de `compose.yml` (se conservan las convenciones de la v1: healthchecks, `depends_on` con `service_healthy`, volúmenes con nombre y versiones fijadas):
 
 ```yaml
   valkey:
-    image: valkey/valkey:8.1-alpine
+    image: valkey/valkey:9.1-alpine
     command: ["valkey-server", "--appendonly", "yes"]
     volumes:
       - valkey_data:/data
@@ -346,7 +346,7 @@ Fragmento de `compose.yml` (se conservan las convenciones de la v1: healthchecks
   worker:
     build:
       context: ./backend
-    command: saq app.worker.settings
+    command: watchfiles --filter python "saq --quiet app.worker.settings" app
     volumes:
       - ./backend:/app
       - api_venv:/app/.venv
@@ -362,7 +362,7 @@ Fragmento de `compose.yml` (se conservan las convenciones de la v1: healthchecks
         condition: service_healthy
 
   mailpit:
-    image: axllent/mailpit:v1.27   # fijar la versión vigente al construir F9
+    image: axllent/mailpit:v1.31
     ports:
       - "8025:8025"
 
@@ -374,7 +374,9 @@ Fragmento de `compose.yml` (se conservan las convenciones de la v1: healthchecks
         condition: service_healthy
 ```
 
-> **Trampa — el `worker` no recarga el código.** `api` arranca con `--reload`; el `worker` no, porque SAQ no lo trae. Tras cambiar el código de un trabajo o de un service que usa, hay que reiniciarlo con `docker compose restart worker`. En desarrollo se puede envolver el comando con `watchfiles` para que se reinicie solo.
+> **Trampa — el `worker` no recarga el código.** `api` arranca con `--reload`; el `worker` no, porque SAQ no lo trae. En desarrollo el comando va envuelto en `watchfiles` (viene con `uvicorn[standard]`), que reinicia el proceso al cambiar cualquier `.py` de `app/`. Al reiniciarse, SAQ avisa de que algunas tareas no terminaron dentro del periodo de gracia: son sus bucles internos (latido, barrido de trabajos abandonados), no trabajos del usuario. En producción (F7) el comando es `saq --quiet app.worker.settings`, sin `watchfiles`.
+
+> **Trampa — SAQ configura el logging a su manera.** Sin `--quiet`, el CLI de SAQ llama a `logging.basicConfig(level=WARNING)` **antes** de importar `app.worker`; después, el `basicConfig` de la aplicación ya no hace nada y no sale ni el arranque del worker ni cada trabajo procesado. Con `--quiet` SAQ no toca el logging, y `app.worker` lo configura al importarse igual que `main.py`.
 
 > **Trampa — las migraciones las aplica solo `api`.** El `entrypoint.sh` que aplica `alembic upgrade head` se queda en `api`. Si el `worker` arrancara también con él, dos procesos migrarían a la vez. El `worker` no usa ese entrypoint: si arranca antes de que termine la migración, sus primeros trabajos fallan y se reintentan.
 
@@ -395,19 +397,21 @@ applications-tracker/
 
 ```
 backend/app/
-├── worker.py                   [nuevo] configuración de SAQ: cola, funciones y tareas programadas. Solo cablea.
-├── jobs/                       [nuevo] funciones de trabajo: abren sesión, construyen el service y lo llaman
+├── worker.py                   [construido] configuración de SAQ: cola, funciones y tareas programadas. Solo cablea.
+├── jobs/                       [construido] funciones de trabajo: abren sesión, construyen el service y lo llaman
+│   ├── context.py              [construido] WorkerContext: el contexto de SAQ con las dependencias que crea worker.py
 │   ├── documents.py            generar PDF (F13, F14)
 │   ├── ai.py                   propuesta de CV o carta (F15)
 │   ├── notifications.py        barridos de avisos y envío (F12)
 │   └── maintenance.py          ficheros huérfanos, reencolar pendientes atascados, reclamos sin resultado
 ├── infra/                      [nuevo] adaptadores a sistemas externos, cada uno detrás de una interfaz
-│   ├── queue/                  JobQueue · SaqJobQueue · InMemoryJobQueue (pruebas)
-│   ├── storage/                FileStorage · LocalFileStorage
-│   ├── email/                  EmailSender · SmtpEmailSender · RecordingEmailSender (pruebas)
+│   ├── queue/                  [construido] JobQueue · SaqJobQueue · InMemoryJobQueue (pruebas) · QueueUnavailableError
+│   ├── storage/                [construido] FileStorage · LocalFileStorage (iter_keys llega en F13)
+│   ├── email/                  [construido] EmailSender · SmtpEmailSender · DisabledEmailSender · RecordingEmailSender (pruebas)
 │   ├── llm/                    LLMProvider · adapters/<proveedor>.py · FakeLLMProvider (pruebas)
 │   │   └── prompts/            prompts versionados (A33): cv_tailoring/v1.md, cover_letter/v1.md
-│   ├── pdf.py                  render con WeasyPrint
+│   ├── pdf/                    [construido] PdfRenderer · WeasyPrintRenderer (weasyprint_renderer.py, que solo importa
+│   │                           el worker: la API no carga WeasyPrint) · TemplateOnlyFetcher contra SSRF
 │   ├── crypto.py               Fernet/MultiFernet para las claves de IA de los usuarios (A34)
 │   └── rate_limit.py           `limits` sobre Valkey
 ├── templates/                  [nuevo]
@@ -493,10 +497,10 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 
 | Variable | Para qué | Si falta |
 |---|---|---|
-| `VALKEY_URL` | Cola (SAQ) y rate limit | No arranca: es infraestructura obligatoria |
-| `FILES_ROOT` | Raíz del almacén de ficheros (`/data/files`) | No arranca |
+| `VALKEY_URL` **[construido]** | Cola (SAQ) y rate limit | No arranca: es infraestructura obligatoria |
+| `FILES_ROOT` **[construido]** | Raíz del almacén de ficheros (`/data/files`) | No arranca |
 | `PUBLIC_APP_URL` | Enlaces en los emails y en el feed ICS | No arranca |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY` (`none`, `starttls`, `tls`), `SMTP_USERNAME`, `SMTP_PASSWORD`, `EMAIL_FROM` | Servidor de correo (RNF-34) | Arranca **sin email**: se registra al iniciar y las funciones dependientes aparecen como no disponibles |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY` (`none`, `starttls`, `tls`), `SMTP_USERNAME`, `SMTP_PASSWORD`, `EMAIL_FROM`, `SMTP_TIMEOUT_SECONDS` (30 por defecto) **[construido]** | Servidor de correo (RNF-34). Con `SMTP_HOST`, `EMAIL_FROM` es obligatorio: si falta, no arranca | Arranca **sin email**: las funciones dependientes aparecen como no disponibles |
 | `APP_SECRET` | Firma de los enlaces de baja de avisos | No arranca |
 | `AI_KEYS_ENCRYPTION_KEYS` | Claves maestras de Fernet, separadas por comas; la primera cifra y todas descifran (rotación, A34) | Las claves propias de IA quedan desactivadas |
 | `AI_ENABLED_PROVIDERS` | Proveedores que se ofrecen a los usuarios (RF-151) | Ninguno: no se pueden añadir claves propias |
@@ -522,7 +526,9 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 Dependencias nuevas previstas (versiones fijadas al añadirlas, siempre con `docker compose exec api uv add`):
 
 - **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `icalendar`, `pypdf` (comprobar que un PDF subido se abre, sin renderizarlo), `python-multipart` (subidas) y el SDK de cada proveedor de IA habilitado.
-- **Imagen del backend:** las librerías de sistema de WeasyPrint (Pango, HarfBuzz). Lo valida F9 (R9).
+- **Imagen del backend:** las librerías de sistema de WeasyPrint (Pango, HarfBuzz) **[construido en F9]**; `fonts-dejavu-core` llega con ellas ([ficheros §7](ficheros.md#fuentes)).
+
+Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPrint no publica tipos (`py.typed`): sus imports llevan `# type: ignore[import-untyped]`, confinados a `weasyprint_renderer.py` y su prueba.
 - **Frontend:** `@dnd-kit/core` y `@dnd-kit/sortable`.
 - **Manual:** Docusaurus y `docusaurus-plugin-openapi-docs`, con versiones fijadas (mismo criterio que MkDocs, R4).
 
