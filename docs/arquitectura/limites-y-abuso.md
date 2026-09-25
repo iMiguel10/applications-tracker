@@ -55,6 +55,47 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 
 > **Trampa — en producción, todos detrás de la IP del proxy.** Detrás de Nginx (F7), la conexión siempre llega desde el proxy. Si `TRUSTED_PROXIES` se queda vacía, `X-Forwarded-For` se ignora y **todos los usuarios comparten una IP**: 10 inicios de sesión por minuto entre todos. Y sin la protección contraria, si se aceptara `X-Forwarded-For` de cualquiera, cada atacante se inventaría una IP por intento. Por eso solo se lee de los proxies declarados, y de derecha a izquierda.
 
+### En producción: el proxy y la aplicación (para F7)
+
+Anotado en F11, a petición del usuario, para cuando se monte F7. Detrás de Nginx el rate limiting va **en las dos capas**, y cada una hace algo que la otra no puede:
+
+| Capa | Qué frena | Por qué ahí |
+|---|---|---|
+| **Nginx** (`limit_req`) | Avalanchas: miles de peticiones por segundo, bots, escaneos | Es barato y corta antes de que la petición llegue a la API o a Valkey. Solo ve IPs: no sabe qué email va en el cuerpo ni de quién es una sesión |
+| **Aplicación** (esta sección) | Lo que depende del contenido: por email, por usuario, por ruta de `/auth/*` | Entiende la petición. Para la IP depende de que el proxy se la pase |
+
+Los valores del proxy son **más generosos** que los de la aplicación: su trabajo es parar el abuso masivo, no los 10 intentos de inicio de sesión. Una configuración de partida:
+
+```nginx
+# Por IP real del cliente (la conexión que ve Nginx).
+limit_req_zone $binary_remote_addr zone=general:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=auth:10m    rate=30r/m;
+limit_req_status 429;
+
+location /auth/ {
+    limit_req zone=auth burst=10 nodelay;
+    proxy_pass http://api:8000;
+    proxy_set_header Host $host;
+    # Añade la IP del cliente al final de X-Forwarded-For. La aplicación lo lee de
+    # derecha a izquierda: lo de la izquierda lo puede escribir el propio cliente.
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location /api/ {
+    limit_req zone=general burst=40 nodelay;
+    # …mismas cabeceras proxy_set_header que arriba
+}
+```
+
+**Lista para F7:**
+
+1. En `compose.prod.yml`, fijar la subred de la red interna (`ipam`) para que la IP de Nginx no cambie entre despliegues.
+2. `TRUSTED_PROXIES` con esa subred (por ejemplo `172.18.0.0/16`). **Sin ella, todos los usuarios comparten la IP del proxy** (ver la trampa de arriba).
+3. Nginx con `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for` en **todas** las rutas que van a la API, no solo en `/auth/`: el límite general por usuario no la necesita, pero los de IP sí.
+4. Si hay otra capa delante (Cloudflare, un balanceador del proveedor), sus rangos de IP también van en `TRUSTED_PROXIES`. El recorrido de derecha a izquierda de `core/client_ip.py` salta todos los proxies de confianza y da la IP real.
+5. Comprobar en vivo: con dos IPs de origen distintas, el límite de inicios de sesión por IP debe contarse por separado. Si se comparte, `TRUSTED_PROXIES` está mal.
+
 ### Valores iniciales
 
 | Qué | Límite | Clave |

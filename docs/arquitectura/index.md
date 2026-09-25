@@ -300,6 +300,7 @@ Las pantallas con dificultad real:
   - Imagen del frontend con Nginx y `ARG VITE_API_URL`.
   - API sin `--reload` y con migraciones en el entrypoint.
   - Core de SuperTokens sin puertos publicados.
+  - Rate limiting también en Nginx, con `TRUSTED_PROXIES` apuntando a una subred fija: reparto entre proxy y aplicación, bloque de Nginx de referencia y lista de comprobación en [límites y abuso §2](limites-y-abuso.md#en-produccion-el-proxy-y-la-aplicacion-para-f7) (anotado en F11).
 - El despliegue real es `[C]`.
 
 ## 11. Pruebas
