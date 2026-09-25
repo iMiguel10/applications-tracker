@@ -40,7 +40,6 @@ class Currency(StrEnum):
 
 DEFAULT_CURRENCY = Currency.EUR
 
-# Límites de la especificación §10.
-MAX_APPLICATIONS_PER_USER = 5_000
-MAX_COMPANIES_PER_USER = 2_000
+# Límite de la especificación §10. Los de cantidad por usuario (solicitudes,
+# empresas) viven en domain/limits.py y la configuración.
 MAX_NOTES_LENGTH = 5_000

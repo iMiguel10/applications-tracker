@@ -114,12 +114,18 @@ An application's status **is not changed with `PATCH`**: it has its own endpoint
 
 ## Limits
 
-| Resource | Limit per account | When exceeded |
+| Resource | Limit per account (default) | When exceeded |
 |---|---|---|
 | Applications | 5,000 | 409 `applications_limit_reached` |
 | Companies | 2,000 | 409 `companies_limit_reached` |
-| Pending reminders | 500 | 409 `reminders_limit_reached` |
+| Reminders, in any status | 5,000 | 409 `reminders_limit_reached` (deleting frees up room: `DELETE /reminders/{id}`) |
 | Notes | 5,000 characters | 422 |
+
+The count limits can differ in each installation, and even per account. `GET /api/v1/me/usage` returns the ones of the session's account, with what is used and what is left. When one is reached, the 409 also carries the numbers:
+
+```json
+{ "detail": "Limit reached: 2000 of 2000", "code": "companies_limit_reached", "limit": 2000, "used": 2000 }
+```
 
 ## Calls from a browser
 

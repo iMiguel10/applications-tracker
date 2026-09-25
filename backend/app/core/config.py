@@ -1,6 +1,6 @@
 from typing import Literal, Self
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     smtp_password: str | None = None
     smtp_timeout_seconds: float = 30
     email_from: str | None = None
+
+    # Límites por usuario (especificación §10, RF-140). Valores globales de la
+    # instalación; una cuenta concreta puede tener otro con
+    # scripts/set_user_limit.py (RF-143). Los nombres siguen domain/limits.py.
+    limit_applications: int = Field(default=5_000, ge=0)
+    limit_companies: int = Field(default=2_000, ge=0)
+    limit_reminders: int = Field(default=5_000, ge=0)
 
     model_config = SettingsConfigDict(
         env_file=".env",

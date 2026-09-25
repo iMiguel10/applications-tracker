@@ -64,6 +64,26 @@ If either of these is missing, the API does not start.
 
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_TIMEOUT_SECONDS` and `EMAIL_FROM`. They are optional: without `SMTP_HOST`, the application starts anyway and sends no email. See [Email](correo.md).
 
+## Per-account limits
+
+| Variable | Default | What it limits |
+|---|---|---|
+| `LIMIT_APPLICATIONS` | 5000 | Applications per account, archived ones included |
+| `LIMIT_COMPANIES` | 2000 | Companies per account |
+| `LIMIT_REMINDERS` | 5000 | Reminders per account, in any status |
+
+They are optional and apply to every account. To give a single account a different value, without touching the others:
+
+```bash
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com                       # see its usage and limits
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications 10000    # exception for that account
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --unlimited  # no limit
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com all --unlimited         # no limit on everything that allows it
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --reset  # back to the global value (all --reset, every one)
+```
+
+Lowering a limit below what the account already has deletes nothing: it only stops it from creating more. An account with no limit sees in Preferences how much it has used and "no limit", and never gets warnings.
+
 ## Environment
 
 | Variable | Required | What it is |

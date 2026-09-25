@@ -1,4 +1,8 @@
-from supertokens_python.asyncio import delete_user, get_user
+from supertokens_python.asyncio import (
+    delete_user,
+    get_user,
+    list_users_by_account_info,
+)
 from supertokens_python.recipe.emailpassword.asyncio import create_reset_password_link
 from supertokens_python.recipe.emailverification.asyncio import (
     create_email_verification_link,
@@ -8,6 +12,7 @@ from supertokens_python.recipe.emailverification.interfaces import (
     CreateEmailVerificationLinkOkResult,
 )
 from supertokens_python.types import RecipeUserId
+from supertokens_python.types.base import AccountInfoInput
 
 
 class IdentityRepository:
@@ -25,6 +30,13 @@ class IdentityRepository:
         if user is None or not user.emails:
             return None
         return user.emails[0]
+
+    async def find_id_by_email(self, email: str) -> str | None:
+        """Para los scripts de administración, que parten de un email."""
+        users = await list_users_by_account_info(
+            "public", AccountInfoInput(email=email)
+        )
+        return users[0].id if users else None
 
     async def create_password_reset_link(
         self, supertokens_user_id: str, email: str, tenant_id: str

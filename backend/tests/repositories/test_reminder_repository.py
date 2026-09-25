@@ -87,14 +87,12 @@ async def test_due_range_filters(db_session: AsyncSession, user: CurrentUser):
 
 
 @pytest.mark.asyncio
-async def test_count_pending_ignores_done_and_dismissed(
-    db_session: AsyncSession, user: CurrentUser
-):
+async def test_count_includes_every_status(db_session: AsyncSession, user: CurrentUser):
     await make_reminder(db_session, user.id, status="pending")
     await make_reminder(db_session, user.id, status="done")
     await make_reminder(db_session, user.id, status="dismissed")
 
-    assert await ReminderRepository(db_session).count_pending(user.id) == 1
+    assert await ReminderRepository(db_session).count(user.id) == 3
 
 
 @pytest.mark.asyncio

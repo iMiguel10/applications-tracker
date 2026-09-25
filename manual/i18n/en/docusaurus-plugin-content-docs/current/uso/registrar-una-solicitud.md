@@ -40,5 +40,5 @@ Companies are created automatically when you add applications, but you can also 
 Two companies in the same account cannot have the same name.
 
 :::info Limits
-Each account can hold up to 5,000 applications and 2,000 companies.
+Each account can hold up to 5,000 applications and 2,000 companies, unless whoever runs the installation has set other values. How much you have used is shown in [Preferences](preferencias.md#see-your-account-usage), and past 80 % the form tells you how many you have left. Archiving an application doesn't free up room; deleting it does.
 :::

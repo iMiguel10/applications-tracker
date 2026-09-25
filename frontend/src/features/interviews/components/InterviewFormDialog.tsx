@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { toDateTimeLocal } from "@/shared/lib/dates";
 import {
   FormActions,
@@ -81,7 +81,7 @@ export function InterviewFormDialog({
     values.map((value) => ({ value, label: t(`${prefix}.${value}`) }));
 
   const onSubmit = (values: InterviewFormValues) => {
-    const onError = (error: Error) => toast.error(t(errorMessageKey(error)));
+    const onError = (error: Error) => toast.error(t(errorMessageKey(error), errorMessageParams(error)));
     if (interview) {
       update.mutate(
         { interviewId: interview.id, values },

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { ApiError } from "@/shared/lib/apiClient";
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import {
   type AsyncComboboxOption,
   FormActions,
@@ -25,6 +25,7 @@ import {
   WORK_MODES,
   type CompanySummary,
 } from "../types/Application";
+import { LimitWarning } from "@/features/usage/components/LimitWarning";
 
 // Cuelga de companyKeys.all: al crear o editar una empresa, las opciones se refrescan.
 const COMPANY_OPTIONS_KEY = [...companyKeys.all, "options"] as const;
@@ -79,7 +80,7 @@ export function ApplicationForm({
     } catch (error) {
       const field = error instanceof ApiError && error.code ? FIELD_ERRORS[error.code] : undefined;
       if (field) form.setError(field, { message: errorMessageKey(error) });
-      else toast.error(t(errorMessageKey(error)));
+      else toast.error(t(errorMessageKey(error), errorMessageParams(error)));
     }
   };
 
@@ -95,6 +96,9 @@ export function ApplicationForm({
       className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:gap-x-10"
       noValidate
     >
+      {mode === "create" && (
+        <LimitWarning limitKey="applications" className="lg:col-span-2" />
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <FormAsyncCombobox
           form={form}

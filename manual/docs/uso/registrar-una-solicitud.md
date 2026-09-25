@@ -40,5 +40,5 @@ Las empresas se crean solas al registrar solicitudes, pero también puedes gesti
 Dos empresas no pueden llamarse igual en la misma cuenta.
 
 :::info Límites
-Cada cuenta admite hasta 5 000 solicitudes y 2 000 empresas.
+Cada cuenta admite hasta 5000 solicitudes y 2000 empresas, salvo que quien administra la instalación haya fijado otros valores. Cuánto llevas se ve en [Preferencias](preferencias.md#ver-el-uso-de-tu-cuenta), y al pasar del 80 % el formulario te avisa de cuántas te quedan. Archivar una solicitud no libera espacio; borrarla, sí.
 :::

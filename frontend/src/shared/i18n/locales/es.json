@@ -383,7 +383,11 @@
       "dueAtRequired": "Indica la fecha límite"
     },
     "emptyPendingTitle": "No tienes recordatorios pendientes",
-    "emptyPendingDescription": "Crea uno para no olvidar el próximo paso de una candidatura."
+    "emptyPendingDescription": "Crea uno para no olvidar el próximo paso de una candidatura.",
+    "delete": "Borrar",
+    "deleteTitle": "¿Borrar el recordatorio?",
+    "deleteConfirm": "Se borrará de forma definitiva. Borrar recordatorios hechos o descartados libera espacio en el límite de tu cuenta.",
+    "deleted": "Recordatorio borrado"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -428,8 +432,8 @@
     "not_found": "No existe o ya no está disponible.",
     "company_name_taken": "Ya tienes una empresa con ese nombre",
     "company_in_use": "La empresa tiene solicitudes y no se puede borrar",
-    "companies_limit_reached": "Has alcanzado el máximo de empresas",
-    "applications_limit_reached": "Has alcanzado el máximo de solicitudes",
+    "companies_limit_reached": "Has alcanzado tu límite de {{limit, number}} empresas",
+    "applications_limit_reached": "Has alcanzado tu límite de {{limit, number}} solicitudes",
     "salary_range_invalid": "El mínimo no puede ser mayor que el máximo",
     "applied_at_required": "Una solicitud enviada necesita fecha de envío",
     "name_required": "El nombre es obligatorio",
@@ -439,7 +443,32 @@
     "cannot_undo_initial_change": "No se puede deshacer el cambio que creó la solicitud",
     "changed_at_in_future": "La fecha no puede ser futura",
     "changed_at_before_last_change": "La fecha no puede ser anterior al último cambio",
-    "reminders_limit_reached": "Has alcanzado el máximo de recordatorios pendientes",
+    "reminders_limit_reached": "Has alcanzado tu límite de {{limit, number}} recordatorios",
     "reminder_not_pending": "Este recordatorio ya no está pendiente"
+  },
+  "usage": {
+    "title": "Uso de la cuenta",
+    "description": "Cuánto llevas de cada límite de tu cuenta. No se renuevan: se libera espacio al borrar solicitudes, empresas o recordatorios. Archivar una solicitud o completar un recordatorio no libera espacio.",
+    "limits": {
+      "applications": "Solicitudes",
+      "companies": "Empresas",
+      "reminders": "Recordatorios"
+    },
+    "warning": {
+      "applications_one": "Te queda {{remaining, number}} de las {{limit, number}} solicitudes de tu cuenta.",
+      "applications_other": "Te quedan {{remaining, number}} de las {{limit, number}} solicitudes de tu cuenta.",
+      "companies_one": "Te queda {{remaining, number}} de las {{limit, number}} empresas de tu cuenta.",
+      "companies_other": "Te quedan {{remaining, number}} de las {{limit, number}} empresas de tu cuenta.",
+      "reminders_one": "Te queda {{remaining, number}} de los {{limit, number}} recordatorios de tu cuenta.",
+      "reminders_other": "Te quedan {{remaining, number}} de los {{limit, number}} recordatorios de tu cuenta."
+    },
+    "reached": {
+      "applications": "Has alcanzado tu límite de {{limit, number}} solicitudes: borra alguna para poder crear otra.",
+      "companies": "Has alcanzado tu límite de {{limit, number}} empresas: borra alguna sin solicitudes para poder crear otra.",
+      "reminders": "Has alcanzado tu límite de {{limit, number}} recordatorios, contando los hechos y descartados: borra alguno para poder crear otro."
+    },
+    "amounts_one": "{{used, number}} de {{limit, number}} · queda {{remaining, number}}",
+    "amounts_other": "{{used, number}} de {{limit, number}} · quedan {{remaining, number}}",
+    "amountsUnlimited": "{{used, number}} · sin límite"
   }
 }

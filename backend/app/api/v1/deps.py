@@ -16,6 +16,7 @@ from app.services.application_status_service import ApplicationStatusService
 from app.services.company_service import CompanyService
 from app.services.dashboard_service import DashboardService
 from app.services.interview_service import InterviewService
+from app.services.limit_service import LimitService
 from app.services.reminder_service import ReminderService
 from app.services.user_service import UserService
 
@@ -86,6 +87,12 @@ def get_reminder_service(
     db: AsyncSession = Depends(get_db),
 ) -> ReminderService:
     return ReminderService(db)
+
+
+def get_limit_service(
+    db: AsyncSession = Depends(get_db),
+) -> LimitService:
+    return LimitService(db)
 
 
 def get_user_service(

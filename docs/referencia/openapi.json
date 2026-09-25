@@ -773,6 +773,46 @@
         ]
       }
     },
+    "/api/v1/me/usage": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Consumo de los límites de la cuenta",
+        "description": "Para cada límite de la cuenta (RF-140, RF-141): cuánto lleva, su límite y\ncuánto le queda. Al alcanzar uno, la creación responde **409** con el código\ndel límite y los mismos números: `{\"detail\", \"code\", \"limit\", \"used\"}`.\n\n| `key` | Qué cuenta | Código al alcanzarlo |\n|---|---|---|\n| `applications` | Solicitudes, archivadas incluidas | `applications_limit_reached` |\n| `companies` | Empresas | `companies_limit_reached` |\n| `reminders` | Recordatorios en cualquier estado | `reminders_limit_reached` |",
+        "operationId": "read_usage_api_v1_me_usage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/companies": {
       "get": {
         "tags": [
@@ -904,7 +944,7 @@
           "Companies"
         ],
         "summary": "Crear una empresa",
-        "description": "Crea una empresa. El nombre es único por usuario sin distinguir mayúsculas:\nsi ya existe, responde 409 `company_name_taken`. 409\n`companies_limit_reached` al superar 2 000 empresas.",
+        "description": "Crea una empresa. El nombre es único por usuario sin distinguir mayúsculas:\nsi ya existe, responde 409 `company_name_taken`. 409\n`companies_limit_reached` al alcanzar el límite de empresas de la cuenta (2 000\npor defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.",
         "operationId": "create_company_api_v1_companies_post",
         "security": [
           {
@@ -1446,7 +1486,7 @@
           "Applications"
         ],
         "summary": "Crear una solicitud",
-        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al superar 5 000 solicitudes.",
+        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta\n(5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.",
         "operationId": "create_application_api_v1_applications_post",
         "security": [
           {
@@ -2673,7 +2713,7 @@
           "Reminders"
         ],
         "summary": "Crear un recordatorio",
-        "description": "Crea un recordatorio, opcionalmente ligado a una solicitud (RF-50). 404 si\n`application_id` no existe o es de otro usuario. 409\n`reminders_limit_reached` al superar 500 recordatorios **pendientes**.",
+        "description": "Crea un recordatorio, opcionalmente ligado a una solicitud (RF-50). 404 si\n`application_id` no existe o es de otro usuario. 409\n`reminders_limit_reached` al alcanzar el límite de recordatorios de la cuenta\n(5 000 por defecto, contando también los hechos y descartados), con `limit` y\n`used`; el consumo, en `GET /me/usage`. Borrar recordatorios libera espacio.",
         "operationId": "create_reminder_api_v1_reminders_post",
         "security": [
           {
@@ -2890,6 +2930,71 @@
           },
           "409": {
             "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reminders/{reminder_id}": {
+      "delete": {
+        "tags": [
+          "Reminders"
+        ],
+        "summary": "Borrar un recordatorio",
+        "description": "Borra un recordatorio en cualquier estado, de forma definitiva. Es la manera\nde liberar espacio del límite de recordatorios, que cuenta también los hechos y\nlos descartados.",
+        "operationId": "delete_reminder_api_v1_reminders__reminder_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reminder_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reminder Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
             "content": {
               "application/json": {
                 "schema": {
@@ -4540,6 +4645,66 @@
         "title": "Language",
         "description": "Idioma de la interfaz. `null` en el usuario significa \"sigue el navegador\"."
       },
+      "LimitKey": {
+        "type": "string",
+        "enum": [
+          "applications",
+          "companies",
+          "reminders"
+        ],
+        "title": "LimitKey"
+      },
+      "LimitUsageRead": {
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/LimitKey",
+            "description": "Qué se limita."
+          },
+          "used": {
+            "type": "integer",
+            "title": "Used",
+            "description": "Consumo actual, contado sobre los datos reales."
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit",
+            "description": "Límite de esta cuenta: el global de la instalación o una excepción individual. `null`: esta cuenta no tiene límite en este recurso."
+          },
+          "remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining",
+            "description": "`limit - used`, nunca negativo. `null` si no hay límite."
+          },
+          "renews": {
+            "type": "boolean",
+            "title": "Renews",
+            "description": "Si el consumo vuelve a cero cada cierto tiempo. Ningún límite actual se renueva."
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "used",
+          "limit",
+          "remaining",
+          "renews"
+        ],
+        "title": "LimitUsageRead"
+      },
       "MeRead": {
         "properties": {
           "id": {
@@ -5187,6 +5352,31 @@
         ],
         "title": "UpcomingInterview",
         "description": "RF-63."
+      },
+      "UsageRead": {
+        "properties": {
+          "limits": {
+            "items": {
+              "$ref": "#/components/schemas/LimitUsageRead"
+            },
+            "type": "array",
+            "title": "Limits"
+          },
+          "warning_ratio": {
+            "type": "number",
+            "title": "Warning Ratio",
+            "description": "A partir de esta fracción de un límite (`used / limit`) la aplicación avisa antes de llegar al tope (RF-144).",
+            "examples": [
+              0.8
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "limits",
+          "warning_ratio"
+        ],
+        "title": "UsageRead"
       },
       "ValidationError": {
         "properties": {

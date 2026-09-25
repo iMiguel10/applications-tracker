@@ -18,6 +18,10 @@ The **theme** can also be switched with the sun and moon button in the top bar. 
 
 The number of days decides which applications appear in the **No activity** block of the [Dashboard](dashboard.md).
 
+## See your account usage
+
+The **Account usage** card shows, for each limit, how much you have used, the maximum and how much is left: for example, "42 of 5,000 · 4,958 left". The bar turns amber past 80 % and red at the limit. Limits don't renew: you free up room by deleting applications, companies or reminders. Archiving an application or completing a reminder doesn't free up room.
+
 ## Check whether your email is verified
 
 The **Email** card shows your account address and whether it is **Verified** or **Not verified**. While it is not, **Resend link** sends you another email to [confirm it](primeros-pasos.md#confirm-your-email). If the installation does not send email, the card says so instead of showing the button.

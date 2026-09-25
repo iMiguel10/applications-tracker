@@ -52,7 +52,8 @@ async def create_application(
     """Registra una solicitud en estado `saved` o `applied` (RF-20).
 
     La empresa debe existir y ser del usuario (404 si no). 409
-    `applications_limit_reached` al superar 5 000 solicitudes.
+    `applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta
+    (5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.
     """
     return ApplicationRead.model_validate(await service.create(current_user.id, data))
 

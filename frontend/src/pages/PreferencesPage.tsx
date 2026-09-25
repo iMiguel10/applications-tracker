@@ -19,6 +19,7 @@ import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDia
 import { EmailVerificationCard } from "@/features/auth/components/EmailVerificationCard";
 import { PreferencesForm } from "@/features/auth/components/PreferencesForm";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
+import { UsageCard } from "@/features/usage/components/UsageCard";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
 
 export function PreferencesPage() {
@@ -35,7 +36,7 @@ export function PreferencesPage() {
       {/* Ajustes a la izquierda y acciones de cuenta a la derecha, como el resto de
           páginas: ocupan el ancho completo en vez de una columna estrecha. */}
       <div className="grid items-start gap-6 lg:grid-cols-2">
-        <div>
+        <div className="grid gap-6">
           {isLoading && <ListSkeleton rows={3} />}
           {isError && <ErrorState onRetry={() => refetch()} retrying={isFetching} />}
           {data && (
@@ -45,6 +46,7 @@ export function PreferencesPage() {
               </CardContent>
             </Card>
           )}
+          <UsageCard />
         </div>
 
         {me?.email && (

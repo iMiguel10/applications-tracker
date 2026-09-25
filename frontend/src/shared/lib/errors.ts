@@ -13,3 +13,9 @@ export function errorMessageKey(error: unknown): string {
   }
   return "errors.generic";
 }
+
+/** Valores para interpolar en el mensaje de `errorMessageKey` (p. ej. el límite
+ * alcanzado). Se usa siempre en pareja: `t(errorMessageKey(e), errorMessageParams(e))`. */
+export function errorMessageParams(error: unknown): Record<string, unknown> {
+  return error instanceof ApiError ? error.params : {};
+}

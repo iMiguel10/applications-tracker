@@ -383,7 +383,11 @@
       "dueAtRequired": "Enter the due date"
     },
     "emptyPendingTitle": "No pending reminders",
-    "emptyPendingDescription": "Create one so you don’t forget the next step of an application."
+    "emptyPendingDescription": "Create one so you don’t forget the next step of an application.",
+    "delete": "Delete",
+    "deleteTitle": "Delete the reminder?",
+    "deleteConfirm": "It will be deleted for good. Deleting done or dismissed reminders frees up room in your account limit.",
+    "deleted": "Reminder deleted"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -428,8 +432,8 @@
     "not_found": "It does not exist or is no longer available.",
     "company_name_taken": "You already have a company with that name",
     "company_in_use": "The company has applications and cannot be deleted",
-    "companies_limit_reached": "You have reached the maximum number of companies",
-    "applications_limit_reached": "You have reached the maximum number of applications",
+    "companies_limit_reached": "You have reached your limit of {{limit, number}} companies",
+    "applications_limit_reached": "You have reached your limit of {{limit, number}} applications",
     "salary_range_invalid": "The minimum cannot be greater than the maximum",
     "applied_at_required": "A sent application needs an application date",
     "name_required": "The name is required",
@@ -439,7 +443,32 @@
     "cannot_undo_initial_change": "Cannot undo the change that created the application",
     "changed_at_in_future": "The date cannot be in the future",
     "changed_at_before_last_change": "The date cannot be earlier than the last change",
-    "reminders_limit_reached": "You have reached the maximum number of pending reminders",
+    "reminders_limit_reached": "You have reached your limit of {{limit, number}} reminders",
     "reminder_not_pending": "This reminder is no longer pending"
+  },
+  "usage": {
+    "title": "Account usage",
+    "description": "How much of each limit of your account you have used. They don’t renew: you free up room by deleting applications, companies or reminders. Archiving an application or completing a reminder doesn’t free up room.",
+    "limits": {
+      "applications": "Applications",
+      "companies": "Companies",
+      "reminders": "Reminders"
+    },
+    "warning": {
+      "applications_one": "You have {{remaining, number}} of your {{limit, number}} applications left.",
+      "applications_other": "You have {{remaining, number}} of your {{limit, number}} applications left.",
+      "companies_one": "You have {{remaining, number}} of your {{limit, number}} companies left.",
+      "companies_other": "You have {{remaining, number}} of your {{limit, number}} companies left.",
+      "reminders_one": "You have {{remaining, number}} of your {{limit, number}} reminders left.",
+      "reminders_other": "You have {{remaining, number}} of your {{limit, number}} reminders left."
+    },
+    "reached": {
+      "applications": "You have reached your limit of {{limit, number}} applications: delete one to create another.",
+      "companies": "You have reached your limit of {{limit, number}} companies: delete one without applications to create another.",
+      "reminders": "You have reached your limit of {{limit, number}} reminders, counting done and dismissed ones: delete one to create another."
+    },
+    "amounts_one": "{{used, number}} of {{limit, number}} · {{remaining, number}} left",
+    "amounts_other": "{{used, number}} of {{limit, number}} · {{remaining, number}} left",
+    "amountsUnlimited": "{{used, number}} · no limit"
   }
 }

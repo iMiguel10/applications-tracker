@@ -5,8 +5,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.schemas.user import CurrentUser
-from app.services import reminder_service
 from tests.factories import make_application, make_reminder
 
 
@@ -53,7 +53,7 @@ async def test_reminder_over_the_pending_limit_is_409(
     user: CurrentUser,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setattr(reminder_service, "MAX_PENDING_REMINDERS_PER_USER", 1)
+    monkeypatch.setattr(settings, "limit_reminders", 1)
     await make_reminder(db_session, user.id)
 
     response = await client.post(
@@ -61,7 +61,10 @@ async def test_reminder_over_the_pending_limit_is_409(
     )
 
     assert response.status_code == 409
+    # RF-142: dice cuál y cuánto.
     assert response.json()["code"] == "reminders_limit_reached"
+    assert response.json()["limit"] == 1
+    assert response.json()["used"] == 1
 
 
 @pytest.mark.asyncio
@@ -112,3 +115,17 @@ async def test_creating_with_unknown_application_is_404(
     )
 
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", ["pending", "done", "dismissed"])
+async def test_delete_reminder_in_any_status(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser, status: str
+):
+    reminder = await make_reminder(db_session, user.id, status=status)
+
+    response = await client.delete(f"/api/v1/reminders/{reminder.id}")
+    listed = await client.get("/api/v1/reminders", params={"status": "all"})
+
+    assert response.status_code == 204
+    assert listed.json()["total"] == 0

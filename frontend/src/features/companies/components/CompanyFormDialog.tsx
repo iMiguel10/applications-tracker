@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { ApiError } from "@/shared/lib/apiClient";
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { FormActions, FormInput, FormTextarea } from "@/shared/components/form";
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
 import { useCreateCompany } from "../hooks/mutations/useCreateCompany";
 import { useUpdateCompany } from "../hooks/mutations/useUpdateCompany";
 import type { Company } from "../types/Company";
+import { LimitWarning } from "@/features/usage/components/LimitWarning";
 
 interface CompanyFormDialogProps {
   open: boolean;
@@ -66,7 +67,7 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
         if (error instanceof ApiError && error.code === "company_name_taken") {
           form.setError("name", { message: "errors.company_name_taken" });
         } else {
-          toast.error(t(errorMessageKey(error)));
+          toast.error(t(errorMessageKey(error), errorMessageParams(error)));
         }
       },
     };
@@ -81,6 +82,7 @@ export function CompanyFormDialog({ open, onOpenChange, company }: CompanyFormDi
           <DialogTitle>{t(isEdit ? "companies.editTitle" : "companies.newTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
+          {!isEdit && <LimitWarning limitKey="companies" />}
           <FormInput form={form} name="name" label={t("companies.fields.name")} />
           <FormInput
             form={form}

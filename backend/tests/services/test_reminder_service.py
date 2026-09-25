@@ -1,13 +1,14 @@
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import ConflictError, LimitReachedError, NotFoundError
 from app.models.reminder import Reminder
 from app.schemas.reminder import ReminderCreate, ReminderListQuery
 from app.schemas.user import CurrentUser
-from app.services import reminder_service
 from app.services.notifications.base import NotificationChannel
 from app.services.reminder_service import ReminderService
 from tests.factories import make_application, make_reminder
@@ -49,7 +50,7 @@ async def test_create_with_a_foreign_application_is_not_found(
 async def test_create_fails_when_pending_limit_is_reached(
     db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setattr(reminder_service, "MAX_PENDING_REMINDERS_PER_USER", 1)
+    monkeypatch.setattr(settings, "limit_reminders", 1)
     await make_reminder(db_session, user.id)
 
     with pytest.raises(LimitReachedError) as error:
@@ -62,19 +63,45 @@ async def test_create_fails_when_pending_limit_is_reached(
 
 
 @pytest.mark.asyncio
-async def test_done_and_dismissed_reminders_do_not_count_against_the_limit(
+async def test_done_and_dismissed_reminders_count_against_the_limit(
     db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setattr(reminder_service, "MAX_PENDING_REMINDERS_PER_USER", 1)
+    # Decisión 0011: si no contaran, crear, completar y repetir haría crecer la
+    # tabla sin tope.
+    monkeypatch.setattr(settings, "limit_reminders", 2)
     await make_reminder(db_session, user.id, status="done")
     await make_reminder(db_session, user.id, status="dismissed")
 
-    reminder = await ReminderService(db_session).create(
+    with pytest.raises(LimitReachedError):
+        await ReminderService(db_session).create(
+            user.id,
+            ReminderCreate(title="x", due_at=datetime.now(UTC) + timedelta(days=1)),
+        )
+
+
+@pytest.mark.asyncio
+async def test_deleting_a_reminder_frees_room_under_the_limit(
+    db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(settings, "limit_reminders", 1)
+    done = await make_reminder(db_session, user.id, status="done")
+    service = ReminderService(db_session)
+
+    await service.delete(user.id, done.id)
+    reminder = await service.create(
         user.id,
         ReminderCreate(title="x", due_at=datetime.now(UTC) + timedelta(days=1)),
     )
 
     assert reminder.id is not None
+
+
+@pytest.mark.asyncio
+async def test_delete_unknown_reminder_is_404(
+    db_session: AsyncSession, user: CurrentUser
+):
+    with pytest.raises(NotFoundError):
+        await ReminderService(db_session).delete(user.id, uuid.uuid4())
 
 
 @pytest.mark.asyncio

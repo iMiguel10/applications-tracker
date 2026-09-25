@@ -64,6 +64,26 @@ Si falta alguna de estas dos, la API no arranca.
 
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_TIMEOUT_SECONDS` y `EMAIL_FROM`. Son opcionales: sin `SMTP_HOST`, la aplicación arranca igual y no envía emails. Ver [Correo](correo.md).
 
+## Límites por cuenta
+
+| Variable | Por defecto | Qué limita |
+|---|---|---|
+| `LIMIT_APPLICATIONS` | 5000 | Solicitudes por cuenta, archivadas incluidas |
+| `LIMIT_COMPANIES` | 2000 | Empresas por cuenta |
+| `LIMIT_REMINDERS` | 5000 | Recordatorios por cuenta, en cualquier estado |
+
+Son opcionales y valen para todas las cuentas. Para dar otro valor a una cuenta concreta, sin tocar las demás:
+
+```bash
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com                       # ver su uso y sus límites
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications 10000    # excepción para esa cuenta
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --unlimited  # sin límite
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com all --unlimited         # sin límite en todo lo que lo admite
+docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --reset  # volver al valor global (all --reset, todos)
+```
+
+Rebajar un límite por debajo de lo que la cuenta ya tiene no borra nada: solo le impide crear más. Una cuenta sin límite ve en Preferencias cuánto lleva y "sin límite", y nunca recibe avisos.
+
 ## Entorno
 
 | Variable | Obligatoria | Qué es |

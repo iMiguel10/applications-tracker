@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +42,7 @@ export function DeleteAccountDialog({ email, open, onOpenChange }: DeleteAccount
   const confirm = () =>
     remove.mutate(undefined, {
       onSuccess: () => toast.success(t("account.delete.deletedToast")),
-      onError: (error) => toast.error(t(errorMessageKey(error))),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
 
   return (

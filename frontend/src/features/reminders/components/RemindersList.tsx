@@ -1,14 +1,16 @@
-import { Check, X } from "lucide-react";
+import { useState } from "react";
+import { Check, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { formatDateTime } from "@/shared/lib/format";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useCompleteReminder } from "../hooks/mutations/useCompleteReminder";
 import { useDismissReminder } from "../hooks/mutations/useDismissReminder";
+import { DeleteReminderDialog } from "./DeleteReminderDialog";
 import type { Reminder } from "../types/Reminder";
 
 interface RemindersListProps {
@@ -21,61 +23,81 @@ export function RemindersList({ reminders, showApplication = true }: RemindersLi
   const { t, i18n } = useTranslation();
   const complete = useCompleteReminder();
   const dismiss = useDismissReminder();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const onError = (error: Error) => toast.error(t(errorMessageKey(error)));
+  const onError = (error: Error) => toast.error(t(errorMessageKey(error), errorMessageParams(error)));
 
   return (
-    <ul className="grid gap-2">
-      {reminders.map((reminder) => {
-        const overdue = reminder.status === "pending" && new Date(reminder.due_at) < new Date();
-        return (
-          <li
-            key={reminder.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3"
-          >
-            <div className="grid gap-1">
-              <span className="font-medium">{reminder.title}</span>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span>{formatDateTime(reminder.due_at, i18n.language)}</span>
-                {overdue && <Badge variant="destructive">{t("reminders.overdue")}</Badge>}
-                {showApplication &&
-                  (reminder.application ? (
-                    <Link
-                      to={`/applications/${reminder.application.id}`}
-                      className="underline underline-offset-2 hover:text-foreground"
-                    >
-                      {reminder.application.position_title}
-                    </Link>
-                  ) : (
-                    <span>{t("reminders.noApplication")}</span>
-                  ))}
+    <>
+      <ul className="grid gap-2">
+        {reminders.map((reminder) => {
+          const overdue = reminder.status === "pending" && new Date(reminder.due_at) < new Date();
+          return (
+            <li
+              key={reminder.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3"
+            >
+              <div className="grid gap-1">
+                <span className="font-medium">{reminder.title}</span>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span>{formatDateTime(reminder.due_at, i18n.language)}</span>
+                  {overdue && <Badge variant="destructive">{t("reminders.overdue")}</Badge>}
+                  {showApplication &&
+                    (reminder.application ? (
+                      <Link
+                        to={`/applications/${reminder.application.id}`}
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
+                        {reminder.application.position_title}
+                      </Link>
+                    ) : (
+                      <span>{t("reminders.noApplication")}</span>
+                    ))}
+                </div>
               </div>
-            </div>
-            {reminder.status === "pending" && (
               <div className="flex gap-1">
+                {reminder.status === "pending" && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="hover:bg-success/10 hover:text-success-text"
+                      aria-label={t("reminders.complete")}
+                      onClick={() => complete.mutate(reminder.id, { onError })}
+                    >
+                      <Check />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                      aria-label={t("reminders.dismiss")}
+                      onClick={() => dismiss.mutate(reminder.id, { onError })}
+                    >
+                      <X />
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  className="hover:bg-success/10 hover:text-success-text"
-                  aria-label={t("reminders.complete")}
-                  onClick={() => complete.mutate(reminder.id, { onError })}
+                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={t("reminders.delete")}
+                  onClick={() => setDeletingId(reminder.id)}
                 >
-                  <Check />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hover:bg-destructive/10 hover:text-destructive"
-                  aria-label={t("reminders.dismiss")}
-                  onClick={() => dismiss.mutate(reminder.id, { onError })}
-                >
-                  <X />
+                  <Trash2 />
                 </Button>
               </div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+            </li>
+          );
+        })}
+      </ul>
+      <DeleteReminderDialog
+        reminderId={deletingId}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
+      />
+    </>
   );
 }

@@ -4,8 +4,9 @@ from typing import cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictError, LimitReachedError, NotFoundError
-from app.domain.reminder import MAX_PENDING_REMINDERS_PER_USER, ReminderStatus
+from app.core.exceptions import ConflictError, NotFoundError
+from app.domain.limits import LimitKey
+from app.domain.reminder import ReminderStatus
 from app.models.reminder import Reminder
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.reminder_repository import (
@@ -14,6 +15,7 @@ from app.repositories.reminder_repository import (
     ReminderSort,
 )
 from app.schemas.reminder import ReminderCreate, ReminderListQuery
+from app.services.limit_service import LimitService
 from app.services.notifications.base import NotificationChannel
 from app.services.notifications.in_app import InAppChannel
 
@@ -27,6 +29,7 @@ class ReminderService:
         self.session = session
         self.reminders = ReminderRepository(session)
         self.applications = ApplicationRepository(session)
+        self.limits = LimitService(session)
         # Costura de RF-53: el service solo conoce la interfaz. En el MVP siempre es
         # InAppChannel; un canal nuevo se inyecta aquí, no cambia el resto del service.
         self.channel = channel or InAppChannel()
@@ -50,11 +53,7 @@ class ReminderService:
         )
 
     async def create(self, user_id: uuid.UUID, data: ReminderCreate) -> Reminder:
-        if (
-            await self.reminders.count_pending(user_id)
-            >= MAX_PENDING_REMINDERS_PER_USER
-        ):
-            raise LimitReachedError("reminders", MAX_PENDING_REMINDERS_PER_USER)
+        await self.limits.check(user_id, LimitKey.REMINDERS)
         if data.application_id is not None:
             await self._ensure_application(user_id, data.application_id)
 
@@ -80,6 +79,13 @@ class ReminderService:
         await self.reminders.save(reminder)
         await self.session.commit()
         return reminder
+
+    async def delete(self, user_id: uuid.UUID, reminder_id: uuid.UUID) -> None:
+        """Borra un recordatorio en cualquier estado (decisión 0011): es lo que libera
+        espacio del límite, que cuenta también los hechos y descartados."""
+        reminder = await self._get_or_404(user_id, reminder_id)
+        await self.reminders.delete(reminder)
+        await self.session.commit()
 
     async def _get_or_404(self, user_id: uuid.UUID, reminder_id: uuid.UUID) -> Reminder:
         reminder = await self.reminders.get(user_id, reminder_id)

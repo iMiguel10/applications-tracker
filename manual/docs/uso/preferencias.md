@@ -18,6 +18,10 @@ El **tema** también se cambia con el botón de sol y luna de la barra superior.
 
 El número de días decide qué solicitudes aparecen en el bloque **Sin actividad** del [Dashboard](dashboard.md).
 
+## Ver el uso de tu cuenta
+
+La tarjeta **Uso de la cuenta** muestra, para cada límite, cuánto llevas, el máximo y cuánto te queda: por ejemplo, "42 de 5000 · quedan 4958". La barra se vuelve ámbar al pasar del 80 % y roja al llegar al tope. Los límites no se renuevan: se libera espacio al borrar solicitudes, empresas o recordatorios. Archivar una solicitud o completar un recordatorio no libera espacio.
+
 ## Ver si tu email está verificado
 
 La tarjeta **Email** muestra la dirección de tu cuenta y si está **Verificado** o **Sin verificar**. Mientras no lo esté, **Reenviar enlace** te envía otro email para [confirmarlo](primeros-pasos.md#confirmar-tu-email). Si la instalación no envía emails, la tarjeta lo dice en lugar del botón.

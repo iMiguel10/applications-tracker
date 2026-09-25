@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { FormActions, FormDatePicker, FormSelect, FormTextarea } from "@/shared/components/form";
 import {
   Dialog,
@@ -53,7 +53,7 @@ export function ChangeStatusDialog({ application, open, onOpenChange }: ChangeSt
           toast.success(t("applications.statusChanged"));
           onOpenChange(false);
         },
-        onError: (error) => toast.error(t(errorMessageKey(error))),
+        onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
       },
     );
 

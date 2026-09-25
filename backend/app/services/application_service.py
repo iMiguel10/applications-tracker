@@ -6,12 +6,13 @@ from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import AppException, LimitReachedError, NotFoundError
-from app.domain.application import MAX_APPLICATIONS_PER_USER, ApplicationOrigin
+from app.core.exceptions import AppException, NotFoundError
+from app.domain.application import ApplicationOrigin
 from app.domain.application_status import (
     STATUSES_WITHOUT_APPLIED_AT,
     ApplicationStatus,
 )
+from app.domain.limits import LimitKey
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.repositories.application_repository import (
@@ -28,6 +29,7 @@ from app.schemas.application import (
     ApplicationListQuery,
     ApplicationUpdate,
 )
+from app.services.limit_service import LimitService
 
 _ARCHIVED_FILTER: dict[str, bool | None] = {
     "active": False,
@@ -49,6 +51,7 @@ class ApplicationService:
         self.applications = ApplicationRepository(session)
         self.companies = CompanyRepository(session)
         self.status_changes = ApplicationStatusChangeRepository(session)
+        self.limits = LimitService(session)
 
     async def list(
         self, user_id: uuid.UUID, query: ApplicationListQuery
@@ -79,8 +82,7 @@ class ApplicationService:
         return application
 
     async def create(self, user_id: uuid.UUID, data: ApplicationCreate) -> Application:
-        if await self.applications.count(user_id) >= MAX_APPLICATIONS_PER_USER:
-            raise LimitReachedError("applications", MAX_APPLICATIONS_PER_USER)
+        await self.limits.check(user_id, LimitKey.APPLICATIONS)
         # La empresa debe existir y ser del usuario (T3). Si es de otro, 404 igual
         # que si no existiera; la FK compuesta lo impediría de todos modos.
         await self._ensure_company(user_id, data.company_id)

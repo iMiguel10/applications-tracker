@@ -19,4 +19,6 @@ export const reminderService = {
   complete: (id: string) => apiClient.post<Reminder>(`/reminders/${id}/complete`),
 
   dismiss: (id: string) => apiClient.post<Reminder>(`/reminders/${id}/dismiss`),
+
+  remove: (id: string) => apiClient.delete<void>(`/reminders/${id}`),
 };

@@ -8,12 +8,21 @@ export class ApiError extends Error {
   readonly status: number;
   /** Código estable de la API (p. ej. "company_name_taken"); se traduce con errors.<code>. */
   readonly code: string | null;
+  /** Datos extra del error, además de detail y code (p. ej. `limit` y `used` de
+   * un límite alcanzado, RF-142). Se pasan a la traducción del mensaje. */
+  readonly params: Record<string, unknown>;
 
-  constructor(status: number, message: string, code: string | null = null) {
+  constructor(
+    status: number,
+    message: string,
+    code: string | null = null,
+    params: Record<string, unknown> = {},
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    this.params = params;
   }
 }
 
@@ -32,7 +41,15 @@ async function throwIfError(response: Response): Promise<void> {
   const data = await response.json().catch(() => null);
   // Los 422 de validación de FastAPI traen `detail` como lista y sin `code`.
   const message = typeof data?.detail === "string" ? data.detail : response.statusText;
-  throw new ApiError(response.status, message, data?.code ?? null);
+  const params =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? Object.fromEntries(
+          Object.entries(data as Record<string, unknown>).filter(
+            ([key]) => key !== "detail" && key !== "code",
+          ),
+        )
+      : {};
+  throw new ApiError(response.status, message, data?.code ?? null, params);
 }
 
 async function request<T>(path: string, { body, headers, ...init }: RequestOptions = {}): Promise<T> {

@@ -18,8 +18,9 @@ Indica el **Título** y la **Fecha límite**, y pulsa **Guardar**.
 
 - **Marcar como hecho** cuando lo hayas hecho.
 - **Descartar** si ya no hace falta.
+- **Borrar** (el icono de la papelera) lo elimina de forma definitiva, esté como esté. Pide confirmación.
 
-Un recordatorio pendiente cuya fecha ya pasó aparece como **Vencido**. Los recordatorios no se editan ni se borran: si cambió la fecha, descarta el antiguo y crea otro.
+Un recordatorio pendiente cuya fecha ya pasó aparece como **Vencido**. Los recordatorios no se editan: si cambió la fecha, descarta o borra el antiguo y crea otro.
 
 ## Dónde verlos
 
@@ -32,5 +33,5 @@ Los recordatorios se muestran en la aplicación: por ahora no se envían por ema
 :::
 
 :::info Límite
-Hasta 500 recordatorios pendientes por cuenta. Los hechos y descartados no cuentan.
+Hasta 5000 recordatorios por cuenta, salvo que la instalación fije otro valor, **contando también los hechos y los descartados**. Para liberar espacio, borra los que ya no necesites: completarlos o descartarlos no libera espacio. Al pasar del 80 %, el formulario te avisa de cuántos te quedan.
 :::

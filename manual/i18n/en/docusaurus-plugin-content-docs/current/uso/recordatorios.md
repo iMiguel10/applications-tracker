@@ -18,8 +18,9 @@ Enter the **Title** and the **Due date**, and click **Save**.
 
 - **Mark as done** once you have done it.
 - **Dismiss** it if it is no longer needed.
+- **Delete** (the bin icon) removes it for good, whatever its status. It asks for confirmation.
 
-A pending reminder whose date has passed is shown as **Overdue**. Reminders cannot be edited or deleted: if the date changed, dismiss the old one and create a new one.
+A pending reminder whose date has passed is shown as **Overdue**. Reminders cannot be edited: if the date changed, dismiss or delete the old one and create a new one.
 
 ## Where to see them
 
@@ -32,5 +33,5 @@ Reminders are shown in the application: for now they are not sent by email.
 :::
 
 :::info Limit
-Up to 500 pending reminders per account. Done and dismissed ones do not count.
+Up to 5,000 reminders per account, unless the installation sets another value, **done and dismissed ones included**. To free up room, delete the ones you no longer need: completing or dismissing them doesn't free up room. Past 80 %, the form tells you how many you have left.
 :::

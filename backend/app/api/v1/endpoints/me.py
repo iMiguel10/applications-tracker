@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, status
 
-from app.api.v1.deps import get_current_user, get_user_service
+from app.api.v1.deps import get_current_user, get_limit_service, get_user_service
+from app.domain.limits import WARNING_RATIO
+from app.schemas.usage import LimitUsageRead, UsageRead
 from app.schemas.user import CurrentUser, MeRead, PreferencesRead, PreferencesUpdate
+from app.services.limit_service import LimitService
 from app.services.user_service import UserService
 
 router = APIRouter(
@@ -58,3 +61,25 @@ async def update_preferences(
     """Actualización parcial: solo se cambian los campos enviados. Enviar
     `"language": null` vuelve a seguir el idioma del navegador."""
     return await users.update_preferences(current_user.id, data)
+
+
+@router.get("/usage", summary="Consumo de los límites de la cuenta")
+async def read_usage(
+    current_user: CurrentUser = Depends(get_current_user),
+    limits: LimitService = Depends(get_limit_service),
+) -> UsageRead:
+    """Para cada límite de la cuenta (RF-140, RF-141): cuánto lleva, su límite y
+    cuánto le queda. Al alcanzar uno, la creación responde **409** con el código
+    del límite y los mismos números: `{"detail", "code", "limit", "used"}`.
+
+    | `key` | Qué cuenta | Código al alcanzarlo |
+    |---|---|---|
+    | `applications` | Solicitudes, archivadas incluidas | `applications_limit_reached` |
+    | `companies` | Empresas | `companies_limit_reached` |
+    | `reminders` | Recordatorios en cualquier estado | `reminders_limit_reached` |
+    """
+    usage = await limits.usage(current_user.id)
+    return UsageRead(
+        limits=[LimitUsageRead.model_validate(item) for item in usage],
+        warning_ratio=WARNING_RATIO,
+    )

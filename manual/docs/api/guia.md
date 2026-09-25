@@ -110,12 +110,18 @@ El estado de una solicitud **no se cambia con `PATCH`**: tiene su propio endpoin
 
 ## Límites
 
-| Recurso | Límite por cuenta | Al superarlo |
+| Recurso | Límite por cuenta (por defecto) | Al superarlo |
 |---|---|---|
-| Solicitudes | 5 000 | 409 `applications_limit_reached` |
-| Empresas | 2 000 | 409 `companies_limit_reached` |
-| Recordatorios pendientes | 500 | 409 `reminders_limit_reached` |
-| Notas | 5 000 caracteres | 422 |
+| Solicitudes | 5000 | 409 `applications_limit_reached` |
+| Empresas | 2000 | 409 `companies_limit_reached` |
+| Recordatorios, en cualquier estado | 5000 | 409 `reminders_limit_reached` (borrar libera espacio: `DELETE /reminders/{id}`) |
+| Notas | 5000 caracteres | 422 |
+
+Los de cantidad pueden ser otros en cada instalación, e incluso en cada cuenta. `GET /api/v1/me/usage` dice los de la cuenta de la sesión, con lo usado y lo que queda. Al alcanzar uno, el 409 lleva además los números:
+
+```json
+{ "detail": "Limit reached: 2000 of 2000", "code": "companies_limit_reached", "limit": 2000, "used": 2000 }
+```
 
 ## Llamadas desde un navegador
 

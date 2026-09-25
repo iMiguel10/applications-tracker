@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +35,7 @@ export function UndoStatusChangeDialog({
         onOpenChange(false);
       },
       onError: (error) => {
-        toast.error(t(errorMessageKey(error)));
+        toast.error(t(errorMessageKey(error), errorMessageParams(error)));
         onOpenChange(false);
       },
     });

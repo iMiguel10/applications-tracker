@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { EmptyState } from "@/shared/components/common/EmptyState";
@@ -45,7 +45,7 @@ export function ApplicationsPage() {
             disabled={exportCsv.isPending}
             onClick={() =>
               exportCsv.mutate(undefined, {
-                onError: (error) => toast.error(t(errorMessageKey(error))),
+                onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
               })
             }
           >

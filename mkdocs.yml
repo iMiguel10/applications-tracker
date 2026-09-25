@@ -69,3 +69,4 @@ nav:
       - "0008 — Borrado de cuenta en F8": decisiones/0008-borrado-de-cuenta-en-f8.md
       - "0009 — F8 antes que F7": decisiones/0009-f8-antes-que-f7.md
       - "0010 — Docusaurus para producción": decisiones/0010-docusaurus-para-la-documentacion-de-produccion.md
+      - "0011 — Límite de recordatorios en todos los estados": decisiones/0011-limite-de-recordatorios-en-todos-los-estados.md

@@ -4,10 +4,10 @@ from datetime import UTC, date, datetime
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import AppException, LimitReachedError, NotFoundError
 from app.schemas.application import ApplicationCreate, ApplicationUpdate
 from app.schemas.user import CurrentUser
-from app.services import application_service
 from app.services.application_service import ApplicationService
 from tests.factories import make_application, make_company
 
@@ -58,7 +58,7 @@ async def test_create_with_unknown_company_is_not_found(
 async def test_create_fails_when_limit_is_reached(
     db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setattr(application_service, "MAX_APPLICATIONS_PER_USER", 1)
+    monkeypatch.setattr(settings, "limit_applications", 1)
     existing = await make_application(db_session, user.id)
 
     with pytest.raises(LimitReachedError) as error:

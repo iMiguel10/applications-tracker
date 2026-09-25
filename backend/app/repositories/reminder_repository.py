@@ -7,7 +7,6 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.domain.reminder import ReminderStatus
 from app.models.reminder import Reminder
 
 ReminderSort = Literal["due_at", "created_at"]
@@ -46,18 +45,19 @@ class ReminderRepository:
             .execution_options(populate_existing=True)
         )
 
-    async def count_pending(self, user_id: uuid.UUID) -> int:
-        """Para la cuota (especificación §10): solo cuentan los pendientes, no el
-        histórico de hechos y descartados."""
+    async def count(self, user_id: uuid.UUID) -> int:
+        """Para el límite (especificación §10): todos los estados, también los
+        hechos y descartados (decisión 0011)."""
         total = await self.session.scalar(
             select(func.count())
             .select_from(Reminder)
-            .where(
-                Reminder.user_id == user_id,
-                Reminder.status == ReminderStatus.PENDING.value,
-            )
+            .where(Reminder.user_id == user_id)
         )
         return total or 0
+
+    async def delete(self, reminder: Reminder) -> None:
+        await self.session.delete(reminder)
+        await self.session.flush()
 
     async def list(
         self,

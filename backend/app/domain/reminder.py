@@ -15,8 +15,3 @@ class ReminderStatus(StrEnum):
     PENDING = "pending"
     DONE = "done"
     DISMISSED = "dismissed"
-
-
-# Límite de la especificación §10: cuenta solo los recordatorios pendientes, no el
-# histórico de hechos y descartados.
-MAX_PENDING_REMINDERS_PER_USER = 500

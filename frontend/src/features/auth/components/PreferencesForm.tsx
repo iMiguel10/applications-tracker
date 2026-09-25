@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { useTheme } from "@/app/providers/useTheme";
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { FormActions, FormCombobox, FormInput, FormSelect } from "@/shared/components/form";
 import { Switch } from "@/shared/components/ui/switch";
 import { useUpdatePreferences } from "../hooks/mutations/useUpdatePreferences";
@@ -69,7 +69,7 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
   const onSubmit = (values: PreferencesFormValues) => {
     update.mutate(values, {
       onSuccess: () => toast.success(t("preferences.saved")),
-      onError: (error) => toast.error(t(errorMessageKey(error))),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
   };
 

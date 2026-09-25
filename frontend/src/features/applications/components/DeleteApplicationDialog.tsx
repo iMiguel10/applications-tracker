@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +37,7 @@ export function DeleteApplicationDialog({
         toast.success(t("applications.deleted"));
         onDeleted();
       },
-      onError: (error) => toast.error(t(errorMessageKey(error))),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
 
   return (

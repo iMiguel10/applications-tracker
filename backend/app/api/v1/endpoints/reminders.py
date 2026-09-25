@@ -43,7 +43,9 @@ async def create_reminder(
 ) -> ReminderRead:
     """Crea un recordatorio, opcionalmente ligado a una solicitud (RF-50). 404 si
     `application_id` no existe o es de otro usuario. 409
-    `reminders_limit_reached` al superar 500 recordatorios **pendientes**."""
+    `reminders_limit_reached` al alcanzar el límite de recordatorios de la cuenta
+    (5 000 por defecto, contando también los hechos y descartados), con `limit` y
+    `used`; el consumo, en `GET /me/usage`. Borrar recordatorios libera espacio."""
     return ReminderRead.model_validate(await service.create(current_user.id, data))
 
 
@@ -77,3 +79,20 @@ async def dismiss_reminder(
     return ReminderRead.model_validate(
         await service.dismiss(current_user.id, reminder_id)
     )
+
+
+@router.delete(
+    "/{reminder_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Borrar un recordatorio",
+    responses=error_responses(404),
+)
+async def delete_reminder(
+    reminder_id: uuid.UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: ReminderService = Depends(get_reminder_service),
+) -> None:
+    """Borra un recordatorio en cualquier estado, de forma definitiva. Es la manera
+    de liberar espacio del límite de recordatorios, que cuenta también los hechos y
+    los descartados."""
+    await service.delete(current_user.id, reminder_id)

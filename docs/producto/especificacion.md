@@ -167,7 +167,7 @@ Usuario
 ### Recordatorios (RF-50…)
 
 - **RF-50** Crear recordatorios con título, fecha límite y, opcionalmente, una solicitud asociada.
-- **RF-51** Marcarlos como hechos o descartarlos.
+- **RF-51** Marcarlos como hechos o descartarlos, y borrarlos en cualquier estado (el borrado, desde F11: [0011](../decisiones/0011-limite-de-recordatorios-en-todos-los-estados.md)).
 - **RF-52** Ver los recordatorios pendientes, vencidos y de los próximos 7 días, en el dashboard y en el detalle de la solicitud.
 - **RF-53** Todo recordatorio tiene un **canal**. En el MVP solo existe `in_app`: se muestra en la aplicación y no se envía nada.
 
@@ -251,11 +251,11 @@ Usuario
 
 ### Límites y uso (RF-140…) · v2
 
-- **RF-140** `[F11]` Límites de creación por usuario para solicitudes, empresas, recordatorios pendientes, documentos, almacenamiento total y uso de IA (§10). Los tres primeros ya existen desde el MVP; la v2 añade el resto y los hace visibles.
-- **RF-141** `[F11]` Página de **uso**: para cada límite, cuánto lleva consumido el usuario, su límite y **cuánto le queda** (por ejemplo "Solicitudes: 42 de 5 000 · quedan 4 958"), con una barra de progreso. Los usos gratuitos de IA se muestran igual, dejando claro que **no se renuevan**; con clave propia se muestra "clave propia de <proveedor>" en su lugar.
+- **RF-140** `[F11]` Límites de creación por usuario para solicitudes, empresas, recordatorios, documentos, almacenamiento total y uso de IA (§10). Los tres primeros ya existen desde el MVP; la v2 añade el resto y los hace visibles.
+- **RF-141** `[F11]` Vista de **uso** (construida como tarjeta de Preferencias mientras solo haya tres límites, a elección del usuario): para cada límite, cuánto lleva consumido el usuario, su límite y **cuánto le queda** (por ejemplo "Solicitudes: 42 de 5 000 · quedan 4 958"), con una barra de progreso. Los usos gratuitos de IA se muestran igual, dejando claro que **no se renuevan**; con clave propia se muestra "clave propia de <proveedor>" en su lugar.
 - **RF-144** `[F11]` El consumo también se ve **donde se gasta**, sin ir a la página de uso: al subir un documento, cuánto almacenamiento queda; al usar la IA, cuántos usos gratuitos quedan (o que se usará la clave propia). Al pasar del 80 % de un límite se avisa antes de llegar al tope.
 - **RF-142** `[F11]` Al alcanzar un límite, el error dice cuál y cuánto, con un código estable; nunca un error genérico.
-- **RF-143** `[F11]` Los límites son globales por configuración, con una **excepción por usuario** que se ajusta con un script de administración (sin interfaz: la administración sigue `[C]`).
+- **RF-143** `[F11]` Los límites son globales por configuración, con una **excepción por usuario** que se ajusta con un script de administración (sin interfaz: la administración sigue `[C]`). La excepción puede dejar a una cuenta **sin límite**, salvo en los límites que protegen un recurso con coste (almacenamiento e IA), que tienen tope siempre.
 
 ## 6. Ciclo de vida de la solicitud
 
@@ -420,7 +420,7 @@ Requisitos derivados:
 | Empresas por usuario | 2 000 | Ídem. |
 | Tamaño de página del listado | 20 por defecto, máximo 100 | Evita respuestas enormes. |
 | Longitud de las notas | 5 000 caracteres | Son notas, no documentos. |
-| Recordatorios pendientes por usuario | 500 | Evita el abuso. |
+| Recordatorios por usuario, en cualquier estado | 5 000 | Evita el abuso: si solo contaran los pendientes, crear, completar y repetir haría crecer la tabla sin tope ([0011](../decisiones/0011-limite-de-recordatorios-en-todos-los-estados.md)). Borrarlos libera espacio. |
 | **v2** · Documentos en la biblioteca | 100 por usuario | Muy por encima del uso real (varios CVs y cartas por proceso activo). |
 | **v2** · Tamaño de un PDF subido | 5 MB | Un CV de texto pesa decenas o cientos de KB. |
 | **v2** · Almacenamiento total | 100 MB por usuario | Con registro abierto, el disco es el recurso más fácil de agotar. |

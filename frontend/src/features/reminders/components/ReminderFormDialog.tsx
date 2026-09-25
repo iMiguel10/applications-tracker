@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import {
   type AsyncComboboxOption,
   FormActions,
@@ -27,6 +27,7 @@ import {
   type ReminderFormValues,
 } from "../schemas/reminder.schema";
 import { useCreateReminder } from "../hooks/mutations/useCreateReminder";
+import { LimitWarning } from "@/features/usage/components/LimitWarning";
 
 const APPLICATION_OPTIONS_KEY = [...applicationKeys.all, "options"] as const;
 
@@ -74,7 +75,7 @@ export function ReminderFormDialog({
         toast.success(t("reminders.created"));
         onOpenChange(false);
       },
-      onError: (error) => toast.error(t(errorMessageKey(error))),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
 
   return (
@@ -84,6 +85,7 @@ export function ReminderFormDialog({
           <DialogTitle>{t("reminders.newTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
+          <LimitWarning limitKey="reminders" />
           <FormInput form={form} name="title" label={t("reminders.fields.title")} />
           <FormDateTimePicker
             form={form}

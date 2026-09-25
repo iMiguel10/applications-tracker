@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,7 @@ export function DeleteCompanyDialog({ company, onOpenChange }: DeleteCompanyDial
         toast.success(t("companies.deleted"));
         onOpenChange(false);
       },
-      onError: (error) => toast.error(t(errorMessageKey(error))),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
   };
 

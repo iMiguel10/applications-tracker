@@ -12,7 +12,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
-import { errorMessageKey } from "@/shared/lib/errors";
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { formatDateOnly, formatDateTime, formatSalaryRange } from "@/shared/lib/format";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
@@ -63,7 +63,7 @@ export function ApplicationDetailPage() {
       {
         onSuccess: () =>
           toast.success(t(archived ? "applications.unarchivedToast" : "applications.archivedToast")),
-        onError: (error) => toast.error(t(errorMessageKey(error))),
+        onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
       },
     );
 

@@ -7,10 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import (
     AppException,
     ConflictError,
-    LimitReachedError,
     NotFoundError,
 )
-from app.domain.application import MAX_COMPANIES_PER_USER
+from app.domain.limits import LimitKey
 from app.models.company import Company
 from app.repositories.company_repository import (
     CompanyRepository,
@@ -18,6 +17,7 @@ from app.repositories.company_repository import (
     CompanyWithCount,
 )
 from app.schemas.company import CompanyCreate, CompanyListQuery, CompanyUpdate
+from app.services.limit_service import LimitService
 
 NAME_UNIQUE_INDEX = "uq_companies_user_id_lower_name"
 
@@ -28,6 +28,7 @@ class CompanyService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.companies = CompanyRepository(session)
+        self.limits = LimitService(session)
 
     async def list(
         self, user_id: uuid.UUID, query: CompanyListQuery
@@ -47,8 +48,7 @@ class CompanyService:
         return CompanyWithCount(company, count)
 
     async def create(self, user_id: uuid.UUID, data: CompanyCreate) -> CompanyWithCount:
-        if await self.companies.count(user_id) >= MAX_COMPANIES_PER_USER:
-            raise LimitReachedError("companies", MAX_COMPANIES_PER_USER)
+        await self.limits.check(user_id, LimitKey.COMPANIES)
         await self._ensure_name_available(user_id, data.name)
 
         company = Company(user_id=user_id, **data.model_dump())

@@ -1,6 +1,6 @@
 # Límites, rate limiting y superficie pública
 
-> Estado: **diseño, sin construir** (F11, F12, F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
+> Estado: **§1 construido en F11** (límites de solicitudes, empresas y recordatorios); el resto, diseño (F11, F12, F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
 
 Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento reúne las tres defensas que eso exige: **cuánto** puede crear cada usuario (límites), **a qué ritmo** se puede llamar a la API (rate limiting) y **qué** responde sin sesión (superficie pública).
 
@@ -17,7 +17,7 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 
 | Límite | Cómo | Por qué así |
 |---|---|---|
-| Solicitudes, empresas, recordatorios pendientes | Contar e insertar en la misma transacción, **sin** bloqueo (como en la v1) | Pasarse en uno por una carrera no cuesta nada |
+| Solicitudes, empresas, recordatorios (en cualquier estado, [0011](../decisiones/0011-limite-de-recordatorios-en-todos-los-estados.md)) | Contar e insertar en la misma transacción, **sin** bloqueo (como en la v1) | Pasarse en uno por una carrera no cuesta nada |
 | Documentos y almacenamiento | Con la fila del usuario bloqueada (A30) | Disco |
 | Usos gratuitos de IA | Con la fila del usuario bloqueada, contando lo que está en curso ([IA §6](ia.md#6-elegir-la-clave-y-contar-el-consumo)) | Dinero |
 
@@ -25,6 +25,12 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 
 - `GET /me/usage` devuelve, por cada límite, `used`, `limit`, `remaining` y si se renueva. El frontend calcula ahí mismo el aviso del 80 %.
 - Al superar un límite, el error lleva el código de siempre (`<recurso>_limit_reached`) **y** los números: `{"detail", "code", "limit", "used"}`. `AppException` gana un campo `extra` opcional para datos como estos, que el handler añade a la respuesta.
+
+**Construido en F11:** `domain/limits.py` (`LimitKey`, `LIMIT_RULES` con el código de error de cada límite y si se renueva, `WARNING_RATIO`), los `LIMIT_*` en `core/config.py`, la tabla `user_limit_overrides` (clave primaria `user_id` + `limit_key`, `ON DELETE CASCADE`), `LimitService` (`check`, `usage`, `set_override`, `clear_override`), `GET /me/usage` con `warning_ratio` y `scripts/set_user_limit.py`. Los services de solicitudes, empresas y recordatorios llaman a `LimitService.check` en lugar de comparar con una constante. Documentos, almacenamiento e IA se añadirán a `LimitKey` en F13 y F15.
+
+- **"Sin límite" por cuenta, solo donde no cuesta nada.** Una excepción con `value` nulo deja a la cuenta sin tope en ese límite (`set_user_limit … --unlimited`, o `all --unlimited`); `GET /me/usage` responde `limit` y `remaining` a `null` y la interfaz muestra "sin límite", sin barra ni avisos. **Decisión del usuario en F11: los límites que protegen un recurso con coste (almacenamiento, IA) tienen tope siempre.** Cada `LimitRule` declara `allows_unlimited` (falso por defecto, así que un límite nuevo nace protegido) y la BD lo impone además con el CHECK `unlimited_only_where_allowed`, que lista las claves permitidas. Una prueba compara esa lista con la del dominio.
+- **Los códigos de error no cambian.** `LimitKey.REMINDERS` responde `reminders_limit_reached`, el código del MVP: el código es contrato de la API. Lo que cambió al construirlo es qué cuenta: todos los estados, no solo los pendientes ([0011](../decisiones/0011-limite-de-recordatorios-en-todos-los-estados.md)).
+- **En la interfaz:** la tarjeta **Uso de la cuenta** de Preferencias (el usuario la prefirió a una página propia mientras solo haya tres límites; se moverá a una página cuando lleguen almacenamiento e IA) y `LimitWarning` en los formularios de creación, que no pinta nada por debajo del 80 %. Los mensajes de error interpolan `limit` y `used`: `ApiError` guarda los campos extra de la respuesta y `errorMessageParams` los pasa a la traducción.
 
 > **Trampa — contadores que se desincronizan.** Guardar "usos consumidos" en una columna que se incrementa es más rápido de leer, pero cualquier camino que borre o cree sin pasar por el incremento (un borrado en cascada, un script, un fallo a mitad) la deja mal para siempre. El consumo se **calcula** sobre las tablas reales (`COUNT`, `SUM(size_bytes)`), que con los índices por `user_id` es barato. La única excepción que se paga en rendimiento, la cuota de IA, también se calcula desde `ai_proposals`.
 

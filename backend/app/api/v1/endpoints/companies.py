@@ -59,7 +59,8 @@ async def create_company(
 ) -> CompanyRead:
     """Crea una empresa. El nombre es único por usuario sin distinguir mayúsculas:
     si ya existe, responde 409 `company_name_taken`. 409
-    `companies_limit_reached` al superar 2 000 empresas."""
+    `companies_limit_reached` al alcanzar el límite de empresas de la cuenta (2 000
+    por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`."""
     return _read(await service.create(current_user.id, data))
 
 

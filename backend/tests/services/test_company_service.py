@@ -1,10 +1,10 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import ConflictError, LimitReachedError
 from app.schemas.company import CompanyCreate, CompanyUpdate
 from app.schemas.user import CurrentUser
-from app.services import company_service
 from app.services.company_service import CompanyService
 from tests.factories import make_application, make_company
 
@@ -51,7 +51,7 @@ async def test_delete_company_with_applications_is_rejected(
 async def test_create_fails_when_limit_is_reached(
     db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setattr(company_service, "MAX_COMPANIES_PER_USER", 1)
+    monkeypatch.setattr(settings, "limit_companies", 1)
     await make_company(db_session, user.id)
 
     with pytest.raises(LimitReachedError) as error:
