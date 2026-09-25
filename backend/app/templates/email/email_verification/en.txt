@@ -1,0 +1,10 @@
+{% set subject = "Confirm your email for Applications Tracker" -%}
+Hi,
+
+To confirm that this email is yours, open this link:
+
+{{ link }}
+
+The link expires in {{ expires_in_hours }} hours. If it expires, you can request another one from the notice you will see in the application.
+
+If you didn't create an Applications Tracker account, ignore this email.

@@ -28,6 +28,9 @@ class UserService:
         email = await self.identities.get_email(current_user.supertokens_user_id)
         return MeRead(id=current_user.id, email=email)
 
+    async def is_email_verified(self, supertokens_user_id: str) -> bool:
+        return await self.identities.is_email_verified(supertokens_user_id)
+
     async def get_preferences(self, user_id: uuid.UUID) -> PreferencesRead:
         # get_current_user ya crea la fila (invariante 8): si no existe, es un bug.
         user = await self.users.get_by_id(user_id)

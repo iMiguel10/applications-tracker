@@ -2,12 +2,13 @@ from collections.abc import Callable
 
 from supertokens_python import InputAppInfo, SupertokensConfig, init
 from supertokens_python.ingredients.emaildelivery.types import EmailDeliveryConfig
-from supertokens_python.recipe import emailpassword, session
+from supertokens_python.recipe import emailpassword, emailverification, session
 from supertokens_python.recipe.emailpassword import EmailPasswordOverrideConfig
 
 from app.core.auth_emails import (
     QueuedPasswordResetEmail,
-    revoke_sessions_after_password_reset,
+    QueuedVerificationEmail,
+    emailpassword_api_overrides,
 )
 from app.core.config import settings
 from app.infra.queue import JobQueue
@@ -52,7 +53,16 @@ def init_supertokens(job_queue: Callable[[], JobQueue] | None = None) -> None:
                     service=QueuedPasswordResetEmail(job_queue)
                 ),
                 override=EmailPasswordOverrideConfig(
-                    apis=revoke_sessions_after_password_reset
+                    apis=emailpassword_api_overrides(job_queue)
+                ),
+            ),
+            # OPTIONAL (A38): la sesión vale esté o no verificado el email. Qué
+            # exige verificación lo decide el backend endpoint por endpoint, con
+            # require_verified_email (RF-06).
+            emailverification.init(
+                mode="OPTIONAL",
+                email_delivery=EmailDeliveryConfig(
+                    service=QueuedVerificationEmail(job_queue)
                 ),
             ),
         ],

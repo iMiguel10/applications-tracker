@@ -11,6 +11,16 @@ sidebar_label: Primeros pasos
 
 La contraseña debe tener **al menos 8 caracteres e incluir letras y números**. Si el email ya está registrado, la aplicación te lo dice: usa **Iniciar sesión** en su lugar.
 
+## Confirmar tu email
+
+Al crear la cuenta recibes un email para confirmar que la dirección es tuya. Pulsa **Confirmar mi email** en ese email: se abre **Verifica tu email** y, si todo va bien, dice **Email verificado**. Desde ahí, **Ir a la aplicación**.
+
+- Puedes usar la aplicación sin confirmarlo. Mientras tanto, un aviso bajo la barra superior te lo recuerda.
+- Si no te llega o el enlace caduca (dura 24 horas), pulsa **Reenviar enlace** en ese aviso o en la tarjeta **Email** de [Preferencias](preferencias.md), que muestra además si ya está verificado.
+- El enlace funciona también en otro dispositivo, por ejemplo en el móvil. Al volver a la pestaña de la aplicación, el aviso desaparece solo.
+
+Si la instalación no envía emails, no verás el aviso.
+
 ## Iniciar y cerrar sesión
 
 - Para entrar, escribe tu email y tu contraseña y pulsa **Iniciar sesión**. La sesión se mantiene aunque recargues la página o cierres la pestaña.

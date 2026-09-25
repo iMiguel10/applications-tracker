@@ -205,6 +205,17 @@
       "success": "Contraseña guardada. Inicia sesión con la nueva.",
       "invalidLink": "Este enlace no es válido: ya se usó, ha caducado o está incompleto. Cada enlace sirve una sola vez.",
       "requestNew": "Pedir un enlace nuevo"
+    },
+    "verifyEmail": {
+      "title": "Verifica tu email",
+      "subtitle": "Confirmar tu email protege tu cuenta y activa las funciones que lo necesitan.",
+      "verifying": "Verificando tu email…",
+      "success": "Email verificado. Ya puedes usar todas las funciones.",
+      "invalidLink": "Este enlace no es válido: ya se usó, ha caducado o está incompleto. Si tu email aún no está verificado, pide otro desde el aviso de la aplicación.",
+      "goToApp": "Ir a la aplicación",
+      "banner": "Confirma tu email: al registrarte te enviamos un enlace a {{email}}.",
+      "bannerResent": "Enlace reenviado a {{email}}. Caduca en 24 horas; si no lo ves, revisa la carpeta de spam.",
+      "resend": "Reenviar enlace"
     }
   },
   "preferences": {
@@ -245,6 +256,13 @@
       "send": "Enviar enlace para cambiarla",
       "sent": "Enlace enviado a {{email}}. Caduca en 1 hora; si no lo ves, revisa la carpeta de spam.",
       "unavailable": "Esta instalación no envía emails, así que la contraseña no se puede cambiar desde aquí. Pide ayuda a quien la administra."
+    },
+    "email": {
+      "title": "Email",
+      "verified": "Verificado",
+      "unverified": "Sin verificar",
+      "pending": "Confirma que este email es tuyo con el enlace que te enviamos al registrarte. Si no lo encuentras o ha caducado, pide otro.",
+      "unavailable": "Esta instalación no envía emails, así que el email no se puede verificar desde aquí."
     }
   },
   "nav": {

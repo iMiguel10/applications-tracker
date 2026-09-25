@@ -12,7 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.infra.email.recording import RecordingEmailSender
-from app.infra.queue import InMemoryJobQueue, JobArg, QueueUnavailableError
+from app.infra.queue import (
+    EnqueuedJob,
+    InMemoryJobQueue,
+    JobArg,
+    QueueUnavailableError,
+)
 from app.jobs.auth_emails import SEND_PASSWORD_RESET_EMAIL
 from app.main import app
 from app.services.auth_email_service import AuthEmailService
@@ -26,6 +31,12 @@ def _queue() -> InMemoryJobQueue:
     queue = app.state.job_queue
     assert isinstance(queue, InMemoryJobQueue)
     return queue
+
+
+def _reset_jobs() -> list[EnqueuedJob]:
+    # El registro encola además el email de verificación: aquí solo interesan los
+    # de recuperación.
+    return [job for job in _queue().jobs if job.job == SEND_PASSWORD_RESET_EMAIL]
 
 
 async def _signup(client: AsyncClient) -> str:
@@ -83,7 +94,7 @@ async def test_same_response_whether_the_account_exists_or_not(
 
     assert existing.status_code == missing.status_code == 200
     assert existing.json() == missing.json() == {"status": "OK"}
-    [job] = _queue().jobs
+    [job] = _reset_jobs()
     assert job.job == SEND_PASSWORD_RESET_EMAIL
     assert job.max_attempts == 1
 
@@ -96,7 +107,7 @@ async def test_job_carries_ids_and_browser_language_but_no_token(
 
     await _request_reset(real_auth_client, email, **{"Accept-Language": "en-GB,en"})
 
-    [job] = _queue().jobs
+    [job] = _reset_jobs()
     # Nada más que esto: el token daría acceso a la cuenta y Valkey guarda los
     # trabajos en disco. El worker genera el enlace al enviar.
     assert set(job.kwargs) == {"supertokens_user_id", "tenant_id", "language_hint"}
@@ -125,7 +136,7 @@ async def test_link_points_to_website_domain_and_works_once(
     email = await _signup(real_auth_client)
     await _request_reset(real_auth_client, email)
 
-    link = await _run_job(db_session, _queue().jobs[0].kwargs)
+    link = await _run_job(db_session, _reset_jobs()[0].kwargs)
 
     # T14: el dominio sale de WEBSITE_DOMAIN, y la ruta es la del frontend.
     assert link.startswith(f"{settings.website_domain}/reset-password?token=")
@@ -143,7 +154,7 @@ async def test_new_password_must_pass_the_signup_policy(
 ):
     email = await _signup(real_auth_client)
     await _request_reset(real_auth_client, email)
-    link = await _run_job(db_session, _queue().jobs[0].kwargs)
+    link = await _run_job(db_session, _reset_jobs()[0].kwargs)
 
     response = await _reset(real_auth_client, link, "corta")
 
@@ -159,7 +170,7 @@ async def test_reset_revokes_every_existing_session(
     stolen = httpx.Cookies(real_auth_client.cookies)
     real_auth_client.cookies.clear()
     await _request_reset(real_auth_client, email)
-    link = await _run_job(db_session, _queue().jobs[0].kwargs)
+    link = await _run_job(db_session, _reset_jobs()[0].kwargs)
 
     assert (await _reset(real_auth_client, link, NEW_PASSWORD)).json()["status"] == "OK"
 

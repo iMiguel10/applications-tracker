@@ -9,13 +9,14 @@ La aplicación envía el correo a través de un servidor **SMTP** que eliges tú
 
 | Email | Cuándo |
 |---|---|
+| Confirmar el email | Al crear la cuenta, y cuando el usuario pulsa **Reenviar enlace** |
 | Recuperar o cambiar la contraseña | Lo pide el usuario desde el inicio de sesión o desde Preferencias |
 
 Salen en el idioma de la cuenta (o, si no lo ha fijado, en el que ve en pantalla), en español o en inglés.
 
 - **Los envía el servicio `worker`**, no la API: si el `worker` está parado, los emails se quedan en cola y salen cuando arranca. En sus registros (`docker compose logs worker`) queda cada envío y cada fallo, con el id del usuario y sin la dirección.
 - **Los enlaces de los emails usan `WEBSITE_DOMAIN`.** Si se queda con el valor de desarrollo (`http://localhost:5173`), los emails llegan bien, pero su enlace no lleva a ninguna parte. Ver [Variables](variables.md).
-- **Sin SMTP la aplicación funciona igual:** no ofrece recuperar ni cambiar la contraseña, y lo dice en pantalla.
+- **Sin SMTP la aplicación funciona igual:** no ofrece recuperar ni cambiar la contraseña, lo dice en pantalla, y no pide confirmar el email.
 
 ## Variables
 

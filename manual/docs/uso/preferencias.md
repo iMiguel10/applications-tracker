@@ -17,6 +17,10 @@ El **tema** también se cambia con el botón de sol y luna de la barra superior.
 
 El número de días decide qué solicitudes aparecen en el bloque **Sin actividad** del [Dashboard](dashboard.md).
 
+## Ver si tu email está verificado
+
+La tarjeta **Email** muestra la dirección de tu cuenta y si está **Verificado** o **Sin verificar**. Mientras no lo esté, **Reenviar enlace** te envía otro email para [confirmarlo](primeros-pasos.md#confirmar-tu-email). Si la instalación no envía emails, la tarjeta lo dice en lugar del botón.
+
 ## Cambiar la contraseña
 
 En la tarjeta **Contraseña**, pulsa **Enviar enlace para cambiarla**. Recibirás en el email de tu cuenta el mismo enlace que para [recuperar la contraseña](primeros-pasos.md#si-olvidas-la-contraseña): ábrelo, elige la contraseña nueva y pulsa **Guardar contraseña**.

@@ -205,6 +205,17 @@
       "success": "Password saved. Sign in with the new one.",
       "invalidLink": "This link isn’t valid: it was already used, it expired or it is incomplete. Each link works only once.",
       "requestNew": "Request a new link"
+    },
+    "verifyEmail": {
+      "title": "Verify your email",
+      "subtitle": "Confirming your email protects your account and enables the features that need it.",
+      "verifying": "Verifying your email…",
+      "success": "Email verified. You can now use every feature.",
+      "invalidLink": "This link isn’t valid: it was already used, it expired or it is incomplete. If your email is not verified yet, request another one from the notice in the application.",
+      "goToApp": "Go to the application",
+      "banner": "Confirm your email: when you signed up we sent a link to {{email}}.",
+      "bannerResent": "Link sent again to {{email}}. It expires in 24 hours; if you don’t see it, check your spam folder.",
+      "resend": "Resend link"
     }
   },
   "preferences": {
@@ -245,6 +256,13 @@
       "send": "Send link to change it",
       "sent": "Link sent to {{email}}. It expires in 1 hour; if you don’t see it, check your spam folder.",
       "unavailable": "This installation doesn’t send emails, so the password can’t be changed from here. Ask whoever runs it for help."
+    },
+    "email": {
+      "title": "Email",
+      "verified": "Verified",
+      "unverified": "Not verified",
+      "pending": "Confirm this email is yours with the link we sent when you signed up. If you can’t find it or it expired, request another one.",
+      "unavailable": "This installation doesn’t send emails, so the email can’t be verified from here."
     }
   },
   "nav": {

@@ -17,6 +17,10 @@ The **theme** can also be switched with the sun and moon button in the top bar. 
 
 The number of days decides which applications appear in the **No activity** block of the [Dashboard](dashboard.md).
 
+## Check whether your email is verified
+
+The **Email** card shows your account address and whether it is **Verified** or **Not verified**. While it is not, **Resend link** sends you another email to [confirm it](primeros-pasos.md#confirm-your-email). If the installation does not send email, the card says so instead of showing the button.
+
 ## Change your password
 
 In the **Password** card, click **Send link to change it**. You receive at your account email the same link as to [recover your password](primeros-pasos.md#if-you-forget-your-password): open it, choose the new password and click **Save password**.

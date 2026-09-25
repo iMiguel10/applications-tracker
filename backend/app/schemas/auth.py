@@ -131,3 +131,38 @@ class UnauthorizedError(BaseModel):
     """Respuesta 401 de SuperTokens: no hay sesión, o el token ha caducado o es inválido."""
 
     message: Literal["unauthorised"]
+
+
+class EmailVerifyRequest(BaseModel):
+    """Cuerpo para verificar el email con el token del enlace."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [{"method": "token", "token": "<token del enlace>"}]
+        }
+    )
+
+    method: Literal["token"]
+    token: str = Field(
+        description="El parámetro `token` del enlace del email. Caduca en 24 horas."
+    )
+
+
+class EmailVerifyInvalidToken(BaseModel):
+    """El token ya se usó, ha caducado o no existe: se puede pedir otro enlace."""
+
+    status: Literal["EMAIL_VERIFICATION_INVALID_TOKEN_ERROR"]
+
+
+class EmailAlreadyVerified(BaseModel):
+    """El email ya está verificado: no se envía nada."""
+
+    status: Literal["EMAIL_ALREADY_VERIFIED_ERROR"]
+
+
+class EmailVerifiedStatus(BaseModel):
+    status: Literal["OK"]
+    isVerified: bool = Field(
+        description="Si el email de la sesión está verificado, según el core. "
+        "Consultarlo también actualiza ese dato dentro del access token."
+    )

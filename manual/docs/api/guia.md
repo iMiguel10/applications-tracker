@@ -54,6 +54,16 @@ Son dos llamadas, sin sesión:
 
 Al cambiar la contraseña **se revocan todas las sesiones del usuario**: los refresh tokens que tuviera una integración dejan de servir y hay que volver a iniciar sesión.
 
+### Verificar el email
+
+Al registrarse (`POST /auth/signup`), la API envía sola un email con un enlace a `<la aplicación web>/verify-email?token=…&tenantId=…`.
+
+- `POST /auth/user/email/verify` con `{"method":"token","token":"<token del enlace>"}` lo verifica, sin necesidad de sesión. El token caduca en 24 horas y sirve una vez: si no vale, `status` es `EMAIL_VERIFICATION_INVALID_TOKEN_ERROR`.
+- `GET /auth/user/email/verify` (con sesión) dice si está verificado: `{"status":"OK","isVerified":…}`.
+- `POST /auth/user/email/verify/token` (con sesión) reenvía el enlace, o responde `EMAIL_ALREADY_VERIFIED_ERROR` si ya lo está.
+
+La API funciona sin verificar el email. Las rutas que lo exijan responderán **403** con `code: email_not_verified`; hoy ninguna lo exige todavía.
+
 ### Capacidades de la instalación
 
 `GET /api/v1/meta` es público y dice qué ofrece esta instalación. Hoy solo incluye `email_enabled`: con `false` no hay servidor de correo, y pedir la recuperación responde igual pero no envía nada.

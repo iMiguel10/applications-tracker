@@ -1,4 +1,6 @@
 import logging
+from collections.abc import Awaitable, Callable, Mapping
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +22,8 @@ logger = logging.getLogger(__name__)
 # por defecto). Solo se usa para decirlo en el email: si se cambia en el core, se
 # cambia aquí.
 PASSWORD_RESET_LINK_MINUTES = 60
+# Ídem para la verificación (`email_verification_token_lifetime`, 1 día).
+EMAIL_VERIFICATION_LINK_HOURS = 24
 
 
 class AuthEmailService:
@@ -42,27 +46,61 @@ class AuthEmailService:
     async def send_password_reset(
         self, *, supertokens_user_id: str, tenant_id: str, language_hint: str | None
     ) -> None:
+        async def link_for(email: str) -> str | None:
+            return await self.identities.create_password_reset_link(
+                supertokens_user_id, email, tenant_id
+            )
+
+        await self._send_link_email(
+            "password_reset",
+            supertokens_user_id=supertokens_user_id,
+            language_hint=language_hint,
+            link_for=link_for,
+            context={"expires_in_minutes": PASSWORD_RESET_LINK_MINUTES},
+        )
+
+    async def send_verification(
+        self, *, supertokens_user_id: str, tenant_id: str, language_hint: str | None
+    ) -> None:
+        async def link_for(email: str) -> str | None:
+            # None si ya está verificado: por ejemplo, un reenvío que llega después
+            # de que el usuario abriera el primer enlace.
+            return await self.identities.create_email_verification_link(
+                supertokens_user_id, email, tenant_id
+            )
+
+        await self._send_link_email(
+            "email_verification",
+            supertokens_user_id=supertokens_user_id,
+            language_hint=language_hint,
+            link_for=link_for,
+            context={"expires_in_hours": EMAIL_VERIFICATION_LINK_HOURS},
+        )
+
+    async def _send_link_email(
+        self,
+        kind: str,
+        *,
+        supertokens_user_id: str,
+        language_hint: str | None,
+        link_for: Callable[[str], Awaitable[str | None]],
+        context: Mapping[str, Any],
+    ) -> None:
         if not self.email_sender.enabled:
             # Sin SMTP no se genera ni el token: nadie lo recibiría (RNF-34).
-            logger.warning("Recuperación de contraseña pedida sin SMTP configurado")
+            logger.warning("Email %s pedido sin SMTP configurado", kind)
             return
         email = await self.identities.get_email(supertokens_user_id)
         if email is None:
-            logger.info("Recuperación para un usuario que ya no existe; se ignora")
+            logger.info("Email %s para un usuario que ya no existe; se ignora", kind)
             return
-        link = await self.identities.create_password_reset_link(
-            supertokens_user_id, email, tenant_id
-        )
+        link = await link_for(email)
         if link is None:
-            logger.info("Recuperación para un usuario que ya no existe; se ignora")
+            logger.info("Email %s sin enlace que enviar; se ignora", kind)
             return
 
         language = await self._language_for(supertokens_user_id, language_hint)
-        rendered = self.templates.render(
-            "password_reset",
-            language,
-            {"link": link, "expires_in_minutes": PASSWORD_RESET_LINK_MINUTES},
-        )
+        rendered = self.templates.render(kind, language, {"link": link, **context})
         await self._send(
             OutgoingEmail(
                 to=email,
@@ -70,7 +108,7 @@ class AuthEmailService:
                 text=rendered.text,
                 html=rendered.html,
             ),
-            kind="password_reset",
+            kind=kind,
             supertokens_user_id=supertokens_user_id,
         )
 

@@ -9,13 +9,14 @@ The application sends email through an **SMTP** server of your choice: your emai
 
 | Email | When |
 |---|---|
+| Confirm the email | When the account is created, and when the user clicks **Resend link** |
 | Recover or change the password | The user asks for it from the sign-in screen or from Preferences |
 
 They go out in the account language (or, if it is not set, in the one shown on screen), in Spanish or English.
 
 - **The `worker` service sends them**, not the API: if `worker` is stopped, emails wait in the queue and go out when it starts. Its logs (`docker compose logs worker`) record every send and every failure, with the user id and without the address.
 - **Email links use `WEBSITE_DOMAIN`.** If it keeps the development value (`http://localhost:5173`), emails arrive fine but their link leads nowhere. See [Variables](variables.md).
-- **Without SMTP the application works the same:** it does not offer to recover or change the password, and says so on screen.
+- **Without SMTP the application works the same:** it does not offer to recover or change the password, says so on screen, and does not ask to confirm the email.
 
 ## Variables
 

@@ -1,4 +1,5 @@
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import Session from "supertokens-web-js/recipe/session";
 
 import { apiClient } from "@/shared/lib/apiClient";
@@ -73,6 +74,29 @@ export const authService = {
       default:
         return { status: "error" };
     }
+  },
+
+  /**
+   * Pregunta al backend si el email de la sesión está verificado. De paso, el
+   * backend actualiza ese dato dentro del access token: quien verificó desde otro
+   * dispositivo deja de ver el aviso al volver a esta pestaña.
+   */
+  isEmailVerified: async (): Promise<boolean> =>
+    (await EmailVerification.isEmailVerified()).isVerified,
+
+  sendVerificationEmail: async (): Promise<"ok" | "already_verified" | "error"> => {
+    const response = await EmailVerification.sendVerificationEmail();
+    if (response.status === "OK") return "ok";
+    if (response.status === "EMAIL_ALREADY_VERIFIED_ERROR") return "already_verified";
+    return "error";
+  },
+
+  /** Consume el token del enlace. El SDK lo lee de la URL, con su `tenantId`. */
+  verifyEmail: async (): Promise<"ok" | "invalid_link" | "error"> => {
+    const response = await EmailVerification.verifyEmail();
+    if (response.status === "OK") return "ok";
+    if (response.status === "EMAIL_VERIFICATION_INVALID_TOKEN_ERROR") return "invalid_link";
+    return "error";
   },
 
   signOut: () => Session.signOut(),

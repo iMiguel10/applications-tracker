@@ -16,6 +16,7 @@ import {
 } from "@/shared/components/ui/card";
 import { ChangePasswordCard } from "@/features/auth/components/ChangePasswordCard";
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog";
+import { EmailVerificationCard } from "@/features/auth/components/EmailVerificationCard";
 import { PreferencesForm } from "@/features/auth/components/PreferencesForm";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
@@ -48,6 +49,7 @@ export function PreferencesPage() {
 
         {me?.email && (
           <div className="grid gap-6">
+            <EmailVerificationCard email={me.email} />
             <ChangePasswordCard email={me.email} />
             <Card className="ring-destructive/25">
               <CardHeader>

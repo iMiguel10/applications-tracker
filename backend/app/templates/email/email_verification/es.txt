@@ -1,0 +1,10 @@
+{% set subject = "Confirma tu email en Applications Tracker" -%}
+Hola:
+
+Para confirmar que este email es tuyo, abre este enlace:
+
+{{ link }}
+
+El enlace caduca en {{ expires_in_hours }} horas. Si caduca, puedes pedir otro desde el aviso que verás en la aplicación.
+
+Si no has creado una cuenta en Applications Tracker, ignora este email.

@@ -15,6 +15,7 @@ import { PreferencesPage } from "../pages/PreferencesPage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { RemindersPage } from "../pages/RemindersPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
+import { VerifyEmailPage } from "../pages/VerifyEmailPage";
 import { redirectIfAuthenticatedLoader, requireAuthLoader } from "./AuthLoaders";
 
 // Toda ruta con loader declara HydrateFallback: es lo que se pinta en la primera
@@ -42,6 +43,8 @@ export const router = createBrowserRouter([
   // Sin loader: el enlace del email tiene que funcionar también con una sesión
   // abierta en este navegador (al guardar se cierran todas).
   { path: "/reset-password", element: <ResetPasswordPage /> },
+  // Sin loader: el enlace se puede abrir con o sin sesión, en cualquier dispositivo.
+  { path: "/verify-email", element: <VerifyEmailPage /> },
   { path: "/health", element: <HealthPage /> },
 
   // Protegidas: el loader del layout se ejecuta en cada navegación a cualquier hija.

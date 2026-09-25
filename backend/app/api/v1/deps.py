@@ -1,10 +1,12 @@
 from fastapi import Depends, Request, Security
 from fastapi.security import APIKeyCookie, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+from supertokens_python.recipe.emailverification import EmailVerificationClaim
 from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.framework.fastapi import verify_session
 
 from app.core.config import settings
+from app.core.exceptions import AppException
 from app.db.session import get_db
 from app.infra.queue import JobQueue
 from app.infra.storage import FileStorage, LocalFileStorage
@@ -92,8 +94,14 @@ def get_user_service(
     return UserService(db)
 
 
+# Una sola instancia: FastAPI cachea una dependencia por petición solo si es el
+# MISMO objeto. Con `verify_session()` escrito en cada sitio, get_current_user y
+# require_verified_email validarían la sesión dos veces.
+_session_dependency = verify_session()
+
+
 async def get_current_user(
-    session: SessionContainer = Depends(verify_session()),
+    session: SessionContainer = Depends(_session_dependency),
     users: UserService = Depends(get_user_service),
     _bearer: None = Security(bearer_scheme),
     _cookie: None = Security(cookie_scheme),
@@ -105,3 +113,25 @@ async def get_current_user(
     entera. _bearer y _cookie solo existen para documentar la seguridad en el OpenAPI.
     """
     return await users.get_or_create(session.get_user_id())
+
+
+async def require_verified_email(
+    session: SessionContainer = Depends(_session_dependency),
+    current_user: CurrentUser = Depends(get_current_user),
+    users: UserService = Depends(get_user_service),
+) -> CurrentUser:
+    """Para las funciones con coste (RF-06): 403 `email_not_verified` si el email no
+    está verificado. Se declara en lugar de get_current_user y devuelve lo mismo.
+
+    Un "sí" del access token se da por bueno. Un "no" se vuelve a preguntar al core
+    antes de rechazar: el claim se calculó al emitir el token, y quien acaba de
+    verificar desde otro dispositivo seguiría viendo "no" hasta renovar la sesión
+    (autenticación §8, T12). Si el core dice que sí, se actualiza el claim en la
+    sesión y las siguientes peticiones ya no preguntan.
+    """
+    if await session.get_claim_value(EmailVerificationClaim) is True:
+        return current_user
+    if await users.is_email_verified(current_user.supertokens_user_id):
+        await session.fetch_and_set_claim(EmailVerificationClaim)
+        return current_user
+    raise AppException("Email not verified", status_code=403, code="email_not_verified")

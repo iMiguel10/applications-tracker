@@ -58,6 +58,16 @@ Two calls, without a session:
 
 Changing the password **revokes every session of the user**: any refresh tokens an integration held stop working and it has to sign in again.
 
+### Verify the email
+
+On sign-up (`POST /auth/signup`), the API sends by itself an email with a link to `<the web application>/verify-email?token=…&tenantId=…`.
+
+- `POST /auth/user/email/verify` with `{"method":"token","token":"<token from the link>"}` verifies it, without needing a session. The token expires after 24 hours and works once: if it is not valid, `status` is `EMAIL_VERIFICATION_INVALID_TOKEN_ERROR`.
+- `GET /auth/user/email/verify` (with a session) says whether it is verified: `{"status":"OK","isVerified":…}`.
+- `POST /auth/user/email/verify/token` (with a session) sends the link again, or answers `EMAIL_ALREADY_VERIFIED_ERROR` if it already is.
+
+The API works without verifying the email. Routes that require it will answer **403** with `code: email_not_verified`; today none requires it yet.
+
 ### Installation capabilities
 
 `GET /api/v1/meta` is public and says what this installation offers. Today it only includes `email_enabled`: with `false` there is no email server, and requesting a recovery answers the same but sends nothing.

@@ -18,6 +18,10 @@ from app.schemas.auth import (
     AuthResetInvalidToken,
     AuthStatusOk,
     AuthWrongCredentials,
+    EmailAlreadyVerified,
+    EmailVerifiedStatus,
+    EmailVerifyInvalidToken,
+    EmailVerifyRequest,
     PasswordResetRequest,
     PasswordResetTokenRequest,
     UnauthorizedError,
@@ -165,5 +169,51 @@ async def refresh(st_auth_mode: AuthMode = None) -> NoReturn:
     En modo `header`, se envía el **refresh** token como `Authorization: Bearer`.
     Cada refresh token solo vale una vez: reutilizar uno ya rotado se trata como
     robo y revoca la sesión.
+    """
+    _served_by_middleware()
+
+
+@router.post(
+    "/user/email/verify/token",
+    summary="Reenviar el email de verificación",
+    response_model=AuthStatusOk | EmailAlreadyVerified,
+    dependencies=SECURITY_SCHEMES,
+    responses={401: {"model": UnauthorizedError, "description": "Sin sesión."}},
+)
+async def email_verify_token() -> NoReturn:
+    """Envía otra vez el enlace de verificación al email de la sesión.
+
+    El primero se envía solo al registrarse. Si la instalación no tiene correo
+    (`GET /api/v1/meta` → `email_enabled: false`), responde igual y no se envía nada.
+    """
+    _served_by_middleware()
+
+
+@router.post(
+    "/user/email/verify",
+    summary="Verificar el email",
+    response_model=AuthStatusOk | EmailVerifyInvalidToken,
+)
+async def email_verify(body: EmailVerifyRequest) -> NoReturn:
+    """Marca como verificado el email con el token del enlace. No requiere sesión:
+    el enlace puede abrirse en otro dispositivo.
+
+    Responde siempre **200**: el resultado va en `status`.
+    """
+    _served_by_middleware()
+
+
+@router.get(
+    "/user/email/verify",
+    summary="Comprobar si el email está verificado",
+    response_model=EmailVerifiedStatus,
+    dependencies=SECURITY_SCHEMES,
+    responses={401: {"model": UnauthorizedError, "description": "Sin sesión."}},
+)
+async def email_verify_status() -> NoReturn:
+    """Dice si el email de la sesión está verificado.
+
+    La API funciona sin verificar el email. Las rutas que lo exijan responderán
+    **403** con `code: email_not_verified`; hoy ninguna lo exige todavía.
     """
     _served_by_middleware()

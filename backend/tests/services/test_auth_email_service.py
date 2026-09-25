@@ -17,9 +17,13 @@ EMAIL = "persona@example.com"
 LINK = "http://localhost:5173/reset-password?token=t0k3n&tenantId=public"
 
 
+VERIFY_LINK = "http://localhost:5173/verify-email?token=v3r1fy&tenantId=public"
+
+
 class FakeIdentities(IdentityRepository):
-    def __init__(self, *, email: str | None = EMAIL) -> None:
+    def __init__(self, *, email: str | None = EMAIL, verified: bool = False) -> None:
         self.email = email
+        self.verified = verified
         self.links_created = 0
 
     async def get_email(self, supertokens_user_id: str) -> str | None:
@@ -30,6 +34,12 @@ class FakeIdentities(IdentityRepository):
     ) -> str | None:
         self.links_created += 1
         return LINK
+
+    async def create_email_verification_link(
+        self, supertokens_user_id: str, email: str, tenant_id: str
+    ) -> str | None:
+        # Como el core: ya verificado, no hay enlace.
+        return None if self.verified else VERIFY_LINK
 
 
 async def _send(
@@ -144,3 +154,60 @@ async def test_send_failures_are_logged_not_raised(
 
     assert user.supertokens_user_id in caplog.text
     assert EMAIL not in caplog.text
+
+
+async def _send_verification(
+    db_session: AsyncSession,
+    user: CurrentUser,
+    *,
+    identities: FakeIdentities,
+    language_hint: str | None = None,
+) -> RecordingEmailSender:
+    sender = RecordingEmailSender()
+    await AuthEmailService(
+        db_session, email_sender=sender, identities=identities
+    ).send_verification(
+        supertokens_user_id=user.supertokens_user_id,
+        tenant_id="public",
+        language_hint=language_hint,
+    )
+    return sender
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("account_language", "expected_subject"),
+    [
+        ("en", "Confirm your email for Applications Tracker"),
+        ("es", "Confirma tu email en Applications Tracker"),
+    ],
+)
+async def test_verification_email_in_the_account_language(
+    db_session: AsyncSession,
+    user: CurrentUser,
+    account_language: str,
+    expected_subject: str,
+):
+    # T15 para la verificación: mismo canal, mismas reglas de idioma.
+    await _set_language(db_session, user, account_language)
+
+    sender = await _send_verification(
+        db_session, user, identities=FakeIdentities(), language_hint="fr"
+    )
+
+    [email] = sender.sent
+    assert email.subject == expected_subject
+    assert VERIFY_LINK in email.text
+    assert "24" in email.text
+
+
+@pytest.mark.asyncio
+async def test_already_verified_sends_nothing(
+    db_session: AsyncSession, user: CurrentUser
+):
+    # Un reenvío que llega al worker después de verificar no molesta con otro email.
+    sender = await _send_verification(
+        db_session, user, identities=FakeIdentities(verified=True)
+    )
+
+    assert sender.sent == []

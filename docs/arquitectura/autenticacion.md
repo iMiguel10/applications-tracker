@@ -249,7 +249,7 @@ Registro con enumeración de emails: `FIELD_ERROR` "email ya registrado" revela 
 
 ## 8. Ampliación de la v2: verificación y recuperación
 
-> Estado: **en construcción** (F11). Construida la **recuperación de contraseña**, comprobada contra `supertokens-python` 0.31.3; la verificación de email sigue siendo diseño. Los nombres de su receta y su *claim* se comprobarán contra el SDK al construirla.
+> Estado: **construida** (F11): recuperación de contraseña y verificación de email, comprobadas contra `supertokens-python` 0.31.3 y `supertokens-web-js` 0.16. Los nombres de recetas, overrides y *claims* de esta sección son los reales del SDK.
 
 ### Recetas
 
@@ -309,10 +309,24 @@ Los enlaces los construye SuperTokens a partir del `website_domain` de su `appIn
 >
 > - en el backend, `require_verified_email` no se fía de un "no" del token y vuelve a consultar al core antes de rechazar (un "sí" sí se da por bueno);
 > - en el frontend, tras verificar en esa misma sesión, se fuerza la actualización del *claim*.
+>
+> Al construirlo se comprobó que la trampa es real: sin la segunda consulta al core, la prueba T12 (verificar directamente en el core y llamar con el token antiguo) responde 403 a quien ya ha verificado.
+
+**Construido (F11):**
+
+- **Receta** `emailverification.init(mode="OPTIONAL")`, con `QueuedVerificationEmail` como servicio de `email_delivery`: el reenvío (`POST /auth/user/email/verify/token`) encola `send_verification_email` igual que la recuperación, con solo ids.
+- **Envío al registrarse:** override de la API `sign_up_post` de `emailpassword` (`emailpassword_api_overrides` en `core/auth_emails.py`, el mismo que revoca las sesiones tras recuperar la contraseña). Encola el trabajo directamente, sin pedir antes un token que se descartaría.
+- **`worker`:** `AuthEmailService.send_verification` pide el enlace con `create_email_verification_link`. Si el email ya está verificado, el core no da enlace y no se envía nada: un reenvío que llega tarde no molesta.
+- **`require_verified_email`** (`deps.py`) comparte con `get_current_user` la misma instancia de `verify_session()`. FastAPI solo cachea una dependencia por petición si es el mismo objeto; con `verify_session()` escrito en cada sitio, la sesión se validaría dos veces. Si el core dice "sí" cuando el token decía "no", se actualiza el *claim* (`fetch_and_set_claim`) y las siguientes peticiones ya no preguntan. Todavía no la usa ninguna ruta, porque las funciones con coste llegan desde F12. Se prueba en una app mínima con el mismo middleware (`tests/api/test_email_verification.py`).
+- **Frontend:** el aviso `EmailVerificationBanner`, bajo la cabecera de la aplicación, con **Reenviar enlace**. Pregunta con `EmailVerification.isEmailVerified()`, que también actualiza el *claim* de esta sesión, y vuelve a preguntar al recuperar el foco, así que desaparece al volver de verificar en otra pestaña o dispositivo. En Preferencias, la tarjeta `EmailVerificationCard` muestra siempre el estado (Verificado / Sin verificar) y, mientras falte, el mismo reenvío (añadida a petición del usuario). La página `/verify-email` consume el token al cargar, con o sin sesión.
+
+> **Trampa — el token de un solo uso y el doble montaje de React.** En desarrollo, `StrictMode` monta dos veces los efectos. Una página que consume el token del enlace en un `useEffect` lo haría dos veces: la primera verifica y la segunda recibe "enlace no válido", que es lo que se pinta. `VerifyEmailPage` guarda en un `useRef` que ya lo lanzó. En producción no pasa, así que sin esa guarda el fallo solo se vería en desarrollo y parecería un fallo del backend.
 
 ### Sin SMTP configurado
 
-Las recetas se inicializan igual, pero la entrega no envía nada (la implementación desactivada de `EmailSender`) y `GET /api/v1/meta` publica `email_enabled = false`. El frontend oculta "¿olvidaste tu contraseña?" y el aviso de verificación explica que esta instalación no envía emails. Si alguien llama a la API de recuperación directamente, recibe la misma respuesta de siempre y ningún email: es inevitable y no filtra nada.
+Las recetas se inicializan igual, pero la entrega no envía nada (la implementación desactivada de `EmailSender`) y `GET /api/v1/meta` publica `email_enabled = false`. El frontend oculta "¿Olvidaste tu contraseña?", la tarjeta de cambiar la contraseña lo explica, y **el aviso de verificación no se muestra**. El diseño preveía que el aviso explicara que la instalación no envía emails; al construirlo se descartó, porque sería un aviso permanente para todos los usuarios sin nada que puedan hacer. Cuando existan funciones con coste, su error `email_not_verified` será el que lo explique.
+
+> **Pendiente de decidir antes de F13:** sin correo nadie puede verificar su email, así que, tal como está, `require_verified_email` bloquearía para siempre subir ficheros y usar la IA en esa instalación. Las opciones son dejarlo así (sin correo no hay funciones con coste), no exigir la verificación cuando `email_enabled` es falso, o que quien despliega marque cuentas como verificadas con un script. Si alguien llama a la API de recuperación directamente, recibe la misma respuesta de siempre y ningún email: es inevitable y no filtra nada.
 
 ### Pruebas adversas nuevas
 

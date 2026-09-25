@@ -424,6 +424,142 @@
         }
       }
     },
+    "/auth/user/email/verify/token": {
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Reenviar el email de verificación",
+        "description": "Envía otra vez el enlace de verificación al email de la sesión.\n\nEl primero se envía solo al registrarse. Si la instalación no tiene correo\n(`GET /api/v1/meta` → `email_enabled: false`), responde igual y no se envía nada.",
+        "operationId": "email_verify_token_auth_user_email_verify_token_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthStatusOk"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EmailAlreadyVerified"
+                    }
+                  ],
+                  "title": "Response Email Verify Token Auth User Email Verify Token Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/user/email/verify": {
+      "get": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Comprobar si el email está verificado",
+        "description": "Dice si el email de la sesión está verificado.\n\nLa API funciona sin verificar el email. Las rutas que lo exijan responderán\n**403** con `code: email_not_verified`; hoy ninguna lo exige todavía.",
+        "operationId": "email_verify_status_auth_user_email_verify_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailVerifiedStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Autenticación"
+        ],
+        "summary": "Verificar el email",
+        "description": "Marca como verificado el email con el token del enlace. No requiere sesión:\nel enlace puede abrirse en otro dispositivo.\n\nResponde siempre **200**: el resultado va en `status`.",
+        "operationId": "email_verify_auth_user_email_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthStatusOk"
+                    },
+                    {
+                      "$ref": "#/components/schemas/EmailVerifyInvalidToken"
+                    }
+                  ],
+                  "title": "Response Email Verify Auth User Email Verify Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "tags": [
@@ -3911,6 +4047,21 @@
         ],
         "title": "DashboardRead"
       },
+      "EmailAlreadyVerified": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "EMAIL_ALREADY_VERIFIED_ERROR",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "EmailAlreadyVerified",
+        "description": "El email ya está verificado: no se envía nada."
+      },
       "EmailField": {
         "properties": {
           "id": {
@@ -3929,6 +4080,68 @@
           "value"
         ],
         "title": "EmailField"
+      },
+      "EmailVerifiedStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "OK",
+            "title": "Status"
+          },
+          "isVerified": {
+            "type": "boolean",
+            "title": "Isverified",
+            "description": "Si el email de la sesión está verificado, según el core. Consultarlo también actualiza ese dato dentro del access token."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "isVerified"
+        ],
+        "title": "EmailVerifiedStatus"
+      },
+      "EmailVerifyInvalidToken": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "EMAIL_VERIFICATION_INVALID_TOKEN_ERROR",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "EmailVerifyInvalidToken",
+        "description": "El token ya se usó, ha caducado o no existe: se puede pedir otro enlace."
+      },
+      "EmailVerifyRequest": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "const": "token",
+            "title": "Method"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "El parámetro `token` del enlace del email. Caduca en 24 horas."
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "token"
+        ],
+        "title": "EmailVerifyRequest",
+        "description": "Cuerpo para verificar el email con el token del enlace.",
+        "examples": [
+          {
+            "method": "token",
+            "token": "<token del enlace>"
+          }
+        ]
       },
       "ErrorResponse": {
         "properties": {

@@ -11,6 +11,16 @@ sidebar_label: Getting started
 
 The password must be **at least 8 characters long and include letters and numbers**. If the email is already registered, the application tells you: use **Sign in** instead.
 
+## Confirm your email
+
+When you create the account you receive an email to confirm that the address is yours. Click **Confirm my email** in that email: **Verify your email** opens and, if all goes well, it says **Email verified**. From there, **Go to the application**.
+
+- You can use the application without confirming it. Meanwhile, a notice under the top bar reminds you.
+- If it doesn't arrive or the link expires (it lasts 24 hours), click **Resend link** in that notice or in the **Email** card of [Preferences](preferencias.md), which also shows whether it is already verified.
+- The link also works on another device, for example on your phone. When you come back to the application tab, the notice goes away by itself.
+
+If the installation does not send email, you won't see the notice.
+
 ## Sign in and sign out
 
 - To sign in, enter your email and password and click **Sign in**. The session is kept even if you reload the page or close the tab.

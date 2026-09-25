@@ -9,6 +9,7 @@ import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { NAV_ITEMS } from "@/shared/config/navigation";
+import { EmailVerificationBanner } from "@/features/auth/components/EmailVerificationBanner";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
 import { useSignOut } from "@/features/auth/hooks/mutations/useSignOut";
@@ -142,6 +143,7 @@ export function AppLayout() {
           </Popover>
         </div>
       </header>
+      {me?.email && <EmailVerificationBanner email={me.email} />}
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none">
         <Outlet />
       </main>
