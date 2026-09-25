@@ -4819,12 +4819,28 @@
             "minimum": 1.0,
             "title": "Stale After Days",
             "description": "RF-64: días sin actividad para avisar en el dashboard."
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "RF-07: zona horaria IANA (`Europe/Madrid`). `null` hasta que el cliente la fija; mientras tanto se usa UTC.",
+            "examples": [
+              "Europe/Madrid"
+            ]
           }
         },
         "type": "object",
         "required": [
           "language",
-          "stale_after_days"
+          "stale_after_days",
+          "timezone"
         ],
         "title": "PreferencesRead"
       },
@@ -4852,6 +4868,22 @@
               }
             ],
             "title": "Stale After Days"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "examples": [
+                  "Europe/Madrid"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "Nombre IANA de una zona conocida; otro valor responde 422. La aplicación web envía la del navegador si la cuenta aún no tiene."
           }
         },
         "type": "object",

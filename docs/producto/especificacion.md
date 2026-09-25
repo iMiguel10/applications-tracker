@@ -128,7 +128,7 @@ Usuario
 - **RF-04** Cada usuario solo accede a sus propios datos. Un recurso ajeno responde igual que uno inexistente (404).
 - **RF-05** `[F11]` Verificación de email: tras registrarse se envía un enlace de verificación, que se puede reenviar. La aplicación **se puede usar sin verificar**; un aviso visible recuerda hacerlo.
 - **RF-06** `[F11]` Las funciones con coste —IA, subir o generar ficheros, recibir emails de notificación— exigen email verificado. La API responde con un código estable (`email_not_verified`) y la interfaz explica qué hacer, en lugar de ocultar la función.
-- **RF-07** `[F11]` Zona horaria del usuario como preferencia de cuenta, detectada del navegador al registrarse. La necesitan los emails programados (RF-81, RF-82) y el calendario.
+- **RF-07** `[F11]` Zona horaria del usuario como preferencia de cuenta, detectada del navegador al registrarse (y al volver a entrar si la cuenta no la tiene) y editable en Preferencias. La necesitan los emails programados (RF-81, RF-82) y el calendario.
 - **RF-08** `[F11]` Las pantallas de acceso (inicio de sesión, registro y recuperación) tienen un selector de idioma, que se recuerda en el navegador. Una cuenta con el idioma sin fijar sigue lo elegido ahí; una con idioma fijado usa el suyo al entrar. Los emails que se piden sin sesión salen en el idioma que se ve en pantalla (añadido al construir F11 a petición del usuario).
 
 ### Empresas (RF-10…)

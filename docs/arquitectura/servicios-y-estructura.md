@@ -531,7 +531,10 @@ Dependencias nuevas previstas (versiones fijadas al añadirlas, siempre con `doc
 - **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `icalendar`, `pypdf` (comprobar que un PDF subido se abre, sin renderizarlo), `python-multipart` (subidas) y el SDK de cada proveedor de IA habilitado.
 - **Imagen del backend:** las librerías de sistema de WeasyPrint (Pango, HarfBuzz) **[construido en F9]**; `fonts-dejavu-core` llega con ellas ([ficheros §7](ficheros.md#fuentes)).
 
-Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPrint no publica tipos (`py.typed`): sus imports llevan `# type: ignore[import-untyped]`, confinados a `weasyprint_renderer.py` y su prueba.
+Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPrint no publica tipos (`py.typed`): sus imports llevan `# type: ignore[import-untyped]`, confinados a `weasyprint_renderer.py` y su prueba. En F11: `tzdata`, que no estaba prevista.
+
+> **Trampa — zonas horarias que el navegador da y el servidor no conoce** (descubierta en F11). Los navegadores dan la zona con los nombres de CLDR, que para 18 zonas son los antiguos: `Asia/Calcutta`, `Europe/Kiev`, `America/Buenos_Aires`… La tzdata de la imagen (Debian) ya no los trae, porque los separó en el paquete `tzdata-legacy`. Validando solo contra ella, la detección automática fallaba con 422 para quien estuviera en la India o en Ucrania, sin ningún error visible. El paquete `tzdata` de Python trae la base completa con esos alias, va versionado en `uv.lock` y `zoneinfo` lo consulta además de la del sistema. Una prueba guarda varios alias antiguos.
+
 - **Frontend:** `@dnd-kit/core` y `@dnd-kit/sortable`.
 - **Manual:** Docusaurus y `docusaurus-plugin-openapi-docs`, con versiones fijadas (mismo criterio que MkDocs, R4).
 

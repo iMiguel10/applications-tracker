@@ -224,7 +224,8 @@
     "fields": {
       "language": "Interface language",
       "staleAfterDays": "Flag applications with no activity after (days)",
-      "theme": "Theme"
+      "theme": "Theme",
+      "timezone": "Time zone"
     },
     "language": {
       "followBrowser": "Follow the browser language",
@@ -237,6 +238,10 @@
     },
     "validation": {
       "staleAfterDays": "Must be a number between 1 and 90"
+    },
+    "timezone": {
+      "placeholder": "Search for a city or region",
+      "description": "It is detected from your browser when you sign in. Change it if it isn’t yours."
     }
   },
   "account": {

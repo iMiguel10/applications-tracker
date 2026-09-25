@@ -115,13 +115,17 @@ async def test_me_returns_own_id_and_email_from_identity_store(
 
 
 @pytest.mark.asyncio
-async def test_preferences_default_to_no_language_and_14_days(
+async def test_preferences_default_to_no_language_14_days_and_no_timezone(
     client: AsyncClient, user: CurrentUser
 ):
     response = await client.get("/api/v1/me/preferences")
 
     assert response.status_code == 200
-    assert response.json() == {"language": None, "stale_after_days": 14}
+    assert response.json() == {
+        "language": None,
+        "stale_after_days": 14,
+        "timezone": None,
+    }
 
 
 @pytest.mark.asyncio
@@ -129,10 +133,10 @@ async def test_updating_preferences_only_changes_sent_fields(
     client: AsyncClient, user: CurrentUser
 ):
     first = await client.patch("/api/v1/me/preferences", json={"language": "en"})
-    assert first.json() == {"language": "en", "stale_after_days": 14}
+    assert first.json() == {"language": "en", "stale_after_days": 14, "timezone": None}
 
     second = await client.patch("/api/v1/me/preferences", json={"stale_after_days": 30})
-    assert second.json() == {"language": "en", "stale_after_days": 30}
+    assert second.json() == {"language": "en", "stale_after_days": 30, "timezone": None}
 
 
 @pytest.mark.asyncio
@@ -149,8 +153,25 @@ async def test_explicit_null_language_resets_to_follow_the_browser(
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "payload",
-    [{"language": "fr"}, {"stale_after_days": 0}, {"stale_after_days": 91}],
-    ids=["unknown_language", "threshold_too_low", "threshold_too_high"],
+    [
+        {"language": "fr"},
+        {"stale_after_days": 0},
+        {"stale_after_days": 91},
+        # A39: un nombre IANA, nunca un desfase ni una zona inventada.
+        {"timezone": "+02:00"},
+        {"timezone": "Europe/Atlantis"},
+        {"timezone": "europe/madrid"},
+        {"timezone": ""},
+    ],
+    ids=[
+        "unknown_language",
+        "threshold_too_low",
+        "threshold_too_high",
+        "timezone_offset",
+        "timezone_unknown",
+        "timezone_wrong_case",
+        "timezone_empty",
+    ],
 )
 async def test_invalid_preferences_are_rejected(
     client: AsyncClient, user: CurrentUser, payload: dict[str, object]
@@ -158,6 +179,30 @@ async def test_invalid_preferences_are_rejected(
     response = await client.patch("/api/v1/me/preferences", json=payload)
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "timezone",
+    [
+        "Europe/Madrid",
+        "America/Argentina/Buenos_Aires",
+        "UTC",
+        # Alias antiguos que siguen dando los navegadores (CLDR). La tzdata de la
+        # imagen (Debian) no los trae; el paquete tzdata de Python, sí.
+        "Asia/Calcutta",
+        "Europe/Kiev",
+        "America/Buenos_Aires",
+    ],
+)
+async def test_timezone_is_saved_as_an_iana_name(
+    client: AsyncClient, user: CurrentUser, timezone: str
+):
+    response = await client.patch("/api/v1/me/preferences", json={"timezone": timezone})
+
+    assert response.status_code == 200
+    assert response.json()["timezone"] == timezone
+    assert (await client.get("/api/v1/me/preferences")).json()["timezone"] == timezone
 
 
 class UnreachableIdentities(FakeIdentities):

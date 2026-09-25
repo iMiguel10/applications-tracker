@@ -224,7 +224,8 @@
     "fields": {
       "language": "Idioma de la interfaz",
       "staleAfterDays": "Avisar de solicitudes sin actividad tras (días)",
-      "theme": "Tema"
+      "theme": "Tema",
+      "timezone": "Zona horaria"
     },
     "language": {
       "followBrowser": "Seguir el idioma del navegador",
@@ -237,6 +238,10 @@
     },
     "validation": {
       "staleAfterDays": "Debe ser un número entre 1 y 90"
+    },
+    "timezone": {
+      "placeholder": "Busca una ciudad o región",
+      "description": "Se detecta de tu navegador al entrar. Cámbiala si no es la tuya."
     }
   },
   "account": {

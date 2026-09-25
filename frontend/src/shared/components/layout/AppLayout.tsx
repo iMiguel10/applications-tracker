@@ -12,6 +12,7 @@ import { NAV_ITEMS } from "@/shared/config/navigation";
 import { EmailVerificationBanner } from "@/features/auth/components/EmailVerificationBanner";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
+import { useDetectTimezone } from "@/features/auth/hooks/mutations/useDetectTimezone";
 import { useSignOut } from "@/features/auth/hooks/mutations/useSignOut";
 
 const I18NEXT_LNG_STORAGE_KEY = "i18nextLng";
@@ -28,6 +29,7 @@ export function AppLayout() {
   const { data: me } = useMe();
   const { data: preferences } = usePreferences();
   const signOut = useSignOut();
+  useDetectTimezone(preferences);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Preferencia guardada (F8): "null" significa seguir el navegador, así que se

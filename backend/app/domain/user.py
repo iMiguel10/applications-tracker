@@ -1,6 +1,8 @@
-"""Preferencias de usuario (F8). Reglas puras, sin I/O."""
+"""Preferencias de usuario (F8, F11). Reglas puras, sin I/O de la aplicación."""
 
+import zoneinfo
 from enum import StrEnum
+from functools import cache
 
 
 class Language(StrEnum):
@@ -40,6 +42,22 @@ def language_from_accept_language(header: str | None) -> Language | None:
         if primary in Language._value2member_map_:
             return Language(primary)
     return None
+
+
+# Nombre IANA ("Europe/Madrid"), nunca un desfase ("+02:00"): el desfase cambia
+# dos veces al año con el horario de verano (A39).
+MAX_TIMEZONE_LENGTH = 64
+
+
+@cache
+def _known_timezones() -> frozenset[str]:
+    # La base de datos de zonas del sistema (tzdata de la imagen): datos estáticos,
+    # se leen una vez.
+    return frozenset(zoneinfo.available_timezones())
+
+
+def is_valid_timezone(name: str) -> bool:
+    return name in _known_timezones()
 
 
 # RF-64: límites del umbral de "sin actividad" que el usuario puede fijar. El valor

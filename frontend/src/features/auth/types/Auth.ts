@@ -10,6 +10,8 @@ export interface Preferences {
   /** `null`: sigue el idioma del navegador. */
   language: Language | null;
   stale_after_days: number;
+  /** Zona IANA ("Europe/Madrid"); `null` hasta que se detecta del navegador. */
+  timezone: string | null;
 }
 
 export type AuthField = "email" | "password";

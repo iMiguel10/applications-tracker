@@ -12,6 +12,8 @@ export const preferencesSchema = z.object({
       (v) => Number(v) >= 1 && Number(v) <= 90,
       "preferences.validation.staleAfterDays",
     ),
+  // La lista la da el navegador; el backend comprueba que la zona existe.
+  timezone: z.string().nullable(),
 });
 
 export type PreferencesFormValues = z.infer<typeof preferencesSchema>;

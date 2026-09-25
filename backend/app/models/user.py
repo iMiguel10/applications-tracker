@@ -7,7 +7,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.constraints import enum_check
 from app.domain.dashboard import STALE_AFTER_DAYS
-from app.domain.user import MAX_STALE_AFTER_DAYS, MIN_STALE_AFTER_DAYS, Language
+from app.domain.user import (
+    MAX_STALE_AFTER_DAYS,
+    MAX_TIMEZONE_LENGTH,
+    MIN_STALE_AFTER_DAYS,
+    Language,
+)
 
 
 class User(Base):
@@ -39,6 +44,10 @@ class User(Base):
     stale_after_days: Mapped[int] = mapped_column(
         SmallInteger, server_default=str(STALE_AFTER_DAYS)
     )
+    # F11 (RF-07, A39): zona IANA. NULL hasta que el frontend la detecta; quien la
+    # necesite (los emails de F12) usa UTC mientras tanto. Sin CHECK: la lista de
+    # zonas cambia con tzdata y la valida la aplicación (domain/user.py).
+    timezone: Mapped[str | None] = mapped_column(String(MAX_TIMEZONE_LENGTH))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Moon, Sun } from "lucide-react";
@@ -7,11 +7,12 @@ import { toast } from "sonner";
 
 import { useTheme } from "@/app/providers/useTheme";
 import { errorMessageKey } from "@/shared/lib/errors";
-import { FormActions, FormInput, FormSelect } from "@/shared/components/form";
+import { FormActions, FormCombobox, FormInput, FormSelect } from "@/shared/components/form";
 import { Switch } from "@/shared/components/ui/switch";
 import { useUpdatePreferences } from "../hooks/mutations/useUpdatePreferences";
 import { preferencesSchema, type PreferencesFormValues } from "../schemas/preferences.schema";
 import { LANGUAGES, type Preferences } from "../types/Auth";
+import { timezoneOptions } from "../lib/timezones";
 
 // Tema claro/oscuro (F8.4): vive en el navegador (ThemeProvider), no en esta
 // preferencia de cuenta — por eso no pasa por `useUpdatePreferences`.
@@ -42,11 +43,17 @@ function toFormValues(preferences: Preferences): PreferencesFormValues {
   return {
     language: preferences.language,
     stale_after_days: String(preferences.stale_after_days),
+    timezone: preferences.timezone,
   };
 }
 
 export function PreferencesForm({ preferences }: { preferences: Preferences }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? "es";
+  const timezones = useMemo(
+    () => timezoneOptions(locale, preferences.timezone),
+    [locale, preferences.timezone],
+  );
   const update = useUpdatePreferences();
 
   const form = useForm<PreferencesFormValues>({
@@ -75,6 +82,14 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
         label={t("preferences.fields.language")}
         options={LANGUAGES.map((value) => ({ value, label: t(`preferences.language.${value}`) }))}
         emptyLabel={t("preferences.language.followBrowser")}
+      />
+      <FormCombobox
+        form={form}
+        name="timezone"
+        label={t("preferences.fields.timezone")}
+        options={timezones}
+        placeholder={t("preferences.timezone.placeholder")}
+        description={t("preferences.timezone.description")}
       />
       <FormInput
         form={form}
