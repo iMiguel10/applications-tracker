@@ -60,7 +60,7 @@ Especificada en la [especificación](docs/producto/especificacion.md) y diseñad
 |---|---|
 | ✔ F9 | Infraestructura nueva: cola de trabajos, generación de PDF, almacenamiento de ficheros y email |
 | ✔ F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
-| F11 | Recuperación de contraseña, verificación de email y límites visibles (hechos) y rate limiting |
+| F11 | Recuperación de contraseña, verificación de email, límites visibles y rate limiting (construida) |
 | F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad |
 | F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
 | F14 | Perfil profesional y generación de CVs con varios diseños |

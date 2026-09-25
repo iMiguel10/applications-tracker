@@ -22,6 +22,7 @@ async def app_exception_handler(
             "detail": exc.message,
             "code": exc.code,
         },
+        headers=exc.headers or None,
     )
 
 

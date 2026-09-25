@@ -1,6 +1,6 @@
 # Límites, rate limiting y superficie pública
 
-> Estado: **§1 construido en F11** (límites de solicitudes, empresas y recordatorios); el resto, diseño (F11, F12, F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
+> Estado: **§1 y §2 construidos en F11** (límites de solicitudes, empresas y recordatorios; rate limiting de autenticación y límite general de la API); el resto, diseño (F12, F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
 
 Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento reúne las tres defensas que eso exige: **cuánto** puede crear cada usuario (límites), **a qué ritmo** se puede llamar a la API (rate limiting) y **qué** responde sin sesión (superficie pública).
 
@@ -42,6 +42,19 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 - En nuestros endpoints: la dependencia `rate_limit(nombre, por=…)`, declarada igual que `get_current_user`.
 - En `/auth/*` (lo sirve SuperTokens, no nuestros endpoints): un **middleware** añadido de forma que quede **por fuera** del de SuperTokens y lo alcance primero.
 
+**Construido en F11:**
+
+- `infra/rate_limit/`: `RateLimiter` con `LimitsRateLimiter` (`limits[async-valkey]`, `MovingWindowRateLimiter`, almacén `async+valkey://` derivado de `VALKEY_URL`; `async+memory://` en las pruebas) y `DisabledRateLimiter`. Se crea en el `lifespan` y vive en `app.state.rate_limiter`; antes del lifespan, y en las pruebas, está desactivado.
+- `domain/rate_limits.py`: las reglas (`RateRule`: nombre, `"10/minute"`, clave IP/email/usuario) y `AUTH_RULES`, las rutas `/auth/*` limitadas.
+- `api/auth_rate_limit.py`: el middleware de `/auth/*`, añadido entre el de SuperTokens y CORS (`main.py`). Para el reenvío de la verificación, el usuario sale del access token validado con el SDK (`get_session_without_request_response`). Rechaza con 413 un cuerpo de más de 64 KB: leerlo entero para buscar el email no debe servir para agotar la memoria.
+- `core/client_ip.py`: la IP del cliente con `TRUSTED_PROXIES`.
+- **Límite general por usuario** (añadido en F11 a petición del usuario, no estaba en el diseño): 600 peticiones por minuto en todo el router `protected`, con la dependencia `enforce_api_rate_limit`. Nadie lo nota usando la aplicación, pero frena un script que machaque la API.
+- **Valkey caído: se deja pasar** (decisión del usuario en F11). Sin almacén no hay rate limit y queda un aviso en el log; la alternativa, bloquear, dejaría a todo el mundo sin poder iniciar sesión mientras dura la caída.
+- **Respuesta:** `RateLimitedError` (`AppException` gana `headers`) o el propio middleware: `429`, `{"detail", "code": "rate_limited", "retry_after"}` y la cabecera `Retry-After`, expuesta por CORS. En el frontend, `auth.service` convierte el 429 del SDK de SuperTokens (que lanza la `Response`) en el mismo `ApiError`, y el mensaje dice cuánto esperar ("dentro de 44 segundos").
+- **Comprobado:** con el middleware devolviendo un cuerpo vacío, un inicio de sesión correcto responde `FIELD_ERROR` y la prueba L4 se pone en rojo.
+
+> **Trampa — en producción, todos detrás de la IP del proxy.** Detrás de Nginx (F7), la conexión siempre llega desde el proxy. Si `TRUSTED_PROXIES` se queda vacía, `X-Forwarded-For` se ignora y **todos los usuarios comparten una IP**: 10 inicios de sesión por minuto entre todos. Y sin la protección contraria, si se aceptara `X-Forwarded-For` de cualquiera, cada atacante se inventaría una IP por intento. Por eso solo se lee de los proxies declarados, y de derecha a izquierda.
+
 ### Valores iniciales
 
 | Qué | Límite | Clave |
@@ -52,6 +65,7 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 | Pedir recuperación de contraseña | 3 / hora | por email |
 | Pedir recuperación de contraseña | 10 / hora | por IP |
 | Reenviar verificación de email | 3 / hora | por usuario |
+| Toda la API con sesión **[añadido en F11]** | 600 / min | por usuario |
 | Propuestas de IA | 5 / min y 50 / día | por usuario (también con clave propia: el `worker` es de todos) |
 | Guardar o validar una clave de IA | 10 / hora | por usuario |
 | Subir documentos | 20 / hora | por usuario |

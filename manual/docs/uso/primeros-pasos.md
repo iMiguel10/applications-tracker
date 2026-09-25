@@ -25,6 +25,7 @@ Si la instalación no envía emails, no verás el aviso.
 
 - Para entrar, escribe tu email y tu contraseña y pulsa **Iniciar sesión**. La sesión se mantiene aunque recargues la página o cierres la pestaña.
 - Para salir, pulsa **Cerrar sesión** en la barra superior (en pantallas pequeñas, dentro del menú).
+- Si fallas muchas veces seguidas, la aplicación te pide esperar un poco ("Demasiados intentos. Vuelve a intentarlo dentro de…"). Tu cuenta no se bloquea: pasado ese tiempo puedes volver a entrar.
 
 ## Si olvidas la contraseña
 

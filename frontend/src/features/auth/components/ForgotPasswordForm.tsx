@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -30,7 +31,7 @@ export function ForgotPasswordForm() {
         if (result === "ok") setSentTo(email);
         else toast.error(t("auth.errors.generic"));
       },
-      onError: () => toast.error(t("auth.errors.generic")),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
 
   if (sentTo !== null) {

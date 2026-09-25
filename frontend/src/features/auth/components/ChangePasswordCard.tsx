@@ -3,6 +3,7 @@ import { KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
@@ -32,7 +33,7 @@ export function ChangePasswordCard({ email }: { email: string }) {
         if (result === "ok") setSent(true);
         else toast.error(t("auth.errors.generic"));
       },
-      onError: () => toast.error(t("auth.errors.generic")),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
 
   return (

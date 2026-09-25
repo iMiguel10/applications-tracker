@@ -6,9 +6,11 @@ from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.framework.fastapi import verify_session
 
 from app.core.config import settings
-from app.core.exceptions import AppException
+from app.core.exceptions import AppException, RateLimitedError
 from app.db.session import get_db
+from app.domain.rate_limits import API_PER_USER
 from app.infra.queue import JobQueue
+from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
 from app.schemas.user import CurrentUser
 from app.services.application_service import ApplicationService
@@ -142,3 +144,19 @@ async def require_verified_email(
         await session.fetch_and_set_claim(EmailVerificationClaim)
         return current_user
     raise AppException("Email not verified", status_code=403, code="email_not_verified")
+
+
+async def enforce_api_rate_limit(
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Límite general por usuario de toda la API con sesión (RNF-04; añadido en F11
+    a petición del usuario). Va en el router `protected`, después de la sesión:
+    sin sesión, el 401 llega antes."""
+    limiter: RateLimiter = request.app.state.rate_limiter
+    rule = API_PER_USER
+    result = await limiter.hit(
+        rule.limit, rule.name, rule.key.value, str(current_user.id)
+    )
+    if not result.allowed:
+        raise RateLimitedError(result.retry_after)

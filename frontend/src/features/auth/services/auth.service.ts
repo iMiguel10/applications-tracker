@@ -2,7 +2,7 @@ import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import Session from "supertokens-web-js/recipe/session";
 
-import { apiClient } from "@/shared/lib/apiClient";
+import { ApiError, apiClient } from "@/shared/lib/apiClient";
 import type { AuthField, AuthResult, Me, ResetPasswordResult } from "../types/Auth";
 import type { LoginFormValues } from "../schemas/auth.schema";
 
@@ -31,6 +31,25 @@ function toAuthResult(response: SdkResponse): AuthResult {
   }
 }
 
+/**
+ * Las llamadas del SDK de SuperTokens lanzan la propia `Response` si el estado es
+ * 300 o más. Un 429 del rate limit (RNF-04) se convierte en el mismo `ApiError`
+ * que devuelve `apiClient`, para que los formularios lo traduzcan igual.
+ */
+async function withRateLimit<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call();
+  } catch (error) {
+    if (error instanceof Response && error.status === 429) {
+      const body = (await error.json().catch(() => ({}))) as { retry_after?: unknown };
+      const header = Number(error.headers.get("Retry-After"));
+      const retryAfter = typeof body.retry_after === "number" ? body.retry_after : header || 60;
+      throw new ApiError(429, "Too many requests", "rate_limited", { retry_after: retryAfter });
+    }
+    throw error;
+  }
+}
+
 function formFields({ email, password }: LoginFormValues) {
   return [
     { id: "email", value: email },
@@ -40,19 +59,23 @@ function formFields({ email, password }: LoginFormValues) {
 
 export const authService = {
   signIn: async (values: LoginFormValues): Promise<AuthResult> =>
-    toAuthResult(await EmailPassword.signIn({ formFields: formFields(values) })),
+    toAuthResult(
+      await withRateLimit(() => EmailPassword.signIn({ formFields: formFields(values) })),
+    ),
 
   signUp: async (values: LoginFormValues): Promise<AuthResult> =>
-    toAuthResult(await EmailPassword.signUp({ formFields: formFields(values) })),
+    toAuthResult(
+      await withRateLimit(() => EmailPassword.signUp({ formFields: formFields(values) })),
+    ),
 
   /**
    * Pide el email de recuperación. El backend responde lo mismo exista o no la
    * cuenta (T9), así que "ok" solo significa "petición aceptada".
    */
   sendPasswordResetEmail: async (email: string): Promise<"ok" | "error"> => {
-    const response = await EmailPassword.sendPasswordResetEmail({
-      formFields: [{ id: "email", value: email }],
-    });
+    const response = await withRateLimit(() =>
+      EmailPassword.sendPasswordResetEmail({ formFields: [{ id: "email", value: email }] }),
+    );
     return response.status === "OK" ? "ok" : "error";
   },
 
@@ -85,7 +108,7 @@ export const authService = {
     (await EmailVerification.isEmailVerified()).isVerified,
 
   sendVerificationEmail: async (): Promise<"ok" | "already_verified" | "error"> => {
-    const response = await EmailVerification.sendVerificationEmail();
+    const response = await withRateLimit(() => EmailVerification.sendVerificationEmail());
     if (response.status === "OK") return "ok";
     if (response.status === "EMAIL_ALREADY_VERIFIED_ERROR") return "already_verified";
     return "error";

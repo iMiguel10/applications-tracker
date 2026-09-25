@@ -51,6 +51,18 @@ class ErrorResponse(BaseModel):
     code: str = Field(examples=["not_found"])
 
 
+class RateLimitedRead(BaseModel):
+    """429 (RNF-04): demasiadas peticiones. La cabecera `Retry-After` lleva los
+    mismos segundos que `retry_after`."""
+
+    detail: str = Field(examples=["Too many requests"])
+    code: str = Field(examples=["rate_limited"])
+    retry_after: int = Field(
+        description="Segundos que hay que esperar antes de volver a intentarlo.",
+        examples=[42],
+    )
+
+
 def error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
     """Respuestas de error documentadas en el OpenAPI de un endpoint."""
     descriptions = {

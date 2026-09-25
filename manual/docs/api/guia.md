@@ -68,6 +68,24 @@ La API funciona sin verificar el email. Las rutas que lo exijan responderán **4
 
 `GET /api/v1/meta` es público y dice qué ofrece esta instalación. Hoy solo incluye `email_enabled`: con `false` no hay servidor de correo, y pedir la recuperación responde igual pero no envía nada.
 
+## Límite de peticiones
+
+| Qué | Límite | Por |
+|---|---|---|
+| `POST /auth/signin` | 10 por minuto y 10 por hora | IP y email |
+| `POST /auth/signup` | 5 por hora | IP |
+| `POST /auth/user/password/reset/token` | 3 por hora y 10 por hora | email e IP |
+| `POST /auth/user/email/verify/token` | 3 por hora | usuario |
+| Cualquier ruta de `/api/v1` con sesión | 600 por minuto | usuario |
+
+Al superarlo, la respuesta es **429**, con la cabecera `Retry-After` (segundos) y este cuerpo:
+
+```json
+{ "detail": "Too many requests", "code": "rate_limited", "retry_after": 42 }
+```
+
+Espera esos segundos antes de reintentar. El límite frena, pero nunca bloquea la cuenta.
+
 ## Errores
 
 Los errores de la aplicación tienen siempre esta forma:

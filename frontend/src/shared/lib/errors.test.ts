@@ -25,3 +25,17 @@ describe("error messages", () => {
     expect(errorMessageParams(new ApiError(404, "Not found", "not_found"))).toEqual({});
   });
 });
+
+describe("rate limited", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("es");
+  });
+
+  it("says how long to wait (RNF-04)", () => {
+    const error = new ApiError(429, "Too many requests", "rate_limited", { retry_after: 120 });
+
+    expect(i18n.t(errorMessageKey(error), errorMessageParams(error))).toBe(
+      "Demasiados intentos. Vuelve a intentarlo dentro de 2 minutos.",
+    );
+  });
+});

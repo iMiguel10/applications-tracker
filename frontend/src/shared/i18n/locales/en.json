@@ -444,7 +444,8 @@
     "changed_at_in_future": "The date cannot be in the future",
     "changed_at_before_last_change": "The date cannot be earlier than the last change",
     "reminders_limit_reached": "You have reached your limit of {{limit, number}} reminders",
-    "reminder_not_pending": "This reminder is no longer pending"
+    "reminder_not_pending": "This reminder is no longer pending",
+    "rate_limited": "Too many attempts. Try again {{wait}}."
   },
   "usage": {
     "title": "Account usage",

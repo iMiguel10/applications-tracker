@@ -6,7 +6,7 @@ hicieran (el middleware dejó de interceptarlas), responden 500 en vez de fingir
 un login, y las pruebas de humo de auth (tests/api/test_auth_smoke.py) fallan.
 """
 
-from typing import Annotated, Literal, NoReturn
+from typing import Annotated, Any, Literal, NoReturn
 
 from fastapi import APIRouter, Header
 
@@ -26,6 +26,7 @@ from app.schemas.auth import (
     PasswordResetTokenRequest,
     UnauthorizedError,
 )
+from app.schemas.common import RateLimitedRead
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -60,6 +61,14 @@ TOKEN_HEADERS = {
 }
 
 
+def _rate_limited(limit: str) -> dict[str, Any]:
+    return {
+        "model": RateLimitedRead,
+        "description": f"Demasiados intentos ({limit}). `Retry-After` dice cuántos "
+        "segundos esperar. Se frena, pero la cuenta nunca se bloquea.",
+    }
+
+
 def _served_by_middleware() -> NoReturn:
     raise RuntimeError(
         "Ruta servida por el middleware de SuperTokens: este handler solo documenta."
@@ -70,7 +79,10 @@ def _served_by_middleware() -> NoReturn:
     "/signup",
     summary="Registrarse",
     response_model=AuthOk | AuthFieldError,
-    responses={200: {"headers": TOKEN_HEADERS}},
+    responses={
+        200: {"headers": TOKEN_HEADERS},
+        429: _rate_limited("5 por hora y por IP"),
+    },
 )
 async def signup(body: AuthCredentials, st_auth_mode: AuthMode = None) -> NoReturn:
     """Crea la cuenta e inicia sesión en la misma llamada.
@@ -86,7 +98,10 @@ async def signup(body: AuthCredentials, st_auth_mode: AuthMode = None) -> NoRetu
     "/signin",
     summary="Iniciar sesión",
     response_model=AuthOk | AuthWrongCredentials | AuthFieldError,
-    responses={200: {"headers": TOKEN_HEADERS}},
+    responses={
+        200: {"headers": TOKEN_HEADERS},
+        429: _rate_limited("10 por minuto y por IP, y 10 por hora y por email"),
+    },
 )
 async def signin(body: AuthCredentials, st_auth_mode: AuthMode = None) -> NoReturn:
     """Inicia sesión con email y contraseña.
@@ -102,6 +117,7 @@ async def signin(body: AuthCredentials, st_auth_mode: AuthMode = None) -> NoRetu
     "/user/password/reset/token",
     summary="Pedir el email de recuperación de contraseña",
     response_model=AuthStatusOk | AuthFieldError,
+    responses={429: _rate_limited("3 por hora y por email, y 10 por hora y por IP")},
 )
 async def password_reset_token(body: PasswordResetTokenRequest) -> NoReturn:
     """Envía al email indicado un enlace para elegir una contraseña nueva.
@@ -178,7 +194,10 @@ async def refresh(st_auth_mode: AuthMode = None) -> NoReturn:
     summary="Reenviar el email de verificación",
     response_model=AuthStatusOk | EmailAlreadyVerified,
     dependencies=SECURITY_SCHEMES,
-    responses={401: {"model": UnauthorizedError, "description": "Sin sesión."}},
+    responses={
+        401: {"model": UnauthorizedError, "description": "Sin sesión."},
+        429: _rate_limited("3 por hora y por usuario"),
+    },
 )
 async def email_verify_token() -> NoReturn:
     """Envía otra vez el enlace de verificación al email de la sesión.

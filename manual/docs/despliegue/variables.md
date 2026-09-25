@@ -84,6 +84,19 @@ docker compose exec api python -m app.scripts.set_user_limit ana@example.com app
 
 Rebajar un límite por debajo de lo que la cuenta ya tiene no borra nada: solo le impide crear más. Una cuenta sin límite ve en Preferencias cuánto lleva y "sin límite", y nunca recibe avisos.
 
+## Límite de peticiones
+
+| Variable | Por defecto | Qué es |
+|---|---|---|
+| `RATE_LIMIT_ENABLED` | `true` | Limita los intentos de inicio de sesión, registro y emails, y las peticiones de cada usuario. Solo se desactiva para las pruebas |
+| `TRUSTED_PROXIES` | vacía | IPs o redes (CIDR) de tus proxies, separadas por comas, por ejemplo `172.18.0.0/16` |
+
+:::warning Detrás de un proxy, TRUSTED_PROXIES es obligatoria
+Si la aplicación está detrás de un proxy (Nginx, un balanceador), todas las peticiones le llegan desde la IP del proxy. Sin `TRUSTED_PROXIES`, todos los usuarios comparten esa IP y el límite de 10 inicios de sesión por minuto se reparte entre todos. Con ella, la aplicación lee la IP real de la cabecera `X-Forwarded-For`, pero solo cuando la pone un proxy de la lista.
+:::
+
+Los límites se guardan en Valkey. Si Valkey no responde, la aplicación deja pasar las peticiones sin límite y lo registra en el log, para que nadie se quede sin poder entrar.
+
 ## Entorno
 
 | Variable | Obligatoria | Qué es |

@@ -25,6 +25,7 @@ If the installation does not send email, you won't see the notice.
 
 - To sign in, enter your email and password and click **Sign in**. The session is kept even if you reload the page or close the tab.
 - To sign out, click **Sign out** in the top bar (on small screens, inside the menu).
+- If you get it wrong many times in a row, the application asks you to wait a little ("Too many attempts. Try again in…"). Your account is not locked: once that time has passed, you can sign in again.
 
 ## If you forget your password
 

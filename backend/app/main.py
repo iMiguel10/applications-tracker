@@ -8,6 +8,7 @@ from supertokens_python import get_all_cors_headers
 from supertokens_python.framework.fastapi import get_middleware
 
 from app.api import auth_docs
+from app.api.auth_rate_limit import AuthRateLimitMiddleware
 from app.api.openapi import (
     API_DESCRIPTION,
     API_TITLE,
@@ -25,6 +26,7 @@ from app.core.exceptions import AppException
 from app.core.logging import setup_logging
 from app.core.supertokens import init_supertokens
 from app.infra.queue import JobQueue, SaqJobQueue
+from app.infra.rate_limit import DisabledRateLimiter, build_rate_limiter
 
 
 def _job_queue() -> JobQueue:
@@ -44,6 +46,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     queue = Queue.from_url(settings.valkey_url)
     await queue.connect()
     app.state.job_queue = SaqJobQueue(queue)
+    app.state.rate_limiter = build_rate_limiter(settings)
     try:
         yield
     finally:
@@ -68,13 +71,22 @@ app.include_router(api_router, prefix="/api/v1")
 # respuestas de /auth/*. Invertido, el login respondería 200 sin
 # Access-Control-Allow-Origin y el navegador lo bloquearía (autenticacion.md §3).
 app.add_middleware(get_middleware())
+# Por fuera de SuperTokens, para alcanzar /auth/* antes que él, y por dentro de
+# CORS, para que el 429 lleve sus cabeceras (límites y abuso §2).
+app.add_middleware(AuthRateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["Content-Type", *get_all_cors_headers()],
+    # Para que un cliente en el navegador pueda leer cuánto esperar tras un 429.
+    expose_headers=["Retry-After"],
 )
+
+# Hasta el lifespan (y en las pruebas, que no lo ejecutan) no hay rate limit; las
+# pruebas que lo prueban ponen el suyo.
+app.state.rate_limiter = DisabledRateLimiter()
 
 app.add_exception_handler(
     AppException,

@@ -444,7 +444,8 @@
     "changed_at_in_future": "La fecha no puede ser futura",
     "changed_at_before_last_change": "La fecha no puede ser anterior al último cambio",
     "reminders_limit_reached": "Has alcanzado tu límite de {{limit, number}} recordatorios",
-    "reminder_not_pending": "Este recordatorio ya no está pendiente"
+    "reminder_not_pending": "Este recordatorio ya no está pendiente",
+    "rate_limited": "Demasiados intentos. Vuelve a intentarlo {{wait}}."
   },
   "usage": {
     "title": "Uso de la cuenta",

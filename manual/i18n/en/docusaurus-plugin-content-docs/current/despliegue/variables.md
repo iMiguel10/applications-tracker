@@ -84,6 +84,19 @@ docker compose exec api python -m app.scripts.set_user_limit ana@example.com app
 
 Lowering a limit below what the account already has deletes nothing: it only stops it from creating more. An account with no limit sees in Preferences how much it has used and "no limit", and never gets warnings.
 
+## Request limits
+
+| Variable | Default | What it is |
+|---|---|---|
+| `RATE_LIMIT_ENABLED` | `true` | Limits sign-in, sign-up and email attempts, and each user's requests. Only turned off for tests |
+| `TRUSTED_PROXIES` | empty | IPs or networks (CIDR) of your proxies, comma-separated, for example `172.18.0.0/16` |
+
+:::warning Behind a proxy, TRUSTED_PROXIES is required
+If the application is behind a proxy (Nginx, a load balancer), every request reaches it from the proxy's IP. Without `TRUSTED_PROXIES`, all users share that IP and the limit of 10 sign-ins per minute is split among everyone. With it, the application reads the real IP from the `X-Forwarded-For` header, but only when a proxy on the list sets it.
+:::
+
+Limits are kept in Valkey. If Valkey doesn't respond, the application lets requests through without limits and logs it, so that nobody is locked out.
+
 ## Environment
 
 | Variable | Required | What it is |

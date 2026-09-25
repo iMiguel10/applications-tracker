@@ -43,6 +43,13 @@ class Settings(BaseSettings):
     limit_companies: int = Field(default=2_000, ge=0)
     limit_reminders: int = Field(default=5_000, ge=0)
 
+    # Rate limiting (RNF-04, límites y abuso §2). Desactivable solo para las
+    # pruebas, que si no fallarían de forma intermitente por 429.
+    rate_limit_enabled: bool = True
+    # IPs o redes (CIDR) de los proxies cuyo X-Forwarded-For se acepta, separadas
+    # por comas. Vacío (desarrollo, sin proxy): se usa la IP de la conexión.
+    trusted_proxies: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",

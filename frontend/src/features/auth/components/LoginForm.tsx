@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
+import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -42,7 +43,7 @@ export function LoginForm() {
           toast.error(t("auth.errors.generic"));
         }
       },
-      onError: () => toast.error(t("auth.errors.generic")),
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
 
   return (
