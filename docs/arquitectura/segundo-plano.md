@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9 y F12 construidas y cerradas; falta lo de F13–F15). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los cuatro avisos y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12 y F13 construidas; falta lo de F14–F15). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los cuatro avisos y la baja con un clic (§4 y §5) y, de F13, el barrido diario de ficheros huérfanos (§5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 

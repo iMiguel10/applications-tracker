@@ -2,8 +2,9 @@ import csv
 import io
 import uuid
 from datetime import UTC, date, datetime
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException, NotFoundError
@@ -33,6 +34,12 @@ from app.schemas.application import (
     ApplicationUpdate,
 )
 from app.services.limit_service import LimitService
+
+# Nombres de las FK compuestas de applications a documents (naming_convention).
+_DOCUMENT_FOREIGN_KEYS = (
+    "fk_applications_cv_document_id_documents",
+    "fk_applications_cover_letter_document_id_documents",
+)
 
 _ARCHIVED_FILTER: dict[str, bool | None] = {
     "active": False,
@@ -104,18 +111,22 @@ class ApplicationService:
         application = Application(
             user_id=user_id, origin=ApplicationOrigin.MANUAL.value, **fields
         )
-        await self.applications.add(application)
-        # Invariante 4: ninguna solicitud existe sin su cambio inicial en el
-        # historial (arquitectura §4). from_status NULL lo distingue de un cambio real.
-        await self.status_changes.add(
-            ApplicationStatusChange(
-                application_id=application.id,
-                from_status=None,
-                to_status=application.status,
-                changed_at=datetime.now(UTC),
+        try:
+            await self.applications.add(application)
+            # Invariante 4: ninguna solicitud existe sin su cambio inicial en el
+            # historial (arquitectura §4). from_status NULL lo distingue de un
+            # cambio real.
+            await self.status_changes.add(
+                ApplicationStatusChange(
+                    application_id=application.id,
+                    from_status=None,
+                    to_status=application.status,
+                    changed_at=datetime.now(UTC),
+                )
             )
-        )
-        await self.session.commit()
+            await self.session.commit()
+        except IntegrityError as error:
+            await self._raise_document_gone_or_reraise(error)
         # Recarga con la empresa (la relación es lazy="raise").
         return await self.get(user_id, application.id)
 
@@ -159,8 +170,11 @@ class ApplicationService:
 
         for field, value in changes.items():
             setattr(application, field, value)
-        await self.applications.save(application)
-        await self.session.commit()
+        try:
+            await self.applications.save(application)
+            await self.session.commit()
+        except IntegrityError as error:
+            await self._raise_document_gone_or_reraise(error)
         return await self.get(user_id, application_id)
 
     async def archive(
@@ -217,6 +231,17 @@ class ApplicationService:
                     status_code=422,
                     code="document_kind_mismatch",
                 )
+
+    async def _raise_document_gone_or_reraise(self, error: IntegrityError) -> NoReturn:
+        """Traduce la violación de las FK a documentos a 404; el resto, tal cual.
+
+        `_ensure_documents` no basta: si otra petición borra el documento entre la
+        comprobación y el flush, la FK compuesta lo rechaza. Es lo mismo que un
+        documento que no existe, y sin esto el usuario vería un 500."""
+        await self.session.rollback()
+        if any(name in str(error.orig) for name in _DOCUMENT_FOREIGN_KEYS):
+            raise NotFoundError("Document") from error
+        raise error
 
     async def export_csv(self, user_id: uuid.UUID) -> str:
         """RF-70: todas las solicitudes del usuario, archivadas incluidas. Códigos

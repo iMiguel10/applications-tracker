@@ -1,9 +1,9 @@
 # Especificación de producto
 
-> Estado: v1 (MVP, F0–F8) construida · **v2** especificada y diseñada el 2026-09-24; construidas F9 (infraestructura), F10 (manual de producción), F11 (cuenta y protección) y F12 (avisos por email), el resto pendiente
+> Estado: v1 (MVP, F0–F8) construida · **v2** especificada y diseñada el 2026-09-24; construidas F9 (infraestructura), F10 (manual de producción), F11 (cuenta y protección), F12 (avisos por email) y F13 (biblioteca de documentos), el resto pendiente
 
 !!! info "Cómo leer este documento"
-    La **v1** (MVP) está construida: sus requisitos describen lo que existe. La **v2** (fases F9–F17) está especificada y construida hasta F12; sus requisitos llevan la fase en la que se construyen, por ejemplo `[F12]` (la etiqueta indica la fase, no que falte: F9–F12 ya están hechas). Una sola fuente de verdad para las dos, con la numeración continua.
+    La **v1** (MVP) está construida: sus requisitos describen lo que existe. La **v2** (fases F9–F17) está especificada y construida hasta F13; sus requisitos llevan la fase en la que se construyen, por ejemplo `[F13]` (la etiqueta indica la fase, no que falte: F9–F13 ya están hechas). Una sola fuente de verdad para las dos, con la numeración continua.
 
 ## 0. Contexto del proyecto
 
@@ -198,7 +198,7 @@ Usuario
 ### Biblioteca de documentos (RF-90…) · v2
 
 - **RF-90** `[F13]` Subir CVs y cartas en PDF, con nombre y tipo. Listar, renombrar, descargar, previsualizar en la app y archivar.
-- **RF-91** `[F13]` Cada documento muestra su origen: subido, generado desde el perfil o adaptado con IA (y para qué solicitud).
+- **RF-91** `[F13]` Cada documento muestra su origen: subido, generado desde el perfil o adaptado con IA (y para qué solicitud). Hasta F14 solo existe el origen «subido»; los otros dos llegan con la generación y la IA.
 - **RF-92** `[F13]` Un documento se puede asociar a varias solicitudes (RF-28); el detalle de cada documento lista en qué solicitudes se usó.
 - **RF-93** `[F13]` No se puede borrar un documento asociado a alguna solicitud (mismo criterio que RF-12 con las empresas): borrarlo perdería el dato de qué se envió a quién. Se puede **archivar**, que lo oculta de la biblioteca sin romper la asociación.
 - **RF-94** `[F13]` Solo se aceptan PDFs de verdad (se comprueba el contenido, no la extensión) y hasta el tamaño máximo de §10.
@@ -459,7 +459,7 @@ Cada fase se define por el riesgo que quita de en medio. Van en orden de depende
 | **F10 — Documentación de producción** · ✔ construida el 2026-09-24 | Sitio Docusaurus (es + en) con sus tres partes (RNF-33): manual de uso de lo que ya existe (MVP), referencia de la API generada del OpenAPI con su guía de integración, y la estructura del manual de despliegue, que se completa en F7. El agente documentador pasa a mantener los dos sitios. | Montarlo **antes** que las features hace que cada una llegue ya con su página de manual, en vez de acumular deuda. |
 | **F11 — Cuenta, límites y protección** · ✔ construida | Recuperación de contraseña (RF-03), verificación de email (RF-05, RF-06), zona horaria (RF-07), límites ampliados con consumo y restante visibles (RF-140…144) y rate limiting (RNF-04). | Con registro abierto, es lo que hay que tener antes de exponer nada con coste. |
 | **F12 — Notificaciones por email** · ✔ construida el 2026-09-30 | Los cuatro tipos (RF-80…87), preferencias y desactivación con un clic. | Trabajo programado e idempotencia: "nunca dos veces" es la parte difícil. |
-| **F13 — Biblioteca de documentos** | Subida de PDFs, biblioteca, asociación a solicitudes, descripción de la oferta (RF-27, RF-28, RF-90…94). | Manejo seguro de ficheros subidos por usuarios (RNF-05) y consistencia entre base de datos y almacén (RNF-41). |
+| **F13 — Biblioteca de documentos** · ✔ construida el 2026-09-30 | Subida de PDFs, biblioteca, asociación a solicitudes, descripción de la oferta (RF-27, RF-28, RF-90…94). | Manejo seguro de ficheros subidos por usuarios (RNF-05) y consistencia entre base de datos y almacén (RNF-41). |
 | **F14 — Perfil y CVs generados** | Perfil profesional, plantillas y generación de PDF (RF-100…106). | Modelo de datos del perfil y generación de PDF con varias plantillas. |
 | **F15 — IA: CV y carta adaptados** | Ajuste de CV, carencias, revisión, carta de presentación y consentimiento (RF-110…119); cuota gratuita, claves propias y proveedores (RF-150…156). Al empezar se fijan con precios reales la cuota y el tope global (R7). | Integración con un modelo de lenguaje sin que invente, con coste acotado y probable sin llamar al proveedor. |
 | **F16 — Tablero Kanban** | RF-120…123. | Poco riesgo: reutiliza `allowed_transitions` y el cambio de estado existente. Enseña arrastrar y soltar accesible. |

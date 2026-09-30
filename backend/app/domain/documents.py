@@ -98,11 +98,13 @@ def content_disposition(name: str, *, attachment: bool) -> str:
     `currculum`) **y** `filename*` en UTF-8 (RFC 5987), que prefieren los
     navegadores modernos."""
     filename = download_name(name)
-    ascii_name = (
-        unicodedata.normalize("NFKD", filename).encode("ascii", "ignore").decode()
-    )
+    # Sin la extensión: un nombre sin ningún carácter ASCII (`履歴書.pdf`) se
+    # quedaría en `.pdf`, un fichero oculto sin nombre.
+    stem, extension = filename[:-4], filename[-4:]
+    ascii_stem = unicodedata.normalize("NFKD", stem).encode("ascii", "ignore").decode()
     # Comillas y barras invertidas romperían el valor entrecomillado.
-    ascii_name = ascii_name.replace('"', "").replace("\\", "").strip() or DEFAULT_NAME
+    ascii_stem = ascii_stem.replace('"', "").replace("\\", "").strip()
+    ascii_name = f"{ascii_stem}{extension}" if ascii_stem else DEFAULT_NAME
     disposition = "attachment" if attachment else "inline"
     return (
         f'{disposition}; filename="{ascii_name}"; '

@@ -308,7 +308,7 @@ Las tres reglas contra el envejecimiento:
 
 ## 8. Ampliación de la v2
 
-> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora: en F9, `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`; en F10, `manual` y su job de CI; en F11, `infra/rate_limit/`, `LimitService` y el router `public`; en F12, `services/notifications/`, `jobs/notifications.py`, `NotificationDeliveryService` y la variable `APP_SECRET`.
+> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora: en F9, `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`; en F10, `manual` y su job de CI; en F11, `infra/rate_limit/`, `LimitService` y el router `public`; en F13, `OrphanFileService`, `jobs/files.py` y las variables `DOCUMENT_MAX_BYTES`, `LIMIT_DOCUMENTS` y `LIMIT_STORAGE_BYTES`; en F12, `services/notifications/`, `jobs/notifications.py`, `NotificationDeliveryService` y la variable `APP_SECRET`.
 
 ### 8.1 Servicios
 
@@ -400,13 +400,14 @@ backend/app/
 ├── worker.py                   [construido] configuración de SAQ: cola, funciones y tareas programadas. Solo cablea.
 ├── jobs/                       [construido] funciones de trabajo: abren sesión, construyen el service y lo llaman
 │   ├── context.py              [construido] WorkerContext: el contexto de SAQ con las dependencias que crea worker.py
-│   ├── documents.py            generar PDF (F13, F14)
+│   ├── files.py                [construido en F13] barrido diario de ficheros huérfanos
+│   ├── documents.py            generar PDF (F14)
 │   ├── ai.py                   propuesta de CV o carta (F15)
 │   ├── notifications.py        barridos de avisos y envío (F12)
-│   └── maintenance.py          ficheros huérfanos, reencolar pendientes atascados, reclamos sin resultado
+│   └── maintenance.py          reencolar pendientes atascados, reclamos sin resultado
 ├── infra/                      [nuevo] adaptadores a sistemas externos, cada uno detrás de una interfaz
 │   ├── queue/                  [construido] JobQueue · SaqJobQueue · InMemoryJobQueue (pruebas) · QueueUnavailableError
-│   ├── storage/                [construido] FileStorage · LocalFileStorage (iter_keys llega en F13)
+│   ├── storage/                [construido] FileStorage · LocalFileStorage (`iter_files` y `delete_temporaries`, F13)
 │   ├── email/                  [construido] EmailSender · SmtpEmailSender · DisabledEmailSender · RecordingEmailSender (pruebas)
 │   ├── llm/                    LLMProvider · adapters/<proveedor>.py · FakeLLMProvider (pruebas)
 │   │   └── prompts/            prompts versionados (A33): cv_tailoring/v1.md, cover_letter/v1.md

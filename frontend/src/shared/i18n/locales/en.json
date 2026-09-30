@@ -258,7 +258,7 @@
   "account": {
     "delete": {
       "title": "Delete account",
-      "description": "Your account and all your data will be permanently deleted: applications with their history, companies, interviews and reminders. To keep them, export your applications to CSV from <link>Applications</link> first.",
+      "description": "Your account and all your data will be permanently deleted: applications with their history, companies, interviews, reminders and documents. To keep them, export your applications to CSV from <link>Applications</link> first and download any PDFs you want to keep: they are not in the CSV.",
       "openButton": "Delete account",
       "dialogTitle": "Delete your account?",
       "dialogDescription": "This can't be undone. All your data will be deleted and you'll be signed out.",

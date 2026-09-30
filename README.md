@@ -21,7 +21,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 ---
 
 > [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11) y recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11), recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12), y guardar tus CVs y cartas en PDF y asociarlos a cada solicitud junto con la descripción de la oferta (F13). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Contenido
 
@@ -46,6 +46,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 | **Solicitudes y empresas** | Alta, edición, archivado y borrado. Listado con búsqueda, filtros (estado, modalidad, fuente, archivadas; y por empresa desde su ficha), orden y paginación **en la URL**, así que un filtro se puede compartir o recuperar con el botón atrás. Empresas reutilizables entre solicitudes, creables sin salir del formulario. |
 | **Ciclo de vida** | Cada solicitud recorre una máquina de estados (guardada → enviada → en revisión → entrevistas → oferta → aceptada, o descartada / retirada). Cada cambio queda en un historial con la fecha en que ocurrió de verdad, y el último se puede **deshacer**. |
 | **Entrevistas y recordatorios** | Entrevistas por solicitud (tipo, formato, resultado) y recordatorios con fecha límite, ligados o no a una solicitud. |
+| **Documentos** | Biblioteca de CVs y cartas de presentación en PDF (subir, ver en la app, descargar, renombrar, archivar), la descripción de la oferta y el CV y la carta enviados en cada solicitud. Solo se aceptan PDFs de verdad, con cuota de almacenamiento por cuenta. |
 | **Avisos por email** | Recordatorio vencido (con antelación opcional), entrevista próxima, solicitudes sin actividad y resumen semanal del lunes, cada uno activable por separado. Nunca dos veces por el mismo motivo y con baja de un clic desde el propio email. Requieren un servidor SMTP. |
 | **Dashboard** | Solicitudes por estado, envíos por semana, tasa de respuesta, próximas entrevistas, recordatorios pendientes y solicitudes sin actividad. |
 | **Métricas honestas** | Cada porcentaje indica sobre cuántas solicitudes se calcula y no se muestra con menos de 5. El sistema **nunca** da por descartada una candidatura que solo lleva tiempo sin respuesta. |
@@ -55,7 +56,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F12: la infraestructura, el manual de producción, la cuenta y protección, y los avisos por email.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F13: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email y la biblioteca de documentos.
 
 | Fase | Contenido |
 |---|---|
@@ -63,7 +64,7 @@ Especificada en la [especificación](docs/producto/especificacion.md) y diseñad
 | ✔ F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
 | ✔ F11 | Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
 | ✔ F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad, nunca dos veces por el mismo motivo y con baja de un clic |
-| F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
+| ✔ F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
 | F14 | Perfil profesional y generación de CVs con varios diseños |
 | F15 | IA que adapta el CV y la carta a una oferta **sin inventar experiencia**, con cuota gratuita y clave propia del usuario |
 | F16 | Tablero Kanban |

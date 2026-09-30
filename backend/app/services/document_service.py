@@ -142,11 +142,12 @@ class DocumentService:
         if used:
             raise DocumentInUseError(used)
         key = document.storage_key
-        await self.documents.delete(document)
         try:
+            # La FK salta ya en el flush del repository, no solo en el commit.
+            await self.documents.delete(document)
             await self.session.commit()
         except IntegrityError as exc:
-            # Alguien lo asoció a una solicitud entre la comprobación y el commit.
+            # Alguien lo asoció a una solicitud entre la comprobación y el borrado.
             await self.session.rollback()
             raise DocumentInUseError(1) from exc
         if key is None:
