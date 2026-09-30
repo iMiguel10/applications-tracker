@@ -27,7 +27,7 @@ In the **Email notifications** card you turn each notification on or off separat
 | Reminder due | When a pending reminder reaches its date, or earlier with the notice you choose in **Notify** (when it is due, 1 hour or 1 day before; when it is due by default) | On |
 | Upcoming interview | Before each scheduled interview, as far ahead as you choose in **Notify** (from 1 hour to 7 days; 1 day by default) | On |
 | Weekly summary | On Monday mornings, in your time zone | Off |
-| Applications without activity | When an application goes past the days without activity in your preferences | Off |
+| Applications without activity | When an application goes past the days without activity in your preferences. If there are several, they all go in a single email | Off |
 
 You never get two emails for the same reason. Every email has a link at the bottom to **unsubscribe** from that notification without signing in: it opens a page that asks whether you want to stop receiving it, and it only applies when you click **Unsubscribe**. Your email program may also show its own unsubscribe button, which does the same. To receive it again, turn it back on here.
 

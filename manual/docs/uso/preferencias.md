@@ -27,7 +27,7 @@ En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado.
 | Recordatorio vencido | Cuando llega la fecha de un recordatorio pendiente, o antes con la antelación que elijas en **Avisar** (al vencer, 1 hora o 1 día antes; al vencer por defecto) | Activado |
 | Entrevista próxima | Antes de cada entrevista programada, con la antelación que elijas en **Avisar** (de 1 hora a 7 días; 1 día por defecto) | Activado |
 | Resumen semanal | Los lunes por la mañana, en tu zona horaria | Desactivado |
-| Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias | Desactivado |
+| Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias. Si hay varias, van todas en un solo email | Desactivado |
 
 Nunca recibes dos emails por el mismo motivo. Cada email trae al pie un enlace para **darte de baja** de ese aviso sin iniciar sesión: abre una página que te pregunta si quieres dejar de recibirlo, y solo se aplica al pulsar **Darme de baja**. Tu programa de correo también puede mostrar su propio botón de baja, que hace lo mismo. Para volver a recibirlo, actívalo aquí.
 

@@ -29,6 +29,7 @@ from app.schemas.user import CurrentUser
 from app.services.notification_delivery_service import (
     SEND_NOTIFICATION,
     NotificationDeliveryService,
+    SingleDeliveryComposer,
 )
 
 NOW = datetime(2026, 10, 5, 8, 0, tzinfo=UTC)
@@ -44,13 +45,13 @@ class FakeIdentities(IdentityRepository):
         return self.email
 
 
-class FakeComposer:
+class FakeComposer(SingleDeliveryComposer):
     def __init__(self, *, reason_gone: bool = False) -> None:
         self.reason_gone = reason_gone
         self.composed: list[str] = []
         self.unsubscribe_links: list[str] = []
 
-    async def compose(
+    async def compose_one(
         self, delivery: NotificationDelivery, user: User, unsubscribe_link: str
     ) -> RenderedEmail | None:
         self.composed.append(delivery.dedupe_key)
@@ -96,9 +97,9 @@ async def test_accepted_email_is_sent_once(db_session: AsyncSession, user: Curre
     service = _service(db_session, sender)
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
     # Encolado dos veces, o un worker que lo toma por abandonado al arrancar.
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
 
     delivery = await _delivery(db_session, delivery_id, user)
     assert delivery.status == DeliveryStatus.SENT
@@ -117,7 +118,7 @@ async def test_every_email_carries_its_one_click_unsubscribe(
     service = _service(db_session, sender, composer=composer)
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
 
     [email] = sender.sent
     one_click = email.headers["List-Unsubscribe"]
@@ -139,7 +140,7 @@ async def test_ambiguous_failure_is_unknown_and_never_retried(
     service = _service(db_session, sender)
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
 
     delivery = await _delivery(db_session, delivery_id, user)
     assert delivery.status == DeliveryStatus.UNKNOWN
@@ -162,7 +163,7 @@ async def test_failure_before_delivery_is_retried_up_to_the_limit(
     now = NOW
 
     for attempt in range(1, MAX_DELIVERY_ATTEMPTS + 1):
-        await service.deliver(delivery_id, user.id, now)
+        await service.deliver([delivery_id], user.id, now)
         delivery = await _delivery(db_session, delivery_id, user)
         assert delivery.status == DeliveryStatus.FAILED
         assert delivery.attempts == attempt
@@ -187,13 +188,13 @@ async def test_retry_that_succeeds_ends_sent(
     sender = RecordingEmailSender(fail_with=EmailNotSentError("sin conexión"))
     service = _service(db_session, sender)
     delivery_id = await _claim(service, user)
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
     retry_at = (await _delivery(db_session, delivery_id, user)).next_attempt_at
     assert retry_at is not None
 
     sender.fail_with = None
     await service.claim(user.id, KIND, "reminder:1", retry_at)
-    await service.deliver(delivery_id, user.id, retry_at)
+    await service.deliver([delivery_id], user.id, retry_at)
 
     delivery = await _delivery(db_session, delivery_id, user)
     assert delivery.status == DeliveryStatus.SENT
@@ -210,7 +211,7 @@ async def test_job_with_another_users_id_does_not_touch_the_delivery(
     service = _service(db_session, sender)
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, other_user.id, NOW)
+    await service.deliver([delivery_id], other_user.id, NOW)
 
     assert sender.sent == []
     assert (await _delivery(db_session, delivery_id, user)).status == (
@@ -226,7 +227,7 @@ async def test_deleted_account_gives_up_without_retries(
     service = _service(db_session, sender, email=None)
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
 
     delivery = await _delivery(db_session, delivery_id, user)
     assert delivery.status == DeliveryStatus.FAILED
@@ -242,7 +243,7 @@ async def test_reason_that_disappeared_sends_nothing_and_leaves_no_claim(
     service = _service(db_session, sender, composer=FakeComposer(reason_gone=True))
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
 
     assert sender.sent == []
     assert (
@@ -261,7 +262,7 @@ async def test_kind_without_composer_gives_up(
     )
     delivery_id = await _claim(service, user)
 
-    await service.deliver(delivery_id, user.id, NOW)
+    await service.deliver([delivery_id], user.id, NOW)
 
     delivery = await _delivery(db_session, delivery_id, user)
     assert delivery.status == DeliveryStatus.FAILED
@@ -277,12 +278,12 @@ async def test_send_job_carries_only_ids_and_a_single_attempt(
     service = NotificationDeliveryService(db_session)
     delivery_id = await _claim(service, user)
 
-    await service.enqueue_send(queue, delivery_id, user.id)
+    await service.enqueue_send(queue, [delivery_id], user.id)
 
     [job] = queue.jobs
     assert job.job == SEND_NOTIFICATION
     assert job.max_attempts == 1
-    assert job.kwargs == {"delivery_id": str(delivery_id), "user_id": str(user.id)}
+    assert job.kwargs == {"delivery_ids": str(delivery_id), "user_id": str(user.id)}
 
 
 class UnavailableQueue(InMemoryJobQueue):
@@ -306,7 +307,7 @@ async def test_queue_down_after_the_claim_does_not_fail(
     service = NotificationDeliveryService(db_session)
     delivery_id = await _claim(service, user)
 
-    await service.enqueue_send(UnavailableQueue(), delivery_id, user.id)
+    await service.enqueue_send(UnavailableQueue(), [delivery_id], user.id)
 
     assert (await _delivery(db_session, delivery_id, user)).status == (
         DeliveryStatus.CLAIMED

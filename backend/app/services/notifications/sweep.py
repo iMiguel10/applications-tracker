@@ -54,9 +54,18 @@ class ClaimingSweep:
         self.identities = identities or IdentityRepository()
 
     async def claim_all(
-        self, kind: NotificationKind, fetch_page: FetchPage, now: datetime
+        self,
+        kind: NotificationKind,
+        fetch_page: FetchPage,
+        now: datetime,
+        *,
+        group_per_user: bool = False,
     ) -> int:
+        """Reclama y encola. Con `group_per_user`, las entregas de cada usuario se
+        encolan juntas al final de la pasada: un solo email con todas (RF-83).
+        Cada una sigue teniendo su reclamo, para no repetir ninguna."""
         verified: dict[str, bool] = {}
+        grouped: dict[uuid.UUID, list[uuid.UUID]] = {}
         claimed = 0
         after: Cursor | None = None
         while claimed < SWEEP_MAX_CLAIMS:
@@ -74,13 +83,18 @@ class ClaimingSweep:
                 )
                 if delivery_id is None:
                     continue
-                await self.deliveries.enqueue_send(
-                    self.job_queue, delivery_id, candidate.user_id
-                )
+                if group_per_user:
+                    grouped.setdefault(candidate.user_id, []).append(delivery_id)
+                else:
+                    await self.deliveries.enqueue_send(
+                        self.job_queue, [delivery_id], candidate.user_id
+                    )
                 claimed += 1
                 if claimed >= SWEEP_MAX_CLAIMS:
                     break
             after = candidates[-1].cursor
+        for user_id, delivery_ids in grouped.items():
+            await self.deliveries.enqueue_send(self.job_queue, delivery_ids, user_id)
         if claimed:
             logger.info("%d avisos %s reclamados", claimed, kind.value)
         return claimed

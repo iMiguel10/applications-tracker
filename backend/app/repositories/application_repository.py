@@ -4,18 +4,47 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Literal
 
-from sqlalchemy import Row, Select, func, or_, select
+from sqlalchemy import (
+    BigInteger,
+    Row,
+    Select,
+    String,
+    and_,
+    cast,
+    func,
+    literal,
+    or_,
+    select,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, joinedload
 
+from app.domain.notifications import (
+    STALE_KEY_PREFIX,
+    DeliveryChannel,
+    DeliveryStatus,
+    NotificationKind,
+)
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
+from app.models.notification_delivery import NotificationDelivery
+from app.models.user import User
 from app.repositories.search import LIKE_ESCAPE, contains_pattern
 
 ApplicationSort = Literal[
     "applied_at", "created_at", "updated_at", "company", "position_title"
 ]
+
+
+@dataclass(frozen=True)
+class StaleCandidate:
+    """Un candidato del barrido de solicitudes sin actividad."""
+
+    application_id: uuid.UUID
+    user_id: uuid.UUID
+    last_activity_at: datetime
+    supertokens_user_id: str
 
 
 @dataclass(frozen=True)
@@ -280,3 +309,89 @@ class ApplicationRepository:
             .order_by(Application.created_at)
         )
         return result.all()
+
+    async def get_many_for_notification(
+        self, user_id: uuid.UUID, application_ids: Sequence[uuid.UUID]
+    ) -> Sequence[Application]:
+        """Las solicitudes de un aviso de inactividad, con su empresa (RF-83)."""
+        result = await self.session.scalars(
+            select(Application)
+            .options(joinedload(Application.company))
+            .where(Application.user_id == user_id, Application.id.in_(application_ids))
+        )
+        return result.all()
+
+    async def list_stale_for_notification(
+        self,
+        *,
+        statuses: Sequence[str],
+        now: datetime,
+        after: tuple[datetime, uuid.UUID] | None,
+        limit: int,
+    ) -> Sequence[StaleCandidate]:
+        """Candidatos del barrido de RF-83: solicitudes activas, en un estado de
+        espera y sin actividad desde hace más días que el umbral de su cuenta
+        (RF-64), de cuentas con el aviso activado y sin una entrega que lo impida
+        para **ese periodo** de inactividad. Paginado por `(last_activity_at, id)`.
+
+        Sin ventana hacia atrás: el primer barrido encuentra todas las paradas, y
+        por eso el aviso agrupa en un solo email las de cada usuario.
+
+        Recorre las solicitudes de todos los usuarios a propósito: es un barrido del
+        sistema, y cada fila lleva su `user_id` para todo lo que venga después.
+        """
+        delivery = NotificationDelivery
+        seconds = cast(
+            func.floor(func.extract("epoch", Application.last_activity_at)), BigInteger
+        )
+        blocking_delivery = (
+            select(delivery.id)
+            .where(
+                delivery.user_id == Application.user_id,
+                delivery.kind == NotificationKind.STALE_APPLICATION,
+                delivery.channel == DeliveryChannel.EMAIL,
+                delivery.dedupe_key
+                == literal(STALE_KEY_PREFIX)
+                + cast(Application.id, String)
+                + literal(":")
+                + cast(seconds, String),
+                or_(
+                    delivery.status != DeliveryStatus.FAILED,
+                    delivery.next_attempt_at.is_(None),
+                    delivery.next_attempt_at > now,
+                ),
+            )
+            .exists()
+        )
+        stale_since = literal(now) - func.make_interval(0, 0, 0, User.stale_after_days)
+        query = (
+            select(
+                Application.id,
+                Application.user_id,
+                Application.last_activity_at,
+                User.supertokens_user_id,
+            )
+            .join(User, User.id == Application.user_id)
+            .where(
+                Application.archived_at.is_(None),
+                Application.status.in_(statuses),
+                Application.last_activity_at < stale_since,
+                User.notify_stale.is_(True),
+                ~blocking_delivery,
+            )
+        )
+        if after is not None:
+            after_at, after_id = after
+            query = query.where(
+                or_(
+                    Application.last_activity_at > after_at,
+                    and_(
+                        Application.last_activity_at == after_at,
+                        Application.id > after_id,
+                    ),
+                )
+            )
+        rows = await self.session.execute(
+            query.order_by(Application.last_activity_at, Application.id).limit(limit)
+        )
+        return [StaleCandidate(*row) for row in rows.all()]

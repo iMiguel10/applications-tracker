@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from datetime import datetime
 
 from sqlalchemy import select, update
@@ -82,6 +83,17 @@ class NotificationDeliveryRepository:
                 NotificationDelivery.user_id == user_id,
             )
         )
+
+    async def get_many(
+        self, delivery_ids: Sequence[uuid.UUID], user_id: uuid.UUID
+    ) -> Sequence[NotificationDelivery]:
+        result = await self.session.scalars(
+            select(NotificationDelivery).where(
+                NotificationDelivery.id.in_(delivery_ids),
+                NotificationDelivery.user_id == user_id,
+            )
+        )
+        return result.all()
 
     async def save(self, delivery: NotificationDelivery) -> NotificationDelivery:
         await self.session.flush()

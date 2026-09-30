@@ -1,0 +1,15 @@
+{% set count = applications|length -%}
+{% if count == 1 %}{% set subject = "Application without activity: " ~ applications[0].position ~ " at " ~ applications[0].company %}{% else %}{% set subject = count ~ " applications without activity" %}{% endif -%}
+{% set statuses = {"applied": "Applied", "screening": "Screening", "interviewing": "Interviewing", "offer": "Offer"} -%}
+Hi,
+
+{% if count == 1 %}This application has not moved for a while{% else %}These {{ count }} applications have not moved for a while{% endif %}. It may be a good time to follow up, or to close them if you no longer expect an answer.
+{% for application in applications %}
+- {{ application.position }} at {{ application.company }} ({{ statuses[application.status] }}): no activity since {{ application.since }}, {{ application.days }} days ago.
+  {{ application.link }}
+{% endfor %}
+All your stalled applications are on the Dashboard: {{ dashboard_link }}
+
+You are getting this email because the applications without activity notification is on. We tell you once per application: if it moves and stalls again, we will tell you again.
+To stop these notifications: {{ unsubscribe_link }}
+To change the number of days or your other notifications, go to Preferences: {{ preferences_link }}

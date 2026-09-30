@@ -22,6 +22,7 @@ from app.models.notification_delivery import NotificationDelivery
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
 from app.repositories.reminder_repository import ReminderRepository
+from app.services.notification_delivery_service import SingleDeliveryComposer
 from app.services.notifications.sweep import ClaimingSweep, Cursor, SweepCandidate
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class ReminderDueSweep:
         return await self.sweep.claim_all(KIND, fetch_page, now)
 
 
-class ReminderDueComposer:
+class ReminderDueComposer(SingleDeliveryComposer):
     """Escribe el email de un recordatorio vencido. None si ya no hay nada que
     avisar: el recordatorio se completó, se descartó o se borró, o el usuario
     desactivó el aviso, entre el barrido y el envío."""
@@ -78,7 +79,7 @@ class ReminderDueComposer:
         self.templates = templates or EmailTemplates()
         self.website = website_domain.rstrip("/")
 
-    async def compose(
+    async def compose_one(
         self, delivery: NotificationDelivery, user: User, unsubscribe_link: str
     ) -> RenderedEmail | None:
         reminder_id = reminder_id_from_key(delivery.dedupe_key)

@@ -1,0 +1,18 @@
+{% extends "_layout.html" %}
+{% block content %}
+{% set count = applications|length %}
+{% set statuses = {"applied": "Enviada", "screening": "En revisión", "interviewing": "Entrevistas", "offer": "Oferta"} %}
+<p style="margin:0 0 16px;">Hola:</p>
+<p style="margin:0 0 16px;">{% if count == 1 %}Esta solicitud lleva tiempo sin moverse{% else %}Estas {{ count }} solicitudes llevan tiempo sin moverse{% endif %}. Quizá sea buen momento para hacer seguimiento, o para cerrarlas si ya no esperas respuesta.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+{% for application in applications %}
+<tr><td style="padding:10px 16px;border-left:4px solid #4f46e5;background:#f4f4f5;">
+<p style="margin:0 0 2px;font-weight:bold;"><a href="{{ application.link }}" style="color:#18181b;text-decoration:none;">{{ application.position }}</a> <span style="font-weight:normal;color:#52525b;">en {{ application.company }}</span></p>
+<p style="margin:0;font-size:14px;color:#52525b;">{{ statuses[application.status] }} · sin actividad desde el {{ application.since }} ({{ application.days }} días)</p>
+</td></tr>
+<tr><td style="height:8px;"></td></tr>
+{% endfor %}
+</table>
+<p style="margin:0 0 24px;"><a href="{{ dashboard_link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">Ver el Dashboard</a></p>
+<p style="margin:0;font-size:13px;color:#52525b;">Recibes este email porque tienes activado el aviso de solicitudes sin actividad. Te avisamos una vez por solicitud: si vuelve a moverse y a pararse, te avisaremos de nuevo. <a href="{{ unsubscribe_link }}" style="color:#4f46e5;">Darme de baja de estos avisos</a> · <a href="{{ preferences_link }}" style="color:#4f46e5;">Preferencias</a></p>
+{% endblock %}

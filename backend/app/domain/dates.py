@@ -79,3 +79,14 @@ def format_local_datetime(
     else:
         text = f"{weekday}, {month} {local.day}, {local.year}, {time}"
     return text if timezone else f"{text} (UTC)"
+
+
+def format_local_date(
+    instant: datetime, timezone: str | None, language: Language
+) -> str:
+    """ "5 de octubre de 2026" / "October 5, 2026", el día en la zona del usuario."""
+    local = instant.astimezone(ZoneInfo(timezone or "UTC"))
+    month = _MONTHS[language][local.month - 1]
+    if language == Language.ES:
+        return f"{local.day} de {month} de {local.year}"
+    return f"{month} {local.day}, {local.year}"

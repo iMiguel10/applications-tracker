@@ -20,6 +20,7 @@ from app.models.notification_delivery import NotificationDelivery
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
 from app.repositories.interview_repository import InterviewRepository
+from app.services.notification_delivery_service import SingleDeliveryComposer
 from app.services.notifications.sweep import ClaimingSweep, Cursor, SweepCandidate
 
 KIND = NotificationKind.INTERVIEW_UPCOMING
@@ -57,7 +58,7 @@ class InterviewUpcomingSweep:
         return await self.sweep.claim_all(KIND, fetch_page, now)
 
 
-class InterviewUpcomingComposer:
+class InterviewUpcomingComposer(SingleDeliveryComposer):
     """Escribe el email de una entrevista próxima. None si ya no hay nada que
     avisar: la entrevista se borró, se movió (su aviso es otro motivo, que ya
     reclamará el barrido), tiene resultado, o el usuario desactivó el aviso."""
@@ -72,7 +73,7 @@ class InterviewUpcomingComposer:
         self.templates = templates or EmailTemplates()
         self.website = website_domain.rstrip("/")
 
-    async def compose(
+    async def compose_one(
         self, delivery: NotificationDelivery, user: User, unsubscribe_link: str
     ) -> RenderedEmail | None:
         parsed = interview_from_key(delivery.dedupe_key)

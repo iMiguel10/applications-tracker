@@ -120,3 +120,28 @@ def interview_from_key(dedupe_key: str) -> tuple[uuid.UUID, int] | None:
         return uuid.UUID(interview_id), int(seconds)
     except ValueError:
         return None
+
+
+STALE_KEY_PREFIX = "stale:"
+
+
+def stale_key(application_id: uuid.UUID, last_activity_at: datetime) -> str:
+    """El motivo de un aviso de solicitud sin actividad: la solicitud **y el
+    momento de su última actividad**, en segundos UTC. Un aviso por periodo de
+    inactividad: si la solicitud se vuelve a mover y a quedarse quieta, es otro
+    motivo (RF-83, segundo plano §4)."""
+    return f"{STALE_KEY_PREFIX}{application_id}:{int(last_activity_at.timestamp())}"
+
+
+def stale_from_key(dedupe_key: str) -> tuple[uuid.UUID, int] | None:
+    """La solicitud y su última actividad (segundos UTC); None si no es una clave de
+    este tipo."""
+    if not dedupe_key.startswith(STALE_KEY_PREFIX):
+        return None
+    application_id, _, seconds = dedupe_key.removeprefix(STALE_KEY_PREFIX).partition(
+        ":"
+    )
+    try:
+        return uuid.UUID(application_id), int(seconds)
+    except ValueError:
+        return None

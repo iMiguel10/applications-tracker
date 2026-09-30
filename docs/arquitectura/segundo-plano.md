@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los avisos de recordatorio vencido y de entrevista próxima, y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los avisos de recordatorio vencido, entrevista próxima y solicitudes sin actividad, y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -160,6 +160,15 @@ La `dedupe_key` define qué es "el mismo motivo":
 - El bucle de los barridos (páginas, verificación por cuenta, reclamo, encolado) se sacó a `ClaimingSweep` (`services/notifications/sweep.py`): cada aviso solo aporta su consulta y su clave. `email_language` pasó a `domain/user.py`.
 - Las entrevistas de solicitudes archivadas también avisan, como las muestra el dashboard (RF-63).
 - Verificado en vivo con Mailpit. Pruebas en `tests/services/test_interview_upcoming_notifications.py`.
+
+**Construido en F12 (paso 5: solicitudes sin actividad, RF-83).**
+
+- **Un email puede cubrir varias entregas.** `send_notification` recibe una lista de entregas del mismo tipo y usuario, y el compositor devuelve una `Composition`: el email y las entregas que cubre. Las que no cubre son motivos que ya no existen y se borran, y el resultado del envío (`sent`, `failed`, `unknown`) vale para todas las cubiertas: es un solo email. Los avisos de un motivo por email (recordatorio, entrevista) heredan de `SingleDeliveryComposer` y siguen escribiendo uno.
+- `ClaimingSweep.claim_all(..., group_per_user=True)` reclama cada solicitud por separado y encola al final de la pasada **un envío por usuario** con todas las suyas. Si la pasada llega a los 200 reclamos a mitad de un usuario, sus solicitudes restantes van en el email de la pasada siguiente, una hora después.
+- `StaleApplicationSweep` (`services/notifications/stale_applications.py`), cada hora (en el minuto 7): solicitudes activas, en un estado de espera (`WAITING_STATUSES`, los mismos que el bloque "Sin actividad" del dashboard) y con `last_activity_at` anterior a `ahora − stale_after_days` de su cuenta. Sin ventana hacia atrás: el primer barrido encuentra todas las paradas, y por eso se agrupan.
+- **Clave con la última actividad** (`stale_key`, en segundos UTC): un aviso por periodo de inactividad. Si la solicitud vuelve a moverse, su `last_activity_at` cambia, y cuando se vuelva a parar es otro motivo.
+- `StaleApplicationsComposer`: al enviar, deja fuera de la lista las solicitudes que se movieron, se archivaron, pasaron a un estado final o ya no superan el umbral, y ordena el resto de la más a la menos desatendida. El asunto nombra la solicitud si es una y dice cuántas si son varias; los estados se nombran como en la interfaz.
+- Verificado en vivo lanzando el barrido a mano: un email con las dos solicitudes paradas de la cuenta y, en la pasada siguiente, ningún reclamo. Pruebas en `tests/services/test_stale_application_notifications.py`.
 
 ## 5. Emails
 

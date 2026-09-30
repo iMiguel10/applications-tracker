@@ -12,12 +12,18 @@ from app.services.notifications.reminder_due import (
     ReminderDueComposer,
     ReminderDueSweep,
 )
+from app.services.notifications.stale_applications import (
+    StaleApplicationsComposer,
+    StaleApplicationSweep,
+)
 
 __all__ = [
     "InterviewUpcomingComposer",
     "InterviewUpcomingSweep",
     "ReminderDueComposer",
     "ReminderDueSweep",
+    "StaleApplicationSweep",
+    "StaleApplicationsComposer",
     "composers_for",
 ]
 
@@ -30,4 +36,5 @@ def composers_for(
     return {
         NotificationKind.REMINDER_DUE: ReminderDueComposer(session),
         NotificationKind.INTERVIEW_UPCOMING: InterviewUpcomingComposer(session),
+        NotificationKind.STALE_APPLICATION: StaleApplicationsComposer(session),
     }

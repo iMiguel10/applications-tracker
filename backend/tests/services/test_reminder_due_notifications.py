@@ -89,7 +89,7 @@ async def test_a_reminder_that_just_fell_due_is_claimed_and_its_send_queued(
     assert job.job == "send_notification"
     assert job.kwargs["user_id"] == str(user.id)
     delivery = await NotificationDeliveryRepository(db_session).get(
-        uuid.UUID(str(job.kwargs["delivery_id"])), user.id
+        uuid.UUID(str(job.kwargs["delivery_ids"])), user.id
     )
     assert delivery is not None
     assert delivery.dedupe_key == reminder_due_key(reminder.id)
@@ -213,7 +213,7 @@ async def test_a_failed_delivery_is_claimed_again_once_its_retry_is_due(
 ):
     await _due(db_session, user)
     _, queue = await _sweep(db_session)
-    delivery_id = uuid.UUID(str(queue.jobs[0].kwargs["delivery_id"]))
+    delivery_id = uuid.UUID(str(queue.jobs[0].kwargs["delivery_ids"]))
     repository = NotificationDeliveryRepository(db_session)
     delivery = await repository.get(delivery_id, user.id)
     assert delivery is not None
@@ -268,7 +268,7 @@ async def _compose(session: AsyncSession, user: CurrentUser, reminder: Reminder)
     delivery = await NotificationDeliveryRepository(session).get(delivery_id, user.id)
     assert delivery is not None
     composer = ReminderDueComposer(session, website_domain=WEBSITE)
-    return await composer.compose(
+    return await composer.compose_one(
         delivery, await _user(session, user), f"{WEBSITE}/unsubscribe?token=t"
     )
 
@@ -387,7 +387,7 @@ async def test_sweep_then_send_delivers_exactly_one_email(
 
     for job in queue.jobs:
         await delivery.deliver(
-            uuid.UUID(str(job.kwargs["delivery_id"])),
+            [uuid.UUID(str(job.kwargs["delivery_ids"]))],
             uuid.UUID(str(job.kwargs["user_id"])),
             NOW,
         )

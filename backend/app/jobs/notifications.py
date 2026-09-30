@@ -11,6 +11,7 @@ from app.services.notification_delivery_service import NotificationDeliveryServi
 from app.services.notifications import (
     InterviewUpcomingSweep,
     ReminderDueSweep,
+    StaleApplicationSweep,
     composers_for,
 )
 
@@ -20,7 +21,7 @@ SWEEP_TIMEOUT_SECONDS = 50
 
 
 async def send_notification(
-    ctx: WorkerContext, *, delivery_id: str, user_id: str
+    ctx: WorkerContext, *, delivery_ids: str, user_id: str
 ) -> None:
     async with ctx["session_factory"]() as session:
         service = NotificationDeliveryService(
@@ -28,7 +29,11 @@ async def send_notification(
             email_sender=ctx["email_sender"],
             composers=composers_for(session),
         )
-        await service.deliver(uuid.UUID(delivery_id), uuid.UUID(user_id), _now())
+        await service.deliver(
+            [uuid.UUID(delivery_id) for delivery_id in delivery_ids.split(",")],
+            uuid.UUID(user_id),
+            _now(),
+        )
 
 
 async def sweep_due_reminders(ctx: WorkerContext) -> None:
@@ -39,6 +44,11 @@ async def sweep_due_reminders(ctx: WorkerContext) -> None:
 async def sweep_upcoming_interviews(ctx: WorkerContext) -> None:
     async with ctx["session_factory"]() as session:
         await InterviewUpcomingSweep(session, ctx["job_queue"]).run(_now())
+
+
+async def sweep_stale_applications(ctx: WorkerContext) -> None:
+    async with ctx["session_factory"]() as session:
+        await StaleApplicationSweep(session, ctx["job_queue"]).run(_now())
 
 
 async def expire_abandoned_notification_claims(ctx: WorkerContext) -> None:
@@ -61,6 +71,12 @@ def notification_cron_jobs(email_enabled: bool) -> list[CronJob[WorkerContext]]:
         CronJob(
             sweep_upcoming_interviews,
             cron="*/5 * * * *",
+            timeout=SWEEP_TIMEOUT_SECONDS,
+            retries=1,
+        ),
+        CronJob(
+            sweep_stale_applications,
+            cron="7 * * * *",
             timeout=SWEEP_TIMEOUT_SECONDS,
             retries=1,
         ),

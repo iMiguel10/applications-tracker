@@ -87,7 +87,7 @@ async def test_an_interview_within_the_notice_is_claimed_once(
 
     assert (claimed, again) == (1, 0)
     delivery = await NotificationDeliveryRepository(db_session).get(
-        uuid.UUID(str(queue.jobs[0].kwargs["delivery_id"])), user.id
+        uuid.UUID(str(queue.jobs[0].kwargs["delivery_ids"])), user.id
     )
     assert delivery is not None
     assert delivery.dedupe_key == interview_key(interview.id, interview.scheduled_at)
@@ -178,7 +178,7 @@ async def _compose(session: AsyncSession, user: CurrentUser, interview: Intervie
     delivery = await repository.get(delivery_id, user.id)
     assert delivery is not None
     composer = InterviewUpcomingComposer(session, website_domain=WEBSITE)
-    return await composer.compose(
+    return await composer.compose_one(
         delivery, await _user(session, user), f"{WEBSITE}/unsubscribe?token=t"
     )
 
@@ -250,7 +250,7 @@ async def test_nothing_to_say_if_it_was_moved_or_decided_meanwhile(
     account = await _user(db_session, user)
     for delivery in deliveries:
         assert delivery is not None
-        assert await composer.compose(delivery, account, "x") is None
+        assert await composer.compose_one(delivery, account, "x") is None
 
 
 # --- De punta a punta ----------------------------------------------------------
@@ -273,7 +273,7 @@ async def test_sweep_then_send_delivers_exactly_one_email(
 
     for job in queue.jobs:
         await delivery.deliver(
-            uuid.UUID(str(job.kwargs["delivery_id"])),
+            [uuid.UUID(str(job.kwargs["delivery_ids"]))],
             uuid.UUID(str(job.kwargs["user_id"])),
             NOW,
         )
