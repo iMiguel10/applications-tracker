@@ -458,8 +458,24 @@
     "title": "Documents",
     "subtitle": "Your CVs and cover letters as PDFs.",
     "emptyTitle": "You don’t have any documents yet",
-    "emptyDescription": "Upload your CVs and cover letters as PDFs to have them at hand for every application.",
+    "emptyDescription": "Upload your CVs and cover letters as PDFs to have them at hand for every application. The ones you archived are under Archived.",
     "emptyFiltered": "There are no documents of this type.",
+    "emptyArchived": "There are no matching archived documents.",
+    "archivedBadge": "Archived",
+    "rename": "Rename",
+    "renameNamed": "Rename {{name}}",
+    "renameTitle": "Rename the document",
+    "renamed": "Document renamed",
+    "archive": "Archive",
+    "archiveNamed": "Archive {{name}}",
+    "archived": "Document archived",
+    "unarchive": "Unarchive",
+    "unarchiveNamed": "Unarchive {{name}}",
+    "unarchived": "Document back in the library",
+    "deleteNamed": "Delete {{name}}",
+    "deleteTitle": "Delete the document?",
+    "deleteConfirm": "“{{name}}” and its PDF will be deleted, and its space freed up. This cannot be undone. If you only want to take it out of the library, archive it.",
+    "deleted": "Document deleted",
     "view": "View",
     "viewNamed": "View {{name}}",
     "download": "Download",
@@ -480,10 +496,16 @@
     },
     "fields": {
       "kind": "Type",
-      "file": "PDF file"
+      "file": "PDF file",
+      "name": "Name"
     },
     "filters": {
       "kind": "Document type",
+      "place": "Library or archived",
+      "placeOptions": {
+        "library": "In the library",
+        "archived": "Archived"
+      },
       "kindOptions": {
         "all": "All types",
         "cv": "CVs",
@@ -501,6 +523,7 @@
     },
     "validation": {
       "fileRequired": "Choose a PDF file",
+      "nameRequired": "Enter the name",
       "notPdf": "The file must be a PDF",
       "tooLarge": "The file is over the maximum size"
     }

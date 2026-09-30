@@ -12,7 +12,7 @@ from app.api.v1.deps import (
 )
 from app.domain.documents import DocumentKind, content_disposition
 from app.schemas.common import ErrorResponse, error_responses
-from app.schemas.document import DocumentListQuery, DocumentRead
+from app.schemas.document import DocumentListQuery, DocumentRead, DocumentUpdate
 from app.schemas.pagination import Page
 from app.schemas.user import CurrentUser
 from app.services.document_service import DocumentService
@@ -138,3 +138,82 @@ async def get_document_file(
     if document.size_bytes is not None:
         headers["Content-Length"] = str(document.size_bytes)
     return StreamingResponse(chunks, media_type="application/pdf", headers=headers)
+
+
+@router.get(
+    "/{document_id}", summary="Ver un documento", responses=error_responses(404)
+)
+async def get_document(
+    document_id: uuid.UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: DocumentService = Depends(get_document_service),
+) -> DocumentRead:
+    """Los datos de un documento (RF-91: de dónde sale). El PDF, en
+    `GET /documents/{document_id}/file`."""
+    return DocumentRead.model_validate(await service.get(current_user.id, document_id))
+
+
+@router.patch(
+    "/{document_id}",
+    summary="Renombrar un documento",
+    responses=error_responses(404, 422),
+)
+async def rename_document(
+    document_id: uuid.UUID,
+    data: DocumentUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: DocumentService = Depends(get_document_service),
+) -> DocumentRead:
+    """Cambia el nombre visible (RF-90). Se sanea como al subir; el fichero en
+    disco no cambia."""
+    return DocumentRead.model_validate(
+        await service.rename(current_user.id, document_id, data.name)
+    )
+
+
+@router.post(
+    "/{document_id}/archive",
+    summary="Archivar un documento",
+    responses=error_responses(404),
+)
+async def archive_document(
+    document_id: uuid.UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: DocumentService = Depends(get_document_service),
+) -> DocumentRead:
+    """Lo saca de la biblioteca sin borrarlo (RF-93): sigue asociado a las
+    solicitudes en que se usó y sigue ocupando almacenamiento. Idempotente."""
+    return DocumentRead.model_validate(
+        await service.archive(current_user.id, document_id)
+    )
+
+
+@router.post(
+    "/{document_id}/unarchive",
+    summary="Desarchivar un documento",
+    responses=error_responses(404),
+)
+async def unarchive_document(
+    document_id: uuid.UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: DocumentService = Depends(get_document_service),
+) -> DocumentRead:
+    """Lo devuelve a la biblioteca. Idempotente."""
+    return DocumentRead.model_validate(
+        await service.unarchive(current_user.id, document_id)
+    )
+
+
+@router.delete(
+    "/{document_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Borrar un documento",
+    responses=error_responses(404),
+)
+async def delete_document(
+    document_id: uuid.UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: DocumentService = Depends(get_document_service),
+) -> None:
+    """Borra el documento y su PDF, y libera su espacio. Definitivo."""
+    await service.delete(current_user.id, document_id)

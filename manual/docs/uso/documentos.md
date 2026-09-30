@@ -30,6 +30,14 @@ La lista muestra primero los más recientes. Con el filtro de tipo ves solo los 
 
 Si tu navegador no muestra PDFs dentro de la página (pasa en algunos móviles), descárgalo.
 
+## Renombrar, archivar o borrar
+
+Cada documento tiene sus botones en la lista:
+
+- **Renombrar** (el lápiz): cambia el nombre con el que aparece. El PDF no cambia.
+- **Archivar**: lo quita de la biblioteca sin borrarlo. Para verlo, elige **Archivados** en el filtro; desde ahí, **Desarchivar** lo devuelve a la biblioteca. Un documento archivado **sigue ocupando** espacio.
+- **Borrar** (la papelera): borra el documento y su PDF de forma definitiva y libera su espacio. Pide confirmación.
+
 :::info Límites
 Cada PDF puede ocupar hasta 5 MB, y cada cuenta tiene hasta 100 documentos y 100 MB de almacenamiento, salvo que la instalación fije otros valores. Al subir un documento ves cuánto almacenamiento te queda, y el formulario te avisa al pasar del 80 %. Cuánto llevas de cada límite está en [Preferencias](preferencias.md#ver-el-uso-de-tu-cuenta).
 :::

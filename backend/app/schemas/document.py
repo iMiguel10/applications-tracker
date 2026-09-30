@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.documents import DocumentKind, DocumentOrigin, DocumentStatus
+from app.schemas.common import RequiredName
 
 
 class DocumentRead(BaseModel):
@@ -45,4 +46,14 @@ class DocumentListQuery(BaseModel):
         default=False,
         description="`false` (por defecto): la biblioteca. `true`: solo los "
         "archivados.",
+    )
+
+
+class DocumentUpdate(BaseModel):
+    """RF-90: renombrar. El tipo no cambia: un documento ya asociado a una solicitud
+    como CV dejaría de serlo."""
+
+    name: RequiredName = Field(
+        description="Nombre visible nuevo. Se sanea igual que al subir.",
+        examples=["CV backend 2026.pdf"],
     )

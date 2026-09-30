@@ -458,8 +458,24 @@
     "title": "Documentos",
     "subtitle": "Tus CVs y cartas de presentación en PDF.",
     "emptyTitle": "Aún no tienes documentos",
-    "emptyDescription": "Sube tus CVs y cartas en PDF para tenerlos a mano en cada solicitud.",
+    "emptyDescription": "Sube tus CVs y cartas en PDF para tenerlos a mano en cada solicitud. Los que hayas archivado están en Archivados.",
     "emptyFiltered": "No hay documentos de este tipo.",
+    "emptyArchived": "No hay documentos archivados que coincidan.",
+    "archivedBadge": "Archivado",
+    "rename": "Renombrar",
+    "renameNamed": "Renombrar {{name}}",
+    "renameTitle": "Renombrar el documento",
+    "renamed": "Documento renombrado",
+    "archive": "Archivar",
+    "archiveNamed": "Archivar {{name}}",
+    "archived": "Documento archivado",
+    "unarchive": "Desarchivar",
+    "unarchiveNamed": "Desarchivar {{name}}",
+    "unarchived": "Documento de vuelta en la biblioteca",
+    "deleteNamed": "Borrar {{name}}",
+    "deleteTitle": "¿Borrar el documento?",
+    "deleteConfirm": "Se borrará «{{name}}» y su PDF, y se liberará su espacio. No se puede deshacer. Si solo quieres quitarlo de la biblioteca, archívalo.",
+    "deleted": "Documento borrado",
     "view": "Ver",
     "viewNamed": "Ver {{name}}",
     "download": "Descargar",
@@ -480,10 +496,16 @@
     },
     "fields": {
       "kind": "Tipo",
-      "file": "Fichero PDF"
+      "file": "Fichero PDF",
+      "name": "Nombre"
     },
     "filters": {
       "kind": "Tipo de documento",
+      "place": "Biblioteca o archivados",
+      "placeOptions": {
+        "library": "En la biblioteca",
+        "archived": "Archivados"
+      },
       "kindOptions": {
         "all": "Todos los tipos",
         "cv": "CVs",
@@ -501,6 +523,7 @@
     },
     "validation": {
       "fileRequired": "Elige un fichero PDF",
+      "nameRequired": "Indica el nombre",
       "notPdf": "El fichero tiene que ser un PDF",
       "tooLarge": "El fichero pasa del tamaño máximo"
     }

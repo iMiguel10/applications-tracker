@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), y renombrar, archivar y borrar · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -78,7 +78,7 @@ Postgres manda (invariante 9) y el orden de escritura garantiza que solo pueden 
 | Situación | Resultado |
 |---|---|
 | Se escribió el fichero y falló el commit de la fila | Fichero huérfano |
-| Se borró la fila y falló el borrado del fichero | Fichero huérfano |
+| Se borró la fila y falló el borrado del fichero | Fichero huérfano (construido en F13: `DocumentService.delete` confirma el borrado de la fila y después borra el fichero; si eso falla, lo deja en el log y responde 204) |
 | Se borró la cuenta y falló el borrado de `users/{user_id}/` | Directorio huérfano |
 | El proceso murió escribiendo un `.part` | Temporal huérfano |
 

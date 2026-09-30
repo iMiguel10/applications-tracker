@@ -395,3 +395,92 @@ async def test_a_row_whose_file_is_missing_is_a_404_not_a_500(
     response = await client.get(f"{URL}/{document.id}/file")
 
     assert response.status_code == 404
+
+
+# --- Gestionar: renombrar, archivar y borrar -----------------------------------
+
+
+@pytest.mark.asyncio
+async def test_rename_sanitizes_like_upload(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    document = await make_document(db_session, user.id, name="viejo.pdf")
+
+    renamed = await client.patch(
+        f"{URL}/{document.id}", json={"name": "  CV‮ nuevo.pdf "}
+    )
+    blank = await client.patch(f"{URL}/{document.id}", json={"name": "   "})
+
+    assert renamed.status_code == 200
+    assert renamed.json()["name"] == "CV nuevo.pdf"
+    assert blank.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_archive_hides_it_from_the_library_but_it_still_counts(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    # RF-93: archivado sigue ocupando almacenamiento (su fichero sigue en disco).
+    document = await make_document(db_session, user.id, size_bytes=2_000)
+
+    first = await client.post(f"{URL}/{document.id}/archive")
+    second = await client.post(f"{URL}/{document.id}/archive")
+    library = (await client.get(URL)).json()
+    usage = {
+        item["key"]: item["used"]
+        for item in (await client.get("/api/v1/me/usage")).json()["limits"]
+    }
+
+    assert first.json()["archived_at"] is not None
+    # Idempotente: conserva la fecha del primer archivado.
+    assert second.json()["archived_at"] == first.json()["archived_at"]
+    assert library["total"] == 0
+    assert usage["documents"] == 1
+    assert usage["storage_bytes"] == 2_000
+
+    restored = await client.post(f"{URL}/{document.id}/unarchive")
+
+    assert restored.json()["archived_at"] is None
+    assert (await client.get(URL)).json()["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_delete_removes_the_row_and_the_file_and_frees_the_space(
+    client: AsyncClient, db_session: AsyncSession, files_root: Path
+):
+    uploaded = (await _upload(client, make_pdf())).json()
+    assert len(_stored_files(files_root)) == 1
+
+    response = await client.delete(f"{URL}/{uploaded['id']}")
+
+    assert response.status_code == 204
+    assert await db_session.get(Document, uuid.UUID(uploaded["id"])) is None
+    assert _stored_files(files_root) == []
+    usage = {
+        item["key"]: item["used"]
+        for item in (await client.get("/api/v1/me/usage")).json()["limits"]
+    }
+    assert usage["storage_bytes"] == 0
+
+
+@pytest.mark.asyncio
+async def test_a_failed_file_delete_leaves_an_orphan_file_never_a_broken_row(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    files_root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # Ficheros §5: la fila se borra primero. Si el disco falla después, sobra un
+    # fichero (lo limpia el barrido); nunca queda una fila sin su fichero.
+    uploaded = (await _upload(client, make_pdf())).json()
+
+    async def broken_delete(self: LocalFileStorage, key: str) -> None:
+        raise OSError("disco")
+
+    monkeypatch.setattr(LocalFileStorage, "delete", broken_delete)
+
+    response = await client.delete(f"{URL}/{uploaded['id']}")
+
+    assert response.status_code == 204
+    assert await db_session.get(Document, uuid.UUID(uploaded["id"])) is None
+    assert len(_stored_files(files_root)) == 1

@@ -24,6 +24,14 @@ describe("listParams de la biblioteca", () => {
     );
   });
 
+  it("lee y escribe el filtro de archivados", () => {
+    expect(parseListParams(new URLSearchParams("archived=true")).archived).toBe(true);
+    expect(parseListParams(new URLSearchParams("archived=si")).archived).toBe(false);
+    expect(serializeListParams({ ...DEFAULT_LIST_PARAMS, archived: true }).toString()).toBe(
+      "archived=true",
+    );
+  });
+
   it("vuelve a la página 1 al cambiar el filtro", () => {
     expect(updateListParams({ ...DEFAULT_LIST_PARAMS, page: 4 }, { kind: "cv" }).page).toBe(1);
     expect(updateListParams(DEFAULT_LIST_PARAMS, { page: 2 }).page).toBe(2);

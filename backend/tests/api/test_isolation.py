@@ -59,6 +59,11 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/api/v1/reminders/{reminder_id}/dismiss", None),
     ("DELETE", "/api/v1/reminders/{reminder_id}", None),
     ("GET", "/api/v1/documents/{document_id}/file", None),
+    ("GET", "/api/v1/documents/{document_id}", None),
+    ("PATCH", "/api/v1/documents/{document_id}", {"name": "Hackeado.pdf"}),
+    ("POST", "/api/v1/documents/{document_id}/archive", None),
+    ("POST", "/api/v1/documents/{document_id}/unarchive", None),
+    ("DELETE", "/api/v1/documents/{document_id}", None),
 ]
 
 
@@ -120,6 +125,7 @@ async def test_other_user_gets_404_and_nothing_changes(
     assert reminder.status == "pending"
     await db_session.refresh(document)
     assert document.name == "Original.pdf"
+    assert document.archived_at is None
 
 
 @pytest.mark.asyncio

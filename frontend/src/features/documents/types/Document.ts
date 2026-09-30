@@ -26,4 +26,6 @@ export interface DocumentListParams {
   page: number;
   limit: number;
   kind: DocumentKindFilter;
+  /** `true`: solo los archivados (RF-93); `false`: la biblioteca. */
+  archived: boolean;
 }

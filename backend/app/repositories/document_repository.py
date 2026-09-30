@@ -36,6 +36,15 @@ class DocumentRepository:
             )
         )
 
+    async def save(self, document: Document) -> Document:
+        """Envía a la BD los cambios de un documento ya cargado (UPDATE)."""
+        await self.session.flush()
+        return document
+
+    async def delete(self, document: Document) -> None:
+        await self.session.delete(document)
+        await self.session.flush()
+
     async def list(
         self,
         user_id: uuid.UUID,

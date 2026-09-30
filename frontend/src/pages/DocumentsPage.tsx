@@ -57,7 +57,7 @@ export function DocumentsPage() {
       {isError && <ErrorState onRetry={() => refetch()} retrying={isFetching} />}
       {data &&
         data.total === 0 &&
-        (params.kind === DEFAULT_LIST_PARAMS.kind ? (
+        (params.kind === DEFAULT_LIST_PARAMS.kind && !params.archived ? (
           <EmptyState
             icon={FileText}
             title={t("documents.emptyTitle")}
@@ -68,7 +68,9 @@ export function DocumentsPage() {
           <EmptyState
             icon={SearchX}
             title={t("common.noResultsTitle")}
-            description={t("documents.emptyFiltered")}
+            description={t(
+              params.archived ? "documents.emptyArchived" : "documents.emptyFiltered",
+            )}
           />
         ))}
       {data && data.total > 0 && (

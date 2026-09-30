@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, Eye, FileText } from "lucide-react";
+import { Archive, ArchiveRestore, Download, Eye, FileText, Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -8,8 +8,11 @@ import { formatBytes, formatDateTime } from "@/shared/lib/format";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useDownloadDocument } from "../hooks/mutations/useDownloadDocument";
+import { useSetDocumentArchived } from "../hooks/mutations/useSetDocumentArchived";
 import type { LibraryDocument } from "../types/Document";
+import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
 import { DocumentViewerDialog } from "./DocumentViewerDialog";
+import { RenameDocumentDialog } from "./RenameDocumentDialog";
 
 interface DocumentsListProps {
   documents: LibraryDocument[];
@@ -18,18 +21,31 @@ interface DocumentsListProps {
 export function DocumentsList({ documents }: DocumentsListProps) {
   const { t, i18n } = useTranslation();
   const download = useDownloadDocument();
+  const setArchived = useSetDocumentArchived();
   const [viewing, setViewing] = useState<LibraryDocument | null>(null);
+  const [renaming, setRenaming] = useState<LibraryDocument | null>(null);
+  const [deleting, setDeleting] = useState<LibraryDocument | null>(null);
 
-  const onDownload = (document: LibraryDocument) =>
-    download.mutate(document, {
-      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
-    });
+  const onError = (error: Error) => toast.error(t(errorMessageKey(error), errorMessageParams(error)));
+
+  const toggleArchived = (document: LibraryDocument) => {
+    const archived = document.archived_at === null;
+    setArchived.mutate(
+      { id: document.id, archived },
+      {
+        onSuccess: () =>
+          toast.success(t(archived ? "documents.archived" : "documents.unarchived")),
+        onError,
+      },
+    );
+  };
 
   return (
     <>
       <ul className="grid gap-2">
         {documents.map((document) => {
           const ready = document.status === "ready";
+          const isArchived = document.archived_at !== null;
           return (
             <li
               key={document.id}
@@ -54,6 +70,7 @@ export function DocumentsList({ documents }: DocumentsListProps) {
                   )}
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                     <Badge variant="secondary">{t(`documents.kinds.${document.kind}`)}</Badge>
+                    {isArchived && <Badge variant="outline">{t("documents.archivedBadge")}</Badge>}
                     <span>{t(`documents.origins.${document.origin}`)}</span>
                     {document.size_bytes !== null && (
                       <span className="tabular-nums">
@@ -64,34 +81,69 @@ export function DocumentsList({ documents }: DocumentsListProps) {
                   </div>
                 </div>
               </div>
-              {ready && (
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={t("documents.viewNamed", { name: document.name })}
-                    title={t("documents.view")}
-                    onClick={() => setViewing(document)}
-                  >
-                    <Eye />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={t("documents.downloadNamed", { name: document.name })}
-                    title={t("documents.download")}
-                    disabled={download.isPending && download.variables?.id === document.id}
-                    onClick={() => onDownload(document)}
-                  >
-                    <Download />
-                  </Button>
-                </div>
-              )}
+              <div className="flex flex-wrap gap-1">
+                {ready && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("documents.viewNamed", { name: document.name })}
+                      title={t("documents.view")}
+                      onClick={() => setViewing(document)}
+                    >
+                      <Eye />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={t("documents.downloadNamed", { name: document.name })}
+                      title={t("documents.download")}
+                      disabled={download.isPending && download.variables?.id === document.id}
+                      onClick={() => download.mutate(document, { onError })}
+                    >
+                      <Download />
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t("documents.renameNamed", { name: document.name })}
+                  title={t("documents.rename")}
+                  onClick={() => setRenaming(document)}
+                >
+                  <Pencil />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t(isArchived ? "documents.unarchiveNamed" : "documents.archiveNamed", {
+                    name: document.name,
+                  })}
+                  title={t(isArchived ? "documents.unarchive" : "documents.archive")}
+                  disabled={setArchived.isPending && setArchived.variables?.id === document.id}
+                  onClick={() => toggleArchived(document)}
+                >
+                  {isArchived ? <ArchiveRestore /> : <Archive />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={t("documents.deleteNamed", { name: document.name })}
+                  title={t("common.delete")}
+                  onClick={() => setDeleting(document)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
             </li>
           );
         })}
       </ul>
       <DocumentViewerDialog document={viewing} onClose={() => setViewing(null)} />
+      <RenameDocumentDialog document={renaming} onOpenChange={(open) => !open && setRenaming(null)} />
+      <DeleteDocumentDialog document={deleting} onOpenChange={(open) => !open && setDeleting(null)} />
     </>
   );
 }

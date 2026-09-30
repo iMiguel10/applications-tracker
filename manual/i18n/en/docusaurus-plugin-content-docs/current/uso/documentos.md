@@ -30,6 +30,14 @@ The list shows the most recent ones first. With the type filter you see only **C
 
 If your browser does not show PDFs inside the page (this happens on some phones), download it.
 
+## Rename, archive or delete
+
+Each document has its buttons in the list:
+
+- **Rename** (the pencil): changes the name it is shown with. The PDF does not change.
+- **Archive**: takes it out of the library without deleting it. To see it, choose **Archived** in the filter; from there, **Unarchive** puts it back in the library. An archived document **still takes up** space.
+- **Delete** (the bin): deletes the document and its PDF for good and frees up its space. It asks for confirmation.
+
 :::info Limits
 Each PDF can take up to 5 MB, and each account has up to 100 documents and 100 MB of storage, unless the installation sets other values. When you upload a document you see how much storage you have left, and the form warns you past 80 %. How much of each limit you have used is in [Preferences](preferencias.md#see-your-account-usage).
 :::

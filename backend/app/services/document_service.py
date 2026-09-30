@@ -2,6 +2,7 @@ import hashlib
 import logging
 import uuid
 from collections.abc import AsyncIterable, AsyncIterator
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -68,6 +69,52 @@ class DocumentService:
         if document is None:
             raise NotFoundError("Document")
         return document
+
+    async def rename(
+        self, user_id: uuid.UUID, document_id: uuid.UUID, name: str
+    ) -> Document:
+        document = await self.get(user_id, document_id)
+        document.name = sanitize_name(name)
+        await self.documents.save(document)
+        await self.session.commit()
+        return document
+
+    async def archive(self, user_id: uuid.UUID, document_id: uuid.UUID) -> Document:
+        """RF-93: fuera de la biblioteca, pero sigue asociado a sus solicitudes y
+        ocupando almacenamiento. Idempotente: conserva la fecha del primero."""
+        document = await self.get(user_id, document_id)
+        if document.archived_at is None:
+            document.archived_at = datetime.now(UTC)
+            await self.documents.save(document)
+            await self.session.commit()
+        return document
+
+    async def unarchive(self, user_id: uuid.UUID, document_id: uuid.UUID) -> Document:
+        document = await self.get(user_id, document_id)
+        if document.archived_at is not None:
+            document.archived_at = None
+            await self.documents.save(document)
+            await self.session.commit()
+        return document
+
+    async def delete(self, user_id: uuid.UUID, document_id: uuid.UUID) -> None:
+        """Borra la fila y, DESPUÉS del commit, el fichero (RNF-41, ficheros §5).
+        Si falla el borrado del fichero, queda un huérfano que limpia el barrido;
+        al revés quedaría una fila apuntando a nada."""
+        document = await self.get(user_id, document_id)
+        key = document.storage_key
+        await self.documents.delete(document)
+        await self.session.commit()
+        if key is None:
+            return
+        try:
+            await self.storage.delete(key)
+        except Exception:
+            logger.exception(
+                "No se pudo borrar el fichero del documento %s; lo limpiará el "
+                "barrido de huérfanos",
+                document_id,
+            )
 
     async def open_file(
         self, user_id: uuid.UUID, document_id: uuid.UUID
