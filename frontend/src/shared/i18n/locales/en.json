@@ -289,6 +289,7 @@
     "documents": "Documents",
     "profile": "Profile",
     "preferences": "Preferences",
+    "account": "Your account",
     "openMenu": "Open menu",
     "theme": "Switch between light and dark theme",
     "skipToContent": "Skip to content",
@@ -467,7 +468,10 @@
     "storage_limit_reached": "You don’t have enough storage left for this PDF: you are using {{used}} of {{limit}}",
     "document_in_use": "This document was sent in an application and can’t be deleted, so you don’t lose what you sent. You can archive it.",
     "document_kind_mismatch": "That document is not the right type: choose a CV as the CV and a cover letter as the cover letter.",
-    "document_not_ready": "This document is not ready yet."
+    "document_not_ready": "This document is not ready yet.",
+    "profile_section_full": "This section already has the maximum of {{limit, number}} entries",
+    "entry_order_mismatch": "The order changed in another tab. Reload the page and try again.",
+    "bullet_not_in_entry": "An achievement no longer exists. Reload the page and try again."
   },
   "documents": {
     "title": "Documents",
@@ -668,7 +672,83 @@
       "email": "The email is not in a valid format",
       "phone": "Only digits, spaces and + ( ) - . /",
       "linkLabelRequired": "Give the link a name",
-      "summaryTooLong": "At most 2,000 characters"
+      "summaryTooLong": "At most 2,000 characters",
+      "titleRequired": "Enter a title",
+      "bulletRequired": "Write the achievement or remove it",
+      "monthAndYear": "Choose month and year",
+      "endBeforeStart": "The end date is before the start date"
+    },
+    "entries": {
+      "location": "Location",
+      "dates": "Dates",
+      "startMonth": "Start month",
+      "startYear": "Start year",
+      "endMonth": "End month",
+      "endYear": "End year",
+      "present": "Present",
+      "description": "Description",
+      "bullets": "Achievements",
+      "bulletsHint": "One per CV line. Drag them to reorder. Up to 20.",
+      "addBullet": "Add achievement",
+      "bulletN": "Achievement {{n}}",
+      "removeBullet": "Remove achievement {{n}}",
+      "bulletCount_one": "{{count}} achievement",
+      "bulletCount_other": "{{count}} achievements",
+      "edit": "Edit {{title}}",
+      "delete": "Delete {{title}}",
+      "saved": "Entry saved",
+      "deleted": "Entry deleted",
+      "deleteTitle": "Delete “{{title}}”?",
+      "deleteConfirm": "It will be removed from your profile with its achievements. CVs you have already generated do not change.",
+      "experience": {
+        "section": "Experience",
+        "add": "Add experience",
+        "empty": "You haven't added any experience yet.",
+        "newTitle": "New experience",
+        "editTitle": "Edit experience",
+        "titleField": "Job title",
+        "organizationField": "Company",
+        "current": "I currently work here"
+      },
+      "education": {
+        "section": "Education",
+        "add": "Add education",
+        "empty": "You haven't added any education yet.",
+        "newTitle": "New education",
+        "editTitle": "Edit education",
+        "titleField": "Degree",
+        "organizationField": "School",
+        "current": "Still studying"
+      },
+      "project": {
+        "section": "Projects",
+        "add": "Add project",
+        "empty": "You haven't added any projects yet.",
+        "newTitle": "New project",
+        "editTitle": "Edit project",
+        "titleField": "Project name",
+        "organizationField": "Organization or client",
+        "current": "Ongoing project"
+      },
+      "certification": {
+        "section": "Certifications",
+        "add": "Add certification",
+        "empty": "You haven't added any certifications yet.",
+        "newTitle": "New certification",
+        "editTitle": "Edit certification",
+        "titleField": "Certification",
+        "organizationField": "Issuer",
+        "current": "Does not expire"
+      }
     }
+  },
+  "sortable": {
+    "handle": "Move {{label}}",
+    "roleDescription": "sortable item",
+    "instructions": "To move an item, press Space. Use the arrow keys to move it and Space to drop it in its new place. Escape cancels.",
+    "picked": "Picked up “{{label}}”.",
+    "moved": "“{{label}}” is at position {{position}} of {{total}}.",
+    "dropped": "Dropped “{{label}}” at position {{position}} of {{total}}.",
+    "canceled": "Move cancelled. “{{label}}” is back in its place."
   }
 }

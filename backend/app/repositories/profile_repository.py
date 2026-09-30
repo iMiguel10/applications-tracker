@@ -39,3 +39,11 @@ class ProfileRepository:
         """Envía a la BD los cambios de un perfil ya cargado (UPDATE)."""
         await self.session.flush()
         return profile
+
+    async def lock(self, profile_id: uuid.UUID) -> None:
+        """Bloquea el perfil hasta el final de la transacción. Los topes de cada
+        sección se comprueban con él bloqueado: dos altas simultáneas se ponen en
+        fila en vez de pasarse juntas del tope."""
+        await self.session.execute(
+            select(Profile.id).where(Profile.id == profile_id).with_for_update()
+        )

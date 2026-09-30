@@ -21,6 +21,28 @@ Click **Add link** for each website you want to show (LinkedIn, GitHub, your por
 
 A few lines about who you are professionally and what you bring, up to 2,000 characters. The count is shown below.
 
-## Save
+## Save the basic details
 
-Click **Save**. Every field is optional: you can complete the profile bit by bit. A field you leave empty is saved empty.
+Contact details, links and summary are saved together with the **Save** button below them. Every field is optional: you can complete the profile bit by bit. A field you leave empty is saved empty.
+
+## Experience, education, projects and certifications
+
+Each section has its own button: **Add experience**, **Add education**, **Add project** and **Add certification**. In each entry's form you write:
+
+- The title: the **Job title**, the **Degree**, the **Project name** or the **Certification**.
+- Where: the **Company**, the **School**, the **Organization or client** or the **Issuer**, and the **Location**.
+- The **Dates**, by month and year. If it is still ongoing, turn on **I currently work here** (or **Still studying**, **Ongoing project** or **Does not expire**) and no end date is needed.
+- An optional **Description**.
+- The **Achievements**: click **Add achievement** for each one, up to 20. They are the lines shown on the CV under that entry.
+
+Each entry is saved with its own **Save** button, at the bottom of the form.
+
+There is a maximum per section: 50 experiences and 30 education entries, projects or certifications.
+
+To change an entry, click the pencil; to delete it, the bin. Deleting an entry does not change CVs you have already generated.
+
+## Reorder
+
+Each section's order is the one it will have on the CV. To change it, drag an entry by the dotted handle on its left. Achievements are reordered the same way inside their entry's form.
+
+With the keyboard: go to the handle with **Tab**, press **Space** to pick it up, move it with the arrow keys and press **Space** again to drop it. **Escape** cancels the move.

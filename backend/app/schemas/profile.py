@@ -1,4 +1,6 @@
-from typing import Annotated
+import uuid
+from datetime import date
+from typing import Annotated, Self
 
 from pydantic import (
     AfterValidator,
@@ -8,18 +10,24 @@ from pydantic import (
     EmailStr,
     Field,
     StringConstraints,
+    model_validator,
 )
 
 from app.domain.profile import (
+    BULLET_MAX_LENGTH,
     CONTACT_EMAIL_MAX_LENGTH,
+    ENTRY_DESCRIPTION_MAX_LENGTH,
     LINK_LABEL_MAX_LENGTH,
     LINK_URL_MAX_LENGTH,
+    MAX_BULLETS_PER_ENTRY,
+    MAX_ENTRIES,
     MAX_LINKS,
     PHONE_MAX_LENGTH,
     SUMMARY_MAX_LENGTH,
+    EntryKind,
     is_safe_link,
 )
-from app.schemas.common import OptionalShortText, empty_to_none
+from app.schemas.common import OptionalShortText, RequiredName, empty_to_none
 
 
 def _safe_link(value: str) -> str:
@@ -104,3 +112,104 @@ class ProfileUpdate(ProfileBasics):
 
 class ProfileRead(ProfileBasics):
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Entradas del perfil (RF-101, RF-102) -------------------------------------
+
+BulletText = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=1, max_length=BULLET_MAX_LENGTH
+    ),
+]
+OptionalDescription = Annotated[
+    Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True, max_length=ENTRY_DESCRIPTION_MAX_LENGTH
+        ),
+    ]
+    | None,
+    BeforeValidator(empty_to_none),
+]
+
+
+class BulletWrite(BaseModel):
+    """Un logro. Con `id`, el existente con ese id (conserva su identidad para
+    F15); sin él, uno nuevo."""
+
+    id: uuid.UUID | None = None
+    text: BulletText = Field(examples=["Reduje a la mitad el tiempo de despliegue"])
+
+
+class BulletRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    text: str
+
+
+class EntryFields(BaseModel):
+    title: RequiredName = Field(
+        description="Puesto, título académico, nombre del proyecto o de la "
+        "certificación.",
+        examples=["Desarrolladora backend"],
+    )
+    organization: OptionalShortText = Field(default=None, examples=["Acme"])
+    location: OptionalShortText = Field(default=None, examples=["Madrid"])
+    start_date: date | None = Field(
+        default=None,
+        description="Un CV muestra mes y año; la aplicación web envía el día 1.",
+    )
+    end_date: date | None = None
+    is_current: bool = Field(
+        default=False, description="Sigue en curso: sin fecha de fin."
+    )
+    description: OptionalDescription = None
+    bullets: list[BulletWrite] = Field(
+        default_factory=list,
+        max_length=MAX_BULLETS_PER_ENTRY,
+        description="Logros, en el orden en que se muestran.",
+    )
+
+    @model_validator(mode="after")
+    def _dates_make_sense(self) -> Self:
+        if self.is_current and self.end_date is not None:
+            raise ValueError("An entry in progress has no end date")
+        if (
+            self.start_date is not None
+            and self.end_date is not None
+            and self.end_date < self.start_date
+        ):
+            raise ValueError("The end date is before the start date")
+        return self
+
+
+class EntryCreate(EntryFields):
+    kind: EntryKind
+
+
+class EntryUpdate(EntryFields):
+    """Sustituye la entrada entera. La sección (`kind`) no cambia."""
+
+
+class EntryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    kind: EntryKind
+    title: str
+    organization: str | None
+    location: str | None
+    start_date: date | None
+    end_date: date | None
+    is_current: bool
+    description: str | None
+    bullets: list[BulletRead]
+
+
+class EntryOrder(BaseModel):
+    """El orden nuevo de una sección: exactamente todos sus ids."""
+
+    kind: EntryKind
+    entry_ids: list[uuid.UUID] = Field(max_length=max(MAX_ENTRIES.values()))

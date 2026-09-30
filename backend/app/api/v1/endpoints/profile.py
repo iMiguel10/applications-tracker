@@ -1,9 +1,23 @@
-from fastapi import APIRouter, Depends
+import uuid
 
-from app.api.v1.deps import get_current_user, get_profile_service
+from fastapi import APIRouter, Depends, status
+
+from app.api.v1.deps import (
+    get_current_user,
+    get_profile_entry_service,
+    get_profile_service,
+)
 from app.schemas.common import error_responses
-from app.schemas.profile import ProfileRead, ProfileUpdate
+from app.schemas.profile import (
+    EntryCreate,
+    EntryOrder,
+    EntryRead,
+    EntryUpdate,
+    ProfileRead,
+    ProfileUpdate,
+)
 from app.schemas.user import CurrentUser
+from app.services.profile_entry_service import ProfileEntryService
 from app.services.profile_service import ProfileService
 
 router = APIRouter(
@@ -35,3 +49,90 @@ async def update_profile(
     """Sustituye los datos básicos enteros: un campo que no se envía queda vacío.
     Los enlaces solo admiten `http` y `https` (hasta 10)."""
     return await profiles.update(current_user.id, data)
+
+
+# --- Entradas: experiencia, formación, proyectos y certificaciones -------------
+
+
+@router.get("/entries", summary="Entradas del perfil")
+async def list_entries(
+    current_user: CurrentUser = Depends(get_current_user),
+    entries: ProfileEntryService = Depends(get_profile_entry_service),
+) -> list[EntryRead]:
+    """Experiencia, formación, proyectos y certificaciones (RF-101, RF-102), cada
+    una con sus logros, ordenadas por sección (`kind`) y por su posición."""
+    return [
+        EntryRead.model_validate(entry) for entry in await entries.list(current_user.id)
+    ]
+
+
+@router.post(
+    "/entries",
+    status_code=status.HTTP_201_CREATED,
+    summary="Añade una entrada al perfil",
+    responses=error_responses(409, 422),
+)
+async def create_entry(
+    data: EntryCreate,
+    current_user: CurrentUser = Depends(get_current_user),
+    entries: ProfileEntryService = Depends(get_profile_entry_service),
+) -> EntryRead:
+    """La entrada se añade al final de su sección. Cada sección tiene un tope (50
+    experiencias; 30 formaciones, proyectos o certificaciones): al alcanzarlo
+    responde **409** `profile_section_full` con `limit` y `used`. Hasta 20 logros
+    por entrada."""
+    return EntryRead.model_validate(await entries.create(current_user.id, data))
+
+
+# Antes que /entries/{entry_id}: si no, "order" se leería como un id.
+@router.put(
+    "/entries/order",
+    summary="Reordena una sección del perfil",
+    responses=error_responses(422),
+)
+async def reorder_entries(
+    data: EntryOrder,
+    current_user: CurrentUser = Depends(get_current_user),
+    entries: ProfileEntryService = Depends(get_profile_entry_service),
+) -> list[EntryRead]:
+    """`entry_ids` trae **todos** los ids de la sección, en el orden nuevo. Uno de
+    más, uno de menos o uno repetido responde **422** `entry_order_mismatch`.
+    Devuelve todas las entradas, como el listado."""
+    reordered = await entries.reorder(current_user.id, data)
+    return [EntryRead.model_validate(entry) for entry in reordered]
+
+
+@router.put(
+    "/entries/{entry_id}",
+    summary="Guarda una entrada del perfil",
+    responses=error_responses(404, 422),
+)
+async def update_entry(
+    entry_id: uuid.UUID,
+    data: EntryUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
+    entries: ProfileEntryService = Depends(get_profile_entry_service),
+) -> EntryRead:
+    """Sustituye la entrada entera; la sección no cambia. En `bullets`, un logro con
+    `id` edita el existente y conserva su id; uno sin `id` es nuevo; los que no
+    vienen se borran. Un `id` que no es de esta entrada responde **422**
+    `bullet_not_in_entry`."""
+    return EntryRead.model_validate(
+        await entries.update(current_user.id, entry_id, data)
+    )
+
+
+@router.delete(
+    "/entries/{entry_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Borra una entrada del perfil",
+    responses=error_responses(404),
+)
+async def delete_entry(
+    entry_id: uuid.UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    entries: ProfileEntryService = Depends(get_profile_entry_service),
+) -> None:
+    """Borra la entrada con sus logros. Los CVs ya generados no cambian: guardan
+    una copia de lo que se usó."""
+    await entries.delete(current_user.id, entry_id)

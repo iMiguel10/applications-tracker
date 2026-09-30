@@ -509,6 +509,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | R13 | PDF malicioso subido por un usuario. | Medio. | Nunca se procesa ni se renderiza en el servidor, se comprueba el tipo por contenido y se sirve como descarga (RNF-05). |
 | R14 | Mantener dos sitios de documentación en dos idiomas cuadruplica lo que puede quedar desactualizado. | Medio. | El agente documentador los mantiene en el mismo commit; el manual documenta **tareas del usuario**, no pantallas, para que envejezca menos. |
 | R15 | **Sobreingeniería en la v2** (R1 otra vez): cola, almacén de ficheros e IA invitan a construir de más. | Alto. | Mismas reglas: F9 desechable primero, costuras solo si son baratas, y cada fase se puede cortar sin romper las anteriores. |
+| R18 | **`@dnd-kit/react` antes de la 1.0** (F14): la línea clásica (`@dnd-kit/core` 6.3, `sortable` 10) no publica desde diciembre de 2024 y el trabajo del autor está en la reescritura, que aún cambia su API entre versiones. | Bajo: solo reordena listas del perfil (y, en F16, el tablero). | Fijada a la versión exacta (0.5.0, sin `^`), junto con `@dnd-kit/dom` y `@dnd-kit/helpers`, y envuelta en un único componente (`shared/components/common/SortableList.tsx`): actualizarla es tocar un fichero. |
 
 ## 14. Criterios de éxito
 

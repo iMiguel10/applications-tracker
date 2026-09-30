@@ -14,7 +14,7 @@ En **Preferencias** puedes cambiar:
 
 Los cambios de idioma, zona horaria y días se guardan con **Guardar**.
 
-El **tema** también se cambia con el botón de sol y luna de la barra superior. Se guarda en el navegador, no en la cuenta: puedes tener el tema oscuro en el ordenador y el claro en el móvil.
+El **tema** también se cambia con el interruptor de sol y luna del menú de tu cuenta. Se guarda en el navegador, no en la cuenta: puedes tener el tema oscuro en el ordenador y el claro en el móvil.
 
 El número de días decide qué solicitudes aparecen en el bloque **Sin actividad** del [Dashboard](dashboard.md).
 

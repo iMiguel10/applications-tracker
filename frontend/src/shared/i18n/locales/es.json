@@ -289,6 +289,7 @@
     "documents": "Documentos",
     "profile": "Perfil",
     "preferences": "Preferencias",
+    "account": "Tu cuenta",
     "openMenu": "Abrir menú",
     "theme": "Cambiar entre tema claro y oscuro",
     "skipToContent": "Saltar al contenido",
@@ -467,7 +468,10 @@
     "storage_limit_reached": "No te queda almacenamiento para este PDF: usas {{used}} de {{limit}}",
     "document_in_use": "Este documento se envió en alguna solicitud y no se puede borrar, para no perder qué enviaste. Puedes archivarlo.",
     "document_kind_mismatch": "Ese documento no es del tipo que toca: elige un CV como CV y una carta como carta.",
-    "document_not_ready": "Este documento todavía no está listo."
+    "document_not_ready": "Este documento todavía no está listo.",
+    "profile_section_full": "Esta sección ya tiene el máximo de {{limit, number}} entradas",
+    "entry_order_mismatch": "El orden ha cambiado en otra pestaña. Recarga la página e inténtalo de nuevo.",
+    "bullet_not_in_entry": "Un logro ya no existe. Recarga la página e inténtalo de nuevo."
   },
   "documents": {
     "title": "Documentos",
@@ -668,7 +672,83 @@
       "email": "El email no tiene un formato válido",
       "phone": "Solo números, espacios y + ( ) - . /",
       "linkLabelRequired": "Ponle un nombre al enlace",
-      "summaryTooLong": "Máximo 2 000 caracteres"
+      "summaryTooLong": "Máximo 2 000 caracteres",
+      "titleRequired": "Indica un título",
+      "bulletRequired": "Escribe el logro o quítalo",
+      "monthAndYear": "Elige mes y año",
+      "endBeforeStart": "La fecha de fin es anterior a la de inicio"
+    },
+    "entries": {
+      "location": "Ubicación",
+      "dates": "Fechas",
+      "startMonth": "Mes de inicio",
+      "startYear": "Año de inicio",
+      "endMonth": "Mes de fin",
+      "endYear": "Año de fin",
+      "present": "Actualidad",
+      "description": "Descripción",
+      "bullets": "Logros",
+      "bulletsHint": "Uno por línea de CV. Arrástralos para ordenarlos. Hasta 20.",
+      "addBullet": "Añadir logro",
+      "bulletN": "Logro {{n}}",
+      "removeBullet": "Quitar el logro {{n}}",
+      "bulletCount_one": "{{count}} logro",
+      "bulletCount_other": "{{count}} logros",
+      "edit": "Editar {{title}}",
+      "delete": "Borrar {{title}}",
+      "saved": "Entrada guardada",
+      "deleted": "Entrada borrada",
+      "deleteTitle": "¿Borrar «{{title}}»?",
+      "deleteConfirm": "Se borrará del perfil con sus logros. Los CVs que ya hayas generado no cambian.",
+      "experience": {
+        "section": "Experiencia",
+        "add": "Añadir experiencia",
+        "empty": "Aún no has añadido ninguna experiencia.",
+        "newTitle": "Nueva experiencia",
+        "editTitle": "Editar experiencia",
+        "titleField": "Puesto",
+        "organizationField": "Empresa",
+        "current": "Trabajo aquí actualmente"
+      },
+      "education": {
+        "section": "Formación",
+        "add": "Añadir formación",
+        "empty": "Aún no has añadido ninguna formación.",
+        "newTitle": "Nueva formación",
+        "editTitle": "Editar formación",
+        "titleField": "Titulación",
+        "organizationField": "Centro",
+        "current": "Sigo estudiándolo"
+      },
+      "project": {
+        "section": "Proyectos",
+        "add": "Añadir proyecto",
+        "empty": "Aún no has añadido ningún proyecto.",
+        "newTitle": "Nuevo proyecto",
+        "editTitle": "Editar proyecto",
+        "titleField": "Nombre del proyecto",
+        "organizationField": "Organización o cliente",
+        "current": "Proyecto en curso"
+      },
+      "certification": {
+        "section": "Certificaciones",
+        "add": "Añadir certificación",
+        "empty": "Aún no has añadido ninguna certificación.",
+        "newTitle": "Nueva certificación",
+        "editTitle": "Editar certificación",
+        "titleField": "Certificación",
+        "organizationField": "Entidad emisora",
+        "current": "Sin caducidad"
+      }
     }
+  },
+  "sortable": {
+    "handle": "Mover {{label}}",
+    "roleDescription": "elemento reordenable",
+    "instructions": "Para mover un elemento, pulsa Espacio. Con las flechas lo mueves y con Espacio lo sueltas en su nuevo sitio. Escape cancela.",
+    "picked": "Has cogido «{{label}}».",
+    "moved": "«{{label}}» está en la posición {{position}} de {{total}}.",
+    "dropped": "Has soltado «{{label}}» en la posición {{position}} de {{total}}.",
+    "canceled": "Movimiento cancelado. «{{label}}» vuelve a su sitio."
   }
 }

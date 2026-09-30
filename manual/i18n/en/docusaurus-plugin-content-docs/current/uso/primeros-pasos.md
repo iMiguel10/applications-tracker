@@ -24,7 +24,7 @@ If the installation does not send email, you won't see the notice.
 ## Sign in and sign out
 
 - To sign in, enter your email and password and click **Sign in**. The session is kept even if you reload the page or close the tab.
-- To sign out, click **Sign out** in the top bar (on small screens, inside the menu).
+- To sign out, open your account menu (the person icon, top right) and click **Sign out**. On narrower screens it is inside the main menu.
 - If you get it wrong many times in a row, the application asks you to wait a little ("Too many attempts. Try again in…"). Your account is not locked: once that time has passed, you can sign in again.
 
 ## If you forget your password
@@ -44,7 +44,7 @@ If whoever runs the installation has not set up email sending, **Forgot your pas
 
 ## What you see after signing in
 
-The first screen is the **Dashboard**, the summary of your job search. While you have no applications, it invites you to add the first one. The top bar takes you to the other sections: **Applications**, **Companies**, **Reminders** and **Preferences**.
+The first screen is the **Dashboard**, the summary of your job search. While you have no applications, it invites you to add the first one. The top bar takes you to the other sections: **Applications**, **Companies**, **Reminders**, **Documents** and **Profile**. **Preferences** is in your account menu, top right.
 
 Every account is private: nobody else can see your applications, companies, interviews or reminders.
 

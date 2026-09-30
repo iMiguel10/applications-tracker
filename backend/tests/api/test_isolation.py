@@ -22,6 +22,7 @@ from tests.factories import (
     make_company,
     make_document,
     make_interview,
+    make_profile_entry,
     make_reminder,
 )
 
@@ -64,6 +65,8 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/api/v1/documents/{document_id}/archive", None),
     ("POST", "/api/v1/documents/{document_id}/unarchive", None),
     ("DELETE", "/api/v1/documents/{document_id}", None),
+    ("PUT", "/api/v1/profile/entries/{entry_id}", {"title": "Hackeada"}),
+    ("DELETE", "/api/v1/profile/entries/{entry_id}", None),
 ]
 
 
@@ -100,12 +103,14 @@ async def test_other_user_gets_404_and_nothing_changes(
         db_session, user.id, application_id=application.id, title="Original"
     )
     document = await make_document(db_session, user.id, name="Original.pdf")
+    entry = await make_profile_entry(db_session, user.id, title="Original")
     url = path.format(
         company_id=company.id,
         application_id=application.id,
         interview_id=interview.id,
         reminder_id=reminder.id,
         document_id=document.id,
+        entry_id=entry.id,
     )
 
     as_user(other_user)
@@ -126,6 +131,8 @@ async def test_other_user_gets_404_and_nothing_changes(
     await db_session.refresh(document)
     assert document.name == "Original.pdf"
     assert document.archived_at is None
+    await db_session.refresh(entry)
+    assert entry.title == "Original"
 
 
 @pytest.mark.asyncio

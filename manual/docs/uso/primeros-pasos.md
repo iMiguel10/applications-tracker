@@ -24,7 +24,7 @@ Si la instalación no envía emails, no verás el aviso.
 ## Iniciar y cerrar sesión
 
 - Para entrar, escribe tu email y tu contraseña y pulsa **Iniciar sesión**. La sesión se mantiene aunque recargues la página o cierres la pestaña.
-- Para salir, pulsa **Cerrar sesión** en la barra superior (en pantallas pequeñas, dentro del menú).
+- Para salir, abre el menú de tu cuenta (el icono de la persona, arriba a la derecha) y pulsa **Cerrar sesión**. En pantallas más estrechas está dentro del menú general.
 - Si fallas muchas veces seguidas, la aplicación te pide esperar un poco ("Demasiados intentos. Vuelve a intentarlo dentro de…"). Tu cuenta no se bloquea: pasado ese tiempo puedes volver a entrar.
 
 ## Si olvidas la contraseña
@@ -44,7 +44,7 @@ Si quien administra la instalación no ha configurado el envío de emails, **¿O
 
 ## Lo que verás al entrar
 
-La primera pantalla es el **Dashboard**, el resumen de tu búsqueda. Mientras no tengas ninguna solicitud, te invita a registrar la primera. Desde la barra superior llegas a las demás secciones: **Solicitudes**, **Empresas**, **Recordatorios** y **Preferencias**.
+La primera pantalla es el **Dashboard**, el resumen de tu búsqueda. Mientras no tengas ninguna solicitud, te invita a registrar la primera. Desde la barra superior llegas a las demás secciones: **Solicitudes**, **Empresas**, **Recordatorios**, **Documentos** y **Perfil**. **Preferencias** está en el menú de tu cuenta, arriba a la derecha.
 
 Cada cuenta es privada: nadie más puede ver tus solicitudes, empresas, entrevistas ni recordatorios.
 

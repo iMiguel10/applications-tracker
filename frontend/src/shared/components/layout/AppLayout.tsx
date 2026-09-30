@@ -1,11 +1,11 @@
-import { Menu, Settings } from "lucide-react";
+import { CircleUser, LogOut, Menu, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink, Outlet } from "react-router-dom";
 
 import i18n, { browserLanguage } from "@/shared/i18n/i18n";
 import { cn } from "@/shared/lib/utils";
-import { Button, buttonVariants } from "@/shared/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { NAV_ITEMS } from "@/shared/config/navigation";
@@ -31,6 +31,7 @@ export function AppLayout() {
   const signOut = useSignOut();
   useDetectTimezone(preferences);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   // Preferencia guardada (F8): "null" significa seguir el navegador, así que se
   // limpia la caché de i18next para que no se quede en el último idioma de la
@@ -62,8 +63,10 @@ export function AppLayout() {
             </span>
           </span>
 
-          {/* Escritorio (>= lg): navegación y cuenta en línea. */}
-          <nav aria-label={t("nav.main")} className="hidden items-center gap-1 lg:flex">
+          {/* Escritorio (>= xl): navegación en línea y la cuenta en su propio menú.
+              Con seis secciones, la cuenta en línea (email, tema, preferencias y
+              salir) ya no cabía en ningún ancho. */}
+          <nav aria-label={t("nav.main")} className="hidden items-center gap-1 xl:flex">
             {NAV_ITEMS.map(({ to, labelKey, icon: Icon }) => (
               <NavLink key={to} to={to} className={navLinkClass}>
                 <Icon className="size-4" />
@@ -71,33 +74,31 @@ export function AppLayout() {
               </NavLink>
             ))}
           </nav>
-          <div className="hidden items-center gap-3 text-sm lg:flex">
-            {me?.email && <span className="text-muted-foreground">{me.email}</span>}
-            <ThemeToggle />
-            <NavLink
-              to="/preferences"
-              aria-label={t("nav.preferences")}
-              title={t("nav.preferences")}
-              className={({ isActive }) =>
-                cn(buttonVariants({ variant: "outline", size: "sm" }), isActive && "bg-muted")
-              }
+          <Popover open={accountOpen} onOpenChange={setAccountOpen}>
+            <PopoverTrigger
+              render={<Button variant="outline" size="icon-sm" className="hidden xl:inline-flex" />}
+              aria-label={t("nav.account")}
+              title={me?.email ?? t("nav.account")}
             >
-              <Settings className="size-4" />
-            </NavLink>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => signOut.mutate()}
-              disabled={signOut.isPending}
-            >
-              {t("auth.signOut")}
-            </Button>
-          </div>
+              <CircleUser className="size-4" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-64">
+              <AccountMenu
+                email={me?.email}
+                onNavigate={() => setAccountOpen(false)}
+                onSignOut={() => {
+                  setAccountOpen(false);
+                  signOut.mutate();
+                }}
+                signingOut={signOut.isPending}
+              />
+            </PopoverContent>
+          </Popover>
 
-          {/* Móvil y tablet (< lg): todo dentro de un único menú. */}
+          {/* Móvil, tablet y portátil pequeño (< xl): todo dentro de un único menú. */}
           <Popover open={menuOpen} onOpenChange={setMenuOpen}>
             <PopoverTrigger
-              render={<Button variant="outline" size="icon-sm" className="lg:hidden" />}
+              render={<Button variant="outline" size="icon-sm" className="xl:hidden" />}
               aria-label={t("nav.openMenu")}
             >
               <Menu className="size-4" />
@@ -116,30 +117,16 @@ export function AppLayout() {
                   </NavLink>
                 ))}
               </nav>
-              <div className="border-t pt-2">
-                {me?.email && (
-                  <p className="truncate px-3 pb-1 text-xs text-muted-foreground">{me.email}</p>
-                )}
-                <ThemeToggle className="w-full px-3 py-1.5" />
-                <NavLink
-                  to="/preferences"
-                  className={navLinkClass}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <Settings className="size-4" />
-                  {t("nav.preferences")}
-                </NavLink>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start px-3 text-sm font-normal text-muted-foreground hover:text-foreground"
-                  onClick={() => {
+              <div className="mt-1 border-t pt-2">
+                <AccountMenu
+                  email={me?.email}
+                  onNavigate={() => setMenuOpen(false)}
+                  onSignOut={() => {
                     setMenuOpen(false);
                     signOut.mutate();
                   }}
-                  disabled={signOut.isPending}
-                >
-                  {t("auth.signOut")}
-                </Button>
+                  signingOut={signOut.isPending}
+                />
               </div>
             </PopoverContent>
           </Popover>
@@ -149,6 +136,41 @@ export function AppLayout() {
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none">
         <Outlet />
       </main>
+    </div>
+  );
+}
+
+/** La cuenta: quién ha iniciado sesión, tema, preferencias y cerrar sesión. */
+function AccountMenu({
+  email,
+  onNavigate,
+  onSignOut,
+  signingOut,
+}: {
+  email?: string | null;
+  onNavigate: () => void;
+  onSignOut: () => void;
+  signingOut: boolean;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex flex-col gap-1">
+      {email && <p className="truncate px-3 pb-1 text-xs text-muted-foreground">{email}</p>}
+      <ThemeToggle className="w-full px-3 py-1.5" />
+      <NavLink to="/preferences" className={navLinkClass} onClick={onNavigate}>
+        <Settings className="size-4" />
+        {t("nav.preferences")}
+      </NavLink>
+      <Button
+        variant="ghost"
+        className="w-full justify-start px-3 text-sm font-normal text-muted-foreground hover:text-foreground"
+        onClick={onSignOut}
+        disabled={signingOut}
+      >
+        <LogOut className="size-4" />
+        {t("auth.signOut")}
+      </Button>
     </div>
   );
 }

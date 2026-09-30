@@ -10,11 +10,13 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.profile import EntryKind
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
 from app.models.document import Document
 from app.models.interview import Interview
+from app.models.profile_entry import ProfileEntry, ProfileEntryBullet
 from app.models.reminder import Reminder
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.application_status_change_repository import (
@@ -23,6 +25,8 @@ from app.repositories.application_status_change_repository import (
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.interview_repository import InterviewRepository
+from app.repositories.profile_entry_repository import ProfileEntryRepository
+from app.repositories.profile_repository import ProfileRepository
 from app.repositories.reminder_repository import ReminderRepository
 
 
@@ -123,3 +127,30 @@ async def make_document(
     return await DocumentRepository(session).add(
         Document(id=document_id, user_id=user_id, **values)
     )
+
+
+async def make_profile_entry(
+    session: AsyncSession,
+    user_id: uuid.UUID,
+    *,
+    bullets: list[str] | None = None,
+    **fields: Any,
+) -> ProfileEntry:
+    """Una entrada al final de su sección, creando el perfil si no existe."""
+    profile = await ProfileRepository(session).get_or_create(user_id)
+    kind = fields.pop("kind", EntryKind.EXPERIENCE)
+    entries = ProfileEntryRepository(session)
+    values: dict[str, Any] = {
+        "title": "Desarrolladora",
+        "position": await entries.next_position(user_id, kind),
+    } | fields
+    entry = ProfileEntry(
+        profile_id=profile.id,
+        kind=kind,
+        bullets=[
+            ProfileEntryBullet(text=text, position=position)
+            for position, text in enumerate(bullets or [])
+        ],
+        **values,
+    )
+    return await entries.add(entry)

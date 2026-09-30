@@ -4427,6 +4427,377 @@
           }
         ]
       }
+    },
+    "/api/v1/profile/entries": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Entradas del perfil",
+        "description": "Experiencia, formación, proyectos y certificaciones (RF-101, RF-102), cada\nuna con sus logros, ordenadas por sección (`kind`) y por su posición.",
+        "operationId": "list_entries_api_v1_profile_entries_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EntryRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Entries Api V1 Profile Entries Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Añade una entrada al perfil",
+        "description": "La entrada se añade al final de su sección. Cada sección tiene un tope (50\nexperiencias; 30 formaciones, proyectos o certificaciones): al alcanzarlo\nresponde **409** `profile_section_full` con `limit` y `used`. Hasta 20 logros\npor entrada.",
+        "operationId": "create_entry_api_v1_profile_entries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile/entries/order": {
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Reordena una sección del perfil",
+        "description": "`entry_ids` trae **todos** los ids de la sección, en el orden nuevo. Uno de\nmás, uno de menos o uno repetido responde **422** `entry_order_mismatch`.\nDevuelve todas las entradas, como el listado.",
+        "operationId": "reorder_entries_api_v1_profile_entries_order_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryOrder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EntryRead"
+                  },
+                  "type": "array",
+                  "title": "Response Reorder Entries Api V1 Profile Entries Order Put"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile/entries/{entry_id}": {
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Guarda una entrada del perfil",
+        "description": "Sustituye la entrada entera; la sección no cambia. En `bullets`, un logro con\n`id` edita el existente y conserva su id; uno sin `id` es nuevo; los que no\nvienen se borran. Un `id` que no es de esta entrada responde **422**\n`bullet_not_in_entry`.",
+        "operationId": "update_entry_api_v1_profile_entries__entry_id__put",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entry Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Borra una entrada del perfil",
+        "description": "Borra la entrada con sus logros. Los CVs ya generados no cambian: guardan\nuna copia de lo que se usó.",
+        "operationId": "delete_entry_api_v1_profile_entries__entry_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entry Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5503,6 +5874,56 @@
         "title": "AuthWrongCredentials",
         "description": "Email o contraseña incorrectos. No indica cuál de los dos falla."
       },
+      "BulletRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "BulletRead"
+      },
+      "BulletWrite": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "examples": [
+              "Reduje a la mitad el tiempo de despliegue"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "BulletWrite",
+        "description": "Un logro. Con `id`, el existente con ese id (conserva su identidad para\nF15); sin él, uno nuevo."
+      },
       "CompanyCreate": {
         "properties": {
           "name": {
@@ -6277,6 +6698,345 @@
             "token": "<token del enlace>"
           }
         ]
+      },
+      "EntryCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "description": "Puesto, título académico, nombre del proyecto o de la certificación.",
+            "examples": [
+              "Desarrolladora backend"
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization",
+            "examples": [
+              "Acme"
+            ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "examples": [
+              "Madrid"
+            ]
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Un CV muestra mes y año; la aplicación web envía el día 1."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "description": "Sigue en curso: sin fecha de fin.",
+            "default": false
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/BulletWrite"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Bullets",
+            "description": "Logros, en el orden en que se muestran."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EntryKind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "kind"
+        ],
+        "title": "EntryCreate"
+      },
+      "EntryKind": {
+        "type": "string",
+        "enum": [
+          "experience",
+          "education",
+          "project",
+          "certification"
+        ],
+        "title": "EntryKind",
+        "description": "Secciones del perfil con la misma forma: título, organización, fechas,\ndescripción y logros (A26)."
+      },
+      "EntryOrder": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/EntryKind"
+          },
+          "entry_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Entry Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "entry_ids"
+        ],
+        "title": "EntryOrder",
+        "description": "El orden nuevo de una sección: exactamente todos sus ids."
+      },
+      "EntryRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EntryKind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/BulletRead"
+            },
+            "type": "array",
+            "title": "Bullets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "organization",
+          "location",
+          "start_date",
+          "end_date",
+          "is_current",
+          "description",
+          "bullets"
+        ],
+        "title": "EntryRead"
+      },
+      "EntryUpdate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "description": "Puesto, título académico, nombre del proyecto o de la certificación.",
+            "examples": [
+              "Desarrolladora backend"
+            ]
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization",
+            "examples": [
+              "Acme"
+            ]
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "examples": [
+              "Madrid"
+            ]
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date",
+            "description": "Un CV muestra mes y año; la aplicación web envía el día 1."
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "description": "Sigue en curso: sin fecha de fin.",
+            "default": false
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/BulletWrite"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Bullets",
+            "description": "Logros, en el orden en que se muestran."
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "EntryUpdate",
+        "description": "Sustituye la entrada entera. La sección (`kind`) no cambia."
       },
       "ErrorResponse": {
         "properties": {

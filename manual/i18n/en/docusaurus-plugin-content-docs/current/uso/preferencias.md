@@ -14,7 +14,7 @@ In **Preferences** you can change:
 
 Language, time zone and days are saved with **Save**.
 
-The **theme** can also be switched with the sun and moon button in the top bar. It is stored in the browser, not in the account: you can use the dark theme on your computer and the light one on your phone.
+The **theme** can also be switched with the sun and moon switch in your account menu. It is stored in the browser, not in the account: you can use the dark theme on your computer and the light one on your phone.
 
 The number of days decides which applications appear in the **No activity** block of the [Dashboard](dashboard.md).
 
