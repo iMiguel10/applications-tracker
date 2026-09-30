@@ -3,7 +3,7 @@
 import asyncio
 import hashlib
 import uuid
-from collections.abc import AsyncGenerator, AsyncIterator, Iterator
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Iterator
 from pathlib import Path
 
 import httpx
@@ -323,3 +323,75 @@ async def test_two_simultaneous_uploads_cannot_exceed_the_storage_together(
         async with AsyncSession(test_engine) as cleanup:
             await UserRepository(cleanup).delete(owner.id)
             await cleanup.commit()
+
+
+# --- Descarga ------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_download_returns_the_pdf_with_safe_headers(client: AsyncClient):
+    content = make_pdf()
+    uploaded = (await _upload(client, content, name="currículum.pdf")).json()
+
+    inline = await client.get(f"{URL}/{uploaded['id']}/file")
+    attachment = await client.get(
+        f"{URL}/{uploaded['id']}/file", params={"download": "true"}
+    )
+
+    assert inline.status_code == 200
+    assert inline.content == content
+    # Siempre PDF, nunca lo que dijo el cliente, y sin adivinar otro tipo (RNF-05).
+    assert inline.headers["content-type"] == "application/pdf"
+    assert inline.headers["x-content-type-options"] == "nosniff"
+    assert inline.headers["cache-control"] == "private, no-store"
+    assert inline.headers["content-length"] == str(len(content))
+    # D8.
+    assert inline.headers["content-disposition"] == (
+        "inline; filename=\"curriculum.pdf\"; filename*=UTF-8''curr%C3%ADculum.pdf"
+    )
+    assert attachment.headers["content-disposition"].startswith("attachment; ")
+
+
+@pytest.mark.asyncio
+async def test_another_users_document_is_a_404(
+    client: AsyncClient,
+    user: CurrentUser,
+    other_user: CurrentUser,
+    as_user: Callable[[CurrentUser], None],
+):
+    # D4: ni se descarga ni se distingue de uno que no existe.
+    uploaded = (await _upload(client, make_pdf())).json()
+    as_user(other_user)
+
+    response = await client.get(f"{URL}/{uploaded['id']}/file")
+    missing = await client.get(f"{URL}/{uuid.uuid4()}/file")
+
+    assert response.status_code == 404
+    assert response.json() == missing.json()
+
+
+@pytest.mark.asyncio
+async def test_a_document_without_file_is_not_ready(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    pending = await make_document(
+        db_session, user.id, status="pending", storage_key=None, size_bytes=None
+    )
+
+    response = await client.get(f"{URL}/{pending.id}/file")
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "document_not_ready"
+
+
+@pytest.mark.asyncio
+async def test_a_row_whose_file_is_missing_is_a_404_not_a_500(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    # No debería pasar (el fichero se escribe antes que la fila), pero si pasa no
+    # es un 500 con traza: el documento no está disponible.
+    document = await make_document(db_session, user.id)
+
+    response = await client.get(f"{URL}/{document.id}/file")
+
+    assert response.status_code == 404

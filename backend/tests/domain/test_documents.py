@@ -5,6 +5,7 @@ import pytest
 from app.domain.documents import (
     DEFAULT_NAME,
     NAME_MAX_LENGTH,
+    content_disposition,
     sanitize_name,
     storage_key,
 )
@@ -45,4 +46,21 @@ def test_storage_key_is_built_by_the_server_from_ids_only() -> None:
 
     assert storage_key(user_id, document_id) == (
         f"users/{user_id}/documents/{document_id}.pdf"
+    )
+
+
+def test_content_disposition_sends_ascii_and_utf8_names() -> None:
+    # D8: la cabecera solo admite ASCII. NFKD deja "curriculum", no "currculum".
+    header = content_disposition("currículum.pdf", attachment=True)
+
+    assert header == (
+        "attachment; filename=\"curriculum.pdf\"; filename*=UTF-8''curr%C3%ADculum.pdf"
+    )
+
+
+def test_content_disposition_inline_always_ends_in_pdf_and_escapes_quotes() -> None:
+    header = content_disposition('mi "cv"', attachment=False)
+
+    assert header == (
+        "inline; filename=\"mi cv.pdf\"; filename*=UTF-8''mi%20%22cv%22.pdf"
     )

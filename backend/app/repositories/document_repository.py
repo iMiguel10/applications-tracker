@@ -29,6 +29,13 @@ class DocumentRepository:
         await self.session.flush()
         return document
 
+    async def get(self, user_id: uuid.UUID, document_id: uuid.UUID) -> Document | None:
+        return await self.session.scalar(
+            select(Document).where(
+                Document.id == document_id, Document.user_id == user_id
+            )
+        )
+
     async def list(
         self,
         user_id: uuid.UUID,

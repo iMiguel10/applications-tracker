@@ -162,6 +162,8 @@ curl -s -X POST "https://<your API>/api/v1/documents?kind=cv&name=cv-backend.pdf
 - The content is checked: a file that is not a PDF, or a password-protected one, gets 422 `invalid_file_type`.
 - At most 30 uploads per hour (429 `rate_limited`).
 
+`GET /api/v1/documents/{document_id}/file` returns the PDF, always as `application/pdf`. By default with `Content-Disposition: inline`; with `?download=true`, `attachment`. The name is sent in ASCII (`filename`) and in UTF-8 (`filename*`).
+
 ## Calls from a browser
 
 For security, the API only accepts browser requests from the origins configured in the installation (`CORS_ORIGINS`), which are usually just the web application's own. A server-to-server integration is not affected.

@@ -460,6 +460,15 @@
     "emptyTitle": "Aún no tienes documentos",
     "emptyDescription": "Sube tus CVs y cartas en PDF para tenerlos a mano en cada solicitud.",
     "emptyFiltered": "No hay documentos de este tipo.",
+    "view": "Ver",
+    "viewNamed": "Ver {{name}}",
+    "download": "Descargar",
+    "downloadNamed": "Descargar {{name}}",
+    "viewer": {
+      "frameTitle": "Vista previa de {{name}}",
+      "notFound": "Este documento ya no está disponible",
+      "fallback": "Si tu navegador no muestra el PDF aquí, descárgalo."
+    },
     "kinds": {
       "cv": "CV",
       "cover_letter": "Carta de presentación"

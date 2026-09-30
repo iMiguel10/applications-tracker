@@ -3,6 +3,7 @@
 import unicodedata
 import uuid
 from enum import StrEnum
+from urllib.parse import quote
 
 
 class DocumentKind(StrEnum):
@@ -78,3 +79,29 @@ def sanitize_name(raw: str | None) -> str:
         else:
             name = name[:NAME_MAX_LENGTH].rstrip()
     return name
+
+
+def download_name(name: str) -> str:
+    """Nombre del fichero al descargarlo: el visible, siempre acabado en `.pdf` (se
+    sirve siempre como PDF, diga lo que diga el nombre)."""
+    return name if name.lower().endswith(".pdf") else f"{name}.pdf"
+
+
+def content_disposition(name: str, *, attachment: bool) -> str:
+    """`Content-Disposition` con el nombre del documento (ficheros §4, D8).
+
+    Una cabecera HTTP solo admite ASCII: se envía `filename` en ASCII (con las
+    tildes quitadas por NFKD: codificar a ASCII sin más quita la letra entera,
+    `currculum`) **y** `filename*` en UTF-8 (RFC 5987), que prefieren los
+    navegadores modernos."""
+    filename = download_name(name)
+    ascii_name = (
+        unicodedata.normalize("NFKD", filename).encode("ascii", "ignore").decode()
+    )
+    # Comillas y barras invertidas romperían el valor entrecomillado.
+    ascii_name = ascii_name.replace('"', "").replace("\\", "").strip() or DEFAULT_NAME
+    disposition = "attachment" if attachment else "inline"
+    return (
+        f'{disposition}; filename="{ascii_name}"; '
+        f"filename*=UTF-8''{quote(filename, safe='')}"
+    )

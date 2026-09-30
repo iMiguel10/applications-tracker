@@ -1,11 +1,17 @@
 import hashlib
+import logging
 import uuid
 from collections.abc import AsyncIterable, AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
-from app.core.exceptions import FileTooLargeAppError, InvalidFileTypeError
+from app.core.exceptions import (
+    ConflictError,
+    FileTooLargeAppError,
+    InvalidFileTypeError,
+    NotFoundError,
+)
 from app.domain.documents import (
     PDF_INSPECT_TIMEOUT_SECONDS,
     DocumentKind,
@@ -16,12 +22,14 @@ from app.domain.documents import (
 )
 from app.domain.limits import LimitKey
 from app.infra.pdf.inspect import InvalidPdfError, count_pages
-from app.infra.storage import FileStorage
+from app.infra.storage import FileStorage, StorageKeyNotFoundError
 from app.models.document import Document
 from app.repositories.document_repository import DocumentFilters, DocumentRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.document import DocumentListQuery
 from app.services.limit_service import LimitService
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentService:
@@ -54,6 +62,30 @@ class DocumentService:
         return await self.documents.list(
             user_id, filters, page=query.page, limit=query.limit
         )
+
+    async def get(self, user_id: uuid.UUID, document_id: uuid.UUID) -> Document:
+        document = await self.documents.get(user_id, document_id)
+        if document is None:
+            raise NotFoundError("Document")
+        return document
+
+    async def open_file(
+        self, user_id: uuid.UUID, document_id: uuid.UUID
+    ) -> tuple[Document, AsyncIterator[bytes]]:
+        """El documento y su contenido, a trozos (ficheros §4). 404 si es de otro
+        usuario (invariante 2); 409 `document_not_ready` si aún no tiene fichero
+        (uno generado en `pending` o `failed`, F14)."""
+        document = await self.get(user_id, document_id)
+        if document.status != DocumentStatus.READY or document.storage_key is None:
+            raise ConflictError("Document not ready", code="document_not_ready")
+        try:
+            chunks = await self.storage.open(document.storage_key)
+        except StorageKeyNotFoundError:
+            # No debería pasar: el fichero se escribe antes de confirmar la fila y
+            # se borra después de borrarla. Si pasa, es un fallo que hay que ver.
+            logger.error("Falta el fichero del documento %s", document.id)
+            raise NotFoundError("Document") from None
+        return document, chunks
 
     async def upload(
         self,

@@ -1,6 +1,8 @@
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi.responses import StreamingResponse
 
 from app.api.v1.deps import (
     enforce_upload_rate_limit,
@@ -8,7 +10,7 @@ from app.api.v1.deps import (
     get_document_service,
     require_verified_email,
 )
-from app.domain.documents import DocumentKind
+from app.domain.documents import DocumentKind, content_disposition
 from app.schemas.common import ErrorResponse, error_responses
 from app.schemas.document import DocumentListQuery, DocumentRead
 from app.schemas.pagination import Page
@@ -91,3 +93,48 @@ async def upload_document(
         current_user.id, kind=kind, name=name, body=request.stream()
     )
     return DocumentRead.model_validate(document)
+
+
+@router.get(
+    "/{document_id}/file",
+    summary="Descargar o ver el PDF",
+    response_class=StreamingResponse,
+    responses=error_responses(404, 409)
+    | {
+        200: {
+            "content": {
+                "application/pdf": {"schema": {"type": "string", "format": "binary"}}
+            },
+            "description": "El PDF.",
+        }
+    },
+)
+async def get_document_file(
+    document_id: uuid.UUID,
+    download: Annotated[
+        bool,
+        Query(
+            description="`true`: `Content-Disposition: attachment` (descargar). "
+            "`false` (por defecto): `inline`, para verlo en el navegador."
+        ),
+    ] = False,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: DocumentService = Depends(get_document_service),
+) -> StreamingResponse:
+    """El PDF de un documento del usuario (RF-90), siempre como `application/pdf`
+    con `X-Content-Type-Options: nosniff`, nunca con el tipo que dijo el cliente al
+    subirlo (RNF-05). `Content-Disposition` lleva el nombre en ASCII (`filename`) y
+    en UTF-8 (`filename*`). `Cache-Control: private, no-store`: un CV no debe
+    quedarse en la caché de un proxy.
+
+    404 si no existe o es de otro usuario; 409 `document_not_ready` si todavía no
+    tiene fichero (un documento generado que no ha terminado)."""
+    document, chunks = await service.open_file(current_user.id, document_id)
+    headers = {
+        "Content-Disposition": content_disposition(document.name, attachment=download),
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, no-store",
+    }
+    if document.size_bytes is not None:
+        headers["Content-Length"] = str(document.size_bytes)
+    return StreamingResponse(chunks, media_type="application/pdf", headers=headers)

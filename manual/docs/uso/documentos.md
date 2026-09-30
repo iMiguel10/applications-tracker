@@ -23,6 +23,13 @@ Para subir documentos tienes que haber [confirmado tu email](primeros-pasos.md#c
 
 La lista muestra primero los más recientes. Con el filtro de tipo ves solo los **CVs** o solo las **Cartas de presentación**.
 
+## Ver o descargar un documento
+
+- **Ver**: pulsa el nombre del documento o el icono del ojo. Se abre dentro de la aplicación, con sus páginas.
+- **Descargar**: pulsa el icono de descarga, en la lista o en el visor. Se guarda con el nombre que tiene en la lista.
+
+Si tu navegador no muestra PDFs dentro de la página (pasa en algunos móviles), descárgalo.
+
 :::info Límites
 Cada PDF puede ocupar hasta 5 MB, y cada cuenta tiene hasta 100 documentos y 100 MB de almacenamiento, salvo que la instalación fije otros valores. Al subir un documento ves cuánto almacenamiento te queda, y el formulario te avisa al pasar del 80 %. Cuánto llevas de cada límite está en [Preferencias](preferencias.md#ver-el-uso-de-tu-cuenta).
 :::

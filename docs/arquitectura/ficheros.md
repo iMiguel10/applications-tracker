@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, y la subida y el listado (§2) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -67,6 +67,10 @@
 
 El visor del frontend descarga el fichero con `apiClient.getBlob()` y lo muestra en un `iframe` con una URL `blob:` que se libera al cerrar el visor.
 
+**Construido en F13 (paso 3):** `GET /documents/{id}/file` con esas cabeceras, más `Content-Length`; `?download=true` cambia `inline` por `attachment`. 409 `document_not_ready` si el documento no tiene fichero (un generado de F14 que no ha terminado), y 404 si la fila existe pero el fichero no (no debería pasar; queda en el log como error). `content_disposition` (`domain/documents.py`) añade `.pdf` al nombre si no lo lleva. En el frontend, `DocumentViewerDialog` y el botón **Descargar**, que guarda el blob con el nombre visible (el navegador no puede leer `Content-Disposition` de otro origen sin exponerla, y no hace falta).
+
+> **Trampa — la URL `blob:` y el doble montaje de React.** Guardar la URL del visor en el estado, creándola en un efecto y liberándola en su limpieza, deja el visor en blanco en desarrollo: `StrictMode` ejecuta la limpieza (que libera la URL) y vuelve a montar el efecto con el estado de antes, que apunta a una URL ya muerta. `PdfFrame` crea y libera la URL en el mismo efecto y se la asigna al `iframe` directamente.
+
 ## 5. Huérfanos
 
 Postgres manda (invariante 9) y el orden de escritura garantiza que solo pueden sobrar **ficheros**, nunca faltar:
@@ -131,11 +135,11 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 | D1 | Un fichero con extensión `.pdf` que no es un PDF → 422 (también uno cortado, uno con solo la firma, uno cifrado y uno vacío) **[construida en F13]** | Tipo por contenido |
 | D2 | Un cuerpo de 6 MB con `Content-Length` falso de 1 KB → 413, y no se escribe nada **[construida en F13]** | Tamaño real, cortado al leer |
 | D3 | Dos subidas simultáneas que juntas pasan del almacenamiento restante: solo una entra **[construida en F13]**, con dos transacciones reales | Cuota con bloqueo (A30) |
-| D4 | La descarga de un documento de otro usuario → 404 | Aislamiento |
+| D4 | La descarga de un documento de otro usuario → 404 (igual que uno que no existe) **[construida en F13]**, y la ruta está en la lista de `test_isolation.py` | Aislamiento |
 | D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado | RF-93 |
 | D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes | Orden de escritura y margen del barrido |
 | D7 | Una clave con `../` es rechazada por `LocalFileStorage`, y también una clave válida que atraviesa un enlace simbólico hacia fuera **[construida en F9]** | Rutas encerradas en la raíz |
-| D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[probada en el esqueleto de F9, ya retirado; vuelve con la descarga de F13]** | Cabeceras |
+| D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[construida en F13]**, en el dominio y en la respuesta | Cabeceras |
 | D9 | Una plantilla de prueba con `<img src="http://…">` no produce ninguna petición de red **[construida en F9]**: un servidor HTTP local cuenta cero peticiones con imágenes, hojas de estilo, fuentes y fondos externos | El `url_fetcher` contra SSRF |
 | D10 | El texto extraído de un CV generado con un diseño apto para ATS sale en orden de lectura | RF-105 |
 | D11 | Borrar la cuenta borra `users/{user_id}/`; si falla, el barrido lo limpia | RNF-41 |

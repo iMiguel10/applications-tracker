@@ -23,6 +23,13 @@ To upload documents you must have [confirmed your email](primeros-pasos.md#confi
 
 The list shows the most recent ones first. With the type filter you see only **CVs** or only **Cover letters**.
 
+## View or download a document
+
+- **View**: click the document name or the eye icon. It opens inside the application, with its pages.
+- **Download**: click the download icon, in the list or in the viewer. It is saved with the name it has in the list.
+
+If your browser does not show PDFs inside the page (this happens on some phones), download it.
+
 :::info Limits
 Each PDF can take up to 5 MB, and each account has up to 100 documents and 100 MB of storage, unless the installation sets other values. When you upload a document you see how much storage you have left, and the form warns you past 80 %. How much of each limit you have used is in [Preferences](preferencias.md#see-your-account-usage).
 :::

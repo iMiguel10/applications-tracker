@@ -9,6 +9,10 @@ export const documentService = {
       `/documents${toQueryString({ ...params, kind: kind === "all" ? undefined : kind })}`,
     ),
 
+  /** El PDF, como blob: el visor y la descarga lo piden con la sesión, sin
+   * navegar a la API (ficheros §4). */
+  file: (id: string) => apiClient.getBlob(`/documents/${id}/file`),
+
   /** El PDF viaja tal cual; el tipo y el nombre, en la query (RF-90). */
   upload: (kind: DocumentKind, file: File) =>
     apiClient.upload<LibraryDocument>(

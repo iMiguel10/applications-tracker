@@ -20,6 +20,7 @@ from app.schemas.user import CurrentUser
 from tests.factories import (
     make_application,
     make_company,
+    make_document,
     make_interview,
     make_reminder,
 )
@@ -57,6 +58,7 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("POST", "/api/v1/reminders/{reminder_id}/complete", None),
     ("POST", "/api/v1/reminders/{reminder_id}/dismiss", None),
     ("DELETE", "/api/v1/reminders/{reminder_id}", None),
+    ("GET", "/api/v1/documents/{document_id}/file", None),
 ]
 
 
@@ -92,11 +94,13 @@ async def test_other_user_gets_404_and_nothing_changes(
     reminder = await make_reminder(
         db_session, user.id, application_id=application.id, title="Original"
     )
+    document = await make_document(db_session, user.id, name="Original.pdf")
     url = path.format(
         company_id=company.id,
         application_id=application.id,
         interview_id=interview.id,
         reminder_id=reminder.id,
+        document_id=document.id,
     )
 
     as_user(other_user)
@@ -114,6 +118,8 @@ async def test_other_user_gets_404_and_nothing_changes(
     assert application.archived_at is None
     assert interview.notes == "Original"
     assert reminder.status == "pending"
+    await db_session.refresh(document)
+    assert document.name == "Original.pdf"
 
 
 @pytest.mark.asyncio

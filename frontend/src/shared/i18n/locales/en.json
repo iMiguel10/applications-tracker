@@ -460,6 +460,15 @@
     "emptyTitle": "You don’t have any documents yet",
     "emptyDescription": "Upload your CVs and cover letters as PDFs to have them at hand for every application.",
     "emptyFiltered": "There are no documents of this type.",
+    "view": "View",
+    "viewNamed": "View {{name}}",
+    "download": "Download",
+    "downloadNamed": "Download {{name}}",
+    "viewer": {
+      "frameTitle": "Preview of {{name}}",
+      "notFound": "This document is no longer available",
+      "fallback": "If your browser doesn’t show the PDF here, download it."
+    },
     "kinds": {
       "cv": "CV",
       "cover_letter": "Cover letter"

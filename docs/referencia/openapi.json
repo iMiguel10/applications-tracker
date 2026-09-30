@@ -3785,6 +3785,111 @@
           }
         }
       }
+    },
+    "/api/v1/documents/{document_id}/file": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Descargar o ver el PDF",
+        "description": "El PDF de un documento del usuario (RF-90), siempre como `application/pdf`\ncon `X-Content-Type-Options: nosniff`, nunca con el tipo que dijo el cliente al\nsubirlo (RNF-05). `Content-Disposition` lleva el nombre en ASCII (`filename`) y\nen UTF-8 (`filename*`). `Cache-Control: private, no-store`: un CV no debe\nquedarse en la caché de un proxy.\n\n404 si no existe o es de otro usuario; 409 `document_not_ready` si todavía no\ntiene fichero (un documento generado que no ha terminado).",
+        "operationId": "get_document_file_api_v1_documents__document_id__file_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "`true`: `Content-Disposition: attachment` (descargar). `false` (por defecto): `inline`, para verlo en el navegador.",
+              "default": false,
+              "title": "Download"
+            },
+            "description": "`true`: `Content-Disposition: attachment` (descargar). `false` (por defecto): `inline`, para verlo en el navegador."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El PDF.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
