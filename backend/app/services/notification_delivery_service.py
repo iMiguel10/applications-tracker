@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, settings
 from app.domain.notifications import (
     ABANDONED_CLAIM_AFTER,
+    DELIVERY_RETENTION,
     MAX_DELIVERY_ATTEMPTS,
     DeliveryStatus,
     NotificationKind,
@@ -243,6 +244,15 @@ class NotificationDeliveryService:
         if expired:
             logger.warning("%d entregas abandonadas pasan a unknown", expired)
         return expired
+
+    async def purge_old_deliveries(self, now: datetime) -> int:
+        """Barrido diario: borra las entregas terminadas de más de
+        DELIVERY_RETENTION que ya no protegen a nadie de un duplicado."""
+        purged = await self.deliveries.purge_finished(now - DELIVERY_RETENTION)
+        await self.session.commit()
+        if purged:
+            logger.info("%d entregas antiguas borradas", purged)
+        return purged
 
     async def _give_up(self, deliveries: Sequence[NotificationDelivery]) -> None:
         # No salieron y reintentarlo no cambiaría nada: fallidas sin más intentos.

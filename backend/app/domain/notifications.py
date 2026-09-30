@@ -168,3 +168,13 @@ def digest_key_if_due(now: datetime, timezone: str | None) -> str | None:
         return None
     year, week, _ = local.isocalendar()
     return f"{DIGEST_KEY_PREFIX}{year}-W{week:02d}"
+
+
+# Limpieza de entregas (decidida con el usuario en F12, sin historial visible para
+# él). Una entrega terminada es lo único que impide reclamar otra vez su motivo:
+# solo se borra cuando ningún barrido puede volver a encontrarlo. 90 días está muy
+# por encima de la ventana de los barridos de recordatorios (24 h sobre el momento
+# del aviso, que como mucho se adelanta 7 días), entrevistas (solo futuras, avisadas
+# como mucho 7 días antes) y resumen (la semana en curso). Los de inactividad no
+# tienen ventana y siguen otra regla (ver el repository).
+DELIVERY_RETENTION = timedelta(days=90)

@@ -62,6 +62,11 @@ async def expire_abandoned_notification_claims(ctx: WorkerContext) -> None:
         await NotificationDeliveryService(session).expire_abandoned_claims(_now())
 
 
+async def purge_old_notification_deliveries(ctx: WorkerContext) -> None:
+    async with ctx["session_factory"]() as session:
+        await NotificationDeliveryService(session).purge_old_deliveries(_now())
+
+
 def notification_cron_jobs(email_enabled: bool) -> list[CronJob[WorkerContext]]:
     """Los barridos de avisos. Sin SMTP no se programa ninguno (RNF-34, B11): no
     tendría sentido reclamar emails que nunca van a salir."""
@@ -97,6 +102,12 @@ def notification_cron_jobs(email_enabled: bool) -> list[CronJob[WorkerContext]]:
         CronJob(
             expire_abandoned_notification_claims,
             cron="*/5 * * * *",
+            timeout=SWEEP_TIMEOUT_SECONDS,
+            retries=1,
+        ),
+        CronJob(
+            purge_old_notification_deliveries,
+            cron="30 3 * * *",
             timeout=SWEEP_TIMEOUT_SECONDS,
             retries=1,
         ),

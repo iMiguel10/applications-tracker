@@ -2,11 +2,29 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import or_, select, tuple_, update
+from sqlalchemy import (
+    BigInteger,
+    String,
+    and_,
+    cast,
+    delete,
+    func,
+    literal,
+    or_,
+    select,
+    tuple_,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.notifications import DeliveryChannel, DeliveryStatus, NotificationKind
+from app.domain.notifications import (
+    STALE_KEY_PREFIX,
+    DeliveryChannel,
+    DeliveryStatus,
+    NotificationKind,
+)
+from app.models.application import Application
 from app.models.notification_delivery import NotificationDelivery
 
 
@@ -147,5 +165,55 @@ class NotificationDeliveryRepository:
                 NotificationDelivery.claimed_at < claimed_before,
             )
             .values(status=DeliveryStatus.UNKNOWN)
+        )
+        return int(getattr(result, "rowcount", 0) or 0)
+
+    async def purge_finished(self, claimed_before: datetime) -> int:
+        """Borra las entregas terminadas (`sent`, `unknown`, o `failed` sin más
+        intentos) reclamadas antes de `claimed_before`, cuyo motivo ningún barrido
+        puede volver a encontrar (segundo plano §3).
+
+        Las de solicitudes sin actividad son la excepción: ese barrido no tiene
+        ventana, y una solicitud que sigue parada volvería a avisarse si se borrara
+        su entrega. Solo se borran cuando su clave ya no es la de la solicitud
+        (se movió después, o ya no existe), porque entonces no puede coincidir.
+
+        Recorre las entregas de todos los usuarios a propósito: es un barrido del
+        sistema y no devuelve datos de nadie.
+        """
+        delivery = NotificationDelivery
+        finished = and_(
+            delivery.claimed_at < claimed_before,
+            or_(
+                delivery.status.in_([DeliveryStatus.SENT, DeliveryStatus.UNKNOWN]),
+                and_(
+                    delivery.status == DeliveryStatus.FAILED,
+                    delivery.next_attempt_at.is_(None),
+                ),
+            ),
+        )
+        seconds = cast(
+            func.floor(func.extract("epoch", Application.last_activity_at)), BigInteger
+        )
+        still_current = (
+            select(Application.id)
+            .where(
+                Application.user_id == delivery.user_id,
+                literal(STALE_KEY_PREFIX)
+                + cast(Application.id, String)
+                + literal(":")
+                + cast(seconds, String)
+                == delivery.dedupe_key,
+            )
+            .exists()
+        )
+        result = await self.session.execute(
+            delete(delivery).where(
+                finished,
+                or_(
+                    delivery.kind != NotificationKind.STALE_APPLICATION,
+                    ~still_current,
+                ),
+            )
         )
         return int(getattr(result, "rowcount", 0) or 0)

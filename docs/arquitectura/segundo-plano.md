@@ -79,7 +79,7 @@ Se descartó **un worker por tipo de trabajo**: cuatro o cinco procesos casi sie
 | Reencolar pendientes | 5 min | Documentos `pending` con más de 5 minutos (propuestas de IA atascadas: se marcan como fallidas) |
 | Reclamos sin resultado | 5 min | Entregas `claimed` con más de 10 minutos pasan a `unknown` (§4) |
 | Ficheros huérfanos | 1 día | Ver [ficheros](ficheros.md#5-huerfanos) |
-| Entregas antiguas (al final de F12) | 1 día | Borra las entregas terminadas (`sent`, `unknown`, `failed` sin reintentos) de más de 90 días |
+| Entregas antiguas | 1 día (3:30 UTC) | Borra las entregas terminadas (`sent`, `unknown`, `failed` sin reintentos) de más de 90 días; las de inactividad, solo si su clave ya no es la de la solicitud |
 
 Reglas comunes:
 
@@ -89,7 +89,7 @@ Reglas comunes:
 
 > **Trampa — el primer despliegue inunda la bandeja.** Si el barrido de recordatorios buscara "todos los pendientes con `due_at` anterior a ahora", el día que se activa el canal de email se enviaría un correo por cada recordatorio vencido desde que el usuario empezó a usar la aplicación, meses atrás. La ventana de 24 h lo evita: solo avisa de lo que venció recientemente. Lo mismo con la inactividad: el primer barrido encuentra decenas de solicitudes paradas, y por eso se envía **un solo email por usuario y pasada** con la lista, no uno por solicitud (aunque cada solicitud tiene su propio reclamo, para no repetirla).
 
-> **Trampa — limpiar entregas quita la protección.** Una entrega terminada es lo único que impide reclamar otra vez su motivo: si se borrara la de un recordatorio que sigue en su ventana, el barrido lo volvería a avisar. Por eso la limpieza (decidida con el usuario en F12, sin historial visible para él) solo borra entregas terminadas de más de 90 días, muy por encima de la ventana de cualquier barrido (24 h, la entrevista futura, la semana en curso, el cruce del umbral de inactividad), y se construye al final de F12, cuando existan los cuatro barridos y se pueda probar esa regla con cada uno.
+> **Trampa — limpiar entregas quita la protección.** Una entrega terminada es lo único que impide reclamar otra vez su motivo: si se borrara la de un recordatorio que sigue en su ventana, el barrido lo volvería a avisar. Por eso la limpieza (decidida con el usuario en F12, sin historial visible para él) solo borra entregas terminadas de más de 90 días, muy por encima de la ventana de cualquier barrido (24 h, la entrevista futura, la semana en curso, el cruce del umbral de inactividad), Se construyó al final de F12 y se probó con cada barrido, y ahí apareció la excepción: **el de inactividad no tiene ventana**, porque avisa de cualquier solicitud que siga parada. Si se borrara la entrega de una solicitud olvidada, se volvería a avisar cada 90 días. Esas entregas solo se borran cuando su clave ya no es la actual de la solicitud (se movió después, o se borró), y entonces no pueden volver a coincidir. `NotificationDeliveryRepository.purge_finished` y `tests/services/test_delivery_purge.py`, con una prueba por tipo de aviso.
 
 > **Trampa — varios workers ejecutan el mismo barrido.** Si algún día hay dos procesos `worker`, cada uno puede disparar su tarea programada a la misma hora. El diseño no depende de que la cola lo deduplique: los barridos son seguros por construcción, porque todo envío pasa por un reclamo con clave única (§4). Dos barridos simultáneos compiten por insertar el mismo reclamo y solo uno gana.
 

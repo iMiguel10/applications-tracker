@@ -6,7 +6,7 @@ Guía de trabajo para Claude Code (y cualquier colaborador) en **Applications Tr
 
 Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y los recordatorios del próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-> **Estado (2026-09-30): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada, su infraestructura (F9) construida (correo, cola con `worker`, almacén de ficheros y PDF), su manual de producción (F10) en `manual/` y F11 (cuenta y abuso) cerrada. F12 (avisos por email) está en construcción: existen su base (entregas "nunca dos veces", barridos programados y preferencias de aviso), los cuatro avisos (recordatorio vencido, entrevista próxima, solicitudes sin actividad y resumen semanal) y la baja con un clic; falta la limpieza de entregas antiguas. F7 (despliegue) espera a que haya un VPS.**
+> **Estado (2026-09-30): MVP terminado (F0–F6 y F8). La v2 (F9–F17) está especificada y diseñada; construidas F9 (infraestructura: correo, cola con `worker`, almacén de ficheros y PDF), F10 (manual de producción en `manual/`), F11 (cuenta y abuso) y F12 (avisos por email, pendiente de su cierre con el `qa-verifier`). F7 (despliegue) espera a que haya un VPS.**
 >
 > F6 (CI) se construyó antes que F5 (dashboard y exportación CSV) por decisión explícita del usuario, no porque F5 no hiciera falta; ver [0006](docs/decisiones/0006-ci-antes-que-f5.md). F8 (revisión final) se construyó a su vez antes que F7 por otra decisión explícita del usuario: con el MVP funcional completo (F0–F6), tenía más sentido cerrar la revisión mientras el diseño estaba fresco que dejarla para después de desplegar. F7 cambia de contenido: ya no es "preparación para despliegue" sino la **puesta en producción real**, y sigue sin empezar.
 >
@@ -33,7 +33,7 @@ Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candi
         - **Límites visibles** (RF-140…143): `domain/limits.py` (`LimitKey`, `LIMIT_RULES`), `LIMIT_*` en la configuración, excepciones por cuenta en `user_limit_overrides` con `scripts/set_user_limit.py` (también "sin límite", salvo en almacenamiento e IA), y `LimitService`, que usan los services de solicitudes, empresas y recordatorios. `LimitReachedError` responde `{detail, code, limit, used}` (`AppException.extra`). `GET /me/usage`; en el frontend, `features/usage/` (tarjeta **Uso de la cuenta** en Preferencias y `LimitWarning` en los formularios de creación desde el 80 %).
         - **Rate limiting** (RNF-04): `infra/rate_limit/` (`limits` sobre Valkey, ventana deslizante), reglas en `domain/rate_limits.py`, el middleware `api/auth_rate_limit.py` para `/auth/*` (por IP, email o usuario) y `enforce_api_rate_limit` en el router `protected` (600/min por usuario). 429 `rate_limited` con `Retry-After`; con Valkey caído, deja pasar (y deja de consultarlo 30 s). IP real con `TRUSTED_PROXIES` (`core/client_ip.py`).
         - Selector de idioma en las pantallas de acceso (RF-08, `shared/components/LanguageSwitcher.tsx`), recordado en el navegador (`browserLanguage()` de `shared/i18n/i18n.ts`).
->     - F12 (en construcción; los seis pasos hechos, queda la limpieza de entregas):
+>     - F12 (construida; queda su cierre con el `qa-verifier`):
         - `domain/notifications.py` y `notification_deliveries` (reclamo con clave única `(user_id, kind, channel, dedupe_key)`, `channel` hoy solo `email`, estados `claimed`/`sent`/`failed`/`unknown`, `claimed_at` y `next_attempt_at`).
         - `NotificationDeliveryService`: reclamar y confirmar, encolar `send_notification` (un intento), enviar (por id **y** `user_id`, con el contenido de un `NotificationComposer` por tipo) y dar por `unknown` los reclamos abandonados. Los compositores de cada tipo los reúne `composers_for` (`services/notifications/`).
         - Barridos como `CronJob` de SAQ (`jobs/notifications.py`), ninguno sin SMTP: reclamos abandonados y entrevistas próximas (cada 5 minutos), recordatorios vencidos (cada minuto), y solicitudes sin actividad y resumen semanal (cada hora).
@@ -42,10 +42,11 @@ Aplicación para registrar y seguir solicitudes a puestos de trabajo: cada candi
         - **Solicitudes sin actividad** (RF-83): `services/notifications/stale_applications.py`, cada hora, con el umbral de `stale_after_days` y los estados de espera del dashboard. Un aviso por solicitud y periodo de inactividad (la clave lleva `last_activity_at`), agrupados en **un email por usuario y pasada**: `send_notification` recibe una lista de entregas y el compositor devuelve una `Composition` con las que cubre.
         - **Resumen semanal** (RF-82): `services/notifications/weekly_digest.py`, cada hora; sale el lunes desde las 8:00 en la zona del usuario (`digest_key_if_due`, clave con la semana ISO local), con lo del dashboard, también si no hay nada. La hora local se calcula en Python, no en SQL (Postgres podría no conocer algún nombre de zona).
         - **Baja con un clic** (RF-85): token HMAC de (usuario, tipo) con `APP_SECRET` (`domain/unsubscribe.py`), `GET`/`POST /api/v1/notifications/unsubscribe` en el router `public` (30/min por IP; el `GET` no aplica nada), cabeceras `List-Unsubscribe` y `List-Unsubscribe-Post` en cada aviso y la página `/unsubscribe` del frontend, que pide confirmar.
+        - **Limpieza de entregas** (cada día a las 3:30 UTC): borra las terminadas de más de 90 días (`DELIVERY_RETENTION`), salvo las de inactividad cuya clave sigue siendo la de la solicitud, que protegen para siempre a una solicitud que sigue parada. Sin historial visible para el usuario.
         - Preferencias `notify_*`, `reminder_notice_hours` e `interview_notice_hours` en `users` y `PATCH /me/preferences`; en el frontend, `features/notifications/` con la tarjeta **Avisos por email** de Preferencias (cada interruptor guarda al momento).
 > - **No existe todavía:**
 >     - F7, la puesta en producción real (orden invertido a petición del usuario; ver [0009](docs/decisiones/0009-f8-antes-que-f7.md)), en espera de servidor.
->     - **El resto de la v2**: de F12, la limpieza de entregas antiguas (al final de la fase; sin historial visible para el usuario); y F13–F17 (perfil y CVs, IA, Kanban y calendario). De F13–F17 solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
+>     - **El resto de la v2**: F13–F17 (perfil y CVs, IA, Kanban y calendario). De F13–F17 solo existe su diseño (§2). Ninguno de sus servicios, comandos ni carpetas está en el repositorio: no los ejecutes ni los busques hasta que se construya su fase.
 
 ## 2. Documentación
 
@@ -246,7 +247,7 @@ Están en `.claude/agents/`. Se invocan explícitamente al cerrar una feature o 
 | ✔ F9 | **v2.** Infraestructura: correo (Mailpit + `EmailSender`), cola (Valkey + SAQ + `worker`), almacén (`files_data` + `FileStorage`) y PDF (WeasyPrint), validados con un esqueleto vertical desechable (cola → `worker` → PDF → disco → email) que ya se retiró |
 | ✔ F10 | **v2.** Documentación de producción en Docusaurus (`manual/`, es + en): uso, despliegue y API, con el job `manual` en la CI |
 | ✔ F11 | **v2.** Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
-| F12 | **v2.** Notificaciones por email (cuatro tipos, nunca dos veces por el mismo motivo). **En construcción** (hechos los cuatro avisos y la baja con un clic; queda la limpieza de entregas) |
+| F12 | **v2.** Notificaciones por email (cuatro tipos, nunca dos veces por el mismo motivo). **Construida**; queda su cierre con el `qa-verifier` |
 | F13 | **v2.** Biblioteca de documentos (CVs y cartas en PDF) y descripción de la oferta |
 | F14 | **v2.** Perfil profesional y CVs generados con plantillas |
 | F15 | **v2.** IA: CV y carta adaptados, cuota gratuita fija y claves propias de proveedores habilitados |
