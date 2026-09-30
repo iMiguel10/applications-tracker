@@ -46,3 +46,19 @@ To change an entry, click the pencil; to delete it, the bin. Deleting an entry d
 Each section's order is the one it will have on the CV. To change it, drag an entry by the dotted handle on its left. Achievements are reordered the same way inside their entry's form.
 
 With the keyboard: go to the handle with **Tab**, press **Space** to pick it up, move it with the arrow keys and press **Space** again to drop it. **Escape** cancels the move.
+
+## Skills
+
+Click **Add skill** for each one, up to 100. Each row has:
+
+- The **Skill**, for example "PostgreSQL". It cannot be repeated, even with different capitals.
+- The **Category**, for example "Databases". The CV groups skills by it. As you type, it suggests the categories you have already used, so they are repeated exactly.
+- The **Level**, optional: **Basic**, **Intermediate**, **Advanced** or **Expert**.
+
+Drag them to reorder and click **Save** below the list. To remove one, click the bin on its row and save.
+
+## Languages
+
+Click **Add language** for each one, up to 30. Write the language as you want it on the CV ("English", "Inglés") and choose its **Level**: from **A1** to **C2** of the Common European Framework, or **Native**. The level is required.
+
+They are reordered and saved like skills.

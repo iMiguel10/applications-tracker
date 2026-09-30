@@ -30,6 +30,9 @@ type FormSelectProps<T extends FieldValues> = {
    */
   emptyLabel?: string;
   placeholder?: string;
+  /** Oculta la etiqueta a la vista (sigue para los lectores de pantalla): en filas
+   * de una lista, donde la columna ya lo dice. */
+  hideLabel?: boolean;
   disabled?: boolean;
   className?: string;
 };
@@ -41,6 +44,7 @@ export function FormSelect<T extends FieldValues>({
   options,
   emptyLabel,
   placeholder,
+  hideLabel,
   disabled,
   className,
 }: FormSelectProps<T>) {
@@ -55,7 +59,9 @@ export function FormSelect<T extends FieldValues>({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={String(name)}>{label}</Label>
+      <Label htmlFor={String(name)} className={hideLabel ? "sr-only" : undefined}>
+        {label}
+      </Label>
 
       <Select
         items={items}

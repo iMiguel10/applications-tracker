@@ -17,14 +17,21 @@ from app.domain.profile import (
     BULLET_MAX_LENGTH,
     CONTACT_EMAIL_MAX_LENGTH,
     ENTRY_DESCRIPTION_MAX_LENGTH,
+    LANGUAGE_NAME_MAX_LENGTH,
     LINK_LABEL_MAX_LENGTH,
     LINK_URL_MAX_LENGTH,
     MAX_BULLETS_PER_ENTRY,
     MAX_ENTRIES,
+    MAX_LANGUAGES,
     MAX_LINKS,
+    MAX_SKILLS,
     PHONE_MAX_LENGTH,
+    SKILL_CATEGORY_MAX_LENGTH,
+    SKILL_NAME_MAX_LENGTH,
     SUMMARY_MAX_LENGTH,
     EntryKind,
+    LanguageLevel,
+    SkillLevel,
     is_safe_link,
 )
 from app.schemas.common import OptionalShortText, RequiredName, empty_to_none
@@ -213,3 +220,70 @@ class EntryOrder(BaseModel):
 
     kind: EntryKind
     entry_ids: list[uuid.UUID] = Field(max_length=max(MAX_ENTRIES.values()))
+
+
+# --- Habilidades e idiomas (RF-102) -------------------------------------------
+
+SkillName = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=1, max_length=SKILL_NAME_MAX_LENGTH
+    ),
+]
+OptionalCategory = Annotated[
+    Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=SKILL_CATEGORY_MAX_LENGTH),
+    ]
+    | None,
+    BeforeValidator(empty_to_none),
+]
+LanguageName = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=1, max_length=LANGUAGE_NAME_MAX_LENGTH
+    ),
+]
+
+
+class SkillWrite(BaseModel):
+    """Con `id`, la habilidad existente con ese id (conserva su identidad para
+    F15); sin él, una nueva."""
+
+    id: uuid.UUID | None = None
+    name: SkillName = Field(examples=["PostgreSQL"])
+    category: OptionalCategory = Field(default=None, examples=["Bases de datos"])
+    level: SkillLevel | None = None
+
+
+class SkillRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    category: str | None
+    level: SkillLevel | None
+
+
+class SkillsUpdate(BaseModel):
+    """La lista entera, en el orden en que se muestra."""
+
+    skills: list[SkillWrite] = Field(max_length=MAX_SKILLS)
+
+
+class LanguageWrite(BaseModel):
+    id: uuid.UUID | None = None
+    language: LanguageName = Field(examples=["Inglés"])
+    level: LanguageLevel
+
+
+class LanguageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    language: str
+    level: LanguageLevel
+
+
+class LanguagesUpdate(BaseModel):
+    languages: list[LanguageWrite] = Field(max_length=MAX_LANGUAGES)

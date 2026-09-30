@@ -6,9 +6,15 @@ import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { EntriesSection } from "@/features/profile/components/EntriesSection";
+import { LanguagesCard } from "@/features/profile/components/LanguagesCard";
+import { SkillsCard } from "@/features/profile/components/SkillsCard";
 import { ProfileBasicsForm } from "@/features/profile/components/ProfileBasicsForm";
 import { useProfile } from "@/features/profile/hooks/queries/useProfile";
 import { useProfileEntries } from "@/features/profile/hooks/queries/useProfileEntries";
+import {
+  useProfileLanguages,
+  useProfileSkills,
+} from "@/features/profile/hooks/queries/useProfileSkills";
 import { ENTRY_KINDS } from "@/features/profile/types/ProfileEntry";
 
 /** Perfil profesional (RF-100…102): la materia prima de los CVs generados. */
@@ -17,6 +23,8 @@ export function ProfilePage() {
   useDocumentTitle(t("profile.title"));
   const profile = useProfile();
   const entries = useProfileEntries();
+  const skills = useProfileSkills();
+  const languages = useProfileLanguages();
   const { data: me } = useMe();
 
   return (
@@ -50,6 +58,19 @@ export function ProfilePage() {
             entries={entries.data.filter((entry) => entry.kind === kind)}
           />
         ))}
+
+      {(skills.isLoading || languages.isLoading) && <ListSkeleton rows={3} />}
+      {(skills.isError || languages.isError) && (
+        <ErrorState
+          onRetry={() => {
+            void skills.refetch();
+            void languages.refetch();
+          }}
+          retrying={skills.isFetching || languages.isFetching}
+        />
+      )}
+      {skills.data && <SkillsCard skills={skills.data} />}
+      {languages.data && <LanguagesCard languages={languages.data} />}
     </div>
   );
 }

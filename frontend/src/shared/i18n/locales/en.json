@@ -471,7 +471,11 @@
     "document_not_ready": "This document is not ready yet.",
     "profile_section_full": "This section already has the maximum of {{limit, number}} entries",
     "entry_order_mismatch": "The order changed in another tab. Reload the page and try again.",
-    "bullet_not_in_entry": "An achievement no longer exists. Reload the page and try again."
+    "bullet_not_in_entry": "An achievement no longer exists. Reload the page and try again.",
+    "duplicate_skill": "A skill is repeated",
+    "duplicate_language": "A language is repeated",
+    "skill_not_in_profile": "A skill no longer exists. Reload the page and try again.",
+    "language_not_in_profile": "A language no longer exists. Reload the page and try again."
   },
   "documents": {
     "title": "Documents",
@@ -676,7 +680,12 @@
       "titleRequired": "Enter a title",
       "bulletRequired": "Write the achievement or remove it",
       "monthAndYear": "Choose month and year",
-      "endBeforeStart": "The end date is before the start date"
+      "endBeforeStart": "The end date is before the start date",
+      "skillRequired": "Write the skill or remove it",
+      "duplicateSkill": "This skill is already in the list",
+      "languageRequired": "Write the language or remove it",
+      "duplicateLanguage": "This language is already in the list",
+      "languageLevelRequired": "Choose the level"
     },
     "entries": {
       "location": "Location",
@@ -739,6 +748,46 @@
         "titleField": "Certification",
         "organizationField": "Issuer",
         "current": "Does not expire"
+      }
+    },
+    "skills": {
+      "section": "Skills",
+      "hint": "With their category (the CV groups them by it) and, if you like, their level. Drag them to reorder. Up to 100.",
+      "name": "Skill",
+      "category": "Category",
+      "level": "Level",
+      "nameOf": "Skill {{n}}",
+      "categoryOf": "Category of skill {{n}}",
+      "levelOf": "Level of skill {{n}}",
+      "skillN": "Skill {{n}}",
+      "noLevel": "No level",
+      "add": "Add skill",
+      "remove": "Remove {{label}}",
+      "saved": "Skills saved",
+      "levels": {
+        "basic": "Basic",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "expert": "Expert"
+      }
+    },
+    "languages": {
+      "section": "Languages",
+      "language": "Language",
+      "level": "Level",
+      "languageN": "Language {{n}}",
+      "levelOf": "Level of language {{n}}",
+      "add": "Add language",
+      "remove": "Remove {{label}}",
+      "saved": "Languages saved",
+      "levels": {
+        "a1": "A1 · Beginner",
+        "a2": "A2 · Elementary",
+        "b1": "B1 · Intermediate",
+        "b2": "B2 · Upper intermediate",
+        "c1": "C1 · Advanced",
+        "c2": "C2 · Proficient",
+        "native": "Native"
       }
     }
   },

@@ -471,7 +471,11 @@
     "document_not_ready": "Este documento todavía no está listo.",
     "profile_section_full": "Esta sección ya tiene el máximo de {{limit, number}} entradas",
     "entry_order_mismatch": "El orden ha cambiado en otra pestaña. Recarga la página e inténtalo de nuevo.",
-    "bullet_not_in_entry": "Un logro ya no existe. Recarga la página e inténtalo de nuevo."
+    "bullet_not_in_entry": "Un logro ya no existe. Recarga la página e inténtalo de nuevo.",
+    "duplicate_skill": "Hay una habilidad repetida",
+    "duplicate_language": "Hay un idioma repetido",
+    "skill_not_in_profile": "Una habilidad ya no existe. Recarga la página e inténtalo de nuevo.",
+    "language_not_in_profile": "Un idioma ya no existe. Recarga la página e inténtalo de nuevo."
   },
   "documents": {
     "title": "Documentos",
@@ -676,7 +680,12 @@
       "titleRequired": "Indica un título",
       "bulletRequired": "Escribe el logro o quítalo",
       "monthAndYear": "Elige mes y año",
-      "endBeforeStart": "La fecha de fin es anterior a la de inicio"
+      "endBeforeStart": "La fecha de fin es anterior a la de inicio",
+      "skillRequired": "Escribe la habilidad o quítala",
+      "duplicateSkill": "Esta habilidad ya está en la lista",
+      "languageRequired": "Escribe el idioma o quítalo",
+      "duplicateLanguage": "Este idioma ya está en la lista",
+      "languageLevelRequired": "Elige el nivel"
     },
     "entries": {
       "location": "Ubicación",
@@ -739,6 +748,46 @@
         "titleField": "Certificación",
         "organizationField": "Entidad emisora",
         "current": "Sin caducidad"
+      }
+    },
+    "skills": {
+      "section": "Habilidades",
+      "hint": "Con su categoría (se agrupan por ella en el CV) y, si quieres, su nivel. Arrástralas para ordenarlas. Hasta 100.",
+      "name": "Habilidad",
+      "category": "Categoría",
+      "level": "Nivel",
+      "nameOf": "Habilidad {{n}}",
+      "categoryOf": "Categoría de la habilidad {{n}}",
+      "levelOf": "Nivel de la habilidad {{n}}",
+      "skillN": "Habilidad {{n}}",
+      "noLevel": "Sin nivel",
+      "add": "Añadir habilidad",
+      "remove": "Quitar {{label}}",
+      "saved": "Habilidades guardadas",
+      "levels": {
+        "basic": "Básico",
+        "intermediate": "Intermedio",
+        "advanced": "Avanzado",
+        "expert": "Experto"
+      }
+    },
+    "languages": {
+      "section": "Idiomas",
+      "language": "Idioma",
+      "level": "Nivel",
+      "languageN": "Idioma {{n}}",
+      "levelOf": "Nivel del idioma {{n}}",
+      "add": "Añadir idioma",
+      "remove": "Quitar {{label}}",
+      "saved": "Idiomas guardados",
+      "levels": {
+        "a1": "A1 · Acceso",
+        "a2": "A2 · Plataforma",
+        "b1": "B1 · Umbral",
+        "b2": "B2 · Avanzado",
+        "c1": "C1 · Dominio operativo eficaz",
+        "c2": "C2 · Maestría",
+        "native": "Nativo"
       }
     }
   },

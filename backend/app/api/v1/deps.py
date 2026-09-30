@@ -24,6 +24,7 @@ from app.services.interview_service import InterviewService
 from app.services.limit_service import LimitService
 from app.services.profile_entry_service import ProfileEntryService
 from app.services.profile_service import ProfileService
+from app.services.profile_skill_service import ProfileSkillService
 from app.services.reminder_service import ReminderService
 from app.services.unsubscribe_service import UnsubscribeService
 from app.services.user_service import UserService
@@ -102,6 +103,12 @@ def get_profile_entry_service(
     db: AsyncSession = Depends(get_db),
 ) -> ProfileEntryService:
     return ProfileEntryService(db)
+
+
+def get_profile_skill_service(
+    db: AsyncSession = Depends(get_db),
+) -> ProfileSkillService:
+    return ProfileSkillService(db)
 
 
 def get_profile_service(

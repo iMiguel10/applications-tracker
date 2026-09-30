@@ -63,3 +63,41 @@ MAX_ENTRIES: dict[EntryKind, int] = {
     EntryKind.PROJECT: 30,
     EntryKind.CERTIFICATION: 30,
 }
+
+
+# --- Habilidades e idiomas (RF-102) -------------------------------------------
+
+
+class SkillLevel(StrEnum):
+    """Nivel opcional de una habilidad."""
+
+    BASIC = "basic"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+    EXPERT = "expert"
+
+
+class LanguageLevel(StrEnum):
+    """Marco Común Europeo de Referencia, más nativo."""
+
+    A1 = "a1"
+    A2 = "a2"
+    B1 = "b1"
+    B2 = "b2"
+    C1 = "c1"
+    C2 = "c2"
+    NATIVE = "native"
+
+
+SKILL_NAME_MAX_LENGTH = 100
+SKILL_CATEGORY_MAX_LENGTH = 100
+LANGUAGE_NAME_MAX_LENGTH = 100
+# Especificación §10: 100 habilidades y 30 de cada otra sección.
+MAX_SKILLS = 100
+MAX_LANGUAGES = 30
+
+
+def name_key(name: str) -> str:
+    """Clave de unicidad de un nombre: sin distinguir mayúsculas, como el índice
+    `lower(name)` de la BD."""
+    return name.lower()

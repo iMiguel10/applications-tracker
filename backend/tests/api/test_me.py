@@ -15,6 +15,7 @@ from app.models.document import Document
 from app.models.interview import Interview
 from app.models.profile import Profile
 from app.models.profile_entry import ProfileEntry
+from app.models.profile_skill import ProfileLanguage, ProfileSkill
 from app.models.reminder import Reminder
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
@@ -80,6 +81,14 @@ async def _count_owned(session: AsyncSession, user_id: object) -> dict[str, int]
         .select_from(ProfileEntry)
         .join(Profile, Profile.id == ProfileEntry.profile_id)
         .where(Profile.user_id == user_id),
+        "profile_skills": select(func.count())
+        .select_from(ProfileSkill)
+        .join(Profile, Profile.id == ProfileSkill.profile_id)
+        .where(Profile.user_id == user_id),
+        "profile_languages": select(func.count())
+        .select_from(ProfileLanguage)
+        .join(Profile, Profile.id == ProfileLanguage.profile_id)
+        .where(Profile.user_id == user_id),
         "documents": select(func.count())
         .select_from(Document)
         .where(Document.user_id == user_id),
@@ -119,7 +128,15 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
         await make_interview(db_session, application)
         await make_reminder(db_session, owner.id, application_id=application.id)
         await make_reminder(db_session, owner.id)
-        await make_profile_entry(db_session, owner.id, bullets=["Un logro"])
+        entry = await make_profile_entry(db_session, owner.id, bullets=["Un logro"])
+        db_session.add(
+            ProfileSkill(profile_id=entry.profile_id, name="SQL", position=0)
+        )
+        db_session.add(
+            ProfileLanguage(
+                profile_id=entry.profile_id, language="Inglés", level="b2", position=0
+            )
+        )
     identities = FakeIdentities(db_session)
     app.dependency_overrides[get_account_service] = lambda: AccountService(
         db_session, LocalFileStorage(tmp_path), identities=identities
@@ -140,6 +157,8 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
         "reminders": 2,
         "profiles": 1,
         "profile_entries": 1,
+        "profile_skills": 1,
+        "profile_languages": 1,
         "documents": 1,
     }
 

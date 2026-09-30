@@ -46,3 +46,19 @@ Para cambiar una entrada, pulsa el lápiz; para borrarla, la papelera. Borrar un
 El orden de cada sección es el que tendrá en el CV. Para cambiarlo, arrastra una entrada por el asa de puntos de su izquierda. Los logros se ordenan igual dentro del formulario de su entrada.
 
 Con el teclado: ve al asa con **Tab**, pulsa **Espacio** para cogerla, muévela con las flechas y pulsa **Espacio** otra vez para soltarla. **Escape** cancela el movimiento.
+
+## Habilidades
+
+Pulsa **Añadir habilidad** para cada una, hasta 100. Cada fila tiene:
+
+- La **Habilidad**, por ejemplo "PostgreSQL". No se puede repetir, aunque cambien las mayúsculas.
+- La **Categoría**, por ejemplo "Bases de datos". El CV agrupa las habilidades por ella. Al escribir, te sugiere las categorías que ya has usado, para que se repitan igual.
+- El **Nivel**, opcional: **Básico**, **Intermedio**, **Avanzado** o **Experto**.
+
+Arrástralas para ordenarlas y pulsa **Guardar** debajo de la lista. Para quitar una, pulsa la papelera de su fila y guarda.
+
+## Idiomas
+
+Pulsa **Añadir idioma** para cada uno, hasta 30. Escribe el idioma tal como quieres que salga en el CV ("Inglés", "English") y elige su **Nivel**: de **A1** a **C2** del Marco Común Europeo, o **Nativo**. El nivel es obligatorio.
+
+Se ordenan y se guardan igual que las habilidades.

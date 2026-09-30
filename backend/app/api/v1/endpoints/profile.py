@@ -6,6 +6,7 @@ from app.api.v1.deps import (
     get_current_user,
     get_profile_entry_service,
     get_profile_service,
+    get_profile_skill_service,
 )
 from app.schemas.common import error_responses
 from app.schemas.profile import (
@@ -13,12 +14,17 @@ from app.schemas.profile import (
     EntryOrder,
     EntryRead,
     EntryUpdate,
+    LanguageRead,
+    LanguagesUpdate,
     ProfileRead,
     ProfileUpdate,
+    SkillRead,
+    SkillsUpdate,
 )
 from app.schemas.user import CurrentUser
 from app.services.profile_entry_service import ProfileEntryService
 from app.services.profile_service import ProfileService
+from app.services.profile_skill_service import ProfileSkillService
 
 router = APIRouter(
     prefix="/profile",
@@ -136,3 +142,66 @@ async def delete_entry(
     """Borra la entrada con sus logros. Los CVs ya generados no cambian: guardan
     una copia de lo que se usó."""
     await entries.delete(current_user.id, entry_id)
+
+
+# --- Habilidades e idiomas ------------------------------------------------------
+
+
+@router.get("/skills", summary="Habilidades del perfil")
+async def list_skills(
+    current_user: CurrentUser = Depends(get_current_user),
+    skills: ProfileSkillService = Depends(get_profile_skill_service),
+) -> list[SkillRead]:
+    """Las habilidades (RF-102), en su orden."""
+    return [
+        SkillRead.model_validate(skill)
+        for skill in await skills.skills(current_user.id)
+    ]
+
+
+@router.put(
+    "/skills",
+    summary="Guarda las habilidades del perfil",
+    responses=error_responses(422),
+)
+async def replace_skills(
+    data: SkillsUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
+    skills: ProfileSkillService = Depends(get_profile_skill_service),
+) -> list[SkillRead]:
+    """Sustituye la lista entera (hasta 100), en el orden en que se envía. Una
+    habilidad con `id` edita la existente y conserva su id; una sin `id` es nueva;
+    las que no vienen se borran. Un nombre repetido (sin distinguir mayúsculas)
+    responde **422** `duplicate_skill`, y un `id` que no es de este perfil, **422**
+    `skill_not_in_profile`."""
+    replaced = await skills.replace_skills(current_user.id, data)
+    return [SkillRead.model_validate(skill) for skill in replaced]
+
+
+@router.get("/languages", summary="Idiomas del perfil")
+async def list_languages(
+    current_user: CurrentUser = Depends(get_current_user),
+    skills: ProfileSkillService = Depends(get_profile_skill_service),
+) -> list[LanguageRead]:
+    """Los idiomas con su nivel (MCER o nativo), en su orden."""
+    return [
+        LanguageRead.model_validate(language)
+        for language in await skills.languages(current_user.id)
+    ]
+
+
+@router.put(
+    "/languages",
+    summary="Guarda los idiomas del perfil",
+    responses=error_responses(422),
+)
+async def replace_languages(
+    data: LanguagesUpdate,
+    current_user: CurrentUser = Depends(get_current_user),
+    skills: ProfileSkillService = Depends(get_profile_skill_service),
+) -> list[LanguageRead]:
+    """Sustituye la lista entera (hasta 30), igual que las habilidades. Un idioma
+    repetido responde **422** `duplicate_language`, y un `id` que no es de este
+    perfil, **422** `language_not_in_profile`."""
+    replaced = await skills.replace_languages(current_user.id, data)
+    return [LanguageRead.model_validate(language) for language in replaced]

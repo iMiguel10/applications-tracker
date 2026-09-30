@@ -4798,6 +4798,258 @@
           }
         }
       }
+    },
+    "/api/v1/profile/skills": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Habilidades del perfil",
+        "description": "Las habilidades (RF-102), en su orden.",
+        "operationId": "list_skills_api_v1_profile_skills_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SkillRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Skills Api V1 Profile Skills Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Guarda las habilidades del perfil",
+        "description": "Sustituye la lista entera (hasta 100), en el orden en que se envía. Una\nhabilidad con `id` edita la existente y conserva su id; una sin `id` es nueva;\nlas que no vienen se borran. Un nombre repetido (sin distinguir mayúsculas)\nresponde **422** `duplicate_skill`, y un `id` que no es de este perfil, **422**\n`skill_not_in_profile`.",
+        "operationId": "replace_skills_api_v1_profile_skills_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SkillRead"
+                  },
+                  "type": "array",
+                  "title": "Response Replace Skills Api V1 Profile Skills Put"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile/languages": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Idiomas del perfil",
+        "description": "Los idiomas con su nivel (MCER o nativo), en su orden.",
+        "operationId": "list_languages_api_v1_profile_languages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LanguageRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Languages Api V1 Profile Languages Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Guarda los idiomas del perfil",
+        "description": "Sustituye la lista entera (hasta 30), igual que las habilidades. Un idioma\nrepetido responde **422** `duplicate_language`, y un `id` que no es de este\nperfil, **422** `language_not_in_profile`.",
+        "operationId": "replace_languages_api_v1_profile_languages_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LanguagesUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LanguageRead"
+                  },
+                  "type": "array",
+                  "title": "Response Replace Languages Api V1 Profile Languages Put"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -7435,6 +7687,94 @@
         "title": "Language",
         "description": "Idioma de la interfaz. `null` en el usuario significa \"sigue el navegador\"."
       },
+      "LanguageLevel": {
+        "type": "string",
+        "enum": [
+          "a1",
+          "a2",
+          "b1",
+          "b2",
+          "c1",
+          "c2",
+          "native"
+        ],
+        "title": "LanguageLevel",
+        "description": "Marco Común Europeo de Referencia, más nativo."
+      },
+      "LanguageRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language"
+          },
+          "level": {
+            "$ref": "#/components/schemas/LanguageLevel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "language",
+          "level"
+        ],
+        "title": "LanguageRead"
+      },
+      "LanguageWrite": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "language": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Language",
+            "examples": [
+              "Inglés"
+            ]
+          },
+          "level": {
+            "$ref": "#/components/schemas/LanguageLevel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "language",
+          "level"
+        ],
+        "title": "LanguageWrite"
+      },
+      "LanguagesUpdate": {
+        "properties": {
+          "languages": {
+            "items": {
+              "$ref": "#/components/schemas/LanguageWrite"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Languages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "languages"
+        ],
+        "title": "LanguagesUpdate"
+      },
       "LimitKey": {
         "type": "string",
         "enum": [
@@ -8499,6 +8839,133 @@
         ],
         "title": "ResponseRate",
         "description": "RF-62 y RF-66: siempre se indica sobre cuántas solicitudes se calcula, y\n`rate` es `null` con una base menor que `MIN_SAMPLE_FOR_RATE` (RF-66)."
+      },
+      "SkillLevel": {
+        "type": "string",
+        "enum": [
+          "basic",
+          "intermediate",
+          "advanced",
+          "expert"
+        ],
+        "title": "SkillLevel",
+        "description": "Nivel opcional de una habilidad."
+      },
+      "SkillRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkillLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "level"
+        ],
+        "title": "SkillRead"
+      },
+      "SkillWrite": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "examples": [
+              "PostgreSQL"
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category",
+            "examples": [
+              "Bases de datos"
+            ]
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SkillLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "SkillWrite",
+        "description": "Con `id`, la habilidad existente con ese id (conserva su identidad para\nF15); sin él, una nueva."
+      },
+      "SkillsUpdate": {
+        "properties": {
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillWrite"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Skills"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skills"
+        ],
+        "title": "SkillsUpdate",
+        "description": "La lista entera, en el orden en que se muestra."
       },
       "StaleApplication": {
         "properties": {
