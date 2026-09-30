@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.limits import LimitKey
+from app.domain.limits import LimitKey, LimitUnit
 
 
 class LimitUsageRead(BaseModel):
@@ -18,6 +18,10 @@ class LimitUsageRead(BaseModel):
     renews: bool = Field(
         description="Si el consumo vuelve a cero cada cierto tiempo. Ningún límite "
         "actual se renueva."
+    )
+    unit: LimitUnit = Field(
+        description="Unidad de `used`, `limit` y `remaining`: `count` (elementos) o "
+        "`bytes` (almacenamiento)."
     )
 
 

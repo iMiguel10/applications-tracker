@@ -450,11 +450,13 @@
   },
   "usage": {
     "title": "Uso de la cuenta",
-    "description": "Cuánto llevas de cada límite de tu cuenta. No se renuevan: se libera espacio al borrar solicitudes, empresas o recordatorios. Archivar una solicitud o completar un recordatorio no libera espacio.",
+    "description": "Cuánto llevas de cada límite de tu cuenta. No se renuevan: se libera espacio al borrar solicitudes, empresas, recordatorios o documentos. Archivar una solicitud o un documento, o completar un recordatorio, no libera espacio.",
     "limits": {
       "applications": "Solicitudes",
       "companies": "Empresas",
-      "reminders": "Recordatorios"
+      "reminders": "Recordatorios",
+      "documents": "Documentos",
+      "storage_bytes": "Almacenamiento"
     },
     "warning": {
       "applications_one": "Te queda {{remaining, number}} de las {{limit, number}} solicitudes de tu cuenta.",
@@ -462,15 +464,21 @@
       "companies_one": "Te queda {{remaining, number}} de las {{limit, number}} empresas de tu cuenta.",
       "companies_other": "Te quedan {{remaining, number}} de las {{limit, number}} empresas de tu cuenta.",
       "reminders_one": "Te queda {{remaining, number}} de los {{limit, number}} recordatorios de tu cuenta.",
-      "reminders_other": "Te quedan {{remaining, number}} de los {{limit, number}} recordatorios de tu cuenta."
+      "reminders_other": "Te quedan {{remaining, number}} de los {{limit, number}} recordatorios de tu cuenta.",
+      "documents_one": "Te queda {{remaining, number}} de los {{limit, number}} documentos de tu cuenta.",
+      "documents_other": "Te quedan {{remaining, number}} de los {{limit, number}} documentos de tu cuenta.",
+      "storage_bytes": "Te quedan {{remaining}} de los {{limit}} de almacenamiento de tu cuenta."
     },
     "reached": {
       "applications": "Has alcanzado tu límite de {{limit, number}} solicitudes: borra alguna para poder crear otra.",
       "companies": "Has alcanzado tu límite de {{limit, number}} empresas: borra alguna sin solicitudes para poder crear otra.",
-      "reminders": "Has alcanzado tu límite de {{limit, number}} recordatorios, contando los hechos y descartados: borra alguno para poder crear otro."
+      "reminders": "Has alcanzado tu límite de {{limit, number}} recordatorios, contando los hechos y descartados: borra alguno para poder crear otro.",
+      "documents": "Has alcanzado tu límite de {{limit, number}} documentos, contando los archivados: borra alguno para poder subir otro.",
+      "storage_bytes": "Has llenado los {{limit}} de almacenamiento de tu cuenta, contando los documentos archivados: borra alguno para poder subir otro."
     },
     "amounts_one": "{{used, number}} de {{limit, number}} · queda {{remaining, number}}",
     "amounts_other": "{{used, number}} de {{limit, number}} · quedan {{remaining, number}}",
+    "amountsBytes": "{{used}} de {{limit}} · quedan {{remaining}}",
     "amountsUnlimited": "{{used, number}} · sin límite"
   },
   "notifications": {

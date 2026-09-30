@@ -3,6 +3,7 @@
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
+from app.models.document import Document
 from app.models.interview import Interview
 from app.models.notification_delivery import NotificationDelivery
 from app.models.reminder import Reminder
@@ -13,6 +14,7 @@ __all__ = [
     "Application",
     "ApplicationStatusChange",
     "Company",
+    "Document",
     "Interview",
     "NotificationDelivery",
     "Reminder",

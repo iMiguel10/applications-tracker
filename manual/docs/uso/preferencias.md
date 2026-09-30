@@ -35,7 +35,7 @@ Los avisos solo llegan a un email **verificado**: mientras no lo esté, la tarje
 
 ## Ver el uso de tu cuenta
 
-La tarjeta **Uso de la cuenta** muestra, para cada límite, cuánto llevas, el máximo y cuánto te queda: por ejemplo, "42 de 5000 · quedan 4958". La barra se vuelve ámbar al pasar del 80 % y roja al llegar al tope. Los límites no se renuevan: se libera espacio al borrar solicitudes, empresas o recordatorios. Archivar una solicitud o completar un recordatorio no libera espacio.
+La tarjeta **Uso de la cuenta** muestra, para cada límite, cuánto llevas, el máximo y cuánto te queda: por ejemplo, "42 de 5000 · quedan 4958". La barra se vuelve ámbar al pasar del 80 % y roja al llegar al tope. El almacenamiento se muestra en MB ("12,4 MB de 100 MB · quedan 87,6 MB"). Los límites no se renuevan: se libera espacio al borrar solicitudes, empresas, recordatorios o documentos. Archivar una solicitud o un documento, o completar un recordatorio, no libera espacio.
 
 ## Ver si tu email está verificado
 

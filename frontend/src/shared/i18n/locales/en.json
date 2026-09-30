@@ -450,11 +450,13 @@
   },
   "usage": {
     "title": "Account usage",
-    "description": "How much of each limit of your account you have used. They don’t renew: you free up room by deleting applications, companies or reminders. Archiving an application or completing a reminder doesn’t free up room.",
+    "description": "How much of each limit of your account you have used. They don’t renew: you free up room by deleting applications, companies, reminders or documents. Archiving an application or a document, or completing a reminder, doesn’t free up room.",
     "limits": {
       "applications": "Applications",
       "companies": "Companies",
-      "reminders": "Reminders"
+      "reminders": "Reminders",
+      "documents": "Documents",
+      "storage_bytes": "Storage"
     },
     "warning": {
       "applications_one": "You have {{remaining, number}} of your {{limit, number}} applications left.",
@@ -462,15 +464,21 @@
       "companies_one": "You have {{remaining, number}} of your {{limit, number}} companies left.",
       "companies_other": "You have {{remaining, number}} of your {{limit, number}} companies left.",
       "reminders_one": "You have {{remaining, number}} of your {{limit, number}} reminders left.",
-      "reminders_other": "You have {{remaining, number}} of your {{limit, number}} reminders left."
+      "reminders_other": "You have {{remaining, number}} of your {{limit, number}} reminders left.",
+      "documents_one": "You have {{remaining, number}} of your {{limit, number}} documents left.",
+      "documents_other": "You have {{remaining, number}} of your {{limit, number}} documents left.",
+      "storage_bytes": "You have {{remaining}} of your {{limit}} of storage left."
     },
     "reached": {
       "applications": "You have reached your limit of {{limit, number}} applications: delete one to create another.",
       "companies": "You have reached your limit of {{limit, number}} companies: delete one without applications to create another.",
-      "reminders": "You have reached your limit of {{limit, number}} reminders, counting done and dismissed ones: delete one to create another."
+      "reminders": "You have reached your limit of {{limit, number}} reminders, counting done and dismissed ones: delete one to create another.",
+      "documents": "You have reached your limit of {{limit, number}} documents, counting archived ones: delete one to upload another.",
+      "storage_bytes": "You have filled your {{limit}} of storage, counting archived documents: delete one to upload another."
     },
     "amounts_one": "{{used, number}} of {{limit, number}} · {{remaining, number}} left",
     "amounts_other": "{{used, number}} of {{limit, number}} · {{remaining, number}} left",
+    "amountsBytes": "{{used}} of {{limit}} · {{remaining}} left",
     "amountsUnlimited": "{{used, number}} · no limit"
   },
   "notifications": {

@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
+from app.models.document import Document
 from app.models.interview import Interview
 from app.models.reminder import Reminder
 from app.repositories.application_repository import ApplicationRepository
@@ -20,6 +21,7 @@ from app.repositories.application_status_change_repository import (
     ApplicationStatusChangeRepository,
 )
 from app.repositories.company_repository import CompanyRepository
+from app.repositories.document_repository import DocumentRepository
 from app.repositories.interview_repository import InterviewRepository
 from app.repositories.reminder_repository import ReminderRepository
 
@@ -102,3 +104,22 @@ async def make_reminder(
         "due_at": datetime.now(UTC) + timedelta(days=1),
     } | fields
     return await ReminderRepository(session).add(Reminder(user_id=user_id, **values))
+
+
+async def make_document(
+    session: AsyncSession, user_id: uuid.UUID, **fields: Any
+) -> Document:
+    """Solo la fila: el fichero no hace falta salvo para probar la descarga."""
+    document_id = fields.pop("id", uuid.uuid4())
+    values: dict[str, Any] = {
+        "kind": "cv",
+        "origin": "uploaded",
+        "status": "ready",
+        "name": "cv.pdf",
+        "storage_key": f"users/{user_id}/documents/{document_id}.pdf",
+        "size_bytes": 1024,
+        "sha256": "0" * 64,
+    } | fields
+    return await DocumentRepository(session).add(
+        Document(id=document_id, user_id=user_id, **values)
+    )

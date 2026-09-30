@@ -5,9 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
 from app.core.exceptions import LimitReachedError
-from app.domain.limits import LIMIT_RULES, LimitKey, remaining
+from app.domain.limits import LIMIT_RULES, LimitKey, LimitUnit, remaining
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.company_repository import CompanyRepository
+from app.repositories.document_repository import DocumentRepository
 from app.repositories.reminder_repository import ReminderRepository
 from app.repositories.user_limit_override_repository import (
     UserLimitOverrideRepository,
@@ -22,6 +23,7 @@ class LimitUsage:
     limit: int | None
     remaining: int | None
     renews: bool
+    unit: LimitUnit
     # Si el límite es una excepción de esta cuenta. Solo para administración (el
     # script); la API no lo publica.
     overridden: bool = False
@@ -37,7 +39,8 @@ class LimitService:
 
     Contar e insertar van en la misma transacción pero **sin** bloqueo (como en la
     v1): dos peticiones simultáneas pueden pasarse en uno, y eso no cuesta nada.
-    Los límites con coste real (almacenamiento, IA) bloquearán la fila del usuario.
+    Los límites con coste real (almacenamiento, IA) se comprueban además con la
+    fila del usuario bloqueada (A30), lo que hace quien consume.
     """
 
     def __init__(self, session: AsyncSession, config: Settings = settings) -> None:
@@ -47,6 +50,7 @@ class LimitService:
         self.applications = ApplicationRepository(session)
         self.companies = CompanyRepository(session)
         self.reminders = ReminderRepository(session)
+        self.documents = DocumentRepository(session)
 
     def global_limit(self, key: LimitKey) -> int:
         value: int = getattr(self.config, f"limit_{key.value}")
@@ -65,6 +69,10 @@ class LimitService:
                 return await self.companies.count(user_id)
             case LimitKey.REMINDERS:
                 return await self.reminders.count(user_id)
+            case LimitKey.DOCUMENTS:
+                return await self.documents.count(user_id)
+            case LimitKey.STORAGE_BYTES:
+                return await self.documents.total_size(user_id)
 
     async def check(self, user_id: uuid.UUID, key: LimitKey, amount: int = 1) -> None:
         """Lanza LimitReachedError si crear `amount` más superaría el límite."""
@@ -89,6 +97,7 @@ class LimitService:
                     limit=limit,
                     remaining=remaining(used, limit),
                     renews=LIMIT_RULES[key].renews,
+                    unit=LIMIT_RULES[key].unit,
                     overridden=key in overrides,
                 )
             )

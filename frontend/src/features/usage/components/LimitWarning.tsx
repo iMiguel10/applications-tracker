@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { useUsage } from "../hooks/queries/useUsage";
 import { usageLevel } from "../lib/level";
+import { usageValues } from "../lib/values";
 import type { LimitKey } from "../types/Usage";
 
 /**
@@ -13,7 +14,7 @@ import type { LimitKey } from "../types/Usage";
  * aplicando el límite y su error lo explica.
  */
 export function LimitWarning({ limitKey, className }: { limitKey: LimitKey; className?: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data } = useUsage();
   const item = data?.limits.find((limit) => limit.key === limitKey);
   if (!data || !item) return null;
@@ -21,13 +22,7 @@ export function LimitWarning({ limitKey, className }: { limitKey: LimitKey; clas
   const level = usageLevel(item, data.warning_ratio);
   if (level === "ok" || level === "unlimited") return null;
 
-  // count elige singular o plural ("te queda 1", "te quedan 3").
-  const values = {
-    used: item.used,
-    limit: item.limit,
-    remaining: item.remaining,
-    count: item.remaining,
-  };
+  const values = usageValues(item, i18n.language);
   return (
     <p
       role={level === "reached" ? "alert" : "status"}

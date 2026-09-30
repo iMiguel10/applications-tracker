@@ -18,7 +18,12 @@ from app.domain.limits import (
 from app.schemas.user import CurrentUser
 from app.services.application_service import ApplicationService
 from app.services.limit_service import LimitService, LimitUsage
-from tests.factories import make_application, make_company, make_reminder
+from tests.factories import (
+    make_application,
+    make_company,
+    make_document,
+    make_reminder,
+)
 
 
 def _by_key(usage: list[LimitUsage], key: LimitKey) -> LimitUsage:
@@ -205,3 +210,44 @@ async def test_database_allows_unlimited_exactly_where_the_domain_does(
     assert definition is not None
     allowed = set(re.findall(r"'(\w+)'", definition))
     assert allowed == {key.value for key in keys_allowing_unlimited()}
+
+
+@pytest.mark.asyncio
+async def test_documents_and_storage_count_real_rows_archived_included(
+    db_session: AsyncSession, user: CurrentUser, other_user: CurrentUser
+):
+    # F13: el almacenamiento es la suma de los bytes de verdad. Un archivado sigue
+    # en disco y cuenta; uno `pending` aún no tiene tamaño.
+    await make_document(db_session, user.id, size_bytes=1_000)
+    await make_document(
+        db_session, user.id, size_bytes=2_500, archived_at=datetime.now(UTC)
+    )
+    await make_document(
+        db_session, user.id, status="pending", storage_key=None, size_bytes=None
+    )
+    await make_document(db_session, other_user.id, size_bytes=9_999)
+
+    usage = await LimitService(db_session).usage(user.id)
+
+    documents = _by_key(usage, LimitKey.DOCUMENTS)
+    storage = _by_key(usage, LimitKey.STORAGE_BYTES)
+    assert documents.used == 3
+    assert documents.unit == "count"
+    assert storage.used == 3_500
+    assert storage.limit == settings.limit_storage_bytes
+    assert storage.unit == "bytes"
+
+
+@pytest.mark.asyncio
+async def test_storage_is_never_unlimited_but_can_go_beyond_2_gb(
+    db_session: AsyncSession, user: CurrentUser
+):
+    # Tope siempre (decisión del usuario en F11), en el service y en la BD. Y la
+    # columna aguanta una excepción de más de 2 GB (BigInteger).
+    service = LimitService(db_session)
+    with pytest.raises(ValueError, match="tiene que tener un límite"):
+        await service.set_override(user.id, LimitKey.STORAGE_BYTES, None)
+
+    await service.set_override(user.id, LimitKey.STORAGE_BYTES, 5 * 1024**3)
+
+    assert await service.limit_for(user.id, LimitKey.STORAGE_BYTES) == 5 * 1024**3

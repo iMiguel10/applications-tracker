@@ -1,6 +1,6 @@
 # Límites, rate limiting y superficie pública
 
-> Estado: **§1 y §2 construidos en F11** (límites de solicitudes, empresas y recordatorios; rate limiting de autenticación y límite general de la API); la baja de avisos (§2, F12) también está construida; el resto, diseño (F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
+> Estado: **§1 y §2 construidos en F11** (límites de solicitudes, empresas y recordatorios, y desde F13 los de documentos y almacenamiento; rate limiting de autenticación y límite general de la API); la baja de avisos (§2, F12) también está construida; el resto, diseño (F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
 
 Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento reúne las tres defensas que eso exige: **cuánto** puede crear cada usuario (límites), **a qué ritmo** se puede llamar a la API (rate limiting) y **qué** responde sin sesión (superficie pública).
 
@@ -131,7 +131,7 @@ Son valores de partida, configurables, que se ajustarán con uso real. Al supera
 
 ## 3. Verificación de email como defensa
 
-Las funciones con coste exigen email verificado (RF-06): así una cuenta falsa creada por un bot no puede gastar IA, disco ni emails. La comprobación es una dependencia del backend, `require_verified_email`. El detalle de cómo se lee el estado de verificación está en [autenticación §8](autenticacion.md#8-ampliacion-de-la-v2-verificacion-y-recuperacion).
+Las funciones con coste exigen email verificado (RF-06): así una cuenta falsa creada por un bot no puede gastar IA, disco ni emails. La comprobación es una dependencia del backend, `require_verified_email`. En una instalación sin correo no se exige, porque nadie podría verificar ([0013](../decisiones/0013-sin-correo-no-se-exige-verificar-el-email.md)): quedan el límite de almacenamiento y el rate limit de la subida. El detalle de cómo se lee el estado de verificación está en [autenticación §8](autenticacion.md#8-ampliacion-de-la-v2-verificacion-y-recuperacion).
 
 ## 4. Endpoints públicos
 

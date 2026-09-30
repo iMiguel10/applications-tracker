@@ -15,6 +15,16 @@ class LimitKey(StrEnum):
     # Todos los estados: si solo contaran los pendientes, crear, completar y
     # repetir haría crecer la tabla sin tope (decisión 0011).
     REMINDERS = "reminders"
+    DOCUMENTS = "documents"
+    # Suma de los tamaños de los documentos, archivados incluidos (siguen en disco).
+    STORAGE_BYTES = "storage_bytes"
+
+
+class LimitUnit(StrEnum):
+    """Cómo se muestra el consumo: la interfaz formatea los bytes."""
+
+    COUNT = "count"
+    BYTES = "bytes"
 
 
 @dataclass(frozen=True)
@@ -30,6 +40,7 @@ class LimitRule:
     # siempre, decisión del usuario en F11. Solo se permite donde pasarse no cuesta
     # nada más que filas.
     allows_unlimited: bool = False
+    unit: LimitUnit = LimitUnit.COUNT
 
 
 LIMIT_RULES: dict[LimitKey, LimitRule] = {
@@ -41,6 +52,14 @@ LIMIT_RULES: dict[LimitKey, LimitRule] = {
     ),
     LimitKey.REMINDERS: LimitRule(
         error_code="reminders_limit_reached", allows_unlimited=True
+    ),
+    # Cada documento ocupa disco, pero eso ya lo acota el almacenamiento: contar
+    # documentos solo cuesta filas.
+    LimitKey.DOCUMENTS: LimitRule(
+        error_code="documents_limit_reached", allows_unlimited=True
+    ),
+    LimitKey.STORAGE_BYTES: LimitRule(
+        error_code="storage_limit_reached", unit=LimitUnit.BYTES
     ),
 }
 

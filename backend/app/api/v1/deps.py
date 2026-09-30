@@ -145,7 +145,12 @@ async def require_verified_email(
     verificar desde otro dispositivo seguiría viendo "no" hasta renovar la sesión
     (autenticación §8, T12). Si el core dice que sí, se actualiza el claim en la
     sesión y las siguientes peticiones ya no preguntan.
+
+    Sin correo configurado no se exige (decisión 0013): nadie podría verificar su
+    email y la función quedaría bloqueada para siempre en esa instalación.
     """
+    if not settings.email_enabled:
+        return current_user
     if await session.get_claim_value(EmailVerificationClaim) is True:
         return current_user
     if await users.is_email_verified(current_user.supertokens_user_id):

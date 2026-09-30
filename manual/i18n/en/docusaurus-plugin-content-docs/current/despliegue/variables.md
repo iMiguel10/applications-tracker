@@ -79,6 +79,8 @@ If it is missing or shorter, the API does not start. Keep it like any other pass
 | `LIMIT_APPLICATIONS` | 5000 | Applications per account, archived ones included |
 | `LIMIT_COMPANIES` | 2000 | Companies per account |
 | `LIMIT_REMINDERS` | 5000 | Reminders per account, in any status |
+| `LIMIT_DOCUMENTS` | 100 | Documents (CVs and cover letters) per account, archived ones included |
+| `LIMIT_STORAGE_BYTES` | 104857600 (100 MB) | Storage per account, **in bytes**: the sum of its documents, archived ones included |
 
 They are optional and apply to every account. To give a single account a different value, without touching the others:
 
@@ -89,6 +91,8 @@ docker compose exec api python -m app.scripts.set_user_limit ana@example.com app
 docker compose exec api python -m app.scripts.set_user_limit ana@example.com all --unlimited         # no limit on everything that allows it
 docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --reset  # back to the global value (all --reset, every one)
 ```
+
+Storage is also in bytes in the script (`storage_bytes 524288000` is 500 MB), and it is the only one that **does not allow** `--unlimited`: disk space costs money, and an account with no cap could fill it. `all --unlimited` leaves it as it is.
 
 Lowering a limit below what the account already has deletes nothing: it only stops it from creating more. An account with no limit sees in Preferences how much it has used and "no limit", and never gets warnings.
 

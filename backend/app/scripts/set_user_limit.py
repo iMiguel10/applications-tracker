@@ -9,6 +9,9 @@
     # Sin límite de solicitudes para esta cuenta
     docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --unlimited
 
+    # El almacenamiento va en bytes: 500 MB para esta cuenta
+    docker compose exec api python -m app.scripts.set_user_limit ana@example.com storage_bytes 524288000
+
     # Sin límite en todo lo que lo admite
     docker compose exec api python -m app.scripts.set_user_limit ana@example.com all --unlimited
 

@@ -38,6 +38,10 @@ API_PER_USER = RateRule("api", "600/minute", RateKey.USER)
 # límite cualquiera podría cargar la BD a peticiones. Holgado para una persona que
 # se da de baja de varios avisos seguidos o de un cliente de correo que reintenta.
 UNSUBSCRIBE_PER_IP = RateRule("unsubscribe", "30/minute", RateKey.IP)
+# Subida de documentos (ficheros §2): cada una lee hasta 5 MB y abre el PDF. De
+# sobra para quien sube sus CVs; frena a quien quiera llenar el disco o la CPU a
+# golpe de subidas y borrados, que el límite de almacenamiento no ve.
+UPLOAD_PER_USER = RateRule("upload", "30/hour", RateKey.USER)
 
 # Rutas /auth/* de SuperTokens (POST) y sus reglas. Las sirve el middleware de
 # SuperTokens, no nuestros endpoints: las limita api/auth_rate_limit.py.

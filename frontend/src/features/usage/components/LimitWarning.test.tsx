@@ -12,7 +12,7 @@ function renderWith(used: number, limit: number) {
   vi.mocked(usageService.get).mockResolvedValue({
     warning_ratio: 0.8,
     limits: [
-      { key: "companies", used, limit, remaining: Math.max(limit - used, 0), renews: false },
+      { key: "companies", used, limit, remaining: Math.max(limit - used, 0), renews: false, unit: "count" },
     ],
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

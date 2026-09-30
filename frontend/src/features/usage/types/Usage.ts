@@ -1,4 +1,10 @@
-export const LIMIT_KEYS = ["applications", "companies", "reminders"] as const;
+export const LIMIT_KEYS = [
+  "applications",
+  "companies",
+  "reminders",
+  "documents",
+  "storage_bytes",
+] as const;
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 
 export interface LimitUsage {
@@ -9,6 +15,8 @@ export interface LimitUsage {
   remaining: number | null;
   /** Ningún límite actual se renueva. */
   renews: boolean;
+  /** Unidad de `used`, `limit` y `remaining`: elementos o bytes (almacenamiento). */
+  unit: "count" | "bytes";
 }
 
 /** `GET /me/usage` (RF-141). */

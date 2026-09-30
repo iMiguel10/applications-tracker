@@ -35,7 +35,7 @@ Notifications only go to a **verified** email: until it is, the card reminds you
 
 ## See your account usage
 
-The **Account usage** card shows, for each limit, how much you have used, the maximum and how much is left: for example, "42 of 5,000 · 4,958 left". The bar turns amber past 80 % and red at the limit. Limits don't renew: you free up room by deleting applications, companies or reminders. Archiving an application or completing a reminder doesn't free up room.
+The **Account usage** card shows, for each limit, how much you have used, the maximum and how much is left: for example, "42 of 5,000 · 4,958 left". The bar turns amber past 80 % and red at the limit. Storage is shown in MB ("12.4 MB of 100 MB · 87.6 MB left"). Limits don't renew: you free up room by deleting applications, companies, reminders or documents. Archiving an application or a document, or completing a reminder, doesn't free up room.
 
 ## Check whether your email is verified
 

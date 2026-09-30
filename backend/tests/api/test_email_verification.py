@@ -1,9 +1,9 @@
 """Verificación de email contra el core real (autenticación §8: T12, T13, T14).
 
 La API encola; aquí se ejecuta a mano el service del trabajo con
-`RecordingEmailSender` para leer el enlace. `require_verified_email` todavía no la
-usa ningún endpoint (las funciones con coste llegan en F12+), así que se prueba en
-una app mínima con el mismo middleware y la misma dependencia.
+`RecordingEmailSender` para leer el enlace. `require_verified_email` se prueba en una
+app mínima con el mismo middleware y la misma dependencia, independiente de qué
+funciones con coste la usen (la primera, la subida de documentos de F13).
 """
 
 import uuid
@@ -102,10 +102,16 @@ async def costly(
 
 @pytest_asyncio.fixture
 async def costly_client(
-    real_auth_client: AsyncClient, db_session: AsyncSession
+    real_auth_client: AsyncClient,
+    db_session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncGenerator[AsyncClient, None]:
     """Cliente de la app mínima. Las cookies de sesión se copian en cada prueba
-    DESPUÉS de registrarse: httpx copia el tarro al crear el cliente."""
+    DESPUÉS de registrarse: httpx copia el tarro al crear el cliente.
+
+    Con correo configurado: sin él la verificación no se exige (0013), y el
+    entorno de pruebas no tiene SMTP."""
+    monkeypatch.setattr(settings, "smtp_host", "mailpit")
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
@@ -209,6 +215,23 @@ async def test_verified_elsewhere_is_accepted_with_the_old_token(
     )
     assert isinstance(token, CreateEmailVerificationTokenOkResult)
     await verify_email_using_token("public", token.token)
+    costly_client.cookies = httpx.Cookies(real_auth_client.cookies)
+
+    response = await costly_client.get("/costly")
+
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_without_email_verification_is_not_required(
+    real_auth_client: AsyncClient,
+    costly_client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # Decisión 0013: sin SMTP nadie puede verificar su email. Exigirlo dejaría la
+    # función bloqueada para siempre en esa instalación.
+    await _signup(real_auth_client)
+    monkeypatch.setattr(settings, "smtp_host", None)
     costly_client.cookies = httpx.Cookies(real_auth_client.cookies)
 
     response = await costly_client.get("/costly")

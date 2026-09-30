@@ -22,14 +22,22 @@ async def test_usage_lists_every_limit_with_used_limit_and_remaining(
     body = response.json()
     assert body["warning_ratio"] == 0.8
     by_key = {item["key"]: item for item in body["limits"]}
-    assert set(by_key) == {"applications", "companies", "reminders"}
+    assert set(by_key) == {
+        "applications",
+        "companies",
+        "reminders",
+        "documents",
+        "storage_bytes",
+    }
     assert by_key["companies"] == {
         "key": "companies",
         "used": 1,
         "limit": 10,
         "remaining": 9,
         "renews": False,
+        "unit": "count",
     }
+    assert by_key["storage_bytes"]["unit"] == "bytes"
     assert by_key["applications"]["limit"] == settings.limit_applications
 
 

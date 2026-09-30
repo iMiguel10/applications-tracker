@@ -12,6 +12,7 @@ import {
 } from "@/shared/components/ui/card";
 import { useUsage } from "../hooks/queries/useUsage";
 import { usageLevel, type UsageLevel } from "../lib/level";
+import { usageValues } from "../lib/values";
 
 const BAR_CLASSES: Record<Exclude<UsageLevel, "unlimited">, string> = {
   ok: "bg-primary",
@@ -29,7 +30,7 @@ const TEXT_CLASSES: Record<UsageLevel, string> = {
 /** Consumo de cada límite de la cuenta (RF-141): lo usado, el límite y lo que
  * queda, con una barra que cambia de color al pasar del aviso (RF-144). */
 export function UsageCard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data, isLoading, isError, isFetching, refetch } = useUsage();
 
   return (
@@ -39,7 +40,7 @@ export function UsageCard() {
         <CardDescription>{t("usage.description")}</CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading && <ListSkeleton rows={3} />}
+        {isLoading && <ListSkeleton rows={5} />}
         {isError && <ErrorState onRetry={() => refetch()} retrying={isFetching} />}
         {data && (
           <ul className="grid gap-4">
@@ -52,7 +53,7 @@ export function UsageCard() {
                   <li key={item.key} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
                     <span className="font-medium">{label}</span>
                     <span className={cn("tabular-nums", TEXT_CLASSES.unlimited)}>
-                      {t("usage.amountsUnlimited", { used: item.used })}
+                      {t("usage.amountsUnlimited", usageValues(item, i18n.language))}
                     </span>
                   </li>
                 );
@@ -63,12 +64,10 @@ export function UsageCard() {
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
                     <span className="font-medium">{label}</span>
                     <span className={cn("tabular-nums", TEXT_CLASSES[level])}>
-                      {t("usage.amounts", {
-                        used: item.used,
-                        limit: item.limit,
-                        remaining: item.remaining,
-                        count: item.remaining,
-                      })}
+                      {t(
+                        item.unit === "bytes" ? "usage.amountsBytes" : "usage.amounts",
+                        usageValues(item, i18n.language),
+                      )}
                     </span>
                   </div>
                   <div

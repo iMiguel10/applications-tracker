@@ -8,6 +8,7 @@ const item = (used: number, limit: number | null) => ({
   limit,
   remaining: limit === null ? null : Math.max(limit - used, 0),
   renews: false,
+  unit: "count" as const,
 });
 
 describe("usageLevel", () => {

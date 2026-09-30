@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents` y los límites de documentos y almacenamiento · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 

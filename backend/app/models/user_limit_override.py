@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -35,7 +35,8 @@ class UserLimitOverride(Base):
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     limit_key: Mapped[str] = mapped_column(String(40), primary_key=True)
-    value: Mapped[int | None] = mapped_column(Integer)
+    # BigInteger: el almacenamiento va en bytes y pasaría de 2 GB con Integer.
+    value: Mapped[int | None] = mapped_column(BigInteger)
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

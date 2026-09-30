@@ -512,7 +512,7 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 | `AI_FREE_USES`, `AI_MONTHLY_SPEND_CAP` | Cuota gratuita por cuenta y tope de gasto global (RF-150, RF-155) | Valores por defecto de la configuración |
 | `TRUSTED_PROXIES` **[construido]** | IPs o redes CIDR de los proxies cuyo `X-Forwarded-For` se acepta | Ninguna: se usa la IP de la conexión. **Obligatoria detrás de un proxy**: si no, todos los usuarios comparten su IP |
 | `RATE_LIMIT_ENABLED` **[construido]** | Activa el rate limiting (`true` por defecto); `false` solo en las pruebas | Activado |
-| `LIMIT_*` **[construido: `LIMIT_APPLICATIONS`, `LIMIT_COMPANIES`, `LIMIT_REMINDERS`]** | Valores globales de los límites por usuario (RF-140) | Los de §10 de la especificación |
+| `LIMIT_*` **[construido: `LIMIT_APPLICATIONS`, `LIMIT_COMPANIES`, `LIMIT_REMINDERS`; en F13 `LIMIT_DOCUMENTS` y `LIMIT_STORAGE_BYTES`, en bytes]** | Valores globales de los límites por usuario (RF-140) | Los de §10 de la especificación |
 
 ### 8.7 Convenciones nuevas del backend
 

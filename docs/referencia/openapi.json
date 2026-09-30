@@ -5130,9 +5130,20 @@
         "enum": [
           "applications",
           "companies",
-          "reminders"
+          "reminders",
+          "documents",
+          "storage_bytes"
         ],
         "title": "LimitKey"
+      },
+      "LimitUnit": {
+        "type": "string",
+        "enum": [
+          "count",
+          "bytes"
+        ],
+        "title": "LimitUnit",
+        "description": "Cómo se muestra el consumo: la interfaz formatea los bytes."
       },
       "LimitUsageRead": {
         "properties": {
@@ -5173,6 +5184,10 @@
             "type": "boolean",
             "title": "Renews",
             "description": "Si el consumo vuelve a cero cada cierto tiempo. Ningún límite actual se renueva."
+          },
+          "unit": {
+            "$ref": "#/components/schemas/LimitUnit",
+            "description": "Unidad de `used`, `limit` y `remaining`: `count` (elementos) o `bytes` (almacenamiento)."
           }
         },
         "type": "object",
@@ -5181,7 +5196,8 @@
           "used",
           "limit",
           "remaining",
-          "renews"
+          "renews",
+          "unit"
         ],
         "title": "LimitUsageRead"
       },

@@ -79,6 +79,8 @@ Si falta o es más corto, la API no arranca. Guárdalo como cualquier otra contr
 | `LIMIT_APPLICATIONS` | 5000 | Solicitudes por cuenta, archivadas incluidas |
 | `LIMIT_COMPANIES` | 2000 | Empresas por cuenta |
 | `LIMIT_REMINDERS` | 5000 | Recordatorios por cuenta, en cualquier estado |
+| `LIMIT_DOCUMENTS` | 100 | Documentos (CVs y cartas) por cuenta, archivados incluidos |
+| `LIMIT_STORAGE_BYTES` | 104857600 (100 MB) | Almacenamiento por cuenta, **en bytes**: la suma de sus documentos, archivados incluidos |
 
 Son opcionales y valen para todas las cuentas. Para dar otro valor a una cuenta concreta, sin tocar las demás:
 
@@ -89,6 +91,8 @@ docker compose exec api python -m app.scripts.set_user_limit ana@example.com app
 docker compose exec api python -m app.scripts.set_user_limit ana@example.com all --unlimited         # sin límite en todo lo que lo admite
 docker compose exec api python -m app.scripts.set_user_limit ana@example.com applications --reset  # volver al valor global (all --reset, todos)
 ```
+
+El almacenamiento también va en bytes en el script (`storage_bytes 524288000` son 500 MB) y es el único que **no admite** `--unlimited`: el disco cuesta, y una cuenta sin tope podría llenarlo. `all --unlimited` lo deja como está.
 
 Rebajar un límite por debajo de lo que la cuenta ya tiene no borra nada: solo le impide crear más. Una cuenta sin límite ve en Preferencias cuánto lleva y "sin límite", y nunca recibe avisos.
 
