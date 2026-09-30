@@ -50,6 +50,18 @@ class LimitReachedError(AppException):
         )
 
 
+def retry_after_headers(retry_after: int) -> dict[str, str]:
+    """Cabeceras de un 429. `Retry-After` se expone aquí, en la propia respuesta, y
+    no con `expose_headers` en el `CORSMiddleware`: con esa opción, Starlette
+    sobrescribe en TODAS las respuestas el `Access-Control-Expose-Headers` que pone
+    SuperTokens, el navegador deja de poder leer `front-token` y el inicio de sesión
+    no crea sesión (roto así en F11 hasta el cierre de la fase)."""
+    return {
+        "Retry-After": str(retry_after),
+        "Access-Control-Expose-Headers": "Retry-After",
+    }
+
+
 class RateLimitedError(AppException):
     """429 (RNF-04): demasiadas peticiones. `retry_after` en el cuerpo y en la
     cabecera `Retry-After`, en segundos, para que el cliente diga cuánto esperar."""
@@ -60,5 +72,5 @@ class RateLimitedError(AppException):
             status_code=429,
             code="rate_limited",
             extra={"retry_after": retry_after},
-            headers={"Retry-After": str(retry_after)},
+            headers=retry_after_headers(retry_after),
         )

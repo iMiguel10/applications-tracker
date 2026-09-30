@@ -22,6 +22,7 @@ from supertokens_python.recipe.session.asyncio import (
 
 from app.core.client_ip import client_ip, parse_trusted_proxies
 from app.core.config import settings
+from app.core.exceptions import retry_after_headers
 from app.domain.rate_limits import AUTH_RULES, RateKey, RateRule
 from app.infra.rate_limit import RateLimiter
 
@@ -180,7 +181,7 @@ class AuthRateLimitMiddleware:
                 "retry_after": result.retry_after,
             },
             status_code=429,
-            headers={"Retry-After": str(result.retry_after)},
+            headers=retry_after_headers(result.retry_after),
         )(scope, receive, send)
         return True
 

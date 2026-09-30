@@ -1,5 +1,9 @@
+import uuid
+
 import pytest
 from httpx import AsyncClient
+
+from tests.auth_helpers import PASSWORD, form
 
 ALLOWED_ORIGIN = "http://localhost:5173"
 
@@ -40,3 +44,25 @@ async def test_preflight_from_unknown_origin_gets_no_cors_headers(
     )
 
     assert "access-control-allow-origin" not in response.headers
+
+
+@pytest.mark.asyncio
+async def test_session_response_still_exposes_front_token_to_the_browser(
+    real_auth_client: AsyncClient,
+):
+    # El SDK del navegador lee `front-token` de la respuesta para saber que hay
+    # sesión. Con `expose_headers` en el CORSMiddleware, Starlette pisaba la lista
+    # de SuperTokens en todas las respuestas y el login no creaba sesión (F11).
+    response = await real_auth_client.post(
+        "/auth/signup",
+        headers={
+            "Origin": ALLOWED_ORIGIN,
+            "rid": "emailpassword",
+            "st-auth-mode": "cookie",
+        },
+        json=form(email=f"cors-{uuid.uuid4()}@example.com", password=PASSWORD),
+    )
+
+    assert response.json()["status"] == "OK"
+    exposed = response.headers.get("access-control-expose-headers", "").lower()
+    assert "front-token" in [header.strip() for header in exposed.split(",")]

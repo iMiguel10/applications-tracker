@@ -80,8 +80,9 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["Content-Type", *get_all_cors_headers()],
-    # Para que un cliente en el navegador pueda leer cuánto esperar tras un 429.
-    expose_headers=["Retry-After"],
+    # Sin `expose_headers`: Starlette lo aplicaría a todas las respuestas pisando
+    # el que pone SuperTokens (`front-token`), y el login dejaría de crear sesión en
+    # el navegador. Cada 429 expone su `Retry-After` (`retry_after_headers`).
 )
 
 # Hasta el lifespan (y en las pruebas, que no lo ejecutan) no hay rate limit; las

@@ -55,6 +55,8 @@ async def test_eleventh_signin_from_the_same_ip_is_429(
     assert blocked.status_code == 429
     assert blocked.json()["code"] == "rate_limited"
     assert int(blocked.headers["Retry-After"]) == blocked.json()["retry_after"] > 0
+    # El navegador solo puede leerla si la respuesta la expone (CORS).
+    assert blocked.headers["Access-Control-Expose-Headers"] == "Retry-After"
 
 
 @pytest.mark.asyncio
@@ -125,11 +127,12 @@ async def test_email_limit_slows_down_but_never_locks_the_account(
     monkeypatch: pytest.MonkeyPatch,
 ):
     # L6: frenar, no bloquear. Pasada la ventana, la dueña de la cuenta entra. Con
-    # una ventana de un segundo para no esperar una hora.
+    # una ventana de 3 s para no esperar una hora. Con 1 s era intermitente: si los
+    # tres intentos tardaban más de un segundo, el primero ya había caducado.
     monkeypatch.setitem(
         rate_limits.AUTH_RULES,
         "/auth/signin",
-        (RateRule("signin", "2/second", RateKey.EMAIL),),
+        (RateRule("signin", "2 per 3 seconds", RateKey.EMAIL),),
     )
     email = f"frenada-{uuid.uuid4()}@example.com"
     await real_auth_client.post(
@@ -140,7 +143,7 @@ async def test_email_limit_slows_down_but_never_locks_the_account(
     await _signin(real_auth_client, email)
     assert (await _signin(real_auth_client, email, PASSWORD)).status_code == 429
 
-    await asyncio.sleep(1.1)
+    await asyncio.sleep(3.1)
 
     assert (await _signin(real_auth_client, email, PASSWORD)).json()["status"] == "OK"
 
@@ -192,6 +195,7 @@ async def test_general_api_limit_per_user(
     assert statuses == [200, 200, 429]
     assert blocked.json()["code"] == "rate_limited"
     assert "Retry-After" in blocked.headers
+    assert blocked.headers["Access-Control-Expose-Headers"] == "Retry-After"
 
 
 # --- Resto de reglas de /auth/* y rutas equivalentes (cierre de F11) ----------
