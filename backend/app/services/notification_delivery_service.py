@@ -154,9 +154,15 @@ class NotificationDeliveryService:
         que ya no están en `claimed` (se enviaron, o un barrido las dio por
         abandonadas) no se tocan, y sin ninguna no se envía nada."""
         assert self.email_sender is not None, "deliver necesita un EmailSender"
+        # Bloqueadas hasta el commit final, SMTP incluido: si este mismo envío se
+        # ejecuta dos veces a la vez (un worker que toma por abandonado un trabajo
+        # que acaba de empezar, segundo plano §2), la segunda ejecución se salta las
+        # filas bloqueadas y no envía nada; si llega después, ya no están `claimed`.
         deliveries = [
             delivery
-            for delivery in await self.deliveries.get_many(delivery_ids, user_id)
+            for delivery in await self.deliveries.get_many(
+                delivery_ids, user_id, lock=True
+            )
             if delivery.status == DeliveryStatus.CLAIMED
         ]
         if not deliveries:

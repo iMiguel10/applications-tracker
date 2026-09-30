@@ -31,7 +31,9 @@ class ReminderRead(BaseModel):
     due_at: datetime
     application: ReminderApplicationSummary | None
     sent_at: datetime | None = Field(
-        description="`null` en el MVP: el único canal (in_app) no envía nada (RF-53)."
+        description="Siempre `null`. El aviso por email de un recordatorio vencido "
+        "(RF-80) no se refleja aquí: depende de las preferencias de la cuenta, no del "
+        "recordatorio."
     )
     completed_at: datetime | None
     channel: ReminderChannel

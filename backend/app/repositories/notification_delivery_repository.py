@@ -132,14 +132,22 @@ class NotificationDeliveryRepository:
         )
 
     async def get_many(
-        self, delivery_ids: Sequence[uuid.UUID], user_id: uuid.UUID
+        self,
+        delivery_ids: Sequence[uuid.UUID],
+        user_id: uuid.UUID,
+        *,
+        lock: bool = False,
     ) -> Sequence[NotificationDelivery]:
-        result = await self.session.scalars(
-            select(NotificationDelivery).where(
-                NotificationDelivery.id.in_(delivery_ids),
-                NotificationDelivery.user_id == user_id,
-            )
+        """Con `lock`, bloquea las filas hasta el final de la transacción y se salta
+        las que ya tiene bloqueadas otra: el mismo envío ejecutado dos veces a la vez
+        no ve nada que enviar en la segunda (RF-87)."""
+        query = select(NotificationDelivery).where(
+            NotificationDelivery.id.in_(delivery_ids),
+            NotificationDelivery.user_id == user_id,
         )
+        if lock:
+            query = query.with_for_update(skip_locked=True)
+        result = await self.session.scalars(query)
         return result.all()
 
     async def save(self, delivery: NotificationDelivery) -> NotificationDelivery:
