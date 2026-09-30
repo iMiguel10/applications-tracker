@@ -12,6 +12,7 @@ from collections.abc import Iterator
 import pytest
 from httpx import AsyncClient
 
+from app.api.auth_rate_limit import rules_for
 from app.api.v1 import deps
 from app.core.config import settings
 from app.domain import rate_limits
@@ -191,3 +192,133 @@ async def test_general_api_limit_per_user(
     assert statuses == [200, 200, 429]
     assert blocked.json()["code"] == "rate_limited"
     assert "Retry-After" in blocked.headers
+
+
+# --- Resto de reglas de /auth/* y rutas equivalentes (cierre de F11) ----------
+
+
+@pytest.mark.asyncio
+async def test_sixth_signup_from_the_same_ip_in_an_hour_is_429(
+    real_auth_client: AsyncClient, limiter: LimitsRateLimiter
+):
+    # Registro: 5 por hora y por IP (límites y abuso §2, valores iniciales).
+    for i in range(5):
+        response = await real_auth_client.post(
+            "/auth/signup",
+            json=form(email=f"alta{i}-{uuid.uuid4()}@example.com", password=PASSWORD),
+            headers=EP,
+        )
+        assert response.json()["status"] == "OK"
+        real_auth_client.cookies.clear()
+
+    blocked = await real_auth_client.post(
+        "/auth/signup",
+        json=form(email=f"alta-extra-{uuid.uuid4()}@example.com", password=PASSWORD),
+        headers=EP,
+    )
+
+    assert blocked.status_code == 429
+    assert blocked.json()["code"] == "rate_limited"
+
+
+async def _request_reset(client: AsyncClient, email: str, path: str = ""):
+    return await client.post(
+        path or "/auth/user/password/reset/token",
+        json=form(email=email),
+        headers=EP,
+    )
+
+
+@pytest.mark.asyncio
+async def test_fourth_password_reset_for_the_same_email_is_429(
+    real_auth_client: AsyncClient, limiter: LimitsRateLimiter
+):
+    # Recuperación: 3 por hora y por email. Da igual que la cuenta exista.
+    email = f"nadie-{uuid.uuid4()}@example.com"
+    statuses = [
+        (await _request_reset(real_auth_client, email)).status_code for _ in range(3)
+    ]
+
+    blocked = await _request_reset(real_auth_client, email.upper())
+
+    assert statuses == [200, 200, 200]
+    assert blocked.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_eleventh_password_reset_from_the_same_ip_is_429(
+    real_auth_client: AsyncClient, limiter: LimitsRateLimiter
+):
+    # Recuperación: 10 por hora y por IP, con emails distintos.
+    for i in range(10):
+        response = await _request_reset(
+            real_auth_client, f"r{i}-{uuid.uuid4()}@example.com"
+        )
+        assert response.status_code == 200
+
+    blocked = await _request_reset(real_auth_client, f"r-{uuid.uuid4()}@example.com")
+
+    assert blocked.status_code == 429
+
+
+# SuperTokens atiende la misma API con el tenant en la ruta (/auth/<tenant>/…) y
+# con una barra final (normaliza la ruta). El límite tiene que valer también ahí,
+# o basta con cambiar la URL para saltárselo.
+SIGNIN_VARIANTS = ["/auth/public/signin", "/auth/signin/"]
+RESET_VARIANTS = [
+    "/auth/public/user/password/reset/token",
+    "/auth/user/password/reset/token/",
+]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", SIGNIN_VARIANTS)
+async def test_signin_ip_limit_also_covers_equivalent_paths(
+    real_auth_client: AsyncClient, limiter: LimitsRateLimiter, path: str
+):
+    for i in range(10):
+        await _signin(real_auth_client, f"v{i}-{uuid.uuid4()}@example.com")
+
+    blocked = await real_auth_client.post(
+        path,
+        json=form(email=f"v-{uuid.uuid4()}@example.com", password="mala-clave-1"),
+        headers=EP,
+    )
+
+    assert blocked.status_code == 429
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("path", RESET_VARIANTS)
+async def test_password_reset_email_limit_also_covers_equivalent_paths(
+    real_auth_client: AsyncClient, limiter: LimitsRateLimiter, path: str
+):
+    email = f"nadie-{uuid.uuid4()}@example.com"
+    for _ in range(3):
+        await _request_reset(real_auth_client, email)
+
+    blocked = await _request_reset(real_auth_client, email, path)
+
+    assert blocked.status_code == 429
+
+
+@pytest.mark.parametrize(
+    ("path", "rules"),
+    [
+        ("/auth/signin", rate_limits.AUTH_RULES["/auth/signin"]),
+        ("/auth/signin/", rate_limits.AUTH_RULES["/auth/signin"]),
+        ("/auth/public/signin", rate_limits.AUTH_RULES["/auth/signin"]),
+        ("/Auth//otro-tenant/SignIn/", rate_limits.AUTH_RULES["/auth/signin"]),
+        (
+            "/auth/public/user/email/verify/token",
+            rate_limits.AUTH_RULES["/auth/user/email/verify/token"],
+        ),
+        ("/auth/session/refresh", None),
+        ("/auth/a/b/signin", None),
+        ("/api/v1/signin", None),
+    ],
+)
+def test_rules_for_recognises_equivalent_paths(
+    path: str, rules: tuple[RateRule, ...] | None
+):
+    assert rules_for(path) == rules

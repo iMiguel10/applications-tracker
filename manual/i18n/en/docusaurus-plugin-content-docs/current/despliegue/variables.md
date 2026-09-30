@@ -95,7 +95,7 @@ Lowering a limit below what the account already has deletes nothing: it only sto
 If the application is behind a proxy (Nginx, a load balancer), every request reaches it from the proxy's IP. Without `TRUSTED_PROXIES`, all users share that IP and the limit of 10 sign-ins per minute is split among everyone. With it, the application reads the real IP from the `X-Forwarded-For` header, but only when a proxy on the list sets it.
 :::
 
-Limits are kept in Valkey. If Valkey doesn't respond, the application lets requests through without limits and logs it, so that nobody is locked out.
+Limits are kept in Valkey. If Valkey doesn't respond, the application lets requests through without limits and logs it, so that nobody is locked out. While the outage lasts it tries again every 30 seconds, and limits come back on their own as soon as Valkey responds.
 
 ## Environment
 

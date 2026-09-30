@@ -8,7 +8,7 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 
 ### Piezas
 
-- `domain/limits.py`: un `StrEnum` `LimitKey` (`applications`, `companies`, `pending_reminders`, `documents`, `storage_bytes`, `ai_free_uses`) y, para cada uno, si **se renueva** (ninguno lo hace en la v2) y en qué unidad se muestra.
+- `domain/limits.py`: un `StrEnum` `LimitKey` (`applications`, `companies`, `reminders`, `documents`, `storage_bytes`, `ai_free_uses`) y, para cada uno, si **se renueva** (ninguno lo hace en la v2) y en qué unidad se muestra.
 - Valores globales en la configuración (`LIMIT_*`, §10 de la especificación).
 - Tabla `user_limit_overrides` para las excepciones de un usuario concreto (RF-143), que se ajustan con `scripts/set_user_limit.py`.
 - `LimitService`: `limit_for(user, key)` (excepción o global), `usage_for(user, key)` (una consulta por límite sobre las tablas reales, sin contadores aparte) y `check(user, key, amount)`.
@@ -38,8 +38,8 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 
 ### Piezas
 
-- `infra/rate_limit.py`: la librería `limits` con almacenamiento en Valkey, estrategia de **ventana deslizante** (evita que alguien concentre el doble de peticiones en el cambio de ventana).
-- En nuestros endpoints: la dependencia `rate_limit(nombre, por=…)`, declarada igual que `get_current_user`.
+- `infra/rate_limit/`: la librería `limits` con almacenamiento en Valkey, estrategia de **ventana deslizante** (evita que alguien concentre el doble de peticiones en el cambio de ventana).
+- En nuestros endpoints: una dependencia declarada igual que `get_current_user` (construida como `enforce_api_rate_limit`).
 - En `/auth/*` (lo sirve SuperTokens, no nuestros endpoints): un **middleware** añadido de forma que quede **por fuera** del de SuperTokens y lo alcance primero.
 
 **Construido en F11:**
@@ -49,9 +49,12 @@ Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento re�
 - `api/auth_rate_limit.py`: el middleware de `/auth/*`, añadido entre el de SuperTokens y CORS (`main.py`). Para el reenvío de la verificación, el usuario sale del access token validado con el SDK (`get_session_without_request_response`). Rechaza con 413 un cuerpo de más de 64 KB: leerlo entero para buscar el email no debe servir para agotar la memoria.
 - `core/client_ip.py`: la IP del cliente con `TRUSTED_PROXIES`.
 - **Límite general por usuario** (añadido en F11 a petición del usuario, no estaba en el diseño): 600 peticiones por minuto en todo el router `protected`, con la dependencia `enforce_api_rate_limit`. Nadie lo nota usando la aplicación, pero frena un script que machaque la API.
-- **Valkey caído: se deja pasar** (decisión del usuario en F11). Sin almacén no hay rate limit y queda un aviso en el log; la alternativa, bloquear, dejaría a todo el mundo sin poder iniciar sesión mientras dura la caída.
+- **Valkey caído: se deja pasar** (decisión del usuario en F11). Sin almacén no hay rate limit y queda un aviso en el log; la alternativa, bloquear, dejaría a todo el mundo sin poder iniciar sesión mientras dura la caída. Tras un fallo, `LimitsRateLimiter` deja de consultar Valkey durante 30 s (`STORE_RETRY_SECONDS`) y después vuelve a probar: sin esa pausa, cada petición esperaba el timeout de conexión, unos 4 s por regla (8 s un inicio de sesión, 12 s una recuperación), y dejaba un traceback en el log. Lo encontró el `qa-verifier` al cerrar F11.
+- **Rutas equivalentes:** el middleware reconoce las reglas con `rules_for`, que normaliza la ruta (ver la trampa siguiente).
 - **Respuesta:** `RateLimitedError` (`AppException` gana `headers`) o el propio middleware: `429`, `{"detail", "code": "rate_limited", "retry_after"}` y la cabecera `Retry-After`, expuesta por CORS. En el frontend, `auth.service` convierte el 429 del SDK de SuperTokens (que lanza la `Response`) en el mismo `ApiError`, y el mensaje dice cuánto esperar ("dentro de 44 segundos").
 - **Comprobado:** con el middleware devolviendo un cuerpo vacío, un inicio de sesión correcto responde `FIELD_ERROR` y la prueba L4 se pone en rojo.
+
+> **Trampa — la misma ruta de SuperTokens tiene varias formas.** SuperTokens atiende `/auth/signin` también como `/auth/signin/` (quita una barra final) y como `/auth/public/signin` (el tenant en la ruta, aunque la aplicación no use multitenancy). Si el middleware buscara la regla por la ruta exacta, bastaría con cambiar la URL para saltarse cualquier límite de `/auth/*`: el `qa-verifier` lo reprodujo en el cierre de F11 con 15 contraseñas incorrectas seguidas contra `/auth/public/signin`, todas atendidas. `rules_for` quita barras repetidas y finales, pasa a minúsculas y prueba la ruta con y sin un segmento de tenant. Normaliza más que SuperTokens a propósito: limitar de más una ruta que él rechaza con 404 no cuesta nada.
 
 > **Trampa — en producción, todos detrás de la IP del proxy.** Detrás de Nginx (F7), la conexión siempre llega desde el proxy. Si `TRUSTED_PROXIES` se queda vacía, `X-Forwarded-For` se ignora y **todos los usuarios comparten una IP**: 10 inicios de sesión por minuto entre todos. Y sin la protección contraria, si se aceptara `X-Forwarded-For` de cualquiera, cada atacante se inventaría una IP por intento. Por eso solo se lee de los proxies declarados, y de derecha a izquierda.
 
@@ -122,7 +125,7 @@ Son valores de partida, configurables, que se ajustarán con uso real. Al supera
 
 > **Trampa — la IP del cliente detrás de un proxy.** Explicada en la [arquitectura de la v2](v2.md#5-flujos): solo se lee `X-Forwarded-For` si la conexión viene de una IP de `TRUSTED_PROXIES`. En desarrollo no hay proxy y se usa la IP de la conexión.
 
-> **Trampa — el rate limit en las pruebas.** Con un límite de 10 inicios de sesión por minuto, una batería de pruebas que inicia sesión 30 veces empieza a fallar por `429` de forma intermitente, según el orden de ejecución. Las pruebas usan un Valkey propio que se vacía entre pruebas, y las que no prueban el rate limit lo desactivan por configuración.
+> **Trampa — el rate limit en las pruebas.** Con un límite de 10 inicios de sesión por minuto, una batería de pruebas que inicia sesión 30 veces empieza a fallar por `429` de forma intermitente, según el orden de ejecución. Las pruebas que no prueban el rate limit lo tienen desactivado (`app.state.rate_limiter` es `DisabledRateLimiter` sin lifespan), y las que sí lo prueban ponen un `LimitsRateLimiter("async+memory://")` nuevo en cada prueba, sin Valkey.
 
 ## 3. Verificación de email como defensa
 
@@ -157,7 +160,7 @@ Viven en el router `public` de `api/v1/router.py`. **La prueba T1** (ya existe d
 | L1 | Con una excepción de usuario, su límite es el de la excepción y el de los demás no cambia | RF-143 |
 | L2 | `GET /me/usage` coincide con lo creado, y tras un borrado en cascada sigue coincidiendo | Consumo calculado, no contado |
 | L3 | El error de límite superado incluye `limit` y `used` | RF-142 |
-| L4 | El 11.º inicio de sesión en un minuto desde la misma IP → `429` con `Retry-After`; un inicio de sesión correcto con el middleware delante funciona | Rate limit en `/auth/*` y cuerpo reinyectado |
+| L4 | El 11.º inicio de sesión en un minuto desde la misma IP → `429` con `Retry-After`; un inicio de sesión correcto con el middleware delante funciona; `/auth/public/signin` y `/auth/signin/` cuentan contra el mismo límite | Rate limit en `/auth/*`, cuerpo reinyectado y sin atajos por la URL |
 | L5 | Con `X-Forwarded-For` falso desde una IP que no está en `TRUSTED_PROXIES`, el límite se aplica a la IP real | Proxy de confianza |
 | L6 | Superar el límite por email no impide iniciar sesión a esa cuenta pasada la ventana | Frenar, no bloquear |
 | L7 | La lista de rutas sin sesión del OpenAPI es exactamente la lista blanca | Superficie pública controlada |

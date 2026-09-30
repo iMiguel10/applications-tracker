@@ -95,7 +95,7 @@ Rebajar un límite por debajo de lo que la cuenta ya tiene no borra nada: solo l
 Si la aplicación está detrás de un proxy (Nginx, un balanceador), todas las peticiones le llegan desde la IP del proxy. Sin `TRUSTED_PROXIES`, todos los usuarios comparten esa IP y el límite de 10 inicios de sesión por minuto se reparte entre todos. Con ella, la aplicación lee la IP real de la cabecera `X-Forwarded-For`, pero solo cuando la pone un proxy de la lista.
 :::
 
-Los límites se guardan en Valkey. Si Valkey no responde, la aplicación deja pasar las peticiones sin límite y lo registra en el log, para que nadie se quede sin poder entrar.
+Los límites se guardan en Valkey. Si Valkey no responde, la aplicación deja pasar las peticiones sin límite y lo registra en el log, para que nadie se quede sin poder entrar. Mientras dura la caída vuelve a probar cada 30 segundos, y los límites vuelven solos en cuanto Valkey responde.
 
 ## Entorno
 

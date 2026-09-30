@@ -61,6 +61,29 @@ async def _buffer_body(receive: Receive) -> tuple[bytes | None, Receive]:
     return body, replay
 
 
+AUTH_PREFIX = "auth"
+
+
+def rules_for(path: str) -> tuple[RateRule, ...] | None:
+    """Las reglas de una ruta, reconociendo sus formas equivalentes.
+
+    SuperTokens atiende la misma API con una barra final (`/auth/signin/`) y con
+    el tenant en la ruta (`/auth/public/signin`). Si aquí solo se reconociera la
+    forma canónica, bastaría con cambiar la URL para saltarse el límite (límites
+    y abuso §2). La normalización es más amplia que la de SuperTokens (barras
+    repetidas, mayúsculas): limitar de más una ruta que él rechaza no cuesta nada.
+    """
+    segments = [s for s in path.lower().split("/") if s]
+    if not segments or segments[0] != AUTH_PREFIX:
+        return None
+    rest = segments[1:]
+    for candidate in (rest, rest[1:]):
+        rules = AUTH_RULES.get("/" + "/".join([AUTH_PREFIX, *candidate]))
+        if rules:
+            return rules
+    return None
+
+
 def _email_from(body: bytes) -> str | None:
     try:
         data: Any = json.loads(body)
@@ -99,9 +122,7 @@ class AuthRateLimitMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        rules = (
-            AUTH_RULES.get(scope.get("path", "")) if scope["type"] == "http" else None
-        )
+        rules = rules_for(scope.get("path", "")) if scope["type"] == "http" else None
         if not rules or scope["method"] != "POST":
             await self.app(scope, receive, send)
             return

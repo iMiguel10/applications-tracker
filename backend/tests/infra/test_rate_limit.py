@@ -3,6 +3,7 @@ import logging
 import pytest
 
 from app.infra.rate_limit import LimitsRateLimiter, storage_uri_from_valkey_url
+from app.infra.rate_limit.limits_backend import STORE_RETRY_SECONDS
 
 
 @pytest.mark.asyncio
@@ -37,6 +38,36 @@ async def test_lets_requests_through_when_the_store_fails(
 
     assert result.allowed
     assert "sin almacén" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_stops_asking_a_failed_store_for_a_while(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # Con Valkey caído, cada consulta espera el timeout de conexión (~4 s). Tras
+    # un fallo se deja de preguntar un rato; pasado ese rato, se vuelve a probar.
+    now = [1000.0]
+    limiter = LimitsRateLimiter("async+memory://", clock=lambda: now[0])
+    calls = 0
+
+    async def down(*args: object) -> bool:
+        nonlocal calls
+        calls += 1
+        raise ConnectionError("valkey caído")
+
+    monkeypatch.setattr(limiter._limiter, "hit", down)
+
+    for _ in range(5):
+        assert (await limiter.hit("1/minute", "signin", "ip", "1.2.3.4")).allowed
+    assert calls == 1
+
+    now[0] += STORE_RETRY_SECONDS
+    monkeypatch.undo()
+    first = await limiter.hit("1/minute", "signin", "ip", "1.2.3.4")
+    second = await limiter.hit("1/minute", "signin", "ip", "1.2.3.4")
+
+    assert first.allowed
+    assert not second.allowed
 
 
 @pytest.mark.parametrize(
