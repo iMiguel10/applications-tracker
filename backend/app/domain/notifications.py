@@ -8,6 +8,7 @@ SMTP, y cuyo estado dice si se puede reintentar (segundo plano §4).
 import uuid
 from datetime import datetime, timedelta
 from enum import StrEnum
+from zoneinfo import ZoneInfo
 
 
 class NotificationKind(StrEnum):
@@ -145,3 +146,25 @@ def stale_from_key(dedupe_key: str) -> tuple[uuid.UUID, int] | None:
         return uuid.UUID(application_id), int(seconds)
     except ValueError:
         return None
+
+
+# RF-82: el resumen semanal sale el lunes desde esta hora local. Fija para todos:
+# el barrido pasa cada hora y la clave evita repetirlo el resto del lunes.
+DIGEST_WEEKDAY = 0  # lunes, en datetime.weekday()
+DIGEST_HOUR = 8
+DIGEST_KEY_PREFIX = "digest:"
+# Cuántos elementos de cada lista lleva el resumen; el resto, en el dashboard.
+DIGEST_LIST_LIMIT = 10
+
+
+def digest_key_if_due(now: datetime, timezone: str | None) -> str | None:
+    """La clave del resumen de esta semana si, en la zona del usuario, ya es lunes
+    a partir de las 8:00; None si no. La semana es la ISO **local**
+    (`digest:2031-W11`): uno por semana aunque el barrido pase varias veces esa
+    mañana. Se calcula con el nombre IANA en cada pasada, nunca con un desfase fijo,
+    así que el lunes del cambio de hora también sale a las 8:00 (A39, B9)."""
+    local = now.astimezone(ZoneInfo(timezone or "UTC"))
+    if local.weekday() != DIGEST_WEEKDAY or local.hour < DIGEST_HOUR:
+        return None
+    year, week, _ = local.isocalendar()
+    return f"{DIGEST_KEY_PREFIX}{year}-W{week:02d}"

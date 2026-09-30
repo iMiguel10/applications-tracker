@@ -12,6 +12,7 @@ from app.services.notifications import (
     InterviewUpcomingSweep,
     ReminderDueSweep,
     StaleApplicationSweep,
+    WeeklyDigestSweep,
     composers_for,
 )
 
@@ -51,6 +52,11 @@ async def sweep_stale_applications(ctx: WorkerContext) -> None:
         await StaleApplicationSweep(session, ctx["job_queue"]).run(_now())
 
 
+async def sweep_weekly_digests(ctx: WorkerContext) -> None:
+    async with ctx["session_factory"]() as session:
+        await WeeklyDigestSweep(session, ctx["job_queue"]).run(_now())
+
+
 async def expire_abandoned_notification_claims(ctx: WorkerContext) -> None:
     async with ctx["session_factory"]() as session:
         await NotificationDeliveryService(session).expire_abandoned_claims(_now())
@@ -77,6 +83,14 @@ def notification_cron_jobs(email_enabled: bool) -> list[CronJob[WorkerContext]]:
         CronJob(
             sweep_stale_applications,
             cron="7 * * * *",
+            timeout=SWEEP_TIMEOUT_SECONDS,
+            retries=1,
+        ),
+        CronJob(
+            sweep_weekly_digests,
+            # Cada hora: sale en la primera pasada desde las 8:00 locales (a las
+            # 8:30 en las zonas de media hora, como la India).
+            cron="0 * * * *",
             timeout=SWEEP_TIMEOUT_SECONDS,
             retries=1,
         ),

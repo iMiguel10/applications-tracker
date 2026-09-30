@@ -1,0 +1,30 @@
+{% set subject = "Tu resumen semanal: semana del " ~ week_of -%}
+{% set statuses = {"applied": "Enviada", "screening": "En revisión", "interviewing": "Entrevistas", "offer": "Oferta"} -%}
+{% set types = {"screening": "de screening", "technical": "técnica", "hr": "de RR. HH.", "cultural": "cultural", "final": "final", "other": ""} -%}
+Hola:
+
+Este es tu resumen de la semana del {{ week_of }}.
+{% if in_progress %}
+EN CURSO
+{% for item in in_progress %}- {{ statuses[item.status] }}: {{ item.count }}
+{% endfor %}{% endif %}{% if interviews %}
+ENTREVISTAS DE ESTA SEMANA
+{% for interview in interviews %}- {{ interview.when }}: entrevista{% if interview.interview_type and types[interview.interview_type] %} {{ types[interview.interview_type] }}{% endif %} para {{ interview.position }} en {{ interview.company }}
+  {{ interview.link }}
+{% endfor %}{% endif %}{% if reminders %}
+RECORDATORIOS
+{% for reminder in reminders %}- {% if reminder.overdue %}Vencido: {% endif %}{{ reminder.title }} ({{ reminder.when }})
+{% endfor %}{% if reminders_more > 0 %}Y {{ reminders_more }} más en {{ reminders_link }}
+{% endif %}{% endif %}{% if stale %}
+SIN ACTIVIDAD DESDE HACE MÁS DE {{ stale_after_days }} DÍAS
+{% for application in stale %}- {{ application.position }} en {{ application.company }}: {{ application.days }} días
+  {{ application.link }}
+{% endfor %}{% if stale_more > 0 %}Y {{ stale_more }} más en el Dashboard.
+{% endif %}{% endif %}{% if not (interviews or reminders or stale) %}
+Esta semana no tienes entrevistas, recordatorios pendientes ni solicitudes paradas. ¡Todo al día!
+{% endif %}
+Todo esto, y más, en el Dashboard: {{ dashboard_link }}
+
+Recibes este email porque tienes activado el resumen semanal.
+Para no recibir más estos avisos: {{ unsubscribe_link }}
+Para cambiar tus avisos, ve a Preferencias: {{ preferences_link }}

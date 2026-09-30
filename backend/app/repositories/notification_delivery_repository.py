@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -73,6 +73,35 @@ class NotificationDeliveryRepository:
             )
             .returning(NotificationDelivery.id)
         )
+
+    async def blocking_keys(
+        self,
+        kind: NotificationKind,
+        candidates: Sequence[tuple[uuid.UUID, str]],
+        now: datetime,
+        channel: DeliveryChannel = DeliveryChannel.EMAIL,
+    ) -> set[tuple[uuid.UUID, str]]:
+        """De los pares (usuario, motivo), los que ya tienen una entrega que impide
+        reclamarlos: enviada, desconocida, reclamada, o fallida sin reintento que ya
+        toque. Para los barridos que calculan la clave en Python (resumen semanal)
+        y no pueden descartarlos en la propia consulta."""
+        if not candidates:
+            return set()
+        rows = await self.session.execute(
+            select(NotificationDelivery.user_id, NotificationDelivery.dedupe_key).where(
+                NotificationDelivery.kind == kind,
+                NotificationDelivery.channel == channel,
+                tuple_(
+                    NotificationDelivery.user_id, NotificationDelivery.dedupe_key
+                ).in_(candidates),
+                or_(
+                    NotificationDelivery.status != DeliveryStatus.FAILED,
+                    NotificationDelivery.next_attempt_at.is_(None),
+                    NotificationDelivery.next_attempt_at > now,
+                ),
+            )
+        )
+        return {(user_id, key) for user_id, key in rows.all()}
 
     async def get(
         self, delivery_id: uuid.UUID, user_id: uuid.UUID

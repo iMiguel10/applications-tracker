@@ -16,6 +16,10 @@ from app.services.notifications.stale_applications import (
     StaleApplicationsComposer,
     StaleApplicationSweep,
 )
+from app.services.notifications.weekly_digest import (
+    WeeklyDigestComposer,
+    WeeklyDigestSweep,
+)
 
 __all__ = [
     "InterviewUpcomingComposer",
@@ -24,6 +28,8 @@ __all__ = [
     "ReminderDueSweep",
     "StaleApplicationSweep",
     "StaleApplicationsComposer",
+    "WeeklyDigestComposer",
+    "WeeklyDigestSweep",
     "composers_for",
 ]
 
@@ -37,4 +43,5 @@ def composers_for(
         NotificationKind.REMINDER_DUE: ReminderDueComposer(session),
         NotificationKind.INTERVIEW_UPCOMING: InterviewUpcomingComposer(session),
         NotificationKind.STALE_APPLICATION: StaleApplicationsComposer(session),
+        NotificationKind.WEEKLY_DIGEST: WeeklyDigestComposer(session),
     }

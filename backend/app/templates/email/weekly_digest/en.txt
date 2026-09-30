@@ -1,0 +1,30 @@
+{% set subject = "Your weekly summary: week of " ~ week_of -%}
+{% set statuses = {"applied": "Applied", "screening": "Screening", "interviewing": "Interviewing", "offer": "Offer"} -%}
+{% set types = {"screening": "screening", "technical": "technical", "hr": "HR", "cultural": "cultural", "final": "final", "other": ""} -%}
+Hi,
+
+This is your summary for the week of {{ week_of }}.
+{% if in_progress %}
+IN PROGRESS
+{% for item in in_progress %}- {{ statuses[item.status] }}: {{ item.count }}
+{% endfor %}{% endif %}{% if interviews %}
+THIS WEEK'S INTERVIEWS
+{% for interview in interviews %}- {{ interview.when }}: {% if interview.interview_type and types[interview.interview_type] %}{{ types[interview.interview_type] }} {% endif %}interview for {{ interview.position }} at {{ interview.company }}
+  {{ interview.link }}
+{% endfor %}{% endif %}{% if reminders %}
+REMINDERS
+{% for reminder in reminders %}- {% if reminder.overdue %}Overdue: {% endif %}{{ reminder.title }} ({{ reminder.when }})
+{% endfor %}{% if reminders_more > 0 %}And {{ reminders_more }} more at {{ reminders_link }}
+{% endif %}{% endif %}{% if stale %}
+NO ACTIVITY FOR MORE THAN {{ stale_after_days }} DAYS
+{% for application in stale %}- {{ application.position }} at {{ application.company }}: {{ application.days }} days
+  {{ application.link }}
+{% endfor %}{% if stale_more > 0 %}And {{ stale_more }} more on the Dashboard.
+{% endif %}{% endif %}{% if not (interviews or reminders or stale) %}
+This week you have no interviews, pending reminders or stalled applications. All caught up!
+{% endif %}
+All of this, and more, on the Dashboard: {{ dashboard_link }}
+
+You are getting this email because the weekly summary is on.
+To stop these notifications: {{ unsubscribe_link }}
+To change your notifications, go to Preferences: {{ preferences_link }}

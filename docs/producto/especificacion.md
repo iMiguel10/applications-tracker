@@ -188,7 +188,7 @@ Usuario
 
 - **RF-80** `[F12]` **Recordatorio vencido**: cuando llega la fecha límite de un recordatorio pendiente, se envía un email. Con antelación opcional, elegida en la cuenta: al vencer (por defecto), 1 hora o 1 día antes (la API admite de 0 a 168 horas); con antelación, el email dice que vence pronto. Un solo aviso por recordatorio. Lo decide la preferencia de la cuenta (RF-84), no el `channel` de cada recordatorio, que sigue siendo `in_app` ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)).
 - **RF-81** `[F12]` **Entrevista próxima**: un email antes de cada entrevista programada (24 h antes por defecto).
-- **RF-82** `[F12]` **Resumen semanal**: un email a la semana, el lunes por la mañana en la zona horaria del usuario, con lo mismo que el dashboard: pendientes, vencidos, entrevistas de la semana y solicitudes sin actividad.
+- **RF-82** `[F12]` **Resumen semanal**: un email a la semana, el lunes a las 8:00 en la zona horaria del usuario (fijo para todos, desde F12), con lo mismo que el dashboard: pendientes, vencidos, entrevistas de la semana y solicitudes sin actividad.
 - **RF-83** `[F12]` **Solicitudes sin actividad**: un aviso cuando una solicitud cruza el umbral de RF-64. Una vez por solicitud y por periodo de inactividad, no cada día.
 - **RF-84** `[F12]` Cada tipo se activa o desactiva por separado en preferencias. Por defecto, activados el recordatorio vencido y la entrevista próxima; desactivados el resumen semanal y los avisos de inactividad, para no llenar la bandeja de nadie sin que lo pida.
 - **RF-85** `[F12]` Los emails solo se envían a direcciones verificadas (RF-06). Cada uno lleva un enlace para desactivar **ese tipo** con un clic y sin iniciar sesión.

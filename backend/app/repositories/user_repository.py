@@ -1,10 +1,21 @@
 import uuid
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+
+
+@dataclass(frozen=True)
+class DigestCandidate:
+    user_id: uuid.UUID
+    supertokens_user_id: str
+    timezone: str | None
+    created_at: datetime
 
 
 class UserRepository:
@@ -47,3 +58,28 @@ class UserRepository:
         user = await self.get_by_supertokens_id(supertokens_user_id)
         assert user is not None
         return user
+
+    async def list_for_digest(
+        self, *, after: tuple[datetime, uuid.UUID] | None, limit: int
+    ) -> Sequence[DigestCandidate]:
+        """Usuarios con el resumen semanal activado (RF-82), paginados por
+        `(created_at, id)`. La hora local se decide después, en Python: las zonas
+        se validan con el tzdata de Python y Postgres podría no conocer algún nombre
+        antiguo que da el navegador (A39).
+
+        Recorre todos los usuarios a propósito: es un barrido del sistema."""
+        query = select(
+            User.id, User.supertokens_user_id, User.timezone, User.created_at
+        ).where(User.notify_weekly_digest.is_(True))
+        if after is not None:
+            after_at, after_id = after
+            query = query.where(
+                or_(
+                    User.created_at > after_at,
+                    and_(User.created_at == after_at, User.id > after_id),
+                )
+            )
+        rows = await self.session.execute(
+            query.order_by(User.created_at, User.id).limit(limit)
+        )
+        return [DigestCandidate(*row) for row in rows.all()]

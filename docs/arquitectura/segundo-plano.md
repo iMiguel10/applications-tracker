@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los avisos de recordatorio vencido, entrevista próxima y solicitudes sin actividad, y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los cuatro avisos y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -169,6 +169,14 @@ La `dedupe_key` define qué es "el mismo motivo":
 - **Clave con la última actividad** (`stale_key`, en segundos UTC): un aviso por periodo de inactividad. Si la solicitud vuelve a moverse, su `last_activity_at` cambia, y cuando se vuelva a parar es otro motivo.
 - `StaleApplicationsComposer`: al enviar, deja fuera de la lista las solicitudes que se movieron, se archivaron, pasaron a un estado final o ya no superan el umbral, y ordena el resto de la más a la menos desatendida. El asunto nombra la solicitud si es una y dice cuántas si son varias; los estados se nombran como en la interfaz.
 - Verificado en vivo lanzando el barrido a mano: un email con las dos solicitudes paradas de la cuenta y, en la pasada siguiente, ningún reclamo. Pruebas en `tests/services/test_stale_application_notifications.py`.
+
+**Construido en F12 (paso 6: resumen semanal, RF-82).**
+
+- `digest_key_if_due` (`domain/notifications.py`): si en la zona del usuario ya es lunes desde las 8:00 (fijas para todos, sin preferencia), devuelve `digest:<año>-W<semana ISO local>`; si no, nada. Se calcula en cada pasada con el nombre IANA, así que el lunes del cambio de hora también sale a las 8:00 (B9, con Nueva York y Madrid). Sin zona, UTC.
+- **La hora local se decide en Python, no en SQL.** Las zonas se validan con el `tzdata` de Python, y Postgres podría no conocer algún nombre antiguo que da el navegador (`Asia/Calcutta`): un nombre desconocido haría fallar la consulta entera. `UserRepository.list_for_digest` devuelve los usuarios con el resumen activado, `WeeklyDigestSweep` filtra la página y descarta con `NotificationDeliveryRepository.blocking_keys` los que ya tienen el de esta semana, antes de preguntar por la verificación. Si una página queda vacía tras el filtro, sigue leyendo.
+- Cada hora en punto: sale en la primera pasada desde las 8:00 locales (a las 8:30 en las zonas de media hora). Si el `worker` estuvo parado todo el lunes, ese resumen se pierde: el martes ya no toca.
+- `WeeklyDigestComposer`: lo mismo que el dashboard a la hora del reclamo. Cuántas solicitudes hay en cada estado de espera, las entrevistas de los próximos 7 días, los recordatorios pendientes hasta dentro de 7 días (los vencidos, marcados) y las solicitudes sin actividad, 10 por lista como mucho y el resto en la aplicación. **Sale también sin nada pendiente**, con un "todo al día": quien lo activó espera recibirlo cada lunes.
+- Verificado en vivo lanzando el barrido a mano con "ahora" en un lunes. Pruebas en `tests/domain/test_digest_schedule.py` y `tests/services/test_weekly_digest_notifications.py`.
 
 ## 5. Emails
 

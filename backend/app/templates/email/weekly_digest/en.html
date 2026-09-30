@@ -1,0 +1,32 @@
+{% extends "_layout.html" %}
+{% block content %}
+{% set statuses = {"applied": "Applied", "screening": "Screening", "interviewing": "Interviewing", "offer": "Offer"} %}
+{% set types = {"screening": "screening", "technical": "technical", "hr": "HR", "cultural": "cultural", "final": "final", "other": ""} %}
+{% set h = "margin:24px 0 8px;font-size:13px;font-weight:bold;color:#4f46e5;" %}
+{% set row = "margin:0 0 6px;font-size:14px;" %}
+<p style="margin:0 0 16px;">Hi,</p>
+<p style="margin:0;">This is your summary for the week of {{ week_of }}.</p>
+{% if in_progress %}
+<p style="{{ h }}">In progress</p>
+<p style="{{ row }}">{% for item in in_progress %}{{ statuses[item.status] }}: <strong>{{ item.count }}</strong>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% endif %}
+{% if interviews %}
+<p style="{{ h }}">This week's interviews</p>
+{% for interview in interviews %}<p style="{{ row }}"><strong>{{ interview.when }}</strong><br>{% if interview.interview_type and types[interview.interview_type] %}{{ types[interview.interview_type]|capitalize }} interview{% else %}Interview{% endif %} for <a href="{{ interview.link }}" style="color:#4f46e5;">{{ interview.position }}</a> at {{ interview.company }}</p>{% endfor %}
+{% endif %}
+{% if reminders %}
+<p style="{{ h }}">Reminders</p>
+{% for reminder in reminders %}<p style="{{ row }}">{% if reminder.overdue %}<span style="color:#b91c1c;font-weight:bold;">Overdue:</span> {% endif %}{{ reminder.title }} <span style="color:#52525b;">({{ reminder.when }})</span></p>{% endfor %}
+{% if reminders_more > 0 %}<p style="{{ row }}"><a href="{{ reminders_link }}" style="color:#4f46e5;">And {{ reminders_more }} more</a></p>{% endif %}
+{% endif %}
+{% if stale %}
+<p style="{{ h }}">No activity for more than {{ stale_after_days }} days</p>
+{% for application in stale %}<p style="{{ row }}"><a href="{{ application.link }}" style="color:#4f46e5;">{{ application.position }}</a> at {{ application.company }} <span style="color:#52525b;">({{ application.days }} days)</span></p>{% endfor %}
+{% if stale_more > 0 %}<p style="{{ row }}">And {{ stale_more }} more on the Dashboard.</p>{% endif %}
+{% endif %}
+{% if not (interviews or reminders or stale) %}
+<p style="margin:24px 0 0;">This week you have no interviews, pending reminders or stalled applications. All caught up!</p>
+{% endif %}
+<p style="margin:24px 0;"><a href="{{ dashboard_link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">Open the Dashboard</a></p>
+<p style="margin:0;font-size:13px;color:#52525b;">You are getting this email because the weekly summary is on. <a href="{{ unsubscribe_link }}" style="color:#4f46e5;">Unsubscribe from these notifications</a> · <a href="{{ preferences_link }}" style="color:#4f46e5;">Preferences</a></p>
+{% endblock %}
