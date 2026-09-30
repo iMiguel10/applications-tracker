@@ -208,6 +208,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "limits", extra = ["async-valkey"] },
     { name = "pydantic-settings" },
+    { name = "pypdf" },
     { name = "saq", extra = ["redis"] },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "supertokens-python" },
@@ -235,6 +236,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "limits", extras = ["async-valkey"], specifier = ">=5.8.0" },
     { name = "pydantic-settings" },
+    { name = "pypdf", specifier = ">=6.19.0" },
     { name = "saq", extras = ["redis"], specifier = ">=0.26.4" },
     { name = "sqlalchemy", extras = ["asyncio"] },
     { name = "supertokens-python", specifier = ">=0.31.3" },
@@ -1926,6 +1928,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/2d/c6/c5d96a86fd0bf6fa1bbb5c5c341ff3208638b692727a683c8289068d9a11/pyotp-2.10.0.tar.gz", hash = "sha256:d01e9703443616b03c57c700b5cbffd56a1f929c1b0f8f03131bc78c1fca9d3f", size = 18625, upload-time = "2026-06-14T03:48:49.221Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/65/33/7b83bde70eddaaaaef487751a9c3a5cc0c0be54620ded0e120ebdc401ff9/pyotp-2.10.0-py3-none-any.whl", hash = "sha256:1df2f6a1bcc3bb0716172a5215ddc2f8c7c7fd26a13df9927d52e1746934836c", size = 13768, upload-time = "2026-06-14T03:48:47.831Z" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.19.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/ac/63d71aaedb59acbcdef491e6ca6469165e3771c9c74358204818fd9bc5a6/pypdf-6.19.0.tar.gz", hash = "sha256:bbc43aca292369ccc6cbc8a921991ecf2538a3587ab5a116eff06c321d647155", size = 7033266, upload-time = "2026-09-16T09:32:05.946Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/2c/c43c03eaf630435f023f1dc61ec4a4a78951ad5530a62c71cc89bde307b7/pypdf-6.19.0-py3-none-any.whl", hash = "sha256:7e5d6e730e7dae87d560a2cee218b852f6498c8be61966f3cd02ead971e48d14", size = 395480, upload-time = "2026-09-16T09:32:04.087Z" },
 ]
 
 [[package]]

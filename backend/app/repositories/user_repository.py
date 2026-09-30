@@ -30,6 +30,14 @@ class UserRepository:
     async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         return await self.session.scalar(select(User).where(User.id == user_id))
 
+    async def lock(self, user_id: uuid.UUID) -> None:
+        """Bloquea la fila del usuario hasta el final de la transacción (A30). Las
+        cuotas con coste se comprueban con ella bloqueada: dos subidas simultáneas
+        de la misma cuenta se ponen en fila en vez de pasarse juntas del límite."""
+        await self.session.execute(
+            select(User.id).where(User.id == user_id).with_for_update()
+        )
+
     async def save(self, user: User) -> User:
         """Envía a la BD los cambios de un usuario ya cargado (UPDATE)."""
         await self.session.flush()

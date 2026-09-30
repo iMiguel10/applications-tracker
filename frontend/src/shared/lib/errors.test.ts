@@ -39,3 +39,30 @@ describe("rate limited", () => {
     );
   });
 });
+
+describe("sizes in bytes", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("es");
+  });
+
+  it("say the maximum size in MB", () => {
+    const error = new ApiError(413, "File too large", "file_too_large", {
+      max_bytes: 5 * 1024 * 1024,
+    });
+
+    expect(i18n.t(errorMessageKey(error), errorMessageParams(error))).toBe(
+      "El PDF pasa del tamaño máximo de 5 MB.",
+    );
+  });
+
+  it("say the storage used and its limit in MB", () => {
+    const error = new ApiError(409, "Limit reached", "storage_limit_reached", {
+      limit: 100 * 1024 * 1024,
+      used: 99.5 * 1024 * 1024,
+    });
+
+    expect(i18n.t(errorMessageKey(error), errorMessageParams(error))).toBe(
+      "No te queda almacenamiento para este PDF: usas 99,5 MB de 100 MB",
+    );
+  });
+});

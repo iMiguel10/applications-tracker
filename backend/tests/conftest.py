@@ -7,7 +7,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.api.v1.deps import get_current_user
+from app.api.v1.deps import get_current_user, require_verified_email
 from app.core.config import settings
 from app.db.session import get_db
 from app.infra.queue import InMemoryJobQueue
@@ -84,10 +84,13 @@ async def anonymous_client(
 def as_user() -> Callable[[CurrentUser], None]:
     """Cambia el usuario de la sesión: as_user(otro) hace que las peticiones
     siguientes se ejecuten como `otro`. Sustituye get_current_user entero, así que
-    no interviene SuperTokens."""
+    no interviene SuperTokens, y también require_verified_email: el usuario de
+    prueba tiene el email verificado. Lo que exige la verificación se prueba contra
+    el core real (`real_auth_client`)."""
 
     def _as_user(current_user: CurrentUser) -> None:
         app.dependency_overrides[get_current_user] = lambda: current_user
+        app.dependency_overrides[require_verified_email] = lambda: current_user
 
     return _as_user
 

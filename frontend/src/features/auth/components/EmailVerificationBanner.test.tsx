@@ -18,7 +18,7 @@ vi.mock("../services/auth.service", () => ({
 const EMAIL = "ana@example.com";
 
 function renderBanner({ emailEnabled, verified }: { emailEnabled: boolean; verified: boolean }) {
-  vi.mocked(metaService.get).mockResolvedValue({ email_enabled: emailEnabled });
+  vi.mocked(metaService.get).mockResolvedValue({ email_enabled: emailEnabled, max_document_bytes: 5 * 1024 * 1024 });
   vi.mocked(authService.isEmailVerified).mockResolvedValue(verified);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(

@@ -19,4 +19,7 @@ async def test_meta_reports_whether_email_is_enabled(
     assert response.status_code == 200
     # Igualdad exacta (L10): un campo nuevo obliga a revisar esta prueba, y con
     # ella que lo público siga siendo solo configuración, nada de usuarios.
-    assert response.json() == {"email_enabled": expected}
+    assert response.json() == {
+        "email_enabled": expected,
+        "max_document_bytes": settings.document_max_bytes,
+    }

@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
     "uso/encontrar-solicitudes",
     "uso/archivar-y-borrar",
     "uso/dashboard",
+    "uso/documentos",
     "uso/exportar",
     "uso/preferencias",
     "uso/borrar-la-cuenta",

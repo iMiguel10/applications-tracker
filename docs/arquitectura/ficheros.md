@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents` y los límites de documentos y almacenamiento · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, y la subida y el listado (§2) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -11,7 +11,7 @@
 | Biblioteca | Tabla `documents` y `DocumentService` (RF-90…94) | `repositories/`, `services/` |
 | Generación | WeasyPrint + plantillas Jinja2 (A24, A25) | `infra/pdf/` (construido en F9), `templates/cv/`, `templates/cover_letter/` |
 
-`FileStorage` es deliberadamente pequeña: `put(key, chunks, max_bytes=None) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)` e `iter_keys()`. Construidas en F9 todas menos `iter_keys()`, que llega en F13 con su único consumidor, el barrido de huérfanos. `put` cuenta los bytes mientras escribe y corta con `FileTooLargeError` al pasar de `max_bytes`, sin dejar nada escrito: la subida (§2, paso 2) no necesita contar por su cuenta. Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
+`FileStorage` es deliberadamente pequeña: `put(key, chunks, max_bytes=None) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)` e `iter_keys()`. Construidas en F9 todas menos `iter_keys()`, que llega en F13 con su único consumidor, el barrido de huérfanos. `put` cuenta los bytes mientras escribe y corta con `FileTooLargeError` al pasar de `max_bytes`, sin dejar nada escrito. La subida de F13 no lo usa: cuenta ella misma al leer el cuerpo, porque valida el PDF antes de escribirlo (§2). Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
 
 ## 2. Subir un documento
 
@@ -23,6 +23,19 @@
 | 4 | Con la fila del usuario bloqueada (A30): almacenamiento usado + tamaño **real** ≤ límite, y documentos ≤ límite | 409 `storage_limit_reached`, `documents_limit_reached` |
 | 5 | Escribe el fichero en `users/{user_id}/documents/{document_id}.pdf` de forma atómica (§3) | — |
 | 6 | Inserta la fila `ready` con tamaño, `sha256` y nombre saneado, y hace commit | — |
+
+**Construido en F13 (paso 2):** `POST /documents` y `GET /documents` (`endpoints/documents.py`, `DocumentService`). Cómo quedó cada paso:
+
+- **El cuerpo es el PDF en crudo**, no `multipart/form-data`: `Content-Type: application/pdf`, con `kind` y `name` en la query. Ver la trampa siguiente.
+- **Paso 1:** `require_verified_email` (sin correo no se exige, [0013](../decisiones/0013-sin-correo-no-se-exige-verificar-el-email.md)) y `enforce_upload_rate_limit` (`UPLOAD_PER_USER`, 30 por hora), ambos antes de leer el cuerpo. Listar no exige la verificación: no tiene coste.
+- **Paso 2:** el service lee `request.stream()` en memoria y corta al pasar de `DOCUMENT_MAX_BYTES` (5 MB por defecto), antes de escribir nada. En memoria y no directamente al disco porque los pasos 3 y 4 van antes de escribir, y 5 MB por subida, con el rate limit, es poco. El 413 lleva `max_bytes`, y `GET /meta` publica `max_document_bytes` para que la interfaz avise antes de subir.
+- **Paso 3:** `infra/pdf/inspect.py` (`count_pages`). Además de lo previsto, rechaza un PDF **cifrado** (con contraseña): ni el navegador del dueño podría mostrarlo sin ella ni la IA de F15 leerlo.
+- **Paso 4:** `UserRepository.lock` (`SELECT … FOR UPDATE` de la fila del usuario) y `LimitService.check` para `documents` y `storage_bytes`, este con `amount` = tamaño real.
+- **Nombre:** `sanitize_name` (`domain/documents.py`) quita la ruta (`C:\fakepath\…`), los caracteres de control e invisibles (un override de dirección haría que `cv` + U+202E + `fdp.exe` se viera como `cvexe.pdf`) y los espacios repetidos, y recorta a 200 caracteres sin partir la extensión.
+
+> **Trampa — `UploadFile` lee el fichero entero antes que tú.** Con `multipart/form-data`, Starlette analiza el cuerpo completo y lo guarda en un temporal (en disco a partir de 1 MB) **antes** de llamar al endpoint: un cliente que manda 10 GB llena el disco del contenedor aunque el endpoint lo rechace después por tamaño. Por eso la subida recibe el PDF en crudo y lo lee con `request.stream()`, que entrega el cuerpo a trozos según llega y permite dejar de leer en cuanto se pasa del máximo (D2).
+
+> **Trampa — el tope de tiempo no mata el hilo.** `count_pages` corre en un hilo con `asyncio.wait_for`: al vencer, la petición responde 422, pero un hilo de Python no se puede interrumpir y seguiría trabajando si pypdf se colgara de verdad. pypdf corta los bucles de referencias que conoce y el rate limit acota cuántos hilos así podría acumular una cuenta. Abrirlo en un proceso aparte lo resolvería del todo (§9).
 
 > **Trampa — fiarse de `Content-Length` o de la extensión.** `Content-Length` lo declara el cliente y puede mentir, y la extensión `.pdf` no dice nada del contenido. El tamaño que cuenta para la cuota es el de los bytes escritos de verdad, y el tipo es el que dice la firma del fichero.
 
@@ -115,9 +128,9 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 
 | # | Prueba | Qué demuestra |
 |---|---|---|
-| D1 | Un fichero con extensión `.pdf` que no es un PDF → 422 | Tipo por contenido |
-| D2 | Un cuerpo de 6 MB con `Content-Length` falso de 1 KB → 413, y no se escribe nada | Tamaño real, cortado al leer |
-| D3 | Dos subidas simultáneas que juntas pasan del almacenamiento restante: solo una entra | Cuota con bloqueo (A30) |
+| D1 | Un fichero con extensión `.pdf` que no es un PDF → 422 (también uno cortado, uno con solo la firma, uno cifrado y uno vacío) **[construida en F13]** | Tipo por contenido |
+| D2 | Un cuerpo de 6 MB con `Content-Length` falso de 1 KB → 413, y no se escribe nada **[construida en F13]** | Tamaño real, cortado al leer |
+| D3 | Dos subidas simultáneas que juntas pasan del almacenamiento restante: solo una entra **[construida en F13]**, con dos transacciones reales | Cuota con bloqueo (A30) |
 | D4 | La descarga de un documento de otro usuario → 404 | Aislamiento |
 | D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado | RF-93 |
 | D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes | Orden de escritura y margen del barrido |
@@ -133,5 +146,6 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 |---|---|---|
 | S3 (gestionado o autoalojado) | Cuando haga falta más de un servidor | Otra implementación de `FileStorage` y copiar los ficheros una vez |
 | Antivirus de los ficheros subidos | `[C]` | Un paso más en la subida, antes de escribir; hoy los PDF nunca se procesan en el servidor |
+| Abrir el PDF subido en un proceso aparte | Si algún día se ve un PDF que cuelgue pypdf | `count_pages` es la única pieza que lo abre: cambiar el hilo por un proceso con tope de tiempo no toca nada más |
 | Adjuntos que no sean PDF (Word) | No se hace | La validación por firma decide qué tipos entran |
 | Editor visual de plantillas | No se hace | Las plantillas son carpetas: un diseño nuevo es código revisado |

@@ -74,3 +74,23 @@ class RateLimitedError(AppException):
             extra={"retry_after": retry_after},
             headers=retry_after_headers(retry_after),
         )
+
+
+class FileTooLargeAppError(AppException):
+    """413: el fichero pasa del tamaño máximo (especificación §10). Se corta al
+    leerlo, sin esperar al final."""
+
+    def __init__(self, max_bytes: int):
+        super().__init__(
+            "File too large",
+            status_code=413,
+            code="file_too_large",
+            extra={"max_bytes": max_bytes},
+        )
+
+
+class InvalidFileTypeError(AppException):
+    """422: el contenido no es un PDF válido, diga lo que diga la extensión."""
+
+    def __init__(self) -> None:
+        super().__init__("Not a valid PDF", status_code=422, code="invalid_file_type")

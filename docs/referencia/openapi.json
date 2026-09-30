@@ -3535,6 +3535,256 @@
           }
         ]
       }
+    },
+    "/api/v1/documents": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Listar la biblioteca de documentos",
+        "description": "CVs y cartas del usuario (RF-90), los más recientes primero. Por defecto sin\nlos archivados; con `archived=true`, solo ellos.",
+        "operationId": "list_documents_api_v1_documents_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página, empezando en 1.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Página, empezando en 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página.",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página."
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DocumentKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo este tipo.",
+              "title": "Kind"
+            },
+            "description": "Solo este tipo."
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "`false` (por defecto): la biblioteca. `true`: solo los archivados.",
+              "default": false,
+              "title": "Archived"
+            },
+            "description": "`false` (por defecto): la biblioteca. `true`: solo los archivados."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_DocumentRead_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Subir un PDF",
+        "description": "Sube un CV o una carta en PDF a la biblioteca (RF-90). El cuerpo es el PDF\nen crudo: `Content-Type: application/pdf`, con `kind` y `name` en la query.\n\nSe comprueba el contenido, no la extensión (RF-94): 422 `invalid_file_type` si\nno es un PDF que se pueda abrir, o si está protegido con contraseña. El cuerpo\nse deja de leer al pasar del tamaño máximo de la instalación (413\n`file_too_large`; 5 MB por defecto, `max_document_bytes` en `GET /meta`).\n\n409 `documents_limit_reached` o `storage_limit_reached` al alcanzar el límite de\ndocumentos o de almacenamiento de la cuenta (el almacenamiento, en bytes), con\n`limit` y `used`. 30 subidas por hora como máximo (429 `rate_limited`).",
+        "operationId": "upload_document_api_v1_documents_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/DocumentKind",
+              "description": "`cv` o `cover_letter`."
+            },
+            "description": "`cv` o `cover_letter`."
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Nombre del fichero, para mostrarlo. Se sanea y se recorta a 200 caracteres; nunca se usa como ruta.",
+              "title": "Name"
+            },
+            "description": "Nombre del fichero, para mostrarlo. Se sanea y se recorta a 200 caracteres; nunca se usa como ruta."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`email_not_verified`: subir documentos exige el email verificado (salvo en una instalación sin correo).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "`file_too_large`: pasa del tamaño máximo (`max_bytes`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "description": "El PDF, tal cual (no `multipart/form-data`).",
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4632,6 +4882,111 @@
         ],
         "title": "DashboardRead"
       },
+      "DocumentKind": {
+        "type": "string",
+        "enum": [
+          "cv",
+          "cover_letter"
+        ],
+        "title": "DocumentKind"
+      },
+      "DocumentOrigin": {
+        "type": "string",
+        "enum": [
+          "uploaded",
+          "generated",
+          "ai_tailored"
+        ],
+        "title": "DocumentOrigin",
+        "description": "RF-91: de dónde sale. Los generados (F14) y los adaptados con IA (F15) llegan\nen sus fases; el CHECK los admite desde ya para no rehacerlo."
+      },
+      "DocumentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind",
+            "description": "`cv` o `cover_letter`."
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DocumentOrigin",
+            "description": "De dónde sale (RF-91): `uploaded` (subido), `generated` (desde el perfil) o `ai_tailored` (adaptado con IA)."
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus",
+            "description": "`ready` si el PDF se puede descargar. Uno subido nace `ready`; uno generado pasa por `pending` y puede acabar en `failed`."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Nombre visible. El del fichero subido, saneado: solo se muestra, nunca se usa como ruta.",
+            "examples": [
+              "CV backend 2026.pdf"
+            ]
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes",
+            "description": "Tamaño en bytes. `null` mientras no hay fichero."
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At",
+            "description": "Si está archivado (RF-93): fuera de la biblioteca, pero sigue asociado a sus solicitudes y ocupando almacenamiento."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "origin",
+          "status",
+          "name",
+          "size_bytes",
+          "archived_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DocumentRead"
+      },
+      "DocumentStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "ready",
+          "failed"
+        ],
+        "title": "DocumentStatus",
+        "description": "Un subido nace `ready`. Uno generado nace `pending` y el `worker` lo pasa a\n`ready` o `failed` (A35)."
+      },
       "EmailAlreadyVerified": {
         "properties": {
           "status": {
@@ -5241,11 +5596,20 @@
             "examples": [
               true
             ]
+          },
+          "max_document_bytes": {
+            "type": "integer",
+            "title": "Max Document Bytes",
+            "description": "Tamaño máximo en bytes de un PDF subido a la biblioteca. Un cliente puede avisar antes de subir uno más grande, que la API rechaza con 413 `file_too_large`.",
+            "examples": [
+              5242880
+            ]
           }
         },
         "type": "object",
         "required": [
-          "email_enabled"
+          "email_enabled",
+          "max_document_bytes"
         ],
         "title": "MetaRead"
       },
@@ -5340,6 +5704,47 @@
           "pages"
         ],
         "title": "Page[CompanyRead]"
+      },
+      "Page_DocumentRead_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentRead"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Elementos de la página pedida."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total de elementos que cumplen el filtro."
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Página devuelta, empezando en 1."
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Tamaño de página pedido."
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "description": "Número total de páginas (0 si no hay elementos)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "pages"
+        ],
+        "title": "Page[DocumentRead]"
       },
       "Page_ReminderRead_": {
         "properties": {

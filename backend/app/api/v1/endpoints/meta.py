@@ -17,4 +17,7 @@ async def meta() -> MetaRead:
     Público: no requiere sesión. Solo contiene configuración, nunca datos de
     usuarios.
     """
-    return MetaRead(email_enabled=settings.email_enabled)
+    return MetaRead(
+        email_enabled=settings.email_enabled,
+        max_document_bytes=settings.document_max_bytes,
+    )

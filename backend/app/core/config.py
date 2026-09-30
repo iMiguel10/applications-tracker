@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     limit_documents: int = Field(default=100, ge=0)
     # En bytes (100 MB). Tope siempre: no admite excepciones "sin límite".
     limit_storage_bytes: int = Field(default=100 * 1024 * 1024, ge=0)
+    # Tamaño máximo de un PDF subido (5 MB). No es un límite por cuenta: vale para
+    # todas y lo publica GET /meta para que la interfaz avise antes de subir.
+    document_max_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
 
     # Rate limiting (RNF-04, límites y abuso §2). Desactivable solo para las
     # pruebas, que si no fallarían de forma intermitente por 429.

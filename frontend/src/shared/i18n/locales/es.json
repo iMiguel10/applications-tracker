@@ -275,6 +275,7 @@
     "applications": "Solicitudes",
     "companies": "Empresas",
     "reminders": "Recordatorios",
+    "documents": "Documentos",
     "preferences": "Preferencias",
     "openMenu": "Abrir menú",
     "theme": "Cambiar entre tema claro y oscuro",
@@ -446,7 +447,54 @@
     "reminders_limit_reached": "Has alcanzado tu límite de {{limit, number}} recordatorios",
     "reminder_not_pending": "Este recordatorio ya no está pendiente",
     "rate_limited": "Demasiados intentos. Vuelve a intentarlo {{wait}}.",
-    "invalid_unsubscribe_token": "Este enlace de baja no es válido. Copia el enlace completo del email, o cambia tus avisos en Preferencias."
+    "invalid_unsubscribe_token": "Este enlace de baja no es válido. Copia el enlace completo del email, o cambia tus avisos en Preferencias.",
+    "email_not_verified": "Verifica tu email para usar esta función. Tienes el enlace en tu correo, o puedes pedir otro en Preferencias.",
+    "file_too_large": "El PDF pasa del tamaño máximo de {{max}}.",
+    "invalid_file_type": "El fichero no es un PDF válido. Si está protegido con contraseña, guárdalo sin ella.",
+    "documents_limit_reached": "Has alcanzado tu límite de {{limit, number}} documentos, contando los archivados",
+    "storage_limit_reached": "No te queda almacenamiento para este PDF: usas {{used}} de {{limit}}"
+  },
+  "documents": {
+    "title": "Documentos",
+    "subtitle": "Tus CVs y cartas de presentación en PDF.",
+    "emptyTitle": "Aún no tienes documentos",
+    "emptyDescription": "Sube tus CVs y cartas en PDF para tenerlos a mano en cada solicitud.",
+    "emptyFiltered": "No hay documentos de este tipo.",
+    "kinds": {
+      "cv": "CV",
+      "cover_letter": "Carta de presentación"
+    },
+    "origins": {
+      "uploaded": "Subido",
+      "generated": "Generado desde el perfil",
+      "ai_tailored": "Adaptado con IA"
+    },
+    "fields": {
+      "kind": "Tipo",
+      "file": "Fichero PDF"
+    },
+    "filters": {
+      "kind": "Tipo de documento",
+      "kindOptions": {
+        "all": "Todos los tipos",
+        "cv": "CVs",
+        "cover_letter": "Cartas de presentación"
+      }
+    },
+    "upload": {
+      "open": "Subir PDF",
+      "title": "Subir un documento",
+      "description": "Un CV o una carta de presentación en PDF.",
+      "submit": "Subir",
+      "done": "Documento subido",
+      "maxSize": "PDF de hasta {{size}}.",
+      "storageLeft": "Te quedan {{size}} de almacenamiento."
+    },
+    "validation": {
+      "fileRequired": "Elige un fichero PDF",
+      "notPdf": "El fichero tiene que ser un PDF",
+      "tooLarge": "El fichero pasa del tamaño máximo"
+    }
   },
   "usage": {
     "title": "Uso de la cuenta",

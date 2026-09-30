@@ -511,6 +511,7 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 | `AI_PLATFORM_PROVIDER`, `AI_PLATFORM_API_KEY` | Clave de la plataforma para la cuota gratuita | Sin cuota gratuita: solo claves propias |
 | `AI_FREE_USES`, `AI_MONTHLY_SPEND_CAP` | Cuota gratuita por cuenta y tope de gasto global (RF-150, RF-155) | Valores por defecto de la configuración |
 | `TRUSTED_PROXIES` **[construido]** | IPs o redes CIDR de los proxies cuyo `X-Forwarded-For` se acepta | Ninguna: se usa la IP de la conexión. **Obligatoria detrás de un proxy**: si no, todos los usuarios comparten su IP |
+| `DOCUMENT_MAX_BYTES` **[construido en F13]** | Tamaño máximo de un PDF subido, en bytes; lo publica `GET /meta` | 5 MB |
 | `RATE_LIMIT_ENABLED` **[construido]** | Activa el rate limiting (`true` por defecto); `false` solo en las pruebas | Activado |
 | `LIMIT_*` **[construido: `LIMIT_APPLICATIONS`, `LIMIT_COMPANIES`, `LIMIT_REMINDERS`; en F13 `LIMIT_DOCUMENTS` y `LIMIT_STORAGE_BYTES`, en bytes]** | Valores globales de los límites por usuario (RF-140) | Los de §10 de la especificación |
 
@@ -529,7 +530,7 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 
 Dependencias nuevas previstas (versiones fijadas al añadirlas, siempre con `docker compose exec api uv add`):
 
-- **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `icalendar`, `pypdf` (comprobar que un PDF subido se abre, sin renderizarlo), `python-multipart` (subidas) y el SDK de cada proveedor de IA habilitado.
+- **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `icalendar`, `pypdf` **[construido en F13]** (comprobar que un PDF subido se abre, sin renderizarlo); `python-multipart` ya no hace falta: la subida recibe el PDF en crudo ([ficheros §2](ficheros.md#2-subir-un-documento)) y el SDK de cada proveedor de IA habilitado.
 - **Imagen del backend:** las librerías de sistema de WeasyPrint (Pango, HarfBuzz) **[construido en F9]**; `fonts-dejavu-core` llega con ellas ([ficheros §7](ficheros.md#fuentes)).
 
 Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPrint no publica tipos (`py.typed`): sus imports llevan `# type: ignore[import-untyped]`, confinados a `weasyprint_renderer.py` y su prueba. En F11: `tzdata`, que no estaba prevista.

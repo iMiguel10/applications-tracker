@@ -1,5 +1,6 @@
 import i18n from "@/shared/i18n/i18n";
 import { ApiError } from "./apiClient";
+import { formatBytes } from "./format";
 import { formatRetryAfter } from "./retryAfter";
 
 /**
@@ -23,6 +24,15 @@ export function errorMessageParams(error: unknown): Record<string, unknown> {
   const retryAfter = error.params.retry_after;
   if (error.code === "rate_limited" && typeof retryAfter === "number") {
     return { ...error.params, wait: formatRetryAfter(retryAfter, i18n.language) };
+  }
+  // Tamaños en bytes: el mensaje los dice en MB.
+  const bytes = (value: unknown) =>
+    typeof value === "number" ? formatBytes(value, i18n.language) : value;
+  if (error.code === "file_too_large") {
+    return { ...error.params, max: bytes(error.params.max_bytes) };
+  }
+  if (error.code === "storage_limit_reached") {
+    return { ...error.params, limit: bytes(error.params.limit), used: bytes(error.params.used) };
   }
   return error.params;
 }

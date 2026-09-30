@@ -8,6 +8,7 @@ import { ApplicationNewPage } from "../pages/ApplicationNewPage";
 import { ApplicationsPage } from "../pages/ApplicationsPage";
 import { CompaniesPage } from "../pages/CompaniesPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { DocumentsPage } from "../pages/DocumentsPage";
 import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { HealthPage } from "../pages/HealthPage";
 import { LoginPage } from "../pages/LoginPage";
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
       { path: "/applications/:applicationId/edit", element: <ApplicationEditPage /> },
       { path: "/companies", element: <CompaniesPage /> },
       { path: "/reminders", element: <RemindersPage /> },
+      { path: "/documents", element: <DocumentsPage /> },
       { path: "/preferences", element: <PreferencesPage /> },
     ],
   },

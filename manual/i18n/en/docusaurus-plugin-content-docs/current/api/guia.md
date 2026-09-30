@@ -137,6 +137,8 @@ An application's status **is not changed with `PATCH`**: it has its own endpoint
 | Applications | 5,000 | 409 `applications_limit_reached` |
 | Companies | 2,000 | 409 `companies_limit_reached` |
 | Reminders, in any status | 5,000 | 409 `reminders_limit_reached` (deleting frees up room: `DELETE /reminders/{id}`) |
+| Documents, archived ones included | 100 | 409 `documents_limit_reached` |
+| Storage, in bytes | 104,857,600 (100 MB) | 409 `storage_limit_reached` (`limit` and `used` in bytes) |
 | Notes | 5,000 characters | 422 |
 
 The count limits can differ in each installation, and even per account. `GET /api/v1/me/usage` returns the ones of the session's account, with what is used and what is left. When one is reached, the 409 also carries the numbers:
@@ -144,6 +146,21 @@ The count limits can differ in each installation, and even per account. `GET /ap
 ```json
 { "detail": "Limit reached: 2000 of 2000", "code": "companies_limit_reached", "limit": 2000, "used": 2000 }
 ```
+
+## Upload a document
+
+`POST /api/v1/documents` takes the PDF **as is** in the body, with `Content-Type: application/pdf`: it is not `multipart/form-data`. The type (`cv` or `cover_letter`) and the name go in the query:
+
+```bash
+curl -s -X POST "https://<your API>/api/v1/documents?kind=cv&name=cv-backend.pdf" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/pdf' \
+  --data-binary @cv-backend.pdf
+```
+
+- It requires a verified email (403 `email_not_verified`), except on an installation without email.
+- The maximum size comes from `GET /api/v1/meta` (`max_document_bytes`, 5 MB by default); above it, 413 `file_too_large`.
+- The content is checked: a file that is not a PDF, or a password-protected one, gets 422 `invalid_file_type`.
+- At most 30 uploads per hour (429 `rate_limited`).
 
 ## Calls from a browser
 

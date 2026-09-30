@@ -8,3 +8,9 @@ class MetaRead(BaseModel):
         "la verificación de email no están disponibles.",
         examples=[True],
     )
+    max_document_bytes: int = Field(
+        description="Tamaño máximo en bytes de un PDF subido a la biblioteca. Un "
+        "cliente puede avisar antes de subir uno más grande, que la API rechaza con "
+        "413 `file_too_large`.",
+        examples=[5242880],
+    )

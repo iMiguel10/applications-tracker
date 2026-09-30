@@ -30,10 +30,6 @@ If the **Reminder due** notification is on in [Preferences](preferencias.md#choo
 - In each application's details, its own reminders.
 - On the [Dashboard](dashboard.md), the pending and overdue ones.
 
-:::note
-Reminders are shown in the application: for now they are not sent by email.
-:::
-
 :::info Limit
 Up to 5,000 reminders per account, unless the installation sets another value, **done and dismissed ones included**. To free up room, delete the ones you no longer need: completing or dismissing them doesn't free up room. Past 80 %, the form tells you how many you have left.
 :::

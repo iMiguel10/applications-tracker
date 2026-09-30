@@ -9,7 +9,7 @@ from app.core.client_ip import client_ip, parse_trusted_proxies
 from app.core.config import settings
 from app.core.exceptions import AppException, RateLimitedError
 from app.db.session import get_db
-from app.domain.rate_limits import API_PER_USER, UNSUBSCRIBE_PER_IP
+from app.domain.rate_limits import API_PER_USER, UNSUBSCRIBE_PER_IP, UPLOAD_PER_USER
 from app.infra.queue import JobQueue
 from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
@@ -18,6 +18,7 @@ from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
 from app.services.company_service import CompanyService
 from app.services.dashboard_service import DashboardService
+from app.services.document_service import DocumentService
 from app.services.interview_service import InterviewService
 from app.services.limit_service import LimitService
 from app.services.reminder_service import ReminderService
@@ -85,6 +86,13 @@ def get_interview_service(
     db: AsyncSession = Depends(get_db),
 ) -> InterviewService:
     return InterviewService(db)
+
+
+def get_document_service(
+    db: AsyncSession = Depends(get_db),
+    storage: FileStorage = Depends(get_file_storage),
+) -> DocumentService:
+    return DocumentService(db, storage)
 
 
 def get_reminder_service(
@@ -168,6 +176,21 @@ async def enforce_api_rate_limit(
     sin sesión, el 401 llega antes."""
     limiter: RateLimiter = request.app.state.rate_limiter
     rule = API_PER_USER
+    result = await limiter.hit(
+        rule.limit, rule.name, rule.key.value, str(current_user.id)
+    )
+    if not result.allowed:
+        raise RateLimitedError(result.retry_after)
+
+
+async def enforce_upload_rate_limit(
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Límite de subidas por usuario (ficheros §2, paso 1): cada una lee hasta 5 MB
+    y abre el PDF. Se comprueba antes de leer el cuerpo."""
+    limiter: RateLimiter = request.app.state.rate_limiter
+    rule = UPLOAD_PER_USER
     result = await limiter.hit(
         rule.limit, rule.name, rule.key.value, str(current_user.id)
     )

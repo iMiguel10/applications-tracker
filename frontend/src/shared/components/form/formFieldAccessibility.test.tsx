@@ -6,6 +6,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import i18n from "@/shared/i18n/i18n";
 import { FormDatePicker } from "./FormDatePicker";
 import { FormDateTimePicker } from "./FormDateTimePicker";
+import { FormFileInput } from "./FormFileInput";
 import { FormInput } from "./FormInput";
 import { FormSelect } from "./FormSelect";
 import { FormTextarea } from "./FormTextarea";
@@ -27,6 +28,7 @@ const fields: [string, FieldRenderer][] = [
   ],
   ["FormDatePicker", (form) => <FormDatePicker form={form} name="field" label={LABEL} />],
   ["FormDateTimePicker", (form) => <FormDateTimePicker form={form} name="field" label={LABEL} />],
+  ["FormFileInput", (form) => <FormFileInput form={form} name="field" label={LABEL} />],
 ];
 
 function Harness({ renderField, withError }: { renderField: FieldRenderer; withError: boolean }) {

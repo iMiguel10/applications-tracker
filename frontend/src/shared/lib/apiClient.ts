@@ -80,9 +80,24 @@ async function requestBlob(path: string): Promise<Blob> {
   return response.blob();
 }
 
+/** Para subir un fichero (RF-90): el cuerpo es el fichero tal cual, no JSON ni
+ * multipart. La API lo lee contando bytes y corta al pasar del máximo. */
+async function requestUpload<T>(path: string, file: Blob, contentType: string): Promise<T> {
+  const response = await fetch(`${API_URL}/api/v1${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": contentType },
+    body: file,
+  });
+  await throwIfError(response);
+  return response.json() as Promise<T>;
+}
+
 export const apiClient = {
   get: <T>(path: string, init?: RequestOptions) => request<T>(path, { ...init, method: "GET" }),
   getBlob: (path: string) => requestBlob(path),
+  upload: <T>(path: string, file: Blob, contentType: string) =>
+    requestUpload<T>(path, file, contentType),
   post: <T>(path: string, body?: unknown, init?: RequestOptions) =>
     request<T>(path, { ...init, method: "POST", body }),
   put: <T>(path: string, body?: unknown, init?: RequestOptions) =>

@@ -81,6 +81,7 @@ Si falta o es más corto, la API no arranca. Guárdalo como cualquier otra contr
 | `LIMIT_REMINDERS` | 5000 | Recordatorios por cuenta, en cualquier estado |
 | `LIMIT_DOCUMENTS` | 100 | Documentos (CVs y cartas) por cuenta, archivados incluidos |
 | `LIMIT_STORAGE_BYTES` | 104857600 (100 MB) | Almacenamiento por cuenta, **en bytes**: la suma de sus documentos, archivados incluidos |
+| `DOCUMENT_MAX_BYTES` | 5242880 (5 MB) | Tamaño máximo de cada PDF subido, en bytes. No es por cuenta: vale para todas |
 
 Son opcionales y valen para todas las cuentas. Para dar otro valor a una cuenta concreta, sin tocar las demás:
 

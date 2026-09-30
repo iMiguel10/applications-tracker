@@ -81,6 +81,7 @@ If it is missing or shorter, the API does not start. Keep it like any other pass
 | `LIMIT_REMINDERS` | 5000 | Reminders per account, in any status |
 | `LIMIT_DOCUMENTS` | 100 | Documents (CVs and cover letters) per account, archived ones included |
 | `LIMIT_STORAGE_BYTES` | 104857600 (100 MB) | Storage per account, **in bytes**: the sum of its documents, archived ones included |
+| `DOCUMENT_MAX_BYTES` | 5242880 (5 MB) | Maximum size of each uploaded PDF, in bytes. Not per account: it applies to all |
 
 They are optional and apply to every account. To give a single account a different value, without touching the others:
 
