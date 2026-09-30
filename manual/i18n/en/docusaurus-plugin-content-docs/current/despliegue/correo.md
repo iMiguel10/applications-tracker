@@ -17,7 +17,8 @@ They go out in the account language (or, if it is not set, in the one shown on s
 
 - **The `worker` service sends them**, not the API: if `worker` is stopped, emails wait in the queue and go out when it starts. Its logs (`docker compose logs worker`) record every send and every failure, with the user id and without the address.
 - **Email links use `WEBSITE_DOMAIN`.** If it keeps the development value (`http://localhost:5173`), emails arrive fine but their link leads nowhere. See [Variables](variables.md).
-- **Without SMTP the application works the same:** it does not offer to recover or change the password, says so on screen, and does not ask to confirm the email.
+- **The `worker` schedules the notifications.** Every minute, every 5 minutes or every hour, depending on the notification, it looks at what needs sending. If the `worker` was stopped, notifications that fell due more than 24 hours ago are not sent when it comes back (so the inbox is not flooded), and the weekly summary of a Monday it was down all day is lost. A notification never goes out twice for the same reason, and if a send fails without knowing whether the server accepted it, it is not repeated.
+- **Without SMTP the application works the same:** it does not offer to recover or change the password, says so on screen, and does not ask to confirm the email. No notification is scheduled either: the **Email notifications** card in Preferences says the installation does not send email.
 
 ## Variables
 

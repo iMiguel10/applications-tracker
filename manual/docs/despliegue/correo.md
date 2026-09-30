@@ -17,7 +17,8 @@ Salen en el idioma de la cuenta (o, si no lo ha fijado, en el que ve en pantalla
 
 - **Los envía el servicio `worker`**, no la API: si el `worker` está parado, los emails se quedan en cola y salen cuando arranca. En sus registros (`docker compose logs worker`) queda cada envío y cada fallo, con el id del usuario y sin la dirección.
 - **Los enlaces de los emails usan `WEBSITE_DOMAIN`.** Si se queda con el valor de desarrollo (`http://localhost:5173`), los emails llegan bien, pero su enlace no lleva a ninguna parte. Ver [Variables](variables.md).
-- **Sin SMTP la aplicación funciona igual:** no ofrece recuperar ni cambiar la contraseña, lo dice en pantalla, y no pide confirmar el email.
+- **Los avisos los programa el `worker`.** Cada minuto, cada 5 minutos o cada hora, según el aviso, mira qué toca enviar. Si el `worker` estuvo parado, los avisos que vencieron hace más de 24 horas no se envían al volver (para no inundar la bandeja) y el resumen semanal de un lunes en que estuvo parado todo el día se pierde. Un aviso nunca sale dos veces por el mismo motivo, y si un envío falla sin saber si el servidor llegó a aceptarlo, no se repite.
+- **Sin SMTP la aplicación funciona igual:** no ofrece recuperar ni cambiar la contraseña, lo dice en pantalla, y no pide confirmar el email. Tampoco se programa ningún aviso: la tarjeta **Avisos por email** de Preferencias dice que la instalación no envía emails.
 
 ## Variables
 

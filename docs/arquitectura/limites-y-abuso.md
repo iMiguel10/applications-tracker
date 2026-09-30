@@ -1,6 +1,6 @@
 # Límites, rate limiting y superficie pública
 
-> Estado: **§1 y §2 construidos en F11** (límites de solicitudes, empresas y recordatorios; rate limiting de autenticación y límite general de la API); el resto, diseño (F12, F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
+> Estado: **§1 y §2 construidos en F11** (límites de solicitudes, empresas y recordatorios; rate limiting de autenticación y límite general de la API); la baja de avisos (§2, F12) también está construida; el resto, diseño (F17) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-140…144, RNF-04, §10) y de la [arquitectura de la v2](v2.md) (A28–A30, A40)
 
 Con registro abierto (v2), cualquiera puede crear una cuenta. Este documento reúne las tres defensas que eso exige: **cuánto** puede crear cada usuario (límites), **a qué ritmo** se puede llamar a la API (rate limiting) y **qué** responde sin sesión (superficie pública).
 

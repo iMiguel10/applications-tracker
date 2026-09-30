@@ -308,7 +308,7 @@ Las tres reglas contra el envejecimiento:
 
 ## 8. Ampliación de la v2
 
-> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora: en F9, `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`; en F10, `manual` y su job de CI.
+> Estado: **diseño, en construcción** · Fases F9–F17 · Depende de la [arquitectura de la v2](v2.md). Las desviaciones respecto a lo que ya existe van marcadas **[nuevo]**, y lo ya construido, **[construido]**. Hasta ahora: en F9, `mailpit`, `valkey`, `valkey-test`, `worker`, el volumen `files_data`, `infra/email/`, `infra/queue/`, `infra/storage/`, `infra/pdf/`, `worker.py` y `jobs/`; en F10, `manual` y su job de CI; en F11, `infra/rate_limit/`, `LimitService` y el router `public`; en F12, `services/notifications/`, `jobs/notifications.py`, `NotificationDeliveryService` y la variable `APP_SECRET`.
 
 ### 8.1 Servicios
 

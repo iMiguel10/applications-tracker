@@ -1,9 +1,9 @@
 # Especificación de producto
 
-> Estado: v1 (MVP, F0–F8) construida · **v2** especificada y diseñada el 2026-09-24; construidas F9 (infraestructura) y F10 (manual de producción), el resto pendiente
+> Estado: v1 (MVP, F0–F8) construida · **v2** especificada y diseñada el 2026-09-24; construidas F9 (infraestructura), F10 (manual de producción), F11 (cuenta y protección) y F12 (avisos por email), el resto pendiente
 
 !!! info "Cómo leer este documento"
-    La **v1** (MVP) está construida: sus requisitos describen lo que existe. La **v2** (fases F9–F17) está especificada pero **no construida**; sus requisitos llevan la fase en la que se construyen, por ejemplo `[F12]`. Una sola fuente de verdad para las dos, con la numeración continua.
+    La **v1** (MVP) está construida: sus requisitos describen lo que existe. La **v2** (fases F9–F17) está especificada y construida hasta F12; sus requisitos llevan la fase en la que se construyen, por ejemplo `[F12]` (la etiqueta indica la fase, no que falte: F9–F12 ya están hechas). Una sola fuente de verdad para las dos, con la numeración continua.
 
 ## 0. Contexto del proyecto
 
@@ -169,7 +169,7 @@ Usuario
 - **RF-50** Crear recordatorios con título, fecha límite y, opcionalmente, una solicitud asociada.
 - **RF-51** Marcarlos como hechos o descartarlos, y borrarlos en cualquier estado (el borrado, desde F11: [0011](../decisiones/0011-limite-de-recordatorios-en-todos-los-estados.md)).
 - **RF-52** Ver los recordatorios pendientes, vencidos y de los próximos 7 días, en el dashboard y en el detalle de la solicitud.
-- **RF-53** Todo recordatorio tiene un **canal**. En el MVP solo existe `in_app`: se muestra en la aplicación y no se envía nada.
+- **RF-53** Todo recordatorio tiene un **canal**. En el MVP solo existe `in_app`: se muestra en la aplicación y no se envía nada. Desde F12 el aviso por email no depende de este campo, sino de las preferencias de la cuenta (RF-84; [0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)).
 
 ### Dashboard (RF-60…)
 
@@ -457,8 +457,8 @@ Cada fase se define por el riesgo que quita de en medio. Van en orden de depende
 |---|---|---|
 | **F9 — Esqueleto vertical de la v2** *(desechable)* · ✔ construida y retirada el 2026-09-24 | Un solo camino de punta a punta con toda la infraestructura nueva: un endpoint encola un trabajo → el `worker` genera un PDF trivial → lo guarda en el almacén de ficheros → envía por email (Mailpit) un aviso con el enlace de descarga. Sin interfaz bonita ni reglas de negocio. | Descubre dónde duele antes de construir encima: dependencias de sistema del generador de PDF dentro de la imagen, cola y worker en Docker, almacén de ficheros en un volumen compartido, SMTP. Lo más probable que falle, y lo más caro de descubrir a mitad de una feature. |
 | **F10 — Documentación de producción** · ✔ construida el 2026-09-24 | Sitio Docusaurus (es + en) con sus tres partes (RNF-33): manual de uso de lo que ya existe (MVP), referencia de la API generada del OpenAPI con su guía de integración, y la estructura del manual de despliegue, que se completa en F7. El agente documentador pasa a mantener los dos sitios. | Montarlo **antes** que las features hace que cada una llegue ya con su página de manual, en vez de acumular deuda. |
-| **F11 — Cuenta, límites y protección** | Recuperación de contraseña (RF-03), verificación de email (RF-05, RF-06), zona horaria (RF-07), límites ampliados con consumo y restante visibles (RF-140…144) y rate limiting (RNF-04). | Con registro abierto, es lo que hay que tener antes de exponer nada con coste. |
-| **F12 — Notificaciones por email** | Los cuatro tipos (RF-80…87), preferencias y desactivación con un clic. | Trabajo programado e idempotencia: "nunca dos veces" es la parte difícil. |
+| **F11 — Cuenta, límites y protección** · ✔ construida | Recuperación de contraseña (RF-03), verificación de email (RF-05, RF-06), zona horaria (RF-07), límites ampliados con consumo y restante visibles (RF-140…144) y rate limiting (RNF-04). | Con registro abierto, es lo que hay que tener antes de exponer nada con coste. |
+| **F12 — Notificaciones por email** · ✔ construida el 2026-09-30 | Los cuatro tipos (RF-80…87), preferencias y desactivación con un clic. | Trabajo programado e idempotencia: "nunca dos veces" es la parte difícil. |
 | **F13 — Biblioteca de documentos** | Subida de PDFs, biblioteca, asociación a solicitudes, descripción de la oferta (RF-27, RF-28, RF-90…94). | Manejo seguro de ficheros subidos por usuarios (RNF-05) y consistencia entre base de datos y almacén (RNF-41). |
 | **F14 — Perfil y CVs generados** | Perfil profesional, plantillas y generación de PDF (RF-100…106). | Modelo de datos del perfil y generación de PDF con varias plantillas. |
 | **F15 — IA: CV y carta adaptados** | Ajuste de CV, carencias, revisión, carta de presentación y consentimiento (RF-110…119); cuota gratuita, claves propias y proveedores (RF-150…156). Al empezar se fijan con precios reales la cuota y el tope global (R7). | Integración con un modelo de lenguaje sin que invente, con coste acotado y probable sin llamar al proveedor. |

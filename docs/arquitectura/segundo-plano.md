@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los cuatro avisos y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9 y F12 construidas y cerradas; falta lo de F13–F15). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los cuatro avisos y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -84,7 +84,7 @@ Se descartó **un worker por tipo de trabajo**: cuatro o cinco procesos casi sie
 Reglas comunes:
 
 - Cada barrido recibe **"ahora" como parámetro**, así se prueba con fechas fijas.
-- Solo considera usuarios con **email verificado** y ese tipo de aviso activado. Un usuario sin verificar no genera ni reclamos: si verifica más tarde, no recibe de golpe todo lo acumulado.
+- Solo considera usuarios con **email verificado** y ese tipo de aviso activado. Un usuario sin verificar no genera ni reclamos, y lo que se acumuló mientras tanto depende de la ventana de cada aviso: los **recordatorios** solo avisan de lo que venció en las últimas 24 h, las **entrevistas** solo cuentan si aún no han empezado y el **resumen** es el de la semana en curso, así que al verificar no llega nada antiguo. La **inactividad** no tiene ventana (avisa de cualquier solicitud que siga parada): una cuenta que verifica recibe, en la pasada siguiente, **un solo email con todas sus solicitudes paradas**, no uno por solicitud.
 - Trabaja por lotes acotados (por ejemplo, 200 candidatos por pasada) sobre índices parciales. Lo que no cabe en una pasada, entra en la siguiente.
 
 > **Trampa — el primer despliegue inunda la bandeja.** Si el barrido de recordatorios buscara "todos los pendientes con `due_at` anterior a ahora", el día que se activa el canal de email se enviaría un correo por cada recordatorio vencido desde que el usuario empezó a usar la aplicación, meses atrás. La ventana de 24 h lo evita: solo avisa de lo que venció recientemente. Lo mismo con la inactividad: el primer barrido encuentra decenas de solicitudes paradas, y por eso se envía **un solo email por usuario y pasada** con la lista, no uno por solicitud (aunque cada solicitud tiene su propio reclamo, para no repetirla).
@@ -115,6 +115,8 @@ stateDiagram-v2
 | El proceso murió con el reclamo en `claimed` | `unknown` (barrido de reclamos) | **No** | No se sabe en qué punto murió |
 
 > **Trampa — "mejor esfuerzo con reintentos" y "nunca dos veces" tiran en direcciones opuestas.** Reintentar lo que falló es justo lo que produce duplicados cuando el fallo fue ambiguo: el servidor recibió el mensaje, pero la confirmación no llegó. La salida es clasificar **dónde** falló. Si no se puede saber, se pierde el email, que es lo que la especificación acepta (RF-87).
+
+> **Trampa — el mismo envío ejecutado dos veces a la vez sale dos veces** (encontrada por el `qa-verifier` al cerrar F12). Comprobar `status == claimed` al empezar `deliver` no basta: si SAQ toma por abandonado un trabajo que acaba de empezar y lo lanza otra vez (trampa de §2), las dos ejecuciones leen `claimed` antes de que ninguna llegue a marcar `sent`, y cada una envía el email. `deliver` lee las entregas con `SELECT … FOR UPDATE SKIP LOCKED` (`NotificationDeliveryRepository.get_many(..., lock=True)`) y **no suelta el bloqueo hasta el `commit` final**, con la conversación SMTP dentro: la segunda ejecución se salta las filas bloqueadas y no envía nada, y si llega después, ya no están `claimed`. El coste es una transacción abierta mientras dura el envío (el trabajo tiene 30 s de timeout, §2). Es una carrera distinta de la de dos *barridos*, que resuelve la clave única al reclamar. Pruebas adversas en `tests/services/test_notification_adversarial.py`: el mismo envío dos veces a la vez con un SMTP lento (dos transacciones reales), B3 de punta a punta con dos barridos simultáneos, y entregas cuya clave apunta al recordatorio, la entrevista o la solicitud de **otro usuario**, que no envían nada.
 
 **Dónde está la frontera** (construido en F9). `SmtpEmailSender` no usa el envío de una sola llamada de `aiosmtplib`: conversa paso a paso (conexión y login, `MAIL`, `RCPT`, `DATA`) para saber en qué punto falló. Cualquier fallo antes de `DATA`, y cualquier **código de error** del servidor (también al final de `DATA`, que es un rechazo explícito), lanza `EmailNotSentError`: seguro reintentar. Un corte o un timeout durante `DATA` lanza `EmailDeliveryUnknownError`: no se reintenta. Las pruebas usan un servidor SMTP falso escrito a mano (`tests/infra/fake_smtp.py`) que falla justo en cada uno de esos puntos.
 
@@ -232,7 +234,7 @@ Verificación y recuperación de contraseña se envían con este mismo `EmailSen
 |---|---|---|
 | B1 | Encolar dos veces el mismo documento: el segundo trabajo termina sin hacer nada | Idempotencia de los trabajos |
 | B2 | Un trabajo con un `user_id` que no es el dueño de la fila no la toca | Aislamiento en el worker |
-| B3 | Dos barridos simultáneos sobre el mismo recordatorio: un único reclamo y un único envío | "Nunca dos veces" sin depender de la cola |
+| B3 | Dos barridos simultáneos sobre el mismo recordatorio: un único reclamo y un único envío. Y el **mismo envío** ejecutado dos veces a la vez: un solo email (añadido al cerrar F12) | "Nunca dos veces" sin depender de la cola |
 | B4 | `EmailSender` de prueba que falla **después** de aceptar el mensaje: la entrega queda `unknown` y no se reintenta | La clasificación de fallos |
 | B5 | Falla **antes** de entregar: `failed`, se reintenta hasta 3 veces y después para | Reintentos solo donde es seguro |
 | B6 | Un reclamo abandonado en `claimed` pasa a `unknown` y no se reenvía | Proceso muerto a mitad |
