@@ -828,7 +828,7 @@
           "Me"
         ],
         "summary": "Elimina la cuenta del usuario actual",
-        "description": "Borra de forma irreversible la cuenta y todos sus datos (RNF-40): empresas,\nsolicitudes con su historial, entrevistas, recordatorios y preferencias, y\ndespués la identidad en SuperTokens (credenciales y sesiones).\n\nUn access token ya emitido sigue validándose sin consultar al core hasta que\ncaduca (máximo 5 minutos): el cliente debe cerrar sesión justo después.",
+        "description": "Borra de forma irreversible la cuenta y todos sus datos (RNF-40, RNF-41):\nempresas, solicitudes con su historial, entrevistas, recordatorios, documentos\ncon sus PDF y preferencias, y después la identidad en SuperTokens\n(credenciales y sesiones).\n\nUn access token ya emitido sigue validándose sin consultar al core hasta que\ncaduca (máximo 5 minutos): el cliente debe cerrar sesión justo después.",
         "operationId": "delete_me_api_v1_me_delete",
         "responses": {
           "204": {

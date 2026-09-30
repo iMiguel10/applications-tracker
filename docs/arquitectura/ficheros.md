@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), y renombrar, archivar y borrar · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), renombrar, archivar y borrar, y los huérfanos (§5) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -11,7 +11,7 @@
 | Biblioteca | Tabla `documents` y `DocumentService` (RF-90…94) | `repositories/`, `services/` |
 | Generación | WeasyPrint + plantillas Jinja2 (A24, A25) | `infra/pdf/` (construido en F9), `templates/cv/`, `templates/cover_letter/` |
 
-`FileStorage` es deliberadamente pequeña: `put(key, chunks, max_bytes=None) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)` e `iter_keys()`. Construidas en F9 todas menos `iter_keys()`, que llega en F13 con su único consumidor, el barrido de huérfanos. `put` cuenta los bytes mientras escribe y corta con `FileTooLargeError` al pasar de `max_bytes`, sin dejar nada escrito. La subida de F13 no lo usa: cuenta ella misma al leer el cuerpo, porque valida el PDF antes de escribirlo (§2). Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
+`FileStorage` es deliberadamente pequeña: `put(key, chunks, max_bytes=None) -> size`, `open(key)`, `delete(key)`, `delete_prefix(prefix)`, `iter_files()` y `delete_temporaries(older_than)`. Las cuatro primeras, construidas en F9; las dos últimas, en F13 con su único consumidor, el barrido de huérfanos (el diseño decía `iter_keys()`: el barrido necesita también la fecha de cada fichero, y los temporales van aparte porque sus claves no son válidas). `put` cuenta los bytes mientras escribe y corta con `FileTooLargeError` al pasar de `max_bytes`, sin dejar nada escrito. La subida de F13 no lo usa: cuenta ella misma al leer el cuerpo, porque valida el PDF antes de escribirlo (§2). Todo lo que sabe de documentos (propiedad, cuotas, estados) está en el service; el almacén solo sabe de claves y bytes.
 
 ## 2. Subir un documento
 
@@ -84,6 +84,10 @@ Postgres manda (invariante 9) y el orden de escritura garantiza que solo pueden 
 
 El barrido diario recorre las claves del almacén, comprueba en lotes cuáles no tienen fila en `documents` y borra las que tienen **más de una hora**.
 
+**Construido en F13 (paso 6):** `OrphanFileService.sweep` (`services/orphan_file_service.py`), cada día a las 4:15 UTC (`jobs/files.py`, `sweep_orphan_files`), **con o sin SMTP**. Recorre `iter_files()` en lotes de 500 (`ORPHAN_SWEEP_BATCH`) contra `DocumentRepository.existing_storage_keys`, que se apoya en el `UNIQUE (storage_key)` añadido en la migración `915848114c72`; margen `ORPHAN_GRACE` (1 h); y `delete_temporaries` para los `.part`. El borrado de la cuenta es `AccountService.delete_account` (separado de `UserService`, que se construye en cada petición): borra la fila, commit, `delete_prefix(users/{id})` sin dejar que un fallo lo interrumpa, y después la identidad.
+
+> **Trampa — el prefijo de una cuenta, sin barra final.** `delete_prefix` rechaza un segmento vacío para que un id vacío (`users//`) nunca se convierta en `users`. `user_prefix` devolvía `users/{id}/`, con barra: borrar la cuenta capturaba el `InvalidStorageKeyError`, lo dejaba en el log y los ficheros se quedaban. Lo encontró la prueba D11 antes de publicarse; `user_prefix` devuelve `users/{id}`.
+
 > **Trampa — el barrido borra una subida en curso.** Entre escribir el fichero y confirmar su fila pasan milisegundos, pero pasan. Un barrido que coincidiera justo en ese momento vería un fichero sin fila y lo borraría, y el commit posterior dejaría una fila apuntando a nada: justo lo que el orden de escritura debía impedir. El margen de una hora sobre la fecha de modificación lo evita.
 
 ## 6. Copias de seguridad y restauración
@@ -137,12 +141,12 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 | D3 | Dos subidas simultáneas que juntas pasan del almacenamiento restante: solo una entra **[construida en F13]**, con dos transacciones reales | Cuota con bloqueo (A30) |
 | D4 | La descarga de un documento de otro usuario → 404 (igual que uno que no existe) **[construida en F13]**, y la ruta está en la lista de `test_isolation.py` | Aislamiento |
 | D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado **[construida en F13]** | RF-93 |
-| D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes | Orden de escritura y margen del barrido |
+| D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes **[construida en F13]** | Orden de escritura y margen del barrido |
 | D7 | Una clave con `../` es rechazada por `LocalFileStorage`, y también una clave válida que atraviesa un enlace simbólico hacia fuera **[construida en F9]** | Rutas encerradas en la raíz |
 | D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[construida en F13]**, en el dominio y en la respuesta | Cabeceras |
 | D9 | Una plantilla de prueba con `<img src="http://…">` no produce ninguna petición de red **[construida en F9]**: un servidor HTTP local cuenta cero peticiones con imágenes, hojas de estilo, fuentes y fondos externos | El `url_fetcher` contra SSRF |
 | D10 | El texto extraído de un CV generado con un diseño apto para ATS sale en orden de lectura | RF-105 |
-| D11 | Borrar la cuenta borra `users/{user_id}/`; si falla, el barrido lo limpia | RNF-41 |
+| D11 | Borrar la cuenta borra `users/{user_id}/`; si falla, el barrido lo limpia **[construida en F13]**, y sin tocar los ficheros de otra cuenta | RNF-41 |
 
 ## 9. Lo que no se hace todavía
 

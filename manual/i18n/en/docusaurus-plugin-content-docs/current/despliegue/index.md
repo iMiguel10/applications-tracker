@@ -14,7 +14,7 @@ This covers what is the same in every installation: which services there are, ho
 | Service | What it does | Stores data? |
 |---|---|---|
 | `api` | The API (FastAPI). On start-up it **applies the database migrations by itself** | No |
-| `worker` | Runs slow work in the background, such as sending emails or generating PDFs. It sends the emails (confirmation, password recovery and notifications) and schedules the notifications; it must be running | No |
+| `worker` | Runs slow work in the background, such as sending emails or generating PDFs. It sends the emails (confirmation, password recovery and notifications) and schedules the notifications, and every day it deletes the files no document uses any more; it must be running | No |
 | `frontend` | The web application | No |
 | `db` | PostgreSQL with the application's data | **Yes** |
 | `supertokens` | Authentication service (accounts and sessions) | No |

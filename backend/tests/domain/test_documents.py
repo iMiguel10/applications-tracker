@@ -8,6 +8,7 @@ from app.domain.documents import (
     content_disposition,
     sanitize_name,
     storage_key,
+    user_prefix,
 )
 
 
@@ -64,3 +65,11 @@ def test_content_disposition_inline_always_ends_in_pdf_and_escapes_quotes() -> N
     assert header == (
         "inline; filename=\"mi cv.pdf\"; filename*=UTF-8''mi%20%22cv%22.pdf"
     )
+
+
+def test_user_prefix_has_no_trailing_slash() -> None:
+    # delete_prefix rechaza "users/<id>/" (segmento vacío): con la barra, borrar la
+    # cuenta dejaba sus ficheros en disco sin que fallara nada visible.
+    user_id = uuid.uuid4()
+
+    assert user_prefix(user_id) == f"users/{user_id}"

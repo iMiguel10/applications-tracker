@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps import get_user_service
+from app.api.v1.deps import get_account_service, get_user_service
+from app.infra.storage import LocalFileStorage
 from app.main import app
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
@@ -14,6 +17,7 @@ from app.models.reminder import Reminder
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
 from app.schemas.user import CurrentUser
+from app.services.account_service import AccountService
 from app.services.user_service import UserService
 from tests.factories import (
     make_application,
@@ -94,6 +98,7 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
     user: CurrentUser,
     other_user: CurrentUser,
     db_session: AsyncSession,
+    tmp_path: Path,
 ):
     for owner in (user, other_user):
         # Un documento enviado en la solicitud: la FK de applications a documents
@@ -105,8 +110,8 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
         await make_reminder(db_session, owner.id, application_id=application.id)
         await make_reminder(db_session, owner.id)
     identities = FakeIdentities(db_session)
-    app.dependency_overrides[get_user_service] = lambda: UserService(
-        db_session, identities=identities
+    app.dependency_overrides[get_account_service] = lambda: AccountService(
+        db_session, LocalFileStorage(tmp_path), identities=identities
     )
 
     response = await client.delete("/api/v1/me")
@@ -272,13 +277,13 @@ class UnreachableIdentities(FakeIdentities):
 
 @pytest.mark.asyncio
 async def test_delete_account_reports_500_when_identity_store_fails_after_commit(
-    client: AsyncClient, user: CurrentUser, db_session: AsyncSession
+    client: AsyncClient, user: CurrentUser, db_session: AsyncSession, tmp_path: Path
 ):
     # El cliente no debe recibir un 204: sin él, el frontend no cierra sesión ni
     # vacía la caché, y el usuario puede reintentar (la identidad sigue viva).
     await make_application(db_session, user.id)
-    app.dependency_overrides[get_user_service] = lambda: UserService(
-        db_session, identities=UnreachableIdentities()
+    app.dependency_overrides[get_account_service] = lambda: AccountService(
+        db_session, LocalFileStorage(tmp_path), identities=UnreachableIdentities()
     )
     transport = ASGITransport(app=app, raise_app_exceptions=False)
 

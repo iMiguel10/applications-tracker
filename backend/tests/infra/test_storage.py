@@ -4,7 +4,9 @@ El disco local no necesita doble: la misma implementación que en producción,
 apuntando a `tmp_path` (arquitectura de la v2 §6).
 """
 
+import os
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -243,3 +245,66 @@ async def test_delete_prefix_removes_only_that_user(tmp_path: Path) -> None:
 
     assert not (tmp_path / "users/u-1").exists()
     assert await read_all(storage, "users/u-2/documents/c.pdf") == b"c"
+
+
+# --- Recorrer el almacén (barrido de huérfanos, ficheros §5) -------------------
+
+
+def _age(path: Path, when: datetime) -> None:
+    os.utime(path, (when.timestamp(), when.timestamp()))
+
+
+@pytest.mark.asyncio
+async def test_iter_files_lists_stored_files_but_not_temporaries_or_symlinks(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "store"
+    storage = LocalFileStorage(root)
+    await storage.put(KEY, chunks(b"a"))
+    await storage.put("users/u-2/documents/d-2.pdf", chunks(b"b"))
+    (root / ".tmp").mkdir(exist_ok=True)
+    (root / ".tmp" / "x.part").write_bytes(b"a medias")
+    outside = tmp_path / "fuera.pdf"
+    outside.write_bytes(b"secreto")
+    (root / "users" / "enlace.pdf").symlink_to(outside)
+
+    keys = sorted([stored.key async for stored in storage.iter_files()])
+
+    assert keys == [KEY, "users/u-2/documents/d-2.pdf"]
+
+
+@pytest.mark.asyncio
+async def test_iter_files_reports_the_modification_time(tmp_path: Path) -> None:
+    storage = LocalFileStorage(tmp_path)
+    await storage.put(KEY, chunks(b"a"))
+    when = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+    _age(tmp_path / KEY, when)
+
+    [stored] = [stored async for stored in storage.iter_files()]
+
+    assert stored.modified_at == when
+
+
+@pytest.mark.asyncio
+async def test_delete_temporaries_only_removes_old_ones(tmp_path: Path) -> None:
+    storage = LocalFileStorage(tmp_path)
+    temporaries = tmp_path / ".tmp"
+    temporaries.mkdir()
+    old, recent = temporaries / "old.part", temporaries / "recent.part"
+    old.write_bytes(b"x")
+    recent.write_bytes(b"x")
+    now = datetime.now(UTC)
+    _age(old, now - timedelta(hours=2))
+
+    deleted = await storage.delete_temporaries(now - timedelta(hours=1))
+
+    assert deleted == 1
+    assert not old.exists()
+    assert recent.exists()
+
+
+@pytest.mark.asyncio
+async def test_delete_temporaries_without_temporaries_is_a_no_op(
+    tmp_path: Path,
+) -> None:
+    assert await LocalFileStorage(tmp_path).delete_temporaries(datetime.now(UTC)) == 0

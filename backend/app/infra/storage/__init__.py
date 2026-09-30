@@ -4,6 +4,7 @@ from app.infra.storage.base import (
     InvalidStorageKeyError,
     StorageError,
     StorageKeyNotFoundError,
+    StoredFile,
 )
 from app.infra.storage.local import LocalFileStorage
 
@@ -14,4 +15,5 @@ __all__ = [
     "LocalFileStorage",
     "StorageError",
     "StorageKeyNotFoundError",
+    "StoredFile",
 ]

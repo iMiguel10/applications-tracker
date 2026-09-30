@@ -39,6 +39,9 @@ class Document(Base):
         # Destino de las FK compuestas de applications (F13, paso 5): el CV enviado
         # tiene que ser un documento del MISMO usuario.
         UniqueConstraint("id", "user_id"),
+        # Una clave, un documento. Y el índice con que el barrido de huérfanos busca
+        # en lote qué claves del almacén tienen fila (ficheros §5).
+        UniqueConstraint("storage_key"),
         enum_check("kind", DocumentKind, "kind"),
         enum_check("origin", DocumentOrigin, "origin"),
         enum_check("status", DocumentStatus, "status"),

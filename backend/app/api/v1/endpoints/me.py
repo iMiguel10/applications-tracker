@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, status
 
-from app.api.v1.deps import get_current_user, get_limit_service, get_user_service
+from app.api.v1.deps import (
+    get_account_service,
+    get_current_user,
+    get_limit_service,
+    get_user_service,
+)
 from app.domain.limits import WARNING_RATIO
 from app.schemas.usage import LimitUsageRead, UsageRead
 from app.schemas.user import CurrentUser, MeRead, PreferencesRead, PreferencesUpdate
+from app.services.account_service import AccountService
 from app.services.limit_service import LimitService
 from app.services.user_service import UserService
 
@@ -30,15 +36,16 @@ async def read_me(
 )
 async def delete_me(
     current_user: CurrentUser = Depends(get_current_user),
-    users: UserService = Depends(get_user_service),
+    accounts: AccountService = Depends(get_account_service),
 ) -> None:
-    """Borra de forma irreversible la cuenta y todos sus datos (RNF-40): empresas,
-    solicitudes con su historial, entrevistas, recordatorios y preferencias, y
-    después la identidad en SuperTokens (credenciales y sesiones).
+    """Borra de forma irreversible la cuenta y todos sus datos (RNF-40, RNF-41):
+    empresas, solicitudes con su historial, entrevistas, recordatorios, documentos
+    con sus PDF y preferencias, y después la identidad en SuperTokens
+    (credenciales y sesiones).
 
     Un access token ya emitido sigue validándose sin consultar al core hasta que
     caduca (máximo 5 minutos): el cliente debe cerrar sesión justo después."""
-    await users.delete_account(current_user)
+    await accounts.delete_account(current_user)
 
 
 @router.get("/preferences", summary="Preferencias del usuario actual")

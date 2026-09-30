@@ -78,7 +78,7 @@ Se descartó **un worker por tipo de trabajo**: cuatro o cinco procesos casi sie
 | Solicitudes sin actividad (RF-83) | 1 h | Solicitudes que acaban de cruzar el umbral del usuario |
 | Reencolar pendientes | 5 min | Documentos `pending` con más de 5 minutos (propuestas de IA atascadas: se marcan como fallidas) |
 | Reclamos sin resultado | 5 min | Entregas `claimed` con más de 10 minutos pasan a `unknown` (§4) |
-| Ficheros huérfanos | 1 día | Ver [ficheros](ficheros.md#5-huerfanos) |
+| Ficheros huérfanos | 1 día (4:15 UTC), **también sin SMTP** | Borra los ficheros del almacén sin fila en `documents` y con más de una hora, y los temporales viejos. Ver [ficheros §5](ficheros.md#5-huerfanos) |
 | Entregas antiguas | 1 día (3:30 UTC) | Borra las entregas terminadas (`sent`, `unknown`, `failed` sin reintentos) de más de 90 días; las de inactividad, solo si su clave ya no es la de la solicitud |
 
 Reglas comunes:

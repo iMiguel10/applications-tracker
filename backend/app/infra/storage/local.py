@@ -4,6 +4,8 @@ import re
 import shutil
 import uuid
 from collections.abc import AsyncIterable, AsyncIterator
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import BinaryIO
 
@@ -11,6 +13,7 @@ from app.infra.storage.base import (
     FileTooLargeError,
     InvalidStorageKeyError,
     StorageKeyNotFoundError,
+    StoredFile,
 )
 
 CHUNK_SIZE = 64 * 1024
@@ -89,6 +92,34 @@ class LocalFileStorage:
         path = self._resolve(prefix)
         await asyncio.to_thread(_remove_tree, path)
 
+    async def iter_files(self) -> AsyncIterator[StoredFile]:
+        # Directorio a directorio, cada lectura en un hilo: el almacén puede tener
+        # muchos ficheros y no hace falta tenerlos todos en memoria a la vez.
+        pending = [self._root]
+        while pending:
+            directory = pending.pop()
+            for entry in await asyncio.to_thread(_scan, directory):
+                if entry.is_dir:
+                    # Los temporales se tratan aparte (delete_temporaries).
+                    if not (directory == self._root and entry.path.name == _TMP_DIR):
+                        pending.append(entry.path)
+                    continue
+                yield StoredFile(
+                    key=entry.path.relative_to(self._root).as_posix(),
+                    modified_at=entry.modified_at,
+                )
+
+    async def delete_temporaries(self, older_than: datetime) -> int:
+        temporaries = self._root / _TMP_DIR
+        if not await asyncio.to_thread(temporaries.is_dir):
+            return 0
+        deleted = 0
+        for entry in await asyncio.to_thread(_scan, temporaries):
+            if not entry.is_dir and entry.modified_at < older_than:
+                await asyncio.to_thread(entry.path.unlink, missing_ok=True)
+                deleted += 1
+        return deleted
+
     def _resolve(self, key: str) -> Path:
         """Ruta absoluta de `key`, o InvalidStorageKeyError si no es válida o si,
         resuelta, sale de la raíz. Lo segundo cubre también un enlace simbólico
@@ -109,6 +140,35 @@ async def _read_chunks(handle: BinaryIO) -> AsyncIterator[bytes]:
             yield chunk
     finally:
         handle.close()
+
+
+@dataclass(frozen=True)
+class _Entry:
+    path: Path
+    is_dir: bool
+    modified_at: datetime
+
+
+def _scan(directory: Path) -> list[_Entry]:
+    """Lo que hay en un directorio, sin seguir enlaces simbólicos (se ignoran: un
+    enlace hacia fuera no debe llevar al barrido a recorrer otra parte del disco)."""
+    entries = []
+    with os.scandir(directory) as iterator:
+        for entry in iterator:
+            if entry.is_symlink():
+                continue
+            is_dir = entry.is_dir(follow_symlinks=False)
+            if not is_dir and not entry.is_file(follow_symlinks=False):
+                continue
+            modified = entry.stat(follow_symlinks=False).st_mtime
+            entries.append(
+                _Entry(
+                    path=Path(entry.path),
+                    is_dir=is_dir,
+                    modified_at=datetime.fromtimestamp(modified, UTC),
+                )
+            )
+    return entries
 
 
 def _flush_to_disk(handle: BinaryIO) -> None:

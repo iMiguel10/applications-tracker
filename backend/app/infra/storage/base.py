@@ -1,4 +1,6 @@
 from collections.abc import AsyncIterable, AsyncIterator
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 
@@ -16,6 +18,15 @@ class StorageKeyNotFoundError(StorageError):
 
 class FileTooLargeError(StorageError):
     """El contenido superó `max_bytes` mientras se escribía. No queda nada escrito."""
+
+
+@dataclass(frozen=True)
+class StoredFile:
+    """Un fichero del almacén, para el barrido de huérfanos (ficheros §5)."""
+
+    key: str
+    # Última escritura, en UTC. El barrido no toca nada más reciente que su margen.
+    modified_at: datetime
 
 
 class FileStorage(Protocol):
@@ -50,4 +61,14 @@ class FileStorage(Protocol):
     async def delete_prefix(self, prefix: str) -> None:
         """Borra todo lo que cuelga de `prefix` (p. ej. `users/{user_id}`, sin barra
         final). No falla si no existe."""
+        ...
+
+    def iter_files(self) -> AsyncIterator[StoredFile]:
+        """Todos los ficheros del almacén, sin los temporales de escritura ni los
+        enlaces simbólicos. Para el barrido de huérfanos: nada más lo recorre."""
+        ...
+
+    async def delete_temporaries(self, older_than: datetime) -> int:
+        """Borra los temporales de escrituras que no terminaron (un proceso que
+        murió a mitad) anteriores a `older_than`. Devuelve cuántos."""
         ...

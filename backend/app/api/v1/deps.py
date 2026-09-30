@@ -14,6 +14,7 @@ from app.infra.queue import JobQueue
 from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
 from app.schemas.user import CurrentUser
+from app.services.account_service import AccountService
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
 from app.services.company_service import CompanyService
@@ -111,6 +112,13 @@ def get_limit_service(
     db: AsyncSession = Depends(get_db),
 ) -> LimitService:
     return LimitService(db)
+
+
+def get_account_service(
+    db: AsyncSession = Depends(get_db),
+    storage: FileStorage = Depends(get_file_storage),
+) -> AccountService:
+    return AccountService(db, storage)
 
 
 def get_user_service(

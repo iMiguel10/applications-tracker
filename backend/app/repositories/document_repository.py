@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import func, or_, select
@@ -111,3 +112,15 @@ class DocumentRepository:
             )
         )
         return int(total or 0)
+
+    async def existing_storage_keys(self, keys: Sequence[str]) -> set[str]:
+        """De estas claves del almacén, las que tienen fila (ficheros §5).
+
+        Sin `user_id` a propósito: es el barrido de huérfanos, que recorre el
+        almacén de todas las cuentas; solo devuelve claves, nunca datos."""
+        if not keys:
+            return set()
+        result = await self.session.scalars(
+            select(Document.storage_key).where(Document.storage_key.in_(keys))
+        )
+        return {key for key in result.all() if key is not None}

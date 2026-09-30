@@ -12,7 +12,7 @@ Una copia completa son **tres** piezas:
 Valkey no necesita copia: guarda la cola de tareas en espera, no datos.
 
 :::warning El orden importa
-Copia **primero las bases de datos y después los ficheros**. Así, un fichero subido entre los dos pasos, como mucho, queda en la copia sin que nada lo use: sobra, pero no rompe nada. En el orden contrario, podrías restaurar una base de datos que apunta a un fichero que no está en la copia.
+Copia **primero las bases de datos y después los ficheros**. Así, un fichero subido entre los dos pasos, como mucho, queda en la copia sin que nada lo use: sobra, pero no rompe nada. El `worker` borra cada día (a las 4:15 UTC) los ficheros que no usa ningún documento y tienen más de una hora, así que tras restaurar esos sobrantes desaparecen solos. En el orden contrario, podrías restaurar una base de datos que apunta a un fichero que no está en la copia.
 :::
 
 ## Hacer la copia

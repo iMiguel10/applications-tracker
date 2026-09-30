@@ -14,7 +14,7 @@ Aquí está lo que es igual en cualquier instalación: qué servicios hay, cómo
 | Servicio | Qué hace | ¿Guarda datos? |
 |---|---|---|
 | `api` | La API (FastAPI). Al arrancar, **aplica sola las migraciones** de la base de datos | No |
-| `worker` | Ejecuta en segundo plano las tareas lentas, como enviar emails o generar PDFs. Envía los emails (confirmación, recuperación de contraseña y avisos) y programa los avisos; debe estar en marcha | No |
+| `worker` | Ejecuta en segundo plano las tareas lentas, como enviar emails o generar PDFs. Envía los emails (confirmación, recuperación de contraseña y avisos) y programa los avisos, y cada día borra los ficheros que ya no usa ningún documento; debe estar en marcha | No |
 | `frontend` | La aplicación web | No |
 | `db` | PostgreSQL con los datos de la aplicación | **Sí** |
 | `supertokens` | Servicio de autenticación (cuentas y sesiones) | No |

@@ -2,6 +2,7 @@
 
 import unicodedata
 import uuid
+from datetime import timedelta
 from enum import StrEnum
 from urllib.parse import quote
 
@@ -39,8 +40,10 @@ def storage_key(user_id: uuid.UUID, document_id: uuid.UUID) -> str:
 
 
 def user_prefix(user_id: uuid.UUID) -> str:
-    """Todo lo de una cuenta, para borrarlo con ella (RNF-41)."""
-    return f"users/{user_id}/"
+    """Todo lo de una cuenta, para borrarlo con ella (RNF-41). Sin barra final:
+    `delete_prefix` rechaza un segmento vacío, que es lo que evita que un id vacío
+    (`users//`) acabe borrando `users` entero."""
+    return f"users/{user_id}"
 
 
 # Los primeros bytes de todo PDF (ficheros §2, paso 3). La extensión no dice nada.
@@ -105,3 +108,11 @@ def content_disposition(name: str, *, attachment: bool) -> str:
         f'{disposition}; filename="{ascii_name}"; '
         f"filename*=UTF-8''{quote(filename, safe='')}"
     )
+
+
+# Barrido de huérfanos (ficheros §5): no toca un fichero más reciente que esto.
+# Entre escribir el fichero de una subida y confirmar su fila pasan milisegundos;
+# sin margen, un barrido que coincidiera borraría una subida en curso.
+ORPHAN_GRACE = timedelta(hours=1)
+# Claves que se comprueban contra la BD en cada consulta.
+ORPHAN_SWEEP_BATCH = 500

@@ -12,7 +12,7 @@ A full backup has **three** pieces:
 Valkey needs no backup: it holds the queue of waiting tasks, not data.
 
 :::warning Order matters
-Back up **the databases first and the files after**. That way, a file uploaded between both steps at worst ends up in the backup with nothing using it: it is surplus, but breaks nothing. In the opposite order, you could restore a database pointing to a file that is not in the backup.
+Back up **the databases first and the files after**. That way, a file uploaded between both steps at worst ends up in the backup with nothing using it: it is surplus, but breaks nothing. Every day (at 4:15 UTC) the `worker` deletes files that no document uses and that are more than an hour old, so after a restore that surplus goes away on its own. In the opposite order, you could restore a database pointing to a file that is not in the backup.
 :::
 
 ## Making the backup
