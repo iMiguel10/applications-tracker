@@ -1,17 +1,23 @@
 import asyncio
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
+from app.domain.notifications import NotificationKind
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
 from app.models.interview import Interview
+from app.models.notification_delivery import NotificationDelivery
 from app.models.reminder import Reminder
 from app.models.user import User
+from app.repositories.notification_delivery_repository import (
+    NotificationDeliveryRepository,
+)
 from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 from tests.conftest import test_engine
@@ -22,6 +28,8 @@ from tests.factories import (
     make_reminder,
     make_status_change,
 )
+
+NOW = datetime(2026, 10, 5, 8, 0, tzinfo=UTC)
 
 
 @pytest.mark.asyncio
@@ -109,6 +117,10 @@ async def test_deleting_a_user_leaves_no_row_of_its_data_behind(
     interview = await make_interview(db_session, application)
     linked = await make_reminder(db_session, owner.id, application_id=application.id)
     loose = await make_reminder(db_session, owner.id)
+    delivery_id = await NotificationDeliveryRepository(db_session).claim(
+        owner.id, NotificationKind.REMINDER_DUE, f"reminder:{loose.id}", NOW
+    )
+    assert delivery_id is not None
     initial_change_ids = (
         await db_session.scalars(
             select(ApplicationStatusChange.id).where(
@@ -127,6 +139,7 @@ async def test_deleting_a_user_leaves_no_row_of_its_data_behind(
         "history": (ApplicationStatusChange.id, [change.id, *initial_change_ids]),
         "interviews": (Interview.id, [interview.id]),
         "reminders": (Reminder.id, [linked.id, loose.id]),
+        "notification_deliveries": (NotificationDelivery.id, [delivery_id]),
     }
     counts = {
         name: await db_session.scalar(select(func.count()).where(column.in_(ids)))

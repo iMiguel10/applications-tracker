@@ -64,6 +64,20 @@ async def _count_owned(session: AsyncSession, user_id: object) -> dict[str, int]
     return {name: await session.scalar(query) or 0 for name, query in queries.items()}
 
 
+# RF-84: activados los avisos de lo que el usuario creó (recordatorio, entrevista);
+# apagados el resumen y la inactividad. RF-81: 24 h de antelación.
+DEFAULT_PREFERENCES = {
+    "language": None,
+    "stale_after_days": 14,
+    "timezone": None,
+    "notify_reminder_due": True,
+    "notify_interview": True,
+    "notify_weekly_digest": False,
+    "notify_stale": False,
+    "interview_notice_hours": 24,
+}
+
+
 @pytest.mark.asyncio
 async def test_delete_account_removes_all_own_data_and_then_the_identity(
     client: AsyncClient,
@@ -115,17 +129,11 @@ async def test_me_returns_own_id_and_email_from_identity_store(
 
 
 @pytest.mark.asyncio
-async def test_preferences_default_to_no_language_14_days_and_no_timezone(
-    client: AsyncClient, user: CurrentUser
-):
+async def test_preferences_defaults(client: AsyncClient, user: CurrentUser):
     response = await client.get("/api/v1/me/preferences")
 
     assert response.status_code == 200
-    assert response.json() == {
-        "language": None,
-        "stale_after_days": 14,
-        "timezone": None,
-    }
+    assert response.json() == DEFAULT_PREFERENCES
 
 
 @pytest.mark.asyncio
@@ -133,10 +141,13 @@ async def test_updating_preferences_only_changes_sent_fields(
     client: AsyncClient, user: CurrentUser
 ):
     first = await client.patch("/api/v1/me/preferences", json={"language": "en"})
-    assert first.json() == {"language": "en", "stale_after_days": 14, "timezone": None}
+    assert first.json() == DEFAULT_PREFERENCES | {"language": "en"}
 
     second = await client.patch("/api/v1/me/preferences", json={"stale_after_days": 30})
-    assert second.json() == {"language": "en", "stale_after_days": 30, "timezone": None}
+    assert second.json() == DEFAULT_PREFERENCES | {
+        "language": "en",
+        "stale_after_days": 30,
+    }
 
 
 @pytest.mark.asyncio
@@ -151,6 +162,24 @@ async def test_explicit_null_language_resets_to_follow_the_browser(
 
 
 @pytest.mark.asyncio
+async def test_notification_preferences_are_updated(
+    client: AsyncClient, user: CurrentUser
+):
+    changes = {
+        "notify_reminder_due": False,
+        "notify_weekly_digest": True,
+        "interview_notice_hours": 2,
+    }
+
+    response = await client.patch("/api/v1/me/preferences", json=changes)
+
+    assert response.status_code == 200
+    assert response.json() == DEFAULT_PREFERENCES | changes
+    reloaded = await client.get("/api/v1/me/preferences")
+    assert reloaded.json() == DEFAULT_PREFERENCES | changes
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "payload",
     [
@@ -162,6 +191,13 @@ async def test_explicit_null_language_resets_to_follow_the_browser(
         {"timezone": "Europe/Atlantis"},
         {"timezone": "europe/madrid"},
         {"timezone": ""},
+        {"interview_notice_hours": 0},
+        {"interview_notice_hours": 169},
+        # null solo significa algo en language y timezone: en el resto sería un
+        # NULL que la BD rechaza con un 500.
+        {"stale_after_days": None},
+        {"notify_reminder_due": None},
+        {"interview_notice_hours": None},
     ],
     ids=[
         "unknown_language",
@@ -171,6 +207,11 @@ async def test_explicit_null_language_resets_to_follow_the_browser(
         "timezone_unknown",
         "timezone_wrong_case",
         "timezone_empty",
+        "notice_too_short",
+        "notice_too_long",
+        "null_threshold",
+        "null_notify",
+        "null_notice",
     ],
 )
 async def test_invalid_preferences_are_rejected(

@@ -12,6 +12,13 @@ export interface Preferences {
   stale_after_days: number;
   /** Zona IANA ("Europe/Madrid"); `null` hasta que se detecta del navegador. */
   timezone: string | null;
+  /** F12 (RF-84): avisos por email, cada uno por separado. */
+  notify_reminder_due: boolean;
+  notify_interview: boolean;
+  notify_weekly_digest: boolean;
+  notify_stale: boolean;
+  /** RF-81: horas de antelación del aviso de entrevista. */
+  interview_notice_hours: number;
 }
 
 export type AuthField = "email" | "password";

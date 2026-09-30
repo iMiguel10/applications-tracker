@@ -20,6 +20,7 @@ import { EmailVerificationCard } from "@/features/auth/components/EmailVerificat
 import { PreferencesForm } from "@/features/auth/components/PreferencesForm";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { UsageCard } from "@/features/usage/components/UsageCard";
+import { NotificationSettingsCard } from "@/features/notifications/components/NotificationSettingsCard";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
 
 export function PreferencesPage() {
@@ -46,6 +47,7 @@ export function PreferencesPage() {
               </CardContent>
             </Card>
           )}
+          {data && <NotificationSettingsCard preferences={data} />}
           <UsageCard />
         </div>
 

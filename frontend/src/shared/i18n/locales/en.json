@@ -471,5 +471,32 @@
     "amounts_one": "{{used, number}} of {{limit, number}} · {{remaining, number}} left",
     "amounts_other": "{{used, number}} of {{limit, number}} · {{remaining, number}} left",
     "amountsUnlimited": "{{used, number}} · no limit"
+  },
+  "notifications": {
+    "title": "Email notifications",
+    "description": "Choose what you want to hear about by email. Every email has a link to turn that notification off.",
+    "unverified": "Notifications are only sent to a verified email. Verify it in the Email card to start receiving them.",
+    "unavailable": "This installation doesn't send email, so there are no email notifications.",
+    "notify_reminder_due": {
+      "label": "Reminder due",
+      "description": "When a pending reminder reaches its date."
+    },
+    "notify_interview": {
+      "label": "Upcoming interview",
+      "description": "Before each scheduled interview."
+    },
+    "notify_weekly_digest": {
+      "label": "Weekly summary",
+      "description": "On Monday mornings: pending items, this week's interviews and stalled applications."
+    },
+    "notify_stale": {
+      "label": "Applications without activity",
+      "description": "When an application goes past the days without activity you set in Preferences."
+    },
+    "noticeLabel": "Notify",
+    "noticeHours_one": "{{count}} hour before",
+    "noticeHours_other": "{{count}} hours before",
+    "noticeDays_one": "{{count}} day before",
+    "noticeDays_other": "{{count}} days before"
   }
 }

@@ -5349,13 +5349,45 @@
             "examples": [
               "Europe/Madrid"
             ]
+          },
+          "notify_reminder_due": {
+            "type": "boolean",
+            "title": "Notify Reminder Due",
+            "description": "RF-80: email cuando vence un recordatorio pendiente."
+          },
+          "notify_interview": {
+            "type": "boolean",
+            "title": "Notify Interview",
+            "description": "RF-81: email antes de cada entrevista programada."
+          },
+          "notify_weekly_digest": {
+            "type": "boolean",
+            "title": "Notify Weekly Digest",
+            "description": "RF-82: resumen semanal, el lunes por la mañana."
+          },
+          "notify_stale": {
+            "type": "boolean",
+            "title": "Notify Stale",
+            "description": "RF-83: aviso cuando una solicitud se queda sin actividad."
+          },
+          "interview_notice_hours": {
+            "type": "integer",
+            "maximum": 168.0,
+            "minimum": 1.0,
+            "title": "Interview Notice Hours",
+            "description": "RF-81: horas de antelación del aviso de entrevista."
           }
         },
         "type": "object",
         "required": [
           "language",
           "stale_after_days",
-          "timezone"
+          "timezone",
+          "notify_reminder_due",
+          "notify_interview",
+          "notify_weekly_digest",
+          "notify_stale",
+          "interview_notice_hours"
         ],
         "title": "PreferencesRead"
       },
@@ -5399,10 +5431,68 @@
             ],
             "title": "Timezone",
             "description": "Nombre IANA de una zona conocida; otro valor responde 422. La aplicación web envía la del navegador si la cuenta aún no tiene."
+          },
+          "notify_reminder_due": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Reminder Due"
+          },
+          "notify_interview": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Interview"
+          },
+          "notify_weekly_digest": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Weekly Digest"
+          },
+          "notify_stale": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Stale"
+          },
+          "interview_notice_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 168.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interview Notice Hours"
           }
         },
         "type": "object",
-        "title": "PreferencesUpdate"
+        "title": "PreferencesUpdate",
+        "description": "Solo cambia los campos que se envían. `null` solo vale en `language`\n(seguir al navegador) y `timezone`."
       },
       "RateLimitedRead": {
         "properties": {

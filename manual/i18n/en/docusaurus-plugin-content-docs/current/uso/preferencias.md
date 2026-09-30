@@ -18,6 +18,21 @@ The **theme** can also be switched with the sun and moon button in the top bar. 
 
 The number of days decides which applications appear in the **No activity** block of the [Dashboard](dashboard.md).
 
+## Choose your email notifications
+
+In the **Email notifications** card you turn each notification on or off separately. Each switch is saved right away, without clicking **Save**.
+
+| Notification | When it arrives | By default |
+|---|---|---|
+| Reminder due | When a pending reminder reaches its date | On |
+| Upcoming interview | Before each scheduled interview, as far ahead as you choose in **Notify** (from 1 hour to 7 days; 1 day by default) | On |
+| Weekly summary | On Monday mornings, in your time zone | Off |
+| Applications without activity | When an application goes past the days without activity in your preferences | Off |
+
+You never get two emails for the same reason. Every email has a link to turn that notification off without signing in.
+
+Notifications only go to a **verified** email: until it is, the card reminds you. If the installation does not send email, the card says so and the switches cannot be changed.
+
 ## See your account usage
 
 The **Account usage** card shows, for each limit, how much you have used, the maximum and how much is left: for example, "42 of 5,000 · 4,958 left". The bar turns amber past 80 % and red at the limit. Limits don't renew: you free up room by deleting applications, companies or reminders. Archiving an application or completing a reminder doesn't free up room.

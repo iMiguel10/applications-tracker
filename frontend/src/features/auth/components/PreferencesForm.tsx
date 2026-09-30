@@ -61,9 +61,10 @@ export function PreferencesForm({ preferences }: { preferences: Preferences }) {
     defaultValues: toFormValues(preferences),
   });
 
-  // Si otra pestaña cambia las preferencias, esta refleja el valor guardado.
+  // Si otra pestaña (o la tarjeta de avisos) cambia las preferencias, el formulario
+  // refleja lo guardado sin pisar lo que el usuario está editando aquí.
   useEffect(() => {
-    form.reset(toFormValues(preferences));
+    form.reset(toFormValues(preferences), { keepDirtyValues: true });
   }, [preferences, form]);
 
   const onSubmit = (values: PreferencesFormValues) => {

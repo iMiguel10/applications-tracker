@@ -18,6 +18,21 @@ El **tema** también se cambia con el botón de sol y luna de la barra superior.
 
 El número de días decide qué solicitudes aparecen en el bloque **Sin actividad** del [Dashboard](dashboard.md).
 
+## Elegir los avisos por email
+
+En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado. Cada interruptor se guarda al momento, sin pulsar **Guardar**.
+
+| Aviso | Cuándo llega | Por defecto |
+|---|---|---|
+| Recordatorio vencido | Cuando llega la fecha de un recordatorio pendiente | Activado |
+| Entrevista próxima | Antes de cada entrevista programada, con la antelación que elijas en **Avisar** (de 1 hora a 7 días; 1 día por defecto) | Activado |
+| Resumen semanal | Los lunes por la mañana, en tu zona horaria | Desactivado |
+| Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias | Desactivado |
+
+Nunca recibes dos emails por el mismo motivo. Cada email trae un enlace para desactivar ese aviso sin iniciar sesión.
+
+Los avisos solo llegan a un email **verificado**: mientras no lo esté, la tarjeta te lo recuerda. Si la instalación no envía emails, la tarjeta lo dice y los interruptores no se pueden cambiar.
+
 ## Ver el uso de tu cuenta
 
 La tarjeta **Uso de la cuenta** muestra, para cada límite, cuánto llevas, el máximo y cuánto te queda: por ejemplo, "42 de 5000 · quedan 4958". La barra se vuelve ámbar al pasar del 80 % y roja al llegar al tope. Los límites no se renuevan: se libera espacio al borrar solicitudes, empresas o recordatorios. Archivar una solicitud o completar un recordatorio no libera espacio.

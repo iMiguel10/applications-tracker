@@ -12,7 +12,16 @@ vi.mock("../../services/preferences.service", () => ({
 }));
 vi.mock("../../lib/timezones", () => ({ browserTimezone: () => "America/Mexico_City" }));
 
-const BASE: Preferences = { language: null, stale_after_days: 14, timezone: null };
+const BASE: Preferences = {
+  language: null,
+  stale_after_days: 14,
+  timezone: null,
+  notify_reminder_due: true,
+  notify_interview: true,
+  notify_weekly_digest: false,
+  notify_stale: false,
+  interview_notice_hours: 24,
+};
 
 function renderWith(preferences: Preferences | undefined) {
   const queryClient = new QueryClient();

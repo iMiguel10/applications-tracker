@@ -471,5 +471,32 @@
     "amounts_one": "{{used, number}} de {{limit, number}} · queda {{remaining, number}}",
     "amounts_other": "{{used, number}} de {{limit, number}} · quedan {{remaining, number}}",
     "amountsUnlimited": "{{used, number}} · sin límite"
+  },
+  "notifications": {
+    "title": "Avisos por email",
+    "description": "Elige de qué quieres que te avisemos por email. Cada email trae un enlace para desactivar ese aviso.",
+    "unverified": "Los avisos solo se envían a un email verificado. Verifícalo en la tarjeta Email para empezar a recibirlos.",
+    "unavailable": "Esta instalación no envía emails, así que no hay avisos por email.",
+    "notify_reminder_due": {
+      "label": "Recordatorio vencido",
+      "description": "Cuando llega la fecha de un recordatorio pendiente."
+    },
+    "notify_interview": {
+      "label": "Entrevista próxima",
+      "description": "Antes de cada entrevista programada."
+    },
+    "notify_weekly_digest": {
+      "label": "Resumen semanal",
+      "description": "Los lunes por la mañana: pendientes, entrevistas de la semana y solicitudes paradas."
+    },
+    "notify_stale": {
+      "label": "Solicitudes sin actividad",
+      "description": "Cuando una solicitud pasa los días sin actividad que marcaste en Preferencias."
+    },
+    "noticeLabel": "Avisar",
+    "noticeHours_one": "{{count}} hora antes",
+    "noticeHours_other": "{{count}} horas antes",
+    "noticeDays_one": "{{count}} día antes",
+    "noticeDays_other": "{{count}} días antes"
   }
 }

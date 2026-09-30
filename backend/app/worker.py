@@ -18,6 +18,7 @@ from app.infra.pdf.weasyprint_renderer import WeasyPrintRenderer
 from app.infra.storage import LocalFileStorage
 from app.jobs.auth_emails import send_password_reset_email, send_verification_email
 from app.jobs.context import WorkerContext
+from app.jobs.notifications import notification_cron_jobs, send_notification
 
 # Al importar, como en main.py: SAQ registra el arranque del worker antes de
 # llamar a startup(), y sin logging configurado esas líneas no salen.
@@ -36,7 +37,15 @@ async def startup(ctx: WorkerContext) -> None:
 
 settings = {
     "queue": Queue.from_url(config.valkey_url),
-    "functions": [send_password_reset_email, send_verification_email],
+    "functions": [
+        send_password_reset_email,
+        send_verification_email,
+        send_notification,
+    ],
+    # SAQ encola cada barrido con la clave `cron:<función>`: aunque hubiera dos
+    # workers, cada pasada se ejecuta una vez. Y aunque no fuera así, los reclamos
+    # con clave única hacen seguros dos barridos simultáneos (segundo plano §3).
+    "cron_jobs": notification_cron_jobs(build_email_sender(config).enabled),
     "startup": startup,
     "concurrency": 10,
 }

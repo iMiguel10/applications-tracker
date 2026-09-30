@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), y `EmailSender` (§4 y §5) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados y las preferencias de aviso (§4) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -127,6 +127,17 @@ La `dedupe_key` define qué es "el mismo motivo":
 | Entrevista próxima | `interview:<id>:<scheduled_at>` | Si el usuario **mueve** la entrevista, el nuevo aviso es otro motivo |
 | Resumen semanal | `digest:<año>-W<semana ISO local>` | Uno por semana aunque el barrido pase varias veces esa mañana |
 | Sin actividad | `stale:<application_id>:<last_activity_at>` | Si la solicitud vuelve a moverse y a quedarse quieta, es un periodo nuevo |
+
+**Construido en F12 (paso 1: la base).**
+
+- `domain/notifications.py`: `NotificationKind`, `DeliveryStatus`, `MAX_DELIVERY_ATTEMPTS` (3), `next_attempt_at` (espera de 5 y 30 minutos tras el primer y el segundo fallo), `ABANDONED_CLAIM_AFTER` (10 minutos) y la antelación del aviso de entrevista (1 a 168 horas, 24 por defecto).
+- `notification_deliveries` (migración `f58741a45d81`), con dos columnas que el diseño no tenía: `claimed_at` (último reclamo, desde el que mide el barrido de abandonados, con un índice parcial sobre los `claimed`) y `next_attempt_at` (solo en `failed` con intentos restantes).
+- `NotificationDeliveryRepository.claim`: un `INSERT … ON CONFLICT DO NOTHING` y, si ya existía, un `UPDATE` que solo vuelve a reclamar una entrega `failed` cuyo reintento ya toca. Las dos sentencias son atómicas sin bloqueo previo, y cada reclamo cuenta como un intento. `sent` y `unknown` no se vuelven a reclamar nunca.
+- `NotificationDeliveryService`: `claim` (reclama y confirma), `enqueue_send` (encola `send_notification` con un solo intento; si la cola no responde, la entrega se queda en `claimed` y el barrido la da por perdida), `deliver` (carga por id **y** `user_id`, no hace nada si ya no está en `claimed`, y clasifica el resultado del envío) y `expire_abandoned_claims`.
+- **Compositores:** el contenido de cada tipo lo escribe un `NotificationComposer`, que recibe la entrega y el usuario y devuelve el email, o `None` si el motivo ya no existe (un recordatorio completado entre el barrido y el envío). En ese caso la entrega se borra: no salió nada y no hay nada que recordar. Un tipo sin compositor, o una cuenta borrada, dejan la entrega en `failed` sin más intentos. El primer compositor, el del recordatorio vencido, llega con el paso 2, y con él se decide si el envío pasa por un `EmailChannel` (la costura `NotificationChannel` de F4, pensada para un recordatorio) o solo por los compositores.
+- **Programación:** los barridos son `CronJob` de SAQ en `jobs/notifications.py` (`notification_cron_jobs`), y sin SMTP no se programa ninguno (B11). SAQ encola cada pasada con la clave `cron:<función>`, así que ni con dos workers se ejecuta dos veces, aunque el diseño no depende de eso. El único barrido del paso 1 es el de reclamos abandonados (cada 5 minutos).
+- **Preferencias:** `notify_reminder_due`, `notify_interview`, `notify_weekly_digest`, `notify_stale` e `interview_notice_hours` en `users`, editables en `PATCH /me/preferences`. Un `null` explícito en un campo que no admite nulos responde 422: antes, en `stale_after_days`, llegaba a la BD y daba un 500.
+- **Pruebas:** B2, B3 (dos transacciones reales), B4, B5, B6 y B11 en `tests/repositories/test_notification_delivery_repository.py` y `tests/services/test_notification_delivery_service.py`.
 
 ## 5. Emails
 
