@@ -95,3 +95,28 @@ def reminder_id_from_key(dedupe_key: str) -> uuid.UUID | None:
         return uuid.UUID(dedupe_key.removeprefix(REMINDER_KEY_PREFIX))
     except ValueError:
         return None
+
+
+INTERVIEW_KEY_PREFIX = "interview:"
+
+
+def interview_key(interview_id: uuid.UUID, scheduled_at: datetime) -> str:
+    """El motivo de un aviso de entrevista: la entrevista **y su hora**, en
+    segundos desde 1970 (UTC). Si el usuario la mueve, el aviso nuevo es otro motivo
+    y no queda bloqueado por el de la hora antigua (segundo plano §4, B8). Los
+    segundos, y no el texto ISO, porque la consulta del barrido construye la misma
+    clave en SQL y un número no depende del formato de fecha de nadie."""
+    return f"{INTERVIEW_KEY_PREFIX}{interview_id}:{int(scheduled_at.timestamp())}"
+
+
+def interview_from_key(dedupe_key: str) -> tuple[uuid.UUID, int] | None:
+    """La entrevista y su hora (segundos UTC) de una clave; None si no es de una."""
+    if not dedupe_key.startswith(INTERVIEW_KEY_PREFIX):
+        return None
+    interview_id, _, seconds = dedupe_key.removeprefix(INTERVIEW_KEY_PREFIX).partition(
+        ":"
+    )
+    try:
+        return uuid.UUID(interview_id), int(seconds)
+    except ValueError:
+        return None

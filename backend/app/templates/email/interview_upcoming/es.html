@@ -1,0 +1,18 @@
+{% extends "_layout.html" %}
+{% block content %}
+{% set types = {"screening": "de screening", "technical": "técnica", "hr": "de RR. HH.", "cultural": "cultural", "final": "final", "other": ""} %}
+{% set formats = {"online": "Online", "onsite": "Presencial", "phone": "Teléfono"} %}
+<p style="margin:0 0 16px;">Hola:</p>
+<p style="margin:0 0 16px;">Tienes una entrevista{% if interview_type and types[interview_type] %} {{ types[interview_type] }}{% endif %} para <strong>{{ position }}</strong> en <strong>{{ company }}</strong>:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-left:4px solid #4f46e5;background:#f4f4f5;">
+<tr><td style="padding:12px 16px;font-size:14px;color:#52525b;">
+<p style="margin:0 0 4px;font-size:15px;font-weight:bold;color:#18181b;">{{ when }}</p>
+{% if duration_minutes %}<p style="margin:0;">Duración: {{ duration_minutes }} minutos</p>{% endif %}
+{% if format %}<p style="margin:0;">Formato: {{ formats[format] }}</p>{% endif %}
+{% if interviewers %}<p style="margin:0;">Con: {{ interviewers }}</p>{% endif %}
+</td></tr>
+</table>
+<p style="margin:0 0 24px;"><a href="{{ link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">Repasar la solicitud</a></p>
+<p style="margin:0 0 16px;">¡Mucha suerte!</p>
+<p style="margin:0;font-size:13px;color:#52525b;">Recibes este email porque tienes activado el aviso de entrevistas. <a href="{{ unsubscribe_link }}" style="color:#4f46e5;">Darme de baja de estos avisos</a> · <a href="{{ preferences_link }}" style="color:#4f46e5;">Preferencias</a></p>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% set subject = "Interview: " ~ position ~ " at " ~ company -%}
+{% set types = {"screening": "screening", "technical": "technical", "hr": "HR", "cultural": "cultural", "final": "final", "other": ""} -%}
+{% set formats = {"online": "Online", "onsite": "On-site", "phone": "Phone"} -%}
+Hi,
+
+You have {% if interview_type and types[interview_type] %}a {{ types[interview_type] }} interview{% else %}an interview{% endif %} for {{ position }} at {{ company }}:
+
+When: {{ when }}
+{% if duration_minutes %}Duration: {{ duration_minutes }} minutes
+{% endif %}{% if format %}Format: {{ formats[format] }}
+{% endif %}{% if interviewers %}With: {{ interviewers }}
+{% endif %}
+Go over the application and your notes in Applications Tracker:
+
+{{ link }}
+
+Good luck!
+
+You are getting this email because the interview notification is on.
+To stop these notifications: {{ unsubscribe_link }}
+To change how far ahead it arrives or your other notifications, go to Preferences: {{ preferences_link }}

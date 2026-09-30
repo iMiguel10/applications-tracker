@@ -1,0 +1,21 @@
+{% set subject = "Entrevista: " ~ position ~ " en " ~ company -%}
+{% set types = {"screening": "de screening", "technical": "técnica", "hr": "de RR. HH.", "cultural": "cultural", "final": "final", "other": ""} -%}
+{% set formats = {"online": "Online", "onsite": "Presencial", "phone": "Teléfono"} -%}
+Hola:
+
+Tienes una entrevista{% if interview_type and types[interview_type] %} {{ types[interview_type] }}{% endif %} para {{ position }} en {{ company }}:
+
+Cuándo: {{ when }}
+{% if duration_minutes %}Duración: {{ duration_minutes }} minutos
+{% endif %}{% if format %}Formato: {{ formats[format] }}
+{% endif %}{% if interviewers %}Con: {{ interviewers }}
+{% endif %}
+Repasa la solicitud y tus notas en Applications Tracker:
+
+{{ link }}
+
+¡Mucha suerte!
+
+Recibes este email porque tienes activado el aviso de entrevistas.
+Para no recibir más estos avisos: {{ unsubscribe_link }}
+Para cambiar su antelación o tus otros avisos, ve a Preferencias: {{ preferences_link }}

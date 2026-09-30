@@ -8,7 +8,11 @@ from saq import CronJob
 
 from app.jobs.context import WorkerContext
 from app.services.notification_delivery_service import NotificationDeliveryService
-from app.services.notifications import ReminderDueSweep, composers_for
+from app.services.notifications import (
+    InterviewUpcomingSweep,
+    ReminderDueSweep,
+    composers_for,
+)
 
 # Segundo plano §2: un barrido tiene 50 s y un solo intento; si falla, lo repite
 # la siguiente pasada.
@@ -32,6 +36,11 @@ async def sweep_due_reminders(ctx: WorkerContext) -> None:
         await ReminderDueSweep(session, ctx["job_queue"]).run(_now())
 
 
+async def sweep_upcoming_interviews(ctx: WorkerContext) -> None:
+    async with ctx["session_factory"]() as session:
+        await InterviewUpcomingSweep(session, ctx["job_queue"]).run(_now())
+
+
 async def expire_abandoned_notification_claims(ctx: WorkerContext) -> None:
     async with ctx["session_factory"]() as session:
         await NotificationDeliveryService(session).expire_abandoned_claims(_now())
@@ -46,6 +55,12 @@ def notification_cron_jobs(email_enabled: bool) -> list[CronJob[WorkerContext]]:
         CronJob(
             sweep_due_reminders,
             cron="* * * * *",
+            timeout=SWEEP_TIMEOUT_SECONDS,
+            retries=1,
+        ),
+        CronJob(
+            sweep_upcoming_interviews,
+            cron="*/5 * * * *",
             timeout=SWEEP_TIMEOUT_SECONDS,
             retries=1,
         ),

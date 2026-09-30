@@ -64,3 +64,10 @@ def is_valid_timezone(name: str) -> bool:
 # por defecto sigue viviendo en domain/dashboard.py (STALE_AFTER_DAYS).
 MIN_STALE_AFTER_DAYS = 1
 MAX_STALE_AFTER_DAYS = 90
+
+
+def email_language(account_language: str | None) -> Language:
+    """RF-86: el idioma de un email que nadie ha pedido en ese momento (un aviso):
+    el de la cuenta, o el de por defecto si sigue al navegador, porque no hay
+    navegador al que preguntar."""
+    return Language(account_language) if account_language else DEFAULT_LANGUAGE

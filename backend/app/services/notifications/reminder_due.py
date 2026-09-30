@@ -10,42 +10,28 @@ from app.core.config import settings
 from app.domain.dates import format_local_datetime
 from app.domain.notifications import (
     REMINDER_DUE_WINDOW,
-    SWEEP_MAX_CLAIMS,
     NotificationKind,
     reminder_due_key,
     reminder_id_from_key,
 )
 from app.domain.reminder import ReminderStatus
-from app.domain.user import DEFAULT_LANGUAGE, Language
+from app.domain.user import email_language
 from app.infra.email.templates import EmailTemplates, RenderedEmail
 from app.infra.queue import JobQueue
 from app.models.notification_delivery import NotificationDelivery
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
 from app.repositories.reminder_repository import ReminderRepository
-from app.services.notification_delivery_service import NotificationDeliveryService
+from app.services.notifications.sweep import ClaimingSweep, Cursor, SweepCandidate
 
 logger = logging.getLogger(__name__)
 
 KIND = NotificationKind.REMINDER_DUE
-# Candidatos que se leen por consulta; se sigue leyendo hasta agotarlos o hasta
-# SWEEP_MAX_CLAIMS reclamos, para que las cuentas sin verificar (que no reclaman)
-# no puedan ocupar la pasada entera.
-_PAGE_SIZE = 200
-
-
-def email_language(user: User) -> Language:
-    """RF-86: el idioma de la cuenta, o el de por defecto si sigue al navegador (un
-    barrido no tiene navegador al que preguntar)."""
-    return Language(user.language) if user.language else DEFAULT_LANGUAGE
 
 
 class ReminderDueSweep:
-    """Barrido de RF-80, cada minuto: reclama un aviso por recordatorio vencido en
-    las últimas 24 h y encola su envío. Solo cuentas con el aviso activado (lo
-    filtra la consulta) y el email verificado (lo dice SuperTokens): una cuenta sin
-    verificar no genera ni reclamos, así que al verificarla no recibe de golpe lo
-    acumulado (segundo plano §3)."""
+    """Barrido de RF-80, cada minuto: un aviso por recordatorio pendiente cuyo
+    momento de aviso (la fecha menos la antelación) cayó en las últimas 24 h."""
 
     def __init__(
         self,
@@ -54,48 +40,27 @@ class ReminderDueSweep:
         identities: IdentityRepository | None = None,
     ) -> None:
         self.reminders = ReminderRepository(session)
-        self.deliveries = NotificationDeliveryService(session)
-        self.job_queue = job_queue
-        self.identities = identities or IdentityRepository()
+        self.sweep = ClaimingSweep(session, job_queue, identities)
 
     async def run(self, now: datetime) -> int:
-        verified: dict[str, bool] = {}
-        claimed = 0
-        after = None
-        while claimed < SWEEP_MAX_CLAIMS:
-            candidates = await self.reminders.list_due_for_notification(
+        async def fetch_page(after: Cursor | None, limit: int) -> list[SweepCandidate]:
+            due = await self.reminders.list_due_for_notification(
                 notify_after=now - REMINDER_DUE_WINDOW,
                 now=now,
                 after=after,
-                limit=_PAGE_SIZE,
+                limit=limit,
             )
-            if not candidates:
-                break
-            for candidate in candidates:
-                account = candidate.supertokens_user_id
-                if account not in verified:
-                    verified[account] = await self.identities.is_email_verified(account)
-                if not verified[account]:
-                    continue
-                delivery_id = await self.deliveries.claim(
-                    candidate.user_id,
-                    KIND,
-                    reminder_due_key(candidate.reminder_id),
-                    now,
+            return [
+                SweepCandidate(
+                    user_id=row.user_id,
+                    supertokens_user_id=row.supertokens_user_id,
+                    dedupe_key=reminder_due_key(row.reminder_id),
+                    cursor=(row.due_at, row.reminder_id),
                 )
-                if delivery_id is None:
-                    continue
-                await self.deliveries.enqueue_send(
-                    self.job_queue, delivery_id, candidate.user_id
-                )
-                claimed += 1
-                if claimed >= SWEEP_MAX_CLAIMS:
-                    break
-            last = candidates[-1]
-            after = (last.due_at, last.reminder_id)
-        if claimed:
-            logger.info("%d avisos de recordatorio vencido reclamados", claimed)
-        return claimed
+                for row in due
+            ]
+
+        return await self.sweep.claim_all(KIND, fetch_page, now)
 
 
 class ReminderDueComposer:
@@ -123,7 +88,7 @@ class ReminderDueComposer:
         if reminder is None or reminder.status != ReminderStatus.PENDING:
             return None
 
-        language = email_language(user)
+        language = email_language(user.language)
         application = reminder.application
         return self.templates.render(
             KIND.value,

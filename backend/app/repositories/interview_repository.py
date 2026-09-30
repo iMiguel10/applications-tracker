@@ -1,14 +1,44 @@
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Row, Select, func, select
+from sqlalchemy import (
+    BigInteger,
+    Row,
+    Select,
+    String,
+    and_,
+    cast,
+    func,
+    literal,
+    or_,
+    select,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.interview import InterviewOutcome
+from app.domain.notifications import (
+    INTERVIEW_KEY_PREFIX,
+    DeliveryChannel,
+    DeliveryStatus,
+    NotificationKind,
+)
 from app.models.application import Application
 from app.models.company import Company
 from app.models.interview import Interview
+from app.models.notification_delivery import NotificationDelivery
+from app.models.user import User
+
+
+@dataclass(frozen=True)
+class UpcomingInterview:
+    """Un candidato del barrido de entrevistas próximas."""
+
+    interview_id: uuid.UUID
+    user_id: uuid.UUID
+    scheduled_at: datetime
+    supertokens_user_id: str
 
 
 class InterviewRepository:
@@ -102,3 +132,91 @@ class InterviewRepository:
     async def delete(self, interview: Interview) -> None:
         await self.session.delete(interview)
         await self.session.flush()
+
+    async def get_for_notification(
+        self, user_id: uuid.UUID, interview_id: uuid.UUID
+    ) -> Row[tuple[Interview, Application, Company]] | None:
+        """La entrevista con su solicitud y empresa, para el email de aviso (RF-81)."""
+        result = await self.session.execute(
+            select(Interview, Application, Company)
+            .join(Application, Application.id == Interview.application_id)
+            .join(Company, Company.id == Application.company_id)
+            .where(Application.user_id == user_id, Interview.id == interview_id)
+        )
+        return result.first()
+
+    async def list_upcoming_for_notification(
+        self,
+        *,
+        now: datetime,
+        after: tuple[datetime, uuid.UUID] | None,
+        limit: int,
+    ) -> Sequence[UpcomingInterview]:
+        """Candidatos del barrido de RF-81: entrevistas pendientes que aún no han
+        empezado y cuyo momento de aviso (la hora menos la antelación de la cuenta)
+        ya llegó, de cuentas con el aviso activado y sin una entrega que lo impida
+        para **esa hora**. Paginado por `(scheduled_at, id)` con `after`.
+
+        Sin límite hacia atrás, a diferencia de los recordatorios: una entrevista
+        futura siempre merece su aviso, aunque se programe dentro de la antelación,
+        y como solo cuentan las que aún no han empezado, el día que se activa el
+        canal no hay nada acumulado que enviar.
+
+        Recorre las entrevistas de todos los usuarios a propósito: es un barrido del
+        sistema, y cada fila lleva su `user_id` para todo lo que venga después.
+        """
+        delivery = NotificationDelivery
+        seconds = cast(
+            func.floor(func.extract("epoch", Interview.scheduled_at)), BigInteger
+        )
+        blocking_delivery = (
+            select(delivery.id)
+            .where(
+                delivery.user_id == Application.user_id,
+                delivery.kind == NotificationKind.INTERVIEW_UPCOMING,
+                delivery.channel == DeliveryChannel.EMAIL,
+                delivery.dedupe_key
+                == literal(INTERVIEW_KEY_PREFIX)
+                + cast(Interview.id, String)
+                + literal(":")
+                + cast(seconds, String),
+                or_(
+                    delivery.status != DeliveryStatus.FAILED,
+                    delivery.next_attempt_at.is_(None),
+                    delivery.next_attempt_at > now,
+                ),
+            )
+            .exists()
+        )
+        notify_at = Interview.scheduled_at - func.make_interval(
+            0, 0, 0, 0, User.interview_notice_hours
+        )
+        query = (
+            select(
+                Interview.id,
+                Application.user_id,
+                Interview.scheduled_at,
+                User.supertokens_user_id,
+            )
+            .join(Application, Application.id == Interview.application_id)
+            .join(User, User.id == Application.user_id)
+            .where(
+                Interview.outcome == InterviewOutcome.PENDING.value,
+                Interview.scheduled_at > now,
+                notify_at <= now,
+                User.notify_interview.is_(True),
+                ~blocking_delivery,
+            )
+        )
+        if after is not None:
+            after_at, after_id = after
+            query = query.where(
+                or_(
+                    Interview.scheduled_at > after_at,
+                    and_(Interview.scheduled_at == after_at, Interview.id > after_id),
+                )
+            )
+        rows = await self.session.execute(
+            query.order_by(Interview.scheduled_at, Interview.id).limit(limit)
+        )
+        return [UpcomingInterview(*row) for row in rows.all()]

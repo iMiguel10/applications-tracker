@@ -27,7 +27,7 @@ from app.repositories.notification_delivery_repository import (
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import CurrentUser
 from app.services.notification_delivery_service import NotificationDeliveryService
-from app.services.notifications import ReminderDueSweep, composers_for, reminder_due
+from app.services.notifications import ReminderDueSweep, composers_for, sweep
 from app.services.notifications.reminder_due import ReminderDueComposer
 from tests.factories import make_application, make_company, make_reminder
 
@@ -180,7 +180,7 @@ async def test_unverified_accounts_cannot_starve_the_rest(
 ):
     # Los candidatos se leen por páginas: una página llena de cuentas sin verificar
     # no deja fuera a las verificadas que vienen después.
-    monkeypatch.setattr(reminder_due, "_PAGE_SIZE", 2)
+    monkeypatch.setattr(sweep, "PAGE_SIZE", 2)
     for minutes in (30, 29, 28):
         await _due(db_session, user, due_at=NOW - timedelta(minutes=minutes))
     await _due(db_session, other_user, due_at=NOW - timedelta(minutes=1))
@@ -197,7 +197,7 @@ async def test_unverified_accounts_cannot_starve_the_rest(
 async def test_a_pass_claims_at_most_the_batch_limit(
     db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
 ):
-    monkeypatch.setattr(reminder_due, "SWEEP_MAX_CLAIMS", 2)
+    monkeypatch.setattr(sweep, "SWEEP_MAX_CLAIMS", 2)
     for minutes in (3, 2, 1):
         await _due(db_session, user, due_at=NOW - timedelta(minutes=minutes))
 

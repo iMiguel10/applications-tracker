@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, el aviso de recordatorio vencido y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, los avisos de recordatorio vencido y de entrevista próxima, y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -127,7 +127,7 @@ La `dedupe_key` define qué es "el mismo motivo":
 | Tipo | `dedupe_key` | Efecto |
 |---|---|---|
 | Recordatorio vencido | `reminder:<id>` | Un aviso por recordatorio, para siempre |
-| Entrevista próxima | `interview:<id>:<scheduled_at>` | Si el usuario **mueve** la entrevista, el nuevo aviso es otro motivo |
+| Entrevista próxima | `interview:<id>:<scheduled_at>` (en F12, la hora en segundos desde 1970, UTC: la consulta construye la misma clave en SQL) | Si el usuario **mueve** la entrevista, el nuevo aviso es otro motivo |
 | Resumen semanal | `digest:<año>-W<semana ISO local>` | Uno por semana aunque el barrido pase varias veces esa mañana |
 | Sin actividad | `stale:<application_id>:<last_activity_at>` | Si la solicitud vuelve a moverse y a quedarse quieta, es un periodo nuevo |
 
@@ -151,6 +151,15 @@ La `dedupe_key` define qué es "el mismo motivo":
 - Plantillas `templates/email/reminder_due/{es,en}.{txt,html}`.
 - Verificado en vivo: un recordatorio vencido llegó a Mailpit a la hora de Madrid, la entrega quedó en `sent` y la pasada siguiente no envió nada más.
 - Pruebas: B7 y el resto en `tests/services/test_reminder_due_notifications.py`, incluida una de punta a punta (barrido → envío → un solo email).
+
+**Construido en F12 (paso 4: entrevista próxima, RF-81).**
+
+- `InterviewUpcomingSweep` (`services/notifications/interview_upcoming.py`), cada 5 minutos: entrevistas `pending` que aún no han empezado y cuyo momento de aviso (la hora menos `interview_notice_hours`, 24 por defecto) ya llegó. Sin ventana hacia atrás, a diferencia de los recordatorios: una entrevista programada dentro de la antelación recibe su aviso al momento, y como solo cuentan las futuras, el primer despliegue no tiene nada acumulado.
+- **Clave con la hora** (`interview_key`): `interview:<id>:<segundos UTC>`. Mover la entrevista es otro motivo y se avisa otra vez; no moverla, nunca (B8). Segundos y no texto ISO porque la consulta que descarta lo ya reclamado construye la misma clave en SQL (`floor(extract(epoch …))`), y un número no depende de cómo formatee fechas cada lado.
+- `InterviewUpcomingComposer`: vuelve a comprobar al enviar que la entrevista sigue pendiente, a la misma hora y con el aviso activado; si se movió, no envía nada y su aviso nuevo lo reclama el barrido. El email lleva la solicitud, la empresa, la hora en la zona y el idioma del usuario, y el tipo, el formato, la duración y los entrevistadores si los hay.
+- El bucle de los barridos (páginas, verificación por cuenta, reclamo, encolado) se sacó a `ClaimingSweep` (`services/notifications/sweep.py`): cada aviso solo aporta su consulta y su clave. `email_language` pasó a `domain/user.py`.
+- Las entrevistas de solicitudes archivadas también avisan, como las muestra el dashboard (RF-63).
+- Verificado en vivo con Mailpit. Pruebas en `tests/services/test_interview_upcoming_notifications.py`.
 
 ## 5. Emails
 

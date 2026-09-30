@@ -5,6 +5,8 @@ import pytest
 
 from app.domain.notifications import (
     MAX_DELIVERY_ATTEMPTS,
+    interview_from_key,
+    interview_key,
     next_attempt_at,
     reminder_due_key,
     reminder_id_from_key,
@@ -41,3 +43,30 @@ def test_reminder_key_round_trip():
 )
 def test_other_keys_are_not_reminders(key: str):
     assert reminder_id_from_key(key) is None
+
+
+def test_interview_key_carries_the_time_and_round_trips():
+    interview_id = uuid.uuid4()
+    at = datetime(2031, 3, 10, 9, 30, 15, 500_000, tzinfo=UTC)
+
+    key = interview_key(interview_id, at)
+
+    assert key == f"interview:{interview_id}:{int(at.timestamp())}"
+    assert interview_from_key(key) == (interview_id, int(at.timestamp()))
+
+
+def test_moving_an_interview_changes_its_key():
+    # B8: un aviso nuevo, no un duplicado bloqueado por el de la hora antigua.
+    interview_id = uuid.uuid4()
+    at = datetime(2031, 3, 10, 9, 0, tzinfo=UTC)
+
+    assert interview_key(interview_id, at) != interview_key(
+        interview_id, at + timedelta(hours=1)
+    )
+
+
+@pytest.mark.parametrize(
+    "key", [f"reminder:{uuid.uuid4()}", "interview:x:1", f"interview:{uuid.uuid4()}:x"]
+)
+def test_other_keys_are_not_interviews(key: str):
+    assert interview_from_key(key) is None
