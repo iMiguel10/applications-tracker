@@ -13,6 +13,7 @@ import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { HealthPage } from "../pages/HealthPage";
 import { LoginPage } from "../pages/LoginPage";
 import { PreferencesPage } from "../pages/PreferencesPage";
+import { ProfilePage } from "../pages/ProfilePage";
 import { RegisterPage } from "../pages/RegisterPage";
 import { RemindersPage } from "../pages/RemindersPage";
 import { ResetPasswordPage } from "../pages/ResetPasswordPage";
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
       { path: "/companies", element: <CompaniesPage /> },
       { path: "/reminders", element: <RemindersPage /> },
       { path: "/documents", element: <DocumentsPage /> },
+      { path: "/profile", element: <ProfilePage /> },
       { path: "/preferences", element: <PreferencesPage /> },
     ],
   },

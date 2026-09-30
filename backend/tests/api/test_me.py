@@ -13,9 +13,11 @@ from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
 from app.models.document import Document
 from app.models.interview import Interview
+from app.models.profile import Profile
 from app.models.reminder import Reminder
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
+from app.repositories.profile_repository import ProfileRepository
 from app.schemas.user import CurrentUser
 from app.services.account_service import AccountService
 from app.services.user_service import UserService
@@ -70,6 +72,9 @@ async def _count_owned(session: AsyncSession, user_id: object) -> dict[str, int]
         "reminders": select(func.count())
         .select_from(Reminder)
         .where(Reminder.user_id == user_id),
+        "profiles": select(func.count())
+        .select_from(Profile)
+        .where(Profile.user_id == user_id),
         "documents": select(func.count())
         .select_from(Document)
         .where(Document.user_id == user_id),
@@ -109,6 +114,7 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
         await make_interview(db_session, application)
         await make_reminder(db_session, owner.id, application_id=application.id)
         await make_reminder(db_session, owner.id)
+        await ProfileRepository(db_session).get_or_create(owner.id)
     identities = FakeIdentities(db_session)
     app.dependency_overrides[get_account_service] = lambda: AccountService(
         db_session, LocalFileStorage(tmp_path), identities=identities
@@ -127,6 +133,7 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
         "history": 1,
         "interviews": 1,
         "reminders": 2,
+        "profiles": 1,
         "documents": 1,
     }
 

@@ -22,6 +22,7 @@ from app.services.dashboard_service import DashboardService
 from app.services.document_service import DocumentService
 from app.services.interview_service import InterviewService
 from app.services.limit_service import LimitService
+from app.services.profile_service import ProfileService
 from app.services.reminder_service import ReminderService
 from app.services.unsubscribe_service import UnsubscribeService
 from app.services.user_service import UserService
@@ -94,6 +95,12 @@ def get_document_service(
     storage: FileStorage = Depends(get_file_storage),
 ) -> DocumentService:
     return DocumentService(db, storage)
+
+
+def get_profile_service(
+    db: AsyncSession = Depends(get_db),
+) -> ProfileService:
+    return ProfileService(db)
 
 
 def get_reminder_service(

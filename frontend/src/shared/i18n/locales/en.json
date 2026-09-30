@@ -287,6 +287,7 @@
     "companies": "Companies",
     "reminders": "Reminders",
     "documents": "Documents",
+    "profile": "Profile",
     "preferences": "Preferences",
     "openMenu": "Open menu",
     "theme": "Switch between light and dark theme",
@@ -633,5 +634,41 @@
     "confirm": "Unsubscribe",
     "done": "Done: you will no longer receive “{{notification}}” emails. You can turn them back on at any time in Preferences.",
     "toPreferences": "Go to Preferences"
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "What you add here is the raw material for your CVs: only what is in your profile can appear in a CV.",
+    "saved": "Profile saved",
+    "sections": {
+      "contact": "Contact details",
+      "contactHint": "The ones shown at the top of your CV. They can differ from your account's.",
+      "links": "Links",
+      "linksHint": "Your website, LinkedIn, GitHub or portfolio. Up to 10.",
+      "summary": "Professional summary"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "headline": "Headline",
+      "contactEmail": "Contact email",
+      "phone": "Phone",
+      "location": "Location",
+      "linkLabel": "Name",
+      "linkUrl": "Address",
+      "summary": "Summary"
+    },
+    "placeholders": {
+      "headline": "Backend developer",
+      "location": "Madrid, Spain",
+      "summary": "Who you are professionally and what you bring, in a few lines."
+    },
+    "addLink": "Add link",
+    "removeLink": "Remove the {{label}} link",
+    "summaryCount": "{{count}} / {{max}}",
+    "validation": {
+      "email": "The email is not in a valid format",
+      "phone": "Only digits, spaces and + ( ) - . /",
+      "linkLabelRequired": "Give the link a name",
+      "summaryTooLong": "At most 2,000 characters"
+    }
   }
 }

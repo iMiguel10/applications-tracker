@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     me,
     meta,
     notifications,
+    profile,
     reminders,
 )
 from app.schemas.auth import UnauthorizedError
@@ -53,5 +54,6 @@ protected.include_router(interviews.router)
 protected.include_router(reminders.router)
 protected.include_router(dashboard.router)
 protected.include_router(documents.router)
+protected.include_router(profile.router)
 
 router.include_router(protected)

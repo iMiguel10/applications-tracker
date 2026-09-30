@@ -5,7 +5,7 @@ from pydantic import BaseModel, BeforeValidator, Field, StringConstraints
 from app.domain.application import MAX_JOB_DESCRIPTION_LENGTH, MAX_NOTES_LENGTH
 
 
-def _empty_to_none(value: Any) -> Any:
+def empty_to_none(value: Any) -> Any:
     """Un formulario envía "" al vaciar un campo: se guarda como NULL, no como texto vacío."""
     if isinstance(value, str) and not value.strip():
         return None
@@ -17,18 +17,18 @@ RequiredName = Annotated[
 ]
 OptionalShortText = Annotated[
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)] | None,
-    BeforeValidator(_empty_to_none),
+    BeforeValidator(empty_to_none),
 ]
 OptionalMediumText = Annotated[
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=500)] | None,
-    BeforeValidator(_empty_to_none),
+    BeforeValidator(empty_to_none),
 ]
 OptionalNotes = Annotated[
     Annotated[
         str, StringConstraints(strip_whitespace=True, max_length=MAX_NOTES_LENGTH)
     ]
     | None,
-    BeforeValidator(_empty_to_none),
+    BeforeValidator(empty_to_none),
 ]
 OptionalJobDescription = Annotated[
     Annotated[
@@ -36,7 +36,7 @@ OptionalJobDescription = Annotated[
         StringConstraints(strip_whitespace=True, max_length=MAX_JOB_DESCRIPTION_LENGTH),
     ]
     | None,
-    BeforeValidator(_empty_to_none),
+    BeforeValidator(empty_to_none),
 ]
 OptionalUrl = Annotated[
     Annotated[
@@ -46,7 +46,7 @@ OptionalUrl = Annotated[
         ),
     ]
     | None,
-    BeforeValidator(_empty_to_none),
+    BeforeValidator(empty_to_none),
 ]
 
 SortOrder = Literal["asc", "desc"]

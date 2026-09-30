@@ -6,6 +6,7 @@ from app.models.company import Company
 from app.models.document import Document
 from app.models.interview import Interview
 from app.models.notification_delivery import NotificationDelivery
+from app.models.profile import Profile
 from app.models.reminder import Reminder
 from app.models.user import User
 from app.models.user_limit_override import UserLimitOverride
@@ -17,6 +18,7 @@ __all__ = [
     "Document",
     "Interview",
     "NotificationDelivery",
+    "Profile",
     "Reminder",
     "User",
     "UserLimitOverride",

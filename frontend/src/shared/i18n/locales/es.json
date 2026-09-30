@@ -287,6 +287,7 @@
     "companies": "Empresas",
     "reminders": "Recordatorios",
     "documents": "Documentos",
+    "profile": "Perfil",
     "preferences": "Preferencias",
     "openMenu": "Abrir menú",
     "theme": "Cambiar entre tema claro y oscuro",
@@ -633,5 +634,41 @@
     "confirm": "Darme de baja",
     "done": "Listo: ya no recibirás los emails de «{{notification}}». Puedes volver a activarlos cuando quieras en Preferencias.",
     "toPreferences": "Ir a Preferencias"
+  },
+  "profile": {
+    "title": "Perfil",
+    "description": "Lo que pongas aquí es la materia prima de tus CVs: solo aparece en un CV lo que está en tu perfil.",
+    "saved": "Perfil guardado",
+    "sections": {
+      "contact": "Datos de contacto",
+      "contactHint": "Los que irán en la cabecera del CV. Pueden ser distintos de los de tu cuenta.",
+      "links": "Enlaces",
+      "linksHint": "Tu web, LinkedIn, GitHub o portfolio. Hasta 10.",
+      "summary": "Resumen profesional"
+    },
+    "fields": {
+      "fullName": "Nombre completo",
+      "headline": "Titular",
+      "contactEmail": "Email de contacto",
+      "phone": "Teléfono",
+      "location": "Ubicación",
+      "linkLabel": "Nombre",
+      "linkUrl": "Dirección",
+      "summary": "Resumen"
+    },
+    "placeholders": {
+      "headline": "Desarrolladora backend",
+      "location": "Madrid, España",
+      "summary": "Quién eres profesionalmente y qué aportas, en unas pocas líneas."
+    },
+    "addLink": "Añadir enlace",
+    "removeLink": "Quitar el enlace {{label}}",
+    "summaryCount": "{{count}} / {{max}}",
+    "validation": {
+      "email": "El email no tiene un formato válido",
+      "phone": "Solo números, espacios y + ( ) - . /",
+      "linkLabelRequired": "Ponle un nombre al enlace",
+      "summaryTooLong": "Máximo 2 000 caracteres"
+    }
   }
 }

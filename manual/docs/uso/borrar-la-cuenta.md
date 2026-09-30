@@ -3,7 +3,7 @@ title: Eliminar tu cuenta
 ---
 
 :::danger No se puede deshacer
-Se borran para siempre tu cuenta y **todos** tus datos: solicitudes con su historial, empresas, entrevistas, recordatorios, documentos (también sus ficheros PDF) y preferencias.
+Se borran para siempre tu cuenta y **todos** tus datos: solicitudes con su historial, empresas, entrevistas, recordatorios, documentos (también sus ficheros PDF), tu perfil y tus preferencias.
 :::
 
 1. Si quieres conservar tus solicitudes, [expórtalas a CSV](exportar.md) antes. Los PDF no van en el CSV: descarga desde **Documentos** los que quieras guardar.

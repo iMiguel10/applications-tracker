@@ -18,6 +18,7 @@ const sidebars: SidebarsConfig = {
     "uso/archivar-y-borrar",
     "uso/dashboard",
     "uso/documentos",
+    "uso/perfil",
     "uso/exportar",
     "uso/preferencias",
     "uso/borrar-la-cuenta",

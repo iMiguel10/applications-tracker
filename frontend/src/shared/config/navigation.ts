@@ -3,6 +3,7 @@ import {
   Briefcase,
   Building2,
   FileText,
+  IdCard,
   LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
@@ -20,4 +21,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/companies", labelKey: "nav.companies", icon: Building2 },
   { to: "/reminders", labelKey: "nav.reminders", icon: Bell },
   { to: "/documents", labelKey: "nav.documents", icon: FileText },
+  { to: "/profile", labelKey: "nav.profile", icon: IdCard },
 ];

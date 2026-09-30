@@ -3,7 +3,7 @@ title: Delete your account
 ---
 
 :::danger This cannot be undone
-Your account and **all** your data are deleted forever: applications with their history, companies, interviews, reminders, documents (their PDF files too) and preferences.
+Your account and **all** your data are deleted forever: applications with their history, companies, interviews, reminders, documents (their PDF files too), your profile and your preferences.
 :::
 
 1. If you want to keep your applications, [export them to CSV](exportar.md) first. PDFs are not in the CSV: download the ones you want to keep from **Documents**.
