@@ -20,6 +20,34 @@ export interface LibraryDocument {
   updated_at: string;
 }
 
+/** Un documento del listado de la biblioteca: con en cuántas solicitudes se envió. */
+export interface DocumentListItem extends LibraryDocument {
+  applications_count: number;
+}
+
+/** Lo que hace falta para ver o descargar un documento. */
+export type DocumentRef = Pick<LibraryDocument, "id" | "name" | "kind">;
+
+/** Un documento dentro de una solicitud (el CV y la carta enviados, RF-28). */
+export interface DocumentSummary extends DocumentRef {
+  status: DocumentStatus;
+  archived_at: string | null;
+}
+
+/** Una solicitud en la que se envió el documento (RF-92). */
+export interface DocumentUsage {
+  application_id: string;
+  position_title: string;
+  company_name: string;
+  used_as: DocumentKind;
+  application_archived: boolean;
+}
+
+/** `GET /documents/{id}`: el documento y dónde se usó. */
+export interface DocumentDetail extends LibraryDocument {
+  used_in: DocumentUsage[];
+}
+
 export type DocumentKindFilter = DocumentKind | "all";
 
 export interface DocumentListParams {

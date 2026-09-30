@@ -21,11 +21,11 @@ To upload documents you must have [confirmed your email](primeros-pasos.md#confi
 
 ## See your documents
 
-The list shows the most recent ones first. With the type filter you see only **CVs** or only **Cover letters**.
+The list shows the most recent ones first. With the type filter you see only **CVs** or only **Cover letters**. The ones you sent in an application carry the label **Sent in N applications**; click it to see which.
 
 ## View or download a document
 
-- **View**: click the document name or the eye icon. It opens inside the application, with its pages.
+- **View**: click the document name or the eye icon. It opens inside the application, with its pages. Above the PDF you see the applications you sent it in, with a link to each one.
 - **Download**: click the download icon, in the list or in the viewer. It is saved with the name it has in the list.
 
 If your browser does not show PDFs inside the page (this happens on some phones), download it.
@@ -36,7 +36,7 @@ Each document has its buttons in the list:
 
 - **Rename** (the pencil): changes the name it is shown with. The PDF does not change.
 - **Archive**: takes it out of the library without deleting it. To see it, choose **Archived** in the filter; from there, **Unarchive** puts it back in the library. An archived document **still takes up** space.
-- **Delete** (the bin): deletes the document and its PDF for good and frees up its space. It asks for confirmation.
+- **Delete** (the bin): deletes the document and its PDF for good and frees up its space. It asks for confirmation. A document you sent in an application **cannot be deleted**, so you do not lose what you sent to whom: clicking the bin offers **Archive** instead.
 
 :::info Limits
 Each PDF can take up to 5 MB, and each account has up to 100 documents and 100 MB of storage, unless the installation sets other values. When you upload a document you see how much storage you have left, and the form warns you past 80 %. How much of each limit you have used is in [Preferences](preferencias.md#see-your-account-usage).

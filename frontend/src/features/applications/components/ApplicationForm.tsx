@@ -26,6 +26,8 @@ import {
   type CompanySummary,
 } from "../types/Application";
 import { LimitWarning } from "@/features/usage/components/LimitWarning";
+import { DocumentSelect } from "@/features/documents/components/DocumentSelect";
+import type { DocumentSummary } from "@/features/documents/types/Document";
 
 // Cuelga de companyKeys.all: al crear o editar una empresa, las opciones se refrescan.
 const COMPANY_OPTIONS_KEY = [...companyKeys.all, "options"] as const;
@@ -46,6 +48,8 @@ interface ApplicationFormProps {
   mode: "create" | "edit";
   defaultValues: ApplicationFormValues;
   initialCompany?: CompanySummary | null;
+  /** El CV y la carta que ya tiene la solicitud: se ofrecen aunque estén archivados. */
+  initialDocuments?: { cv: DocumentSummary | null; coverLetter: DocumentSummary | null };
   submitting: boolean;
   onSubmit: (values: ApplicationFormValues) => Promise<unknown>;
   onCancel: () => void;
@@ -55,6 +59,7 @@ export function ApplicationForm({
   mode,
   defaultValues,
   initialCompany,
+  initialDocuments,
   submitting,
   onSubmit,
   onCancel,
@@ -168,6 +173,33 @@ export function ApplicationForm({
 
         <FormTextarea form={form} name="notes" label={t("common.fields.notes")} rows={5} />
       </div>
+
+      <fieldset className="grid gap-4 lg:col-span-2 lg:grid-cols-[3fr_2fr] lg:gap-x-10">
+        <legend className="mb-2 text-sm font-medium">{t("applications.fields.offerAndDocuments")}</legend>
+        <FormTextarea
+          form={form}
+          name="job_description"
+          label={t("applications.fields.jobDescription")}
+          placeholder={t("applications.jobDescriptionPlaceholder")}
+          rows={8}
+        />
+        <div className="grid content-start gap-4">
+          <DocumentSelect
+            form={form}
+            name="cv_document_id"
+            label={t("applications.fields.cvDocument")}
+            kind="cv"
+            current={initialDocuments?.cv}
+          />
+          <DocumentSelect
+            form={form}
+            name="cover_letter_document_id"
+            label={t("applications.fields.coverLetterDocument")}
+            kind="cover_letter"
+            current={initialDocuments?.coverLetter}
+          />
+        </div>
+      </fieldset>
 
       <div className="lg:col-span-2">
         <FormActions

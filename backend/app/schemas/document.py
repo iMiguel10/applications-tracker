@@ -36,6 +36,13 @@ class DocumentRead(BaseModel):
     updated_at: datetime
 
 
+class DocumentListItemRead(DocumentRead):
+    applications_count: int = Field(
+        description="En cuántas solicitudes se envió como CV o como carta (RF-92). "
+        "Cuáles, en `GET /documents/{document_id}`. Mayor que 0: no se puede borrar."
+    )
+
+
 class DocumentListQuery(BaseModel):
     """Filtros de la biblioteca (RF-90)."""
 
@@ -56,4 +63,37 @@ class DocumentUpdate(BaseModel):
     name: RequiredName = Field(
         description="Nombre visible nuevo. Se sanea igual que al subir.",
         examples=["CV backend 2026.pdf"],
+    )
+
+
+class DocumentSummary(BaseModel):
+    """Un documento dentro de otro recurso (el CV y la carta de una solicitud)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    kind: DocumentKind
+    name: str
+    status: DocumentStatus
+    archived_at: datetime | None = Field(
+        description="Archivado: fuera de la biblioteca, pero sigue asociado."
+    )
+
+
+class DocumentUsageRead(BaseModel):
+    """Una solicitud en la que se envió el documento (RF-92)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    application_id: uuid.UUID
+    position_title: str
+    company_name: str
+    used_as: DocumentKind = Field(description="Cómo se envió: `cv` o `cover_letter`.")
+    application_archived: bool
+
+
+class DocumentDetailRead(DocumentRead):
+    used_in: list[DocumentUsageRead] = Field(
+        description="Solicitudes en las que se envió, archivadas incluidas (RF-92). "
+        "Mientras haya alguna, el documento no se puede borrar (RF-93)."
     )

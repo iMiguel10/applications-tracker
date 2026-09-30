@@ -94,3 +94,16 @@ class InvalidFileTypeError(AppException):
 
     def __init__(self) -> None:
         super().__init__("Not a valid PDF", status_code=422, code="invalid_file_type")
+
+
+class DocumentInUseError(AppException):
+    """409 (RF-93): el documento se envió en alguna solicitud y no se puede borrar;
+    se puede archivar. `applications` dice en cuántas."""
+
+    def __init__(self, applications: int):
+        super().__init__(
+            "Document in use",
+            status_code=409,
+            code="document_in_use",
+            extra={"applications": applications},
+        )

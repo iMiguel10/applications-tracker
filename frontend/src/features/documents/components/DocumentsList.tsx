@@ -9,26 +9,26 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useDownloadDocument } from "../hooks/mutations/useDownloadDocument";
 import { useSetDocumentArchived } from "../hooks/mutations/useSetDocumentArchived";
-import type { LibraryDocument } from "../types/Document";
+import type { DocumentListItem } from "../types/Document";
 import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
 import { DocumentViewerDialog } from "./DocumentViewerDialog";
 import { RenameDocumentDialog } from "./RenameDocumentDialog";
 
 interface DocumentsListProps {
-  documents: LibraryDocument[];
+  documents: DocumentListItem[];
 }
 
 export function DocumentsList({ documents }: DocumentsListProps) {
   const { t, i18n } = useTranslation();
   const download = useDownloadDocument();
   const setArchived = useSetDocumentArchived();
-  const [viewing, setViewing] = useState<LibraryDocument | null>(null);
-  const [renaming, setRenaming] = useState<LibraryDocument | null>(null);
-  const [deleting, setDeleting] = useState<LibraryDocument | null>(null);
+  const [viewing, setViewing] = useState<DocumentListItem | null>(null);
+  const [renaming, setRenaming] = useState<DocumentListItem | null>(null);
+  const [deleting, setDeleting] = useState<DocumentListItem | null>(null);
 
   const onError = (error: Error) => toast.error(t(errorMessageKey(error), errorMessageParams(error)));
 
-  const toggleArchived = (document: LibraryDocument) => {
+  const toggleArchived = (document: DocumentListItem) => {
     const archived = document.archived_at === null;
     setArchived.mutate(
       { id: document.id, archived },
@@ -71,6 +71,23 @@ export function DocumentsList({ documents }: DocumentsListProps) {
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                     <Badge variant="secondary">{t(`documents.kinds.${document.kind}`)}</Badge>
                     {isArchived && <Badge variant="outline">{t("documents.archivedBadge")}</Badge>}
+                    {document.applications_count > 0 &&
+                      (ready ? (
+                        <button
+                          type="button"
+                          onClick={() => setViewing(document)}
+                          title={t("documents.usage.seeWhere")}
+                          className="rounded-full focus-visible:outline-2 focus-visible:outline-ring"
+                        >
+                          <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                            {t("documents.usage.sentIn", { count: document.applications_count })}
+                          </Badge>
+                        </button>
+                      ) : (
+                        <Badge variant="outline">
+                          {t("documents.usage.sentIn", { count: document.applications_count })}
+                        </Badge>
+                      ))}
                     <span>{t(`documents.origins.${document.origin}`)}</span>
                     {document.size_bytes !== null && (
                       <span className="tabular-nums">

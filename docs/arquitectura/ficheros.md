@@ -136,7 +136,7 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 | D2 | Un cuerpo de 6 MB con `Content-Length` falso de 1 KB → 413, y no se escribe nada **[construida en F13]** | Tamaño real, cortado al leer |
 | D3 | Dos subidas simultáneas que juntas pasan del almacenamiento restante: solo una entra **[construida en F13]**, con dos transacciones reales | Cuota con bloqueo (A30) |
 | D4 | La descarga de un documento de otro usuario → 404 (igual que uno que no existe) **[construida en F13]**, y la ruta está en la lista de `test_isolation.py` | Aislamiento |
-| D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado | RF-93 |
+| D5 | Un documento asociado a una solicitud no se puede borrar (409 `document_in_use`); archivado, sigue asociado **[construida en F13]** | RF-93 |
 | D6 | Falla el commit tras escribir el fichero: queda un huérfano y ninguna fila rota; el barrido lo borra pasada la hora y no antes | Orden de escritura y margen del barrido |
 | D7 | Una clave con `../` es rechazada por `LocalFileStorage`, y también una clave válida que atraviesa un enlace simbólico hacia fuera **[construida en F9]** | Rutas encerradas en la raíz |
 | D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[construida en F13]**, en el dominio y en la respuesta | Cabeceras |

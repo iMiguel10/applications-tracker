@@ -38,6 +38,10 @@ export function ApplicationEditPage() {
             mode="edit"
             defaultValues={toFormValues(application)}
             initialCompany={application.company}
+            initialDocuments={{
+              cv: application.cv_document,
+              coverLetter: application.cover_letter_document,
+            }}
             submitting={update.isPending}
             onSubmit={async (values) => {
               await update.mutateAsync({ id: application.id, values });

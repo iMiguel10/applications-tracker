@@ -84,7 +84,12 @@ class ApplicationRepository:
     ) -> Application | None:
         return await self.session.scalar(
             select(Application)
-            .options(joinedload(Application.company))
+            .options(
+                joinedload(Application.company),
+                # El detalle los muestra; el listado no los carga (RF-28).
+                joinedload(Application.cv_document),
+                joinedload(Application.cover_letter_document),
+            )
             .where(Application.user_id == user_id, Application.id == application_id)
             # Si la solicitud ya está en la sesión (p. ej. tras cambiar company_id),
             # refresca sus datos y su empresa en lugar de devolver la copia en memoria.
@@ -304,11 +309,50 @@ class ApplicationRepository:
         exportación es un volcado completo, no la vista filtrada del listado."""
         result = await self.session.scalars(
             select(Application)
-            .options(joinedload(Application.company))
+            .options(
+                joinedload(Application.company),
+                joinedload(Application.cv_document),
+                joinedload(Application.cover_letter_document),
+            )
             .where(Application.user_id == user_id)
             .order_by(Application.created_at)
         )
         return result.all()
+
+    async def list_using_document(
+        self, user_id: uuid.UUID, document_id: uuid.UUID
+    ) -> Sequence[Application]:
+        """Las solicitudes que enviaron este documento como CV o como carta (RF-92),
+        archivadas incluidas, las más recientes primero."""
+        result = await self.session.scalars(
+            select(Application)
+            .options(joinedload(Application.company))
+            .where(
+                Application.user_id == user_id,
+                or_(
+                    Application.cv_document_id == document_id,
+                    Application.cover_letter_document_id == document_id,
+                ),
+            )
+            .order_by(Application.created_at.desc(), Application.id)
+        )
+        return result.all()
+
+    async def count_using_document(
+        self, user_id: uuid.UUID, document_id: uuid.UUID
+    ) -> int:
+        total = await self.session.scalar(
+            select(func.count())
+            .select_from(Application)
+            .where(
+                Application.user_id == user_id,
+                or_(
+                    Application.cv_document_id == document_id,
+                    Application.cover_letter_document_id == document_id,
+                ),
+            )
+        )
+        return total or 0
 
     async def get_many_for_notification(
         self, user_id: uuid.UUID, application_ids: Sequence[uuid.UUID]

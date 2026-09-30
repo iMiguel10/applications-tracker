@@ -20,6 +20,7 @@
     "cancel": "Cancelar",
     "edit": "Editar",
     "delete": "Borrar",
+    "close": "Cerrar",
     "view": "Ver detalle",
     "selectDate": "Elegir fecha",
     "noResults": "No hay resultados con estos filtros.",
@@ -56,6 +57,11 @@
     "export": "Exportar CSV",
     "searchPlaceholder": "Buscar puesto o empresa…",
     "companyPlaceholder": "Busca o escribe una empresa nueva",
+    "jobDescriptionPlaceholder": "Pega aquí el texto del anuncio",
+    "showMore": "Ver completa",
+    "showLess": "Ver menos",
+    "noJobDescription": "Sin descripción de la oferta.",
+    "addJobDescription": "Añadirla",
     "appliedAtToday": "Hoy",
     "archived": "Archivada",
     "archive": "Archivar",
@@ -85,6 +91,10 @@
       "location": "Ubicación",
       "workMode": "Modalidad",
       "source": "Fuente",
+      "offerAndDocuments": "Oferta y documentos enviados",
+      "jobDescription": "Descripción de la oferta",
+      "cvDocument": "CV enviado",
+      "coverLetterDocument": "Carta de presentación enviada",
       "jobUrl": "Oferta",
       "salary": "Salario bruto anual",
       "salaryMin": "Mínimo",
@@ -149,6 +159,7 @@
     "validation": {
       "companyRequired": "Elige o crea una empresa",
       "positionRequired": "Indica el puesto",
+      "jobDescriptionTooLong": "Máximo 20 000 caracteres",
       "salaryNumber": "Solo números enteros",
       "statusRequired": "Elige un estado"
     },
@@ -452,7 +463,10 @@
     "file_too_large": "El PDF pasa del tamaño máximo de {{max}}.",
     "invalid_file_type": "El fichero no es un PDF válido. Si está protegido con contraseña, guárdalo sin ella.",
     "documents_limit_reached": "Has alcanzado tu límite de {{limit, number}} documentos, contando los archivados",
-    "storage_limit_reached": "No te queda almacenamiento para este PDF: usas {{used}} de {{limit}}"
+    "storage_limit_reached": "No te queda almacenamiento para este PDF: usas {{used}} de {{limit}}",
+    "document_in_use": "Este documento se envió en alguna solicitud y no se puede borrar, para no perder qué enviaste. Puedes archivarlo.",
+    "document_kind_mismatch": "Ese documento no es del tipo que toca: elige un CV como CV y una carta como carta.",
+    "document_not_ready": "Este documento todavía no está listo."
   },
   "documents": {
     "title": "Documentos",
@@ -461,6 +475,16 @@
     "emptyDescription": "Sube tus CVs y cartas en PDF para tenerlos a mano en cada solicitud. Los que hayas archivado están en Archivados.",
     "emptyFiltered": "No hay documentos de este tipo.",
     "emptyArchived": "No hay documentos archivados que coincidan.",
+    "none": "Ninguno",
+    "usage": {
+      "none": "No se ha enviado en ninguna solicitud.",
+      "title_one": "Enviado en {{count}} solicitud:",
+      "title_other": "Enviado en {{count}} solicitudes:",
+      "archived": "archivada",
+      "sentIn_one": "Enviado en {{count}} solicitud",
+      "sentIn_other": "Enviado en {{count}} solicitudes",
+      "seeWhere": "Ver en qué solicitudes"
+    },
     "archivedBadge": "Archivado",
     "rename": "Renombrar",
     "renameNamed": "Renombrar {{name}}",
@@ -475,6 +499,11 @@
     "deleteNamed": "Borrar {{name}}",
     "deleteTitle": "¿Borrar el documento?",
     "deleteConfirm": "Se borrará «{{name}}» y su PDF, y se liberará su espacio. No se puede deshacer. Si solo quieres quitarlo de la biblioteca, archívalo.",
+    "deleteInUseTitle": "No se puede borrar",
+    "deleteInUse_one": "«{{name}}» se envió en {{count}} solicitud: borrarlo perdería qué enviaste. Puedes archivarlo para quitarlo de la biblioteca.",
+    "deleteInUse_other": "«{{name}}» se envió en {{count}} solicitudes: borrarlo perdería qué enviaste. Puedes archivarlo para quitarlo de la biblioteca.",
+    "deleteInUseArchived_one": "«{{name}}» se envió en {{count}} solicitud y ya está archivado. Para borrarlo, quítalo antes de la solicitud.",
+    "deleteInUseArchived_other": "«{{name}}» se envió en {{count}} solicitudes y ya está archivado. Para borrarlo, quítalo antes de esas solicitudes.",
     "deleted": "Documento borrado",
     "view": "Ver",
     "viewNamed": "Ver {{name}}",
@@ -519,7 +548,15 @@
       "submit": "Subir",
       "done": "Documento subido",
       "maxSize": "PDF de hasta {{size}}.",
-      "storageLeft": "Te quedan {{size}} de almacenamiento."
+      "storageLeft": "Te quedan {{size}} de almacenamiento.",
+      "titleKind": {
+        "cv": "Subir un CV",
+        "cover_letter": "Subir una carta de presentación"
+      },
+      "newKind": {
+        "cv": "Subir CV nuevo",
+        "cover_letter": "Subir carta nueva"
+      }
     },
     "validation": {
       "fileRequired": "Elige un fichero PDF",

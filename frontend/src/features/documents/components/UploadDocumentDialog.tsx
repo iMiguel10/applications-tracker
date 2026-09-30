@@ -19,7 +19,7 @@ import { LimitWarning } from "@/features/usage/components/LimitWarning";
 import { useUsage } from "@/features/usage/hooks/queries/useUsage";
 import { useUploadDocument } from "../hooks/mutations/useUploadDocument";
 import { emptyUploadForm, uploadSchema, type UploadFormValues } from "../schemas/upload.schema";
-import { DOCUMENT_KINDS } from "../types/Document";
+import { DOCUMENT_KINDS, type DocumentKind, type LibraryDocument } from "../types/Document";
 
 // Mientras llega GET /meta: el valor por defecto de la API. La API decide igual.
 const FALLBACK_MAX_BYTES = 5 * 1024 * 1024;
@@ -27,9 +27,18 @@ const FALLBACK_MAX_BYTES = 5 * 1024 * 1024;
 interface UploadDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Tipo fijo (subir desde una solicitud, al lado de su selector): no se pregunta. */
+  kind?: DocumentKind;
+  /** Tras subirlo: p. ej. dejarlo elegido en el formulario de la solicitud. */
+  onUploaded?: (document: LibraryDocument) => void;
 }
 
-export function UploadDocumentDialog({ open, onOpenChange }: UploadDocumentDialogProps) {
+export function UploadDocumentDialog({
+  open,
+  onOpenChange,
+  kind: fixedKind,
+  onUploaded,
+}: UploadDocumentDialogProps) {
   const { t, i18n } = useTranslation();
   const upload = useUploadDocument();
   const { data: meta } = useMeta();
@@ -43,8 +52,8 @@ export function UploadDocumentDialog({ open, onOpenChange }: UploadDocumentDialo
   });
 
   useEffect(() => {
-    if (open) form.reset(emptyUploadForm);
-  }, [open, form]);
+    if (open) form.reset({ ...emptyUploadForm, kind: fixedKind ?? emptyUploadForm.kind });
+  }, [open, form, fixedKind]);
 
   // RF-144: lo que queda de almacenamiento, donde se gasta.
   const storage = usage?.limits.find((limit) => limit.key === "storage_bytes");
@@ -63,8 +72,9 @@ export function UploadDocumentDialog({ open, onOpenChange }: UploadDocumentDialo
     upload.mutate(
       { kind, file },
       {
-        onSuccess: () => {
+        onSuccess: (document) => {
           toast.success(t("documents.upload.done"));
+          onUploaded?.(document);
           onOpenChange(false);
         },
         onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
@@ -76,21 +86,35 @@ export function UploadDocumentDialog({ open, onOpenChange }: UploadDocumentDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("documents.upload.title")}</DialogTitle>
+          <DialogTitle>
+            {t(fixedKind ? `documents.upload.titleKind.${fixedKind}` : "documents.upload.title")}
+          </DialogTitle>
           <DialogDescription>{t("documents.upload.description")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
+        <form
+          // stopPropagation: este diálogo se abre también DENTRO del formulario de una
+          // solicitud. Aunque se pinte en un portal, en React el submit sube por el
+          // árbol de componentes y enviaría también la solicitud.
+          onSubmit={(event) => {
+            event.stopPropagation();
+            void form.handleSubmit(onSubmit)(event);
+          }}
+          className="grid gap-4"
+          noValidate
+        >
           <LimitWarning limitKey="documents" />
           <LimitWarning limitKey="storage_bytes" />
-          <FormSelect
-            form={form}
-            name="kind"
-            label={t("documents.fields.kind")}
-            options={DOCUMENT_KINDS.map((kind) => ({
-              value: kind,
-              label: t(`documents.kinds.${kind}`),
-            }))}
-          />
+          {!fixedKind && (
+            <FormSelect
+              form={form}
+              name="kind"
+              label={t("documents.fields.kind")}
+              options={DOCUMENT_KINDS.map((kind) => ({
+                value: kind,
+                label: t(`documents.kinds.${kind}`),
+              }))}
+            />
+          )}
           <FormFileInput
             form={form}
             name="file"

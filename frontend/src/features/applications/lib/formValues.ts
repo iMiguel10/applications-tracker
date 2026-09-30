@@ -1,6 +1,6 @@
 import { toDateOnly } from "@/shared/lib/dates";
 import type { ApplicationFormValues } from "../schemas/application.schema";
-import type { Application } from "../types/Application";
+import type { ApplicationDetail } from "../types/Application";
 
 /** Formulario vacío para crear: enviada hoy, en euros. */
 export function emptyApplicationForm(companyId = ""): ApplicationFormValues {
@@ -17,10 +17,13 @@ export function emptyApplicationForm(companyId = ""): ApplicationFormValues {
     salary_max: "",
     salary_currency: "EUR",
     notes: "",
+    job_description: "",
+    cv_document_id: null,
+    cover_letter_document_id: null,
   };
 }
 
-export function toFormValues(application: Application): ApplicationFormValues {
+export function toFormValues(application: ApplicationDetail): ApplicationFormValues {
   const text = (value: number | null) => (value === null ? "" : String(value));
   return {
     company_id: application.company.id,
@@ -36,5 +39,8 @@ export function toFormValues(application: Application): ApplicationFormValues {
     salary_max: text(application.salary_max),
     salary_currency: application.salary_currency,
     notes: application.notes ?? "",
+    job_description: application.job_description ?? "",
+    cv_document_id: application.cv_document?.id ?? null,
+    cover_letter_document_id: application.cover_letter_document?.id ?? null,
   };
 }

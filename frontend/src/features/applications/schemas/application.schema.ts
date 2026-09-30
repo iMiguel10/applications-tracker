@@ -31,6 +31,9 @@ export const applicationSchema = z
     salary_max: salary,
     salary_currency: z.enum(CURRENCIES),
     notes: z.string().max(5000, "common.validation.notesTooLong"),
+    job_description: z.string().max(20000, "applications.validation.jobDescriptionTooLong"),
+    cv_document_id: z.string().nullable(),
+    cover_letter_document_id: z.string().nullable(),
   })
   .refine(
     (v) => v.salary_min === "" || v.salary_max === "" || Number(v.salary_min) <= Number(v.salary_max),

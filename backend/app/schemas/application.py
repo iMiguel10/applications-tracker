@@ -19,6 +19,7 @@ from app.domain.application import (
 )
 from app.domain.application_status import ApplicationStatus, allowed_transitions
 from app.schemas.common import (
+    OptionalJobDescription,
     OptionalNotes,
     OptionalShortText,
     OptionalUrl,
@@ -26,6 +27,7 @@ from app.schemas.common import (
     SortOrder,
 )
 from app.schemas.company import CompanySummary
+from app.schemas.document import DocumentSummary
 
 Salary = Annotated[int, Field(ge=0, le=100_000_000)]
 InitialStatus = Literal[ApplicationStatus.SAVED, ApplicationStatus.APPLIED]
@@ -58,6 +60,21 @@ class ApplicationCreate(BaseModel):
         default=DEFAULT_CURRENCY, description="Moneda del rango salarial."
     )
     notes: OptionalNotes = Field(default=None, description="Máximo 5 000 caracteres.")
+    job_description: OptionalJobDescription = Field(
+        default=None,
+        description="Descripción de la oferta, pegada del anuncio (RF-27). Máximo "
+        "20 000 caracteres.",
+    )
+    cv_document_id: uuid.UUID | None = Field(
+        default=None,
+        description="CV enviado (RF-28): un documento `cv` de la biblioteca del "
+        "usuario.",
+    )
+    cover_letter_document_id: uuid.UUID | None = Field(
+        default=None,
+        description="Carta de presentación enviada (RF-28): un documento "
+        "`cover_letter` del usuario.",
+    )
 
     @model_validator(mode="after")
     def _salary_range(self) -> Self:
@@ -85,6 +102,9 @@ class ApplicationUpdate(BaseModel):
     salary_max: Salary | None = None
     salary_currency: Currency | None = None
     notes: OptionalNotes = None
+    job_description: OptionalJobDescription = None
+    cv_document_id: uuid.UUID | None = None
+    cover_letter_document_id: uuid.UUID | None = None
 
 
 class ApplicationRead(BaseModel):
@@ -117,6 +137,17 @@ class ApplicationRead(BaseModel):
     @property
     def allowed_transitions(self) -> tuple[ApplicationStatus, ...]:
         return allowed_transitions(self.status)
+
+
+class ApplicationDetailRead(ApplicationRead):
+    """Una solicitud con lo que no viaja en el listado: la descripción de la oferta
+    (hasta 20 000 caracteres) y los documentos enviados (RF-27, RF-28)."""
+
+    job_description: str | None
+    cv_document: DocumentSummary | None = Field(description="CV enviado.")
+    cover_letter_document: DocumentSummary | None = Field(
+        description="Carta de presentación enviada."
+    )
 
 
 ArchivedFilter = Literal["active", "archived", "all"]

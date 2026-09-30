@@ -2,7 +2,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field, StringConstraints
 
-from app.domain.application import MAX_NOTES_LENGTH
+from app.domain.application import MAX_JOB_DESCRIPTION_LENGTH, MAX_NOTES_LENGTH
 
 
 def _empty_to_none(value: Any) -> Any:
@@ -26,6 +26,14 @@ OptionalMediumText = Annotated[
 OptionalNotes = Annotated[
     Annotated[
         str, StringConstraints(strip_whitespace=True, max_length=MAX_NOTES_LENGTH)
+    ]
+    | None,
+    BeforeValidator(_empty_to_none),
+]
+OptionalJobDescription = Annotated[
+    Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, max_length=MAX_JOB_DESCRIPTION_LENGTH),
     ]
     | None,
     BeforeValidator(_empty_to_none),

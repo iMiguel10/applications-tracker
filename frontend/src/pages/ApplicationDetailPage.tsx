@@ -18,6 +18,7 @@ import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { DetailSkeleton } from "@/shared/components/common/Skeletons";
 import { ApplicationLoadError } from "@/features/applications/components/ApplicationLoadError";
+import { ApplicationOfferCard } from "@/features/applications/components/ApplicationOfferCard";
 import { ApplicationStatusBadge } from "@/features/applications/components/ApplicationStatusBadge";
 import { ChangeStatusDialog } from "@/features/applications/components/ChangeStatusDialog";
 import { DeleteApplicationDialog } from "@/features/applications/components/DeleteApplicationDialog";
@@ -108,6 +109,7 @@ export function ApplicationDetailPage() {
       {/* Escritorio: los datos a la izquierda; lo que cambia con el tiempo (historial,
           entrevistas, recordatorios) en una columna a la derecha. */}
       <div className="grid items-start gap-6 lg:grid-cols-[3fr_2fr]">
+        <div className="grid gap-6">
         <Card>
           <CardContent>
             <dl className="grid gap-4 sm:grid-cols-2">
@@ -157,6 +159,8 @@ export function ApplicationDetailPage() {
             </p>
           </CardContent>
         </Card>
+          <ApplicationOfferCard application={application} />
+        </div>
 
         <div className="grid gap-6">
           <StatusHistoryTimeline applicationId={application.id} />

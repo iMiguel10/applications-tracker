@@ -407,7 +407,7 @@ async def test_rename_sanitizes_like_upload(
     document = await make_document(db_session, user.id, name="viejo.pdf")
 
     renamed = await client.patch(
-        f"{URL}/{document.id}", json={"name": "  CV‮ nuevo.pdf "}
+        f"{URL}/{document.id}", json={"name": "  CV" + chr(0x202E) + " nuevo.pdf "}
     )
     blank = await client.patch(f"{URL}/{document.id}", json={"name": "   "})
 

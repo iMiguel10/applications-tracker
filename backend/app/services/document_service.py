@@ -1,14 +1,17 @@
 import hashlib
 import logging
 import uuid
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
 from app.core.exceptions import (
     ConflictError,
+    DocumentInUseError,
     FileTooLargeAppError,
     InvalidFileTypeError,
     NotFoundError,
@@ -25,12 +28,22 @@ from app.domain.limits import LimitKey
 from app.infra.pdf.inspect import InvalidPdfError, count_pages
 from app.infra.storage import FileStorage, StorageKeyNotFoundError
 from app.models.document import Document
+from app.repositories.application_repository import ApplicationRepository
 from app.repositories.document_repository import DocumentFilters, DocumentRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.document import DocumentListQuery
 from app.services.limit_service import LimitService
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class DocumentUsage:
+    application_id: uuid.UUID
+    position_title: str
+    company_name: str
+    used_as: DocumentKind
+    application_archived: bool
 
 
 class DocumentService:
@@ -51,12 +64,14 @@ class DocumentService:
         self.storage = storage
         self.config = config
         self.documents = DocumentRepository(session)
+        self.applications = ApplicationRepository(session)
         self.users = UserRepository(session)
         self.limits = LimitService(session, config)
 
     async def list(
         self, user_id: uuid.UUID, query: DocumentListQuery
-    ) -> tuple[list[Document], int]:
+    ) -> tuple[Sequence[tuple[Document, int]], int]:
+        """Cada documento con en cuántas solicitudes se envió (RF-92)."""
         filters = DocumentFilters(
             kind=query.kind.value if query.kind else None, archived=query.archived
         )
@@ -69,6 +84,25 @@ class DocumentService:
         if document is None:
             raise NotFoundError("Document")
         return document
+
+    async def usage(
+        self, user_id: uuid.UUID, document_id: uuid.UUID
+    ) -> Sequence[DocumentUsage]:
+        """RF-92: en qué solicitudes se envió. 404 si el documento no es suyo."""
+        await self.get(user_id, document_id)
+        applications = await self.applications.list_using_document(user_id, document_id)
+        return [
+            DocumentUsage(
+                application_id=application.id,
+                position_title=application.position_title,
+                company_name=application.company.name,
+                used_as=DocumentKind.CV
+                if application.cv_document_id == document_id
+                else DocumentKind.COVER_LETTER,
+                application_archived=application.archived_at is not None,
+            )
+            for application in applications
+        ]
 
     async def rename(
         self, user_id: uuid.UUID, document_id: uuid.UUID, name: str
@@ -102,9 +136,19 @@ class DocumentService:
         Si falla el borrado del fichero, queda un huérfano que limpia el barrido;
         al revés quedaría una fila apuntando a nada."""
         document = await self.get(user_id, document_id)
+        # RF-93: borrarlo perdería el dato de qué se envió a quién. La FK lo impide
+        # igual; comprobarlo antes da un 409 con código en vez de un error de la BD.
+        used = await self.applications.count_using_document(user_id, document_id)
+        if used:
+            raise DocumentInUseError(used)
         key = document.storage_key
         await self.documents.delete(document)
-        await self.session.commit()
+        try:
+            await self.session.commit()
+        except IntegrityError as exc:
+            # Alguien lo asoció a una solicitud entre la comprobación y el commit.
+            await self.session.rollback()
+            raise DocumentInUseError(1) from exc
         if key is None:
             return
         try:

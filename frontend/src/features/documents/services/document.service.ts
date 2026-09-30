@@ -1,13 +1,22 @@
 import { apiClient } from "@/shared/lib/apiClient";
 import { toQueryString } from "@/shared/lib/queryString";
 import type { Page } from "@/shared/types/Page";
-import type { DocumentKind, DocumentListParams, LibraryDocument } from "../types/Document";
+import type {
+  DocumentDetail,
+  DocumentKind,
+  DocumentListItem,
+  DocumentListParams,
+  LibraryDocument,
+} from "../types/Document";
 
 export const documentService = {
   list: ({ kind, ...params }: DocumentListParams) =>
-    apiClient.get<Page<LibraryDocument>>(
+    apiClient.get<Page<DocumentListItem>>(
       `/documents${toQueryString({ ...params, kind: kind === "all" ? undefined : kind })}`,
     ),
+
+  /** El documento y las solicitudes en que se envió (RF-92). */
+  get: (id: string) => apiClient.get<DocumentDetail>(`/documents/${id}`),
 
   rename: (id: string, name: string) =>
     apiClient.patch<LibraryDocument>(`/documents/${id}`, { name }),

@@ -28,6 +28,10 @@ Solo la empresa y el puesto son obligatorios.
 | Oferta | Enlace al anuncio (debe empezar por `http://` o `https://`) |
 | Salario bruto anual | Mínimo y máximo, en EUR, USD, GBP o CHF. El mínimo no puede superar al máximo |
 | Notas | Texto libre, hasta 5 000 caracteres |
+| Descripción de la oferta | El texto del anuncio, pegado tal cual, hasta 20 000 caracteres. Así lo conservas aunque el anuncio desaparezca |
+| CV enviado y Carta de presentación enviada | El CV y la carta que enviaste, elegidos de tus [documentos](documentos.md). Solo se ofrecen los de ese tipo. Si aún no lo tienes subido, **Subir CV nuevo** o **Subir carta nueva** lo sube en el momento y lo deja elegido |
+
+La descripción y los documentos se ven en el detalle de la solicitud, en **Oferta y documentos enviados**: pulsa el nombre de un documento para verlo.
 
 ## Editar una solicitud
 

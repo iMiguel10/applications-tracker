@@ -22,6 +22,7 @@ from app.db.base import Base
 from app.db.constraints import enum_check
 from app.domain.application import (
     DEFAULT_CURRENCY,
+    MAX_JOB_DESCRIPTION_LENGTH,
     MAX_NOTES_LENGTH,
     ApplicationOrigin,
     ApplicationSource,
@@ -35,6 +36,7 @@ from app.domain.application_status import (
 
 if TYPE_CHECKING:
     from app.models.company import Company
+    from app.models.document import Document
 
 _STATUSES_WITHOUT_APPLIED_AT_SQL = ", ".join(
     f"'{status.value}'" for status in sorted(STATUSES_WITHOUT_APPLIED_AT)
@@ -52,6 +54,34 @@ class Application(Base):
             ["company_id", "user_id"],
             ["companies.id", "companies.user_id"],
             ondelete="RESTRICT",
+        ),
+        # El CV y la carta enviados (RF-28), documentos del MISMO usuario. NO ACTION y
+        # no RESTRICT: RESTRICT se comprueba en el acto y haría fallar el borrado de
+        # la cuenta, que borra en cascada solicitudes y documentos en la misma
+        # sentencia; NO ACTION espera al final de la sentencia. Borrar un documento
+        # en uso por separado sigue fallando (y el service lo avisa antes, RF-93).
+        ForeignKeyConstraint(
+            ["cv_document_id", "user_id"],
+            ["documents.id", "documents.user_id"],
+        ),
+        ForeignKeyConstraint(
+            ["cover_letter_document_id", "user_id"],
+            ["documents.id", "documents.user_id"],
+        ),
+        CheckConstraint(
+            f"char_length(job_description) <= {MAX_JOB_DESCRIPTION_LENGTH}",
+            name="job_description_length",
+        ),
+        # "Usado en" de cada documento y la comprobación de la FK al borrarlo.
+        Index(
+            "ix_applications_cv_document_id",
+            "cv_document_id",
+            postgresql_where=text("cv_document_id IS NOT NULL"),
+        ),
+        Index(
+            "ix_applications_cover_letter_document_id",
+            "cover_letter_document_id",
+            postgresql_where=text("cover_letter_document_id IS NOT NULL"),
         ),
         # Destino de la FK compuesta de reminders (F4).
         UniqueConstraint("id", "user_id"),
@@ -109,6 +139,10 @@ class Application(Base):
     )
 
     notes: Mapped[str | None] = mapped_column(Text)
+    # RF-27: el texto del anuncio, pegado por el usuario. Entrada de la IA (F15).
+    job_description: Mapped[str | None] = mapped_column(Text)
+    cv_document_id: Mapped[uuid.UUID | None] = mapped_column()
+    cover_letter_document_id: Mapped[uuid.UUID | None] = mapped_column()
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Alimenta el aviso "sin actividad" (RF-64). La actualizan los services al
     # cambiar de estado (F3) o tocar entrevistas (F4), no al editar datos.
@@ -131,4 +165,18 @@ class Application(Base):
     company: Mapped["Company"] = relationship(
         back_populates="applications",
         lazy="raise",
+    )
+    # Solo lectura: se asignan por id. primaryjoin explícito porque las dos FK a
+    # documents comparten user_id.
+    cv_document: Mapped["Document | None"] = relationship(
+        primaryjoin="Application.cv_document_id == Document.id",
+        foreign_keys=[cv_document_id],
+        lazy="raise",
+        viewonly=True,
+    )
+    cover_letter_document: Mapped["Document | None"] = relationship(
+        primaryjoin="Application.cover_letter_document_id == Document.id",
+        foreign_keys=[cover_letter_document_id],
+        lazy="raise",
+        viewonly=True,
     )

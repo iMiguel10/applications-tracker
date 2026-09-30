@@ -170,6 +170,7 @@ async def test_export_csv_includes_archived_and_a_header_row(
     assert lines[0] == (
         "position_title,company,status,applied_at,work_mode,source,origin,"
         "location,job_url,salary_min,salary_max,salary_currency,notes,"
+        "job_description,cv_document,cover_letter_document,"
         "archived_at,created_at,updated_at"
     )
     assert len(lines) == 3
@@ -187,6 +188,7 @@ async def test_export_csv_only_includes_the_users_own_applications(
     header = (
         "position_title,company,status,applied_at,work_mode,source,origin,"
         "location,job_url,salary_min,salary_max,salary_currency,notes,"
+        "job_description,cv_document,cover_letter_document,"
         "archived_at,created_at,updated_at"
     )
 

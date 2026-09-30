@@ -12,9 +12,11 @@ from app.domain.application_status import (
     STATUSES_WITHOUT_APPLIED_AT,
     ApplicationStatus,
 )
+from app.domain.documents import DocumentKind
 from app.domain.limits import LimitKey
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
+from app.models.document import Document
 from app.repositories.application_repository import (
     ApplicationFilters,
     ApplicationRepository,
@@ -24,6 +26,7 @@ from app.repositories.application_status_change_repository import (
     ApplicationStatusChangeRepository,
 )
 from app.repositories.company_repository import CompanyRepository
+from app.repositories.document_repository import DocumentRepository
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationListQuery,
@@ -50,6 +53,7 @@ class ApplicationService:
         self.session = session
         self.applications = ApplicationRepository(session)
         self.companies = CompanyRepository(session)
+        self.documents = DocumentRepository(session)
         self.status_changes = ApplicationStatusChangeRepository(session)
         self.limits = LimitService(session)
 
@@ -86,6 +90,9 @@ class ApplicationService:
         # La empresa debe existir y ser del usuario (T3). Si es de otro, 404 igual
         # que si no existiera; la FK compuesta lo impediría de todos modos.
         await self._ensure_company(user_id, data.company_id)
+        await self._ensure_documents(
+            user_id, data.cv_document_id, data.cover_letter_document_id
+        )
 
         fields = data.model_dump()
         if (
@@ -133,6 +140,11 @@ class ApplicationService:
             await self._ensure_company(user_id, changes["company_id"])
         if "salary_currency" in changes and changes["salary_currency"] is None:
             del changes["salary_currency"]
+        await self._ensure_documents(
+            user_id,
+            changes.get("cv_document_id"),
+            changes.get("cover_letter_document_id"),
+        )
 
         # Reglas que dependen de varios campos: se validan sobre el resultado de
         # mezclar lo guardado con lo enviado. El schema solo ve lo enviado: un
@@ -181,6 +193,31 @@ class ApplicationService:
         if await self.companies.get(user_id, company_id) is None:
             raise NotFoundError("Company")
 
+    async def _ensure_documents(
+        self,
+        user_id: uuid.UUID,
+        cv_document_id: uuid.UUID | None,
+        cover_letter_document_id: uuid.UUID | None,
+    ) -> None:
+        """RF-28: cada uno, un documento del usuario (404 si no, como la empresa) y
+        del tipo que toca. La FK compuesta impone lo primero; lo segundo no puede
+        comprobarlo una FK (es una columna de la otra fila)."""
+        for document_id, kind in (
+            (cv_document_id, DocumentKind.CV),
+            (cover_letter_document_id, DocumentKind.COVER_LETTER),
+        ):
+            if document_id is None:
+                continue
+            document = await self.documents.get(user_id, document_id)
+            if document is None:
+                raise NotFoundError("Document")
+            if document.kind != kind:
+                raise AppException(
+                    "Document kind does not match",
+                    status_code=422,
+                    code="document_kind_mismatch",
+                )
+
     async def export_csv(self, user_id: uuid.UUID) -> str:
         """RF-70: todas las solicitudes del usuario, archivadas incluidas. Códigos
         en crudo (no las etiquetas de la UI) para que el fichero sea estable y, en
@@ -209,6 +246,9 @@ _CSV_HEADER = [
     "salary_max",
     "salary_currency",
     "notes",
+    "job_description",
+    "cv_document",
+    "cover_letter_document",
     "archived_at",
     "created_at",
     "updated_at",
@@ -230,10 +270,17 @@ def _csv_row(application: Application) -> list[str]:
         _str_or_empty(application.salary_max),
         application.salary_currency,
         application.notes or "",
+        application.job_description or "",
+        _document_name(application.cv_document),
+        _document_name(application.cover_letter_document),
         _iso(application.archived_at),
         _iso(application.created_at),
         _iso(application.updated_at),
     ]
+
+
+def _document_name(document: Document | None) -> str:
+    return document.name if document is not None else ""
 
 
 def _iso(value: date | datetime | None) -> str:

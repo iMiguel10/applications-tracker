@@ -8,13 +8,19 @@ from app.main import app
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
+from app.models.document import Document
 from app.models.interview import Interview
 from app.models.reminder import Reminder
 from app.models.user import User
 from app.repositories.identity_repository import IdentityRepository
 from app.schemas.user import CurrentUser
 from app.services.user_service import UserService
-from tests.factories import make_application, make_interview, make_reminder
+from tests.factories import (
+    make_application,
+    make_document,
+    make_interview,
+    make_reminder,
+)
 
 
 class FakeIdentities(IdentityRepository):
@@ -60,6 +66,9 @@ async def _count_owned(session: AsyncSession, user_id: object) -> dict[str, int]
         "reminders": select(func.count())
         .select_from(Reminder)
         .where(Reminder.user_id == user_id),
+        "documents": select(func.count())
+        .select_from(Document)
+        .where(Document.user_id == user_id),
     }
     return {name: await session.scalar(query) or 0 for name, query in queries.items()}
 
@@ -87,7 +96,11 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
     db_session: AsyncSession,
 ):
     for owner in (user, other_user):
-        application = await make_application(db_session, owner.id)
+        # Un documento enviado en la solicitud: la FK de applications a documents
+        # no puede impedir el borrado en cascada de la cuenta (NO ACTION, no
+        # RESTRICT; ver el modelo).
+        cv = await make_document(db_session, owner.id)
+        application = await make_application(db_session, owner.id, cv_document_id=cv.id)
         await make_interview(db_session, application)
         await make_reminder(db_session, owner.id, application_id=application.id)
         await make_reminder(db_session, owner.id)
@@ -109,6 +122,7 @@ async def test_delete_account_removes_all_own_data_and_then_the_identity(
         "history": 1,
         "interviews": 1,
         "reminders": 2,
+        "documents": 1,
     }
 
 

@@ -1,9 +1,10 @@
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.application import Application
 from app.models.document import Document
 
 
@@ -52,8 +53,23 @@ class DocumentRepository:
         *,
         page: int,
         limit: int,
-    ) -> tuple[list[Document], int]:
-        """Los más recientes primero."""
+    ) -> tuple[list[tuple[Document, int]], int]:
+        """Los más recientes primero, cada uno con en cuántas solicitudes se envió
+        (RF-92): una subconsulta por fila de la página, sobre los índices parciales
+        de las dos FK."""
+        used_in = (
+            select(func.count())
+            .select_from(Application)
+            .where(
+                Application.user_id == Document.user_id,
+                or_(
+                    Application.cv_document_id == Document.id,
+                    Application.cover_letter_document_id == Document.id,
+                ),
+            )
+            .correlate(Document)
+            .scalar_subquery()
+        )
         query = select(Document).where(Document.user_id == user_id)
         if filters.kind:
             query = query.where(Document.kind == filters.kind)
@@ -68,12 +84,13 @@ class DocumentRepository:
                 query.with_only_columns(Document.id).subquery()
             )
         )
-        result = await self.session.scalars(
-            query.order_by(Document.created_at.desc(), Document.id)
+        result = await self.session.execute(
+            query.add_columns(used_in)
+            .order_by(Document.created_at.desc(), Document.id)
             .offset((page - 1) * limit)
             .limit(limit)
         )
-        return list(result.all()), total or 0
+        return [(document, count) for document, count in result.tuples()], total or 0
 
     async def count(self, user_id: uuid.UUID) -> int:
         """Para el límite de documentos: todos, archivados incluidos."""

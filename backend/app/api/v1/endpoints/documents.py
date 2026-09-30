@@ -12,7 +12,14 @@ from app.api.v1.deps import (
 )
 from app.domain.documents import DocumentKind, content_disposition
 from app.schemas.common import ErrorResponse, error_responses
-from app.schemas.document import DocumentListQuery, DocumentRead, DocumentUpdate
+from app.schemas.document import (
+    DocumentDetailRead,
+    DocumentListItemRead,
+    DocumentListQuery,
+    DocumentRead,
+    DocumentUpdate,
+    DocumentUsageRead,
+)
 from app.schemas.pagination import Page
 from app.schemas.user import CurrentUser
 from app.services.document_service import DocumentService
@@ -25,12 +32,19 @@ async def list_documents(
     query: Annotated[DocumentListQuery, Query()],
     current_user: CurrentUser = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
-) -> Page[DocumentRead]:
-    """CVs y cartas del usuario (RF-90), los más recientes primero. Por defecto sin
-    los archivados; con `archived=true`, solo ellos."""
+) -> Page[DocumentListItemRead]:
+    """CVs y cartas del usuario (RF-90), los más recientes primero, cada uno con en
+    cuántas solicitudes se envió (RF-92). Por defecto sin los archivados; con
+    `archived=true`, solo ellos."""
     items, total = await service.list(current_user.id, query)
-    return Page[DocumentRead].build(
-        [DocumentRead.model_validate(item) for item in items],
+    return Page[DocumentListItemRead].build(
+        [
+            DocumentListItemRead(
+                **DocumentRead.model_validate(document).model_dump(),
+                applications_count=count,
+            )
+            for document, count in items
+        ],
         total=total,
         page=query.page,
         limit=query.limit,
@@ -147,10 +161,15 @@ async def get_document(
     document_id: uuid.UUID,
     current_user: CurrentUser = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
-) -> DocumentRead:
-    """Los datos de un documento (RF-91: de dónde sale). El PDF, en
-    `GET /documents/{document_id}/file`."""
-    return DocumentRead.model_validate(await service.get(current_user.id, document_id))
+) -> DocumentDetailRead:
+    """Los datos de un documento (RF-91: de dónde sale) y las solicitudes en que se
+    envió (RF-92). El PDF, en `GET /documents/{document_id}/file`."""
+    document = await service.get(current_user.id, document_id)
+    usage = await service.usage(current_user.id, document_id)
+    return DocumentDetailRead(
+        **DocumentRead.model_validate(document).model_dump(),
+        used_in=[DocumentUsageRead.model_validate(item) for item in usage],
+    )
 
 
 @router.patch(
@@ -208,12 +227,16 @@ async def unarchive_document(
     "/{document_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Borrar un documento",
-    responses=error_responses(404),
+    responses=error_responses(404, 409),
 )
 async def delete_document(
     document_id: uuid.UUID,
     current_user: CurrentUser = Depends(get_current_user),
     service: DocumentService = Depends(get_document_service),
 ) -> None:
-    """Borra el documento y su PDF, y libera su espacio. Definitivo."""
+    """Borra el documento y su PDF, y libera su espacio. Definitivo.
+
+    409 `document_in_use` si se envió en alguna solicitud (RF-93), con
+    `applications` (en cuántas): borrarlo perdería qué se envió a quién. Se puede
+    archivar."""
     await service.delete(current_user.id, document_id)

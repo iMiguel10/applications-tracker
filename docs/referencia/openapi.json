@@ -1766,7 +1766,7 @@
           "Applications"
         ],
         "summary": "Crear una solicitud",
-        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta\n(5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.",
+        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta\n(5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.\n\nPuede llevar la descripción de la oferta y el CV y la carta enviados (RF-27,\nRF-28): 404 si un documento no es del usuario, 422 `document_kind_mismatch` si\nno es del tipo que toca.",
         "operationId": "create_application_api_v1_applications_post",
         "security": [
           {
@@ -1792,7 +1792,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationRead"
+                  "$ref": "#/components/schemas/ApplicationDetailRead"
                 }
               }
             }
@@ -1838,11 +1838,11 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Datos no válidos.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1909,7 +1909,7 @@
           "Applications"
         ],
         "summary": "Ver una solicitud",
-        "description": "Detalle de una solicitud del usuario.",
+        "description": "Detalle de una solicitud del usuario, con la descripción de la oferta y el\nCV y la carta enviados (RF-27, RF-28), que el listado no incluye.",
         "operationId": "get_application_api_v1_applications__application_id__get",
         "security": [
           {
@@ -1937,7 +1937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationRead"
+                  "$ref": "#/components/schemas/ApplicationDetailRead"
                 }
               }
             }
@@ -1989,7 +1989,7 @@
           "Applications"
         ],
         "summary": "Editar una solicitud",
-        "description": "Actualización parcial de los datos (RF-21): solo cambian los campos enviados y\n`null` vacía un campo opcional. El estado no se cambia aquí.\n\n422 `salary_range_invalid` o `applied_at_required` si el resultado incumple\nlas reglas teniendo en cuenta también los valores ya guardados.",
+        "description": "Actualización parcial de los datos (RF-21): solo cambian los campos enviados y\n`null` vacía un campo opcional. El estado no se cambia aquí.\n\n422 `salary_range_invalid` o `applied_at_required` si el resultado incumple\nlas reglas teniendo en cuenta también los valores ya guardados.\n\n`cv_document_id` y `cover_letter_document_id` (RF-28): 404 si el documento no\nexiste o es de otro usuario; 422 `document_kind_mismatch` si no es del tipo que\ntoca (un CV como carta).",
         "operationId": "update_application_api_v1_applications__application_id__patch",
         "security": [
           {
@@ -2027,7 +2027,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApplicationRead"
+                  "$ref": "#/components/schemas/ApplicationDetailRead"
                 }
               }
             }
@@ -3542,7 +3542,7 @@
           "Documents"
         ],
         "summary": "Listar la biblioteca de documentos",
-        "description": "CVs y cartas del usuario (RF-90), los más recientes primero. Por defecto sin\nlos archivados; con `archived=true`, solo ellos.",
+        "description": "CVs y cartas del usuario (RF-90), los más recientes primero, cada uno con en\ncuántas solicitudes se envió (RF-92). Por defecto sin los archivados; con\n`archived=true`, solo ellos.",
         "operationId": "list_documents_api_v1_documents_get",
         "security": [
           {
@@ -3617,7 +3617,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Page_DocumentRead_"
+                  "$ref": "#/components/schemas/Page_DocumentListItemRead_"
                 }
               }
             }
@@ -3897,7 +3897,7 @@
           "Documents"
         ],
         "summary": "Ver un documento",
-        "description": "Los datos de un documento (RF-91: de dónde sale). El PDF, en\n`GET /documents/{document_id}/file`.",
+        "description": "Los datos de un documento (RF-91: de dónde sale) y las solicitudes en que se\nenvió (RF-92). El PDF, en `GET /documents/{document_id}/file`.",
         "operationId": "get_document_api_v1_documents__document_id__get",
         "security": [
           {
@@ -3925,7 +3925,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DocumentRead"
+                  "$ref": "#/components/schemas/DocumentDetailRead"
                 }
               }
             }
@@ -4067,7 +4067,7 @@
           "Documents"
         ],
         "summary": "Borrar un documento",
-        "description": "Borra el documento y su PDF, y libera su espacio. Definitivo.",
+        "description": "Borra el documento y su PDF, y libera su espacio. Definitivo.\n\n409 `document_in_use` si se envió en alguna solicitud (RF-93), con\n`applications` (en cuántas): borrarlo perdería qué se envió a quién. Se puede\narchivar.",
         "operationId": "delete_document_api_v1_documents__document_id__delete",
         "security": [
           {
@@ -4115,6 +4115,16 @@
           },
           "404": {
             "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4439,6 +4449,45 @@
             ],
             "title": "Notes",
             "description": "Máximo 5 000 caracteres."
+          },
+          "job_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Description",
+            "description": "Descripción de la oferta, pegada del anuncio (RF-27). Máximo 20 000 caracteres."
+          },
+          "cv_document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Document Id",
+            "description": "CV enviado (RF-28): un documento `cv` de la biblioteca del usuario."
+          },
+          "cover_letter_document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Letter Document Id",
+            "description": "Carta de presentación enviada (RF-28): un documento `cover_letter` del usuario."
           }
         },
         "type": "object",
@@ -4447,6 +4496,218 @@
           "position_title"
         ],
         "title": "ApplicationCreate"
+      },
+      "ApplicationDetailRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanySummary"
+          },
+          "position_title": {
+            "type": "string",
+            "title": "Position Title",
+            "examples": [
+              "Backend Developer"
+            ]
+          },
+          "job_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Url"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApplicationSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "origin": {
+            "$ref": "#/components/schemas/ApplicationOrigin"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "applied_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied At"
+          },
+          "salary_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Min"
+          },
+          "salary_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salary Max"
+          },
+          "salary_currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At",
+            "description": "`null` si está activa."
+          },
+          "last_activity_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Activity At",
+            "description": "Último cambio de estado o de entrevistas (no de datos)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "job_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Description"
+          },
+          "cv_document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "CV enviado."
+          },
+          "cover_letter_document": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Carta de presentación enviada."
+          },
+          "allowed_transitions": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationStatus"
+            },
+            "type": "array",
+            "title": "Allowed Transitions",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company",
+          "position_title",
+          "job_url",
+          "location",
+          "work_mode",
+          "source",
+          "origin",
+          "status",
+          "applied_at",
+          "salary_min",
+          "salary_max",
+          "salary_currency",
+          "notes",
+          "archived_at",
+          "last_activity_at",
+          "created_at",
+          "updated_at",
+          "job_description",
+          "cv_document",
+          "cover_letter_document",
+          "allowed_transitions"
+        ],
+        "title": "ApplicationDetailRead",
+        "description": "Una solicitud con lo que no viaja en el listado: la descripción de la oferta\n(hasta 20 000 caracteres) y los documentos enviados (RF-27, RF-28)."
       },
       "ApplicationOrigin": {
         "type": "string",
@@ -4916,6 +5177,42 @@
               }
             ],
             "title": "Notes"
+          },
+          "job_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Description"
+          },
+          "cv_document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv Document Id"
+          },
+          "cover_letter_document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Letter Document Id"
           }
         },
         "type": "object",
@@ -5396,6 +5693,92 @@
         ],
         "title": "DashboardRead"
       },
+      "DocumentDetailRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind",
+            "description": "`cv` o `cover_letter`."
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DocumentOrigin",
+            "description": "De dónde sale (RF-91): `uploaded` (subido), `generated` (desde el perfil) o `ai_tailored` (adaptado con IA)."
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus",
+            "description": "`ready` si el PDF se puede descargar. Uno subido nace `ready`; uno generado pasa por `pending` y puede acabar en `failed`."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Nombre visible. El del fichero subido, saneado: solo se muestra, nunca se usa como ruta.",
+            "examples": [
+              "CV backend 2026.pdf"
+            ]
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes",
+            "description": "Tamaño en bytes. `null` mientras no hay fichero."
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At",
+            "description": "Si está archivado (RF-93): fuera de la biblioteca, pero sigue asociado a sus solicitudes y ocupando almacenamiento."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "used_in": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentUsageRead"
+            },
+            "type": "array",
+            "title": "Used In",
+            "description": "Solicitudes en las que se envió, archivadas incluidas (RF-92). Mientras haya alguna, el documento no se puede borrar (RF-93)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "origin",
+          "status",
+          "name",
+          "size_bytes",
+          "archived_at",
+          "created_at",
+          "updated_at",
+          "used_in"
+        ],
+        "title": "DocumentDetailRead"
+      },
       "DocumentKind": {
         "type": "string",
         "enum": [
@@ -5403,6 +5786,89 @@
           "cover_letter"
         ],
         "title": "DocumentKind"
+      },
+      "DocumentListItemRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind",
+            "description": "`cv` o `cover_letter`."
+          },
+          "origin": {
+            "$ref": "#/components/schemas/DocumentOrigin",
+            "description": "De dónde sale (RF-91): `uploaded` (subido), `generated` (desde el perfil) o `ai_tailored` (adaptado con IA)."
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus",
+            "description": "`ready` si el PDF se puede descargar. Uno subido nace `ready`; uno generado pasa por `pending` y puede acabar en `failed`."
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Nombre visible. El del fichero subido, saneado: solo se muestra, nunca se usa como ruta.",
+            "examples": [
+              "CV backend 2026.pdf"
+            ]
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes",
+            "description": "Tamaño en bytes. `null` mientras no hay fichero."
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At",
+            "description": "Si está archivado (RF-93): fuera de la biblioteca, pero sigue asociado a sus solicitudes y ocupando almacenamiento."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "applications_count": {
+            "type": "integer",
+            "title": "Applications Count",
+            "description": "En cuántas solicitudes se envió como CV o como carta (RF-92). Cuáles, en `GET /documents/{document_id}`. Mayor que 0: no se puede borrar."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "origin",
+          "status",
+          "name",
+          "size_bytes",
+          "archived_at",
+          "created_at",
+          "updated_at",
+          "applications_count"
+        ],
+        "title": "DocumentListItemRead"
       },
       "DocumentOrigin": {
         "type": "string",
@@ -5501,6 +5967,48 @@
         "title": "DocumentStatus",
         "description": "Un subido nace `ready`. Uno generado nace `pending` y el `worker` lo pasa a\n`ready` o `failed` (A35)."
       },
+      "DocumentSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At",
+            "description": "Archivado: fuera de la biblioteca, pero sigue asociado."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "status",
+          "archived_at"
+        ],
+        "title": "DocumentSummary",
+        "description": "Un documento dentro de otro recurso (el CV y la carta de una solicitud)."
+      },
       "DocumentUpdate": {
         "properties": {
           "name": {
@@ -5520,6 +6028,41 @@
         ],
         "title": "DocumentUpdate",
         "description": "RF-90: renombrar. El tipo no cambia: un documento ya asociado a una solicitud\ncomo CV dejaría de serlo."
+      },
+      "DocumentUsageRead": {
+        "properties": {
+          "application_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Application Id"
+          },
+          "position_title": {
+            "type": "string",
+            "title": "Position Title"
+          },
+          "company_name": {
+            "type": "string",
+            "title": "Company Name"
+          },
+          "used_as": {
+            "$ref": "#/components/schemas/DocumentKind",
+            "description": "Cómo se envió: `cv` o `cover_letter`."
+          },
+          "application_archived": {
+            "type": "boolean",
+            "title": "Application Archived"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "position_title",
+          "company_name",
+          "used_as",
+          "application_archived"
+        ],
+        "title": "DocumentUsageRead",
+        "description": "Una solicitud en la que se envió el documento (RF-92)."
       },
       "EmailAlreadyVerified": {
         "properties": {
@@ -6239,11 +6782,11 @@
         ],
         "title": "Page[CompanyRead]"
       },
-      "Page_DocumentRead_": {
+      "Page_DocumentListItemRead_": {
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/DocumentRead"
+              "$ref": "#/components/schemas/DocumentListItemRead"
             },
             "type": "array",
             "title": "Items",
@@ -6278,7 +6821,7 @@
           "limit",
           "pages"
         ],
-        "title": "Page[DocumentRead]"
+        "title": "Page[DocumentListItemRead]"
       },
       "Page_ReminderRead_": {
         "properties": {

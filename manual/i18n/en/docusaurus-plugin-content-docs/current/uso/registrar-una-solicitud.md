@@ -28,6 +28,10 @@ Only the company and the position are required.
 | Job posting | Link to the ad (must start with `http://` or `https://`) |
 | Gross annual salary | Minimum and maximum, in EUR, USD, GBP or CHF. The minimum cannot be higher than the maximum |
 | Notes | Free text, up to 5,000 characters |
+| Job description | The text of the job posting, pasted as is, up to 20,000 characters. This way you keep it even if the posting disappears |
+| CV sent and Cover letter sent | The CV and the cover letter you sent, chosen from your [documents](documentos.md). Only documents of that type are offered. If it is not uploaded yet, **Upload new CV** or **Upload new cover letter** uploads it right there and selects it |
+
+The description and the documents are shown in the application detail, under **Job posting and documents sent**: click a document name to view it.
 
 ## Edit an application
 

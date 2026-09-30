@@ -43,3 +43,5 @@ DEFAULT_CURRENCY = Currency.EUR
 # Límite de la especificación §10. Los de cantidad por usuario (solicitudes,
 # empresas) viven en domain/limits.py y la configuración.
 MAX_NOTES_LENGTH = 5_000
+# RF-27: cabe cualquier anuncio real y acota lo que se enviará a la IA (F15).
+MAX_JOB_DESCRIPTION_LENGTH = 20_000

@@ -1,3 +1,5 @@
+import type { DocumentSummary } from "@/features/documents/types/Document";
+
 export const APPLICATION_STATUSES = [
   "saved",
   "applied",
@@ -60,6 +62,14 @@ export interface Application {
   last_activity_at: string;
   created_at: string;
   updated_at: string;
+}
+
+/** El detalle (`GET /applications/{id}`, y lo que devuelven crear y editar): lo que
+ * no viaja en el listado (RF-27, RF-28). */
+export interface ApplicationDetail extends Application {
+  job_description: string | null;
+  cv_document: DocumentSummary | null;
+  cover_letter_document: DocumentSummary | null;
 }
 
 export type ArchivedFilter = "active" | "archived" | "all";

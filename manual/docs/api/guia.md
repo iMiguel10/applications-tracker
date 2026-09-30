@@ -158,6 +158,8 @@ curl -s -X POST "https://<tu API>/api/v1/documents?kind=cv&name=cv-backend.pdf" 
 - Se comprueba el contenido: un fichero que no sea un PDF, o uno protegido con contraseña, da 422 `invalid_file_type`.
 - Como máximo 30 subidas por hora (429 `rate_limited`).
 
+Para indicar el CV y la carta enviados en una solicitud, envía `cv_document_id` y `cover_letter_document_id` al crearla o editarla (`null` los quita). Un documento de otro tipo da 422 `document_kind_mismatch`. Estos campos y `job_description` (la descripción de la oferta) vienen en el detalle (`GET /api/v1/applications/{application_id}`), **no en el listado**. `GET /api/v1/documents/{document_id}` dice en qué solicitudes se envió cada documento (`used_in`); mientras haya alguna, borrarlo da 409 `document_in_use`.
+
 `GET /api/v1/documents/{document_id}/file` devuelve el PDF, siempre como `application/pdf`. Por defecto con `Content-Disposition: inline`; con `?download=true`, `attachment`. El nombre va en ASCII (`filename`) y en UTF-8 (`filename*`).
 
 ## Llamadas desde un navegador

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from app.api.v1.deps import get_application_service, get_current_user
 from app.schemas.application import (
     ApplicationCreate,
+    ApplicationDetailRead,
     ApplicationListQuery,
     ApplicationRead,
     ApplicationUpdate,
@@ -42,20 +43,26 @@ async def list_applications(
     "",
     status_code=status.HTTP_201_CREATED,
     summary="Crear una solicitud",
-    responses=error_responses(404, 409),
+    responses=error_responses(404, 409, 422),
 )
 async def create_application(
     data: ApplicationCreate,
     current_user: CurrentUser = Depends(get_current_user),
     service: ApplicationService = Depends(get_application_service),
-) -> ApplicationRead:
+) -> ApplicationDetailRead:
     """Registra una solicitud en estado `saved` o `applied` (RF-20).
 
     La empresa debe existir y ser del usuario (404 si no). 409
     `applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta
     (5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.
+
+    Puede llevar la descripción de la oferta y el CV y la carta enviados (RF-27,
+    RF-28): 404 si un documento no es del usuario, 422 `document_kind_mismatch` si
+    no es del tipo que toca.
     """
-    return ApplicationRead.model_validate(await service.create(current_user.id, data))
+    return ApplicationDetailRead.model_validate(
+        await service.create(current_user.id, data)
+    )
 
 
 @router.get(
@@ -92,9 +99,10 @@ async def get_application(
     application_id: uuid.UUID,
     current_user: CurrentUser = Depends(get_current_user),
     service: ApplicationService = Depends(get_application_service),
-) -> ApplicationRead:
-    """Detalle de una solicitud del usuario."""
-    return ApplicationRead.model_validate(
+) -> ApplicationDetailRead:
+    """Detalle de una solicitud del usuario, con la descripción de la oferta y el
+    CV y la carta enviados (RF-27, RF-28), que el listado no incluye."""
+    return ApplicationDetailRead.model_validate(
         await service.get(current_user.id, application_id)
     )
 
@@ -109,14 +117,18 @@ async def update_application(
     data: ApplicationUpdate,
     current_user: CurrentUser = Depends(get_current_user),
     service: ApplicationService = Depends(get_application_service),
-) -> ApplicationRead:
+) -> ApplicationDetailRead:
     """Actualización parcial de los datos (RF-21): solo cambian los campos enviados y
     `null` vacía un campo opcional. El estado no se cambia aquí.
 
     422 `salary_range_invalid` o `applied_at_required` si el resultado incumple
     las reglas teniendo en cuenta también los valores ya guardados.
+
+    `cv_document_id` y `cover_letter_document_id` (RF-28): 404 si el documento no
+    existe o es de otro usuario; 422 `document_kind_mismatch` si no es del tipo que
+    toca (un CV como carta).
     """
-    return ApplicationRead.model_validate(
+    return ApplicationDetailRead.model_validate(
         await service.update(current_user.id, application_id, data)
     )
 

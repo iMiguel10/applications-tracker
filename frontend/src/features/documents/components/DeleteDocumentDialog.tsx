@@ -13,26 +13,50 @@ import {
   AlertDialogTitle,
 } from "@/shared/components/ui/alert-dialog";
 import { useDeleteDocument } from "../hooks/mutations/useDeleteDocument";
-import type { LibraryDocument } from "../types/Document";
+import { useSetDocumentArchived } from "../hooks/mutations/useSetDocumentArchived";
+import type { DocumentListItem } from "../types/Document";
 
 interface DeleteDocumentDialogProps {
-  document: LibraryDocument | null;
+  document: DocumentListItem | null;
   onOpenChange: (open: boolean) => void;
 }
 
-/** Borrado definitivo: la fila y el PDF. Es lo que libera espacio; archivar no. */
+/**
+ * Borrado definitivo: la fila y el PDF. Es lo que libera espacio; archivar no.
+ * Un documento enviado en alguna solicitud no se puede borrar (RF-93): en vez de
+ * dejar que la API responda 409, el diálogo lo dice antes y ofrece archivarlo.
+ */
 export function DeleteDocumentDialog({ document, onOpenChange }: DeleteDocumentDialogProps) {
   const { t } = useTranslation();
   const remove = useDeleteDocument();
+  const setArchived = useSetDocumentArchived();
+  const inUse = (document?.applications_count ?? 0) > 0;
+  const canArchive = inUse && document?.archived_at === null;
+
+  const onError = (error: Error) => toast.error(t(errorMessageKey(error), errorMessageParams(error)));
 
   const confirm = () => {
     if (!document) return;
+    if (inUse) {
+      if (!canArchive) return onOpenChange(false);
+      setArchived.mutate(
+        { id: document.id, archived: true },
+        {
+          onSuccess: () => {
+            toast.success(t("documents.archived"));
+            onOpenChange(false);
+          },
+          onError,
+        },
+      );
+      return;
+    }
     remove.mutate(document.id, {
       onSuccess: () => {
         toast.success(t("documents.deleted"));
         onOpenChange(false);
       },
-      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
+      onError,
     });
   };
 
@@ -40,15 +64,26 @@ export function DeleteDocumentDialog({ document, onOpenChange }: DeleteDocumentD
     <AlertDialog open={document !== null} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("documents.deleteTitle")}</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t(inUse ? "documents.deleteInUseTitle" : "documents.deleteTitle")}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            {t("documents.deleteConfirm", { name: document?.name })}
+            {inUse
+              ? t(canArchive ? "documents.deleteInUse" : "documents.deleteInUseArchived", {
+                  name: document?.name,
+                  count: document?.applications_count,
+                })
+              : t("documents.deleteConfirm", { name: document?.name })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" onClick={confirm} disabled={remove.isPending}>
-            {t("common.delete")}
+          {(!inUse || canArchive) && <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>}
+          <AlertDialogAction
+            variant={inUse ? "default" : "destructive"}
+            onClick={confirm}
+            disabled={remove.isPending || setArchived.isPending}
+          >
+            {inUse ? t(canArchive ? "documents.archive" : "common.close") : t("common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

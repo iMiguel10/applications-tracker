@@ -7,7 +7,9 @@ In **Applications**, click **Export CSV**. A file is downloaded with **all** you
 
 Each row is an application, with these columns:
 
-`position_title`, `company`, `status`, `applied_at`, `work_mode`, `source`, `origin`, `location`, `job_url`, `salary_min`, `salary_max`, `salary_currency`, `notes`, `archived_at`, `created_at`, `updated_at`
+`position_title`, `company`, `status`, `applied_at`, `work_mode`, `source`, `origin`, `location`, `job_url`, `salary_min`, `salary_max`, `salary_currency`, `notes`, `job_description`, `cv_document`, `cover_letter_document`, `archived_at`, `created_at`, `updated_at`
+
+`cv_document` and `cover_letter_document` hold the **name** of the CV and cover letter sent; the PDFs are not in the CSV.
 
 Statuses, work modes and sources are written as **codes**, not as the labels on screen: `applied` rather than "Applied", `remote` rather than "Remote". That way the file is the same whatever the interface language, and any tool can process it.
 

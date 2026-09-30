@@ -20,6 +20,7 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
+    "close": "Close",
     "view": "View details",
     "selectDate": "Pick a date",
     "noResults": "No results with these filters.",
@@ -56,6 +57,11 @@
     "export": "Export CSV",
     "searchPlaceholder": "Search position or company…",
     "companyPlaceholder": "Search or type a new company",
+    "jobDescriptionPlaceholder": "Paste the text of the job posting here",
+    "showMore": "Show all",
+    "showLess": "Show less",
+    "noJobDescription": "No job description.",
+    "addJobDescription": "Add it",
     "appliedAtToday": "Today",
     "archived": "Archived",
     "archive": "Archive",
@@ -85,6 +91,10 @@
       "location": "Location",
       "workMode": "Work mode",
       "source": "Source",
+      "offerAndDocuments": "Job posting and documents sent",
+      "jobDescription": "Job description",
+      "cvDocument": "CV sent",
+      "coverLetterDocument": "Cover letter sent",
       "jobUrl": "Job posting",
       "salary": "Gross annual salary",
       "salaryMin": "Minimum",
@@ -149,6 +159,7 @@
     "validation": {
       "companyRequired": "Choose or create a company",
       "positionRequired": "Enter the position",
+      "jobDescriptionTooLong": "20,000 characters maximum",
       "salaryNumber": "Whole numbers only",
       "statusRequired": "Choose a status"
     },
@@ -452,7 +463,10 @@
     "file_too_large": "The PDF is over the maximum size of {{max}}.",
     "invalid_file_type": "The file is not a valid PDF. If it is password-protected, save it without the password.",
     "documents_limit_reached": "You have reached your limit of {{limit, number}} documents, counting archived ones",
-    "storage_limit_reached": "You don’t have enough storage left for this PDF: you are using {{used}} of {{limit}}"
+    "storage_limit_reached": "You don’t have enough storage left for this PDF: you are using {{used}} of {{limit}}",
+    "document_in_use": "This document was sent in an application and can’t be deleted, so you don’t lose what you sent. You can archive it.",
+    "document_kind_mismatch": "That document is not the right type: choose a CV as the CV and a cover letter as the cover letter.",
+    "document_not_ready": "This document is not ready yet."
   },
   "documents": {
     "title": "Documents",
@@ -461,6 +475,16 @@
     "emptyDescription": "Upload your CVs and cover letters as PDFs to have them at hand for every application. The ones you archived are under Archived.",
     "emptyFiltered": "There are no documents of this type.",
     "emptyArchived": "There are no matching archived documents.",
+    "none": "None",
+    "usage": {
+      "none": "It has not been sent in any application.",
+      "title_one": "Sent in {{count}} application:",
+      "title_other": "Sent in {{count}} applications:",
+      "archived": "archived",
+      "sentIn_one": "Sent in {{count}} application",
+      "sentIn_other": "Sent in {{count}} applications",
+      "seeWhere": "See which applications"
+    },
     "archivedBadge": "Archived",
     "rename": "Rename",
     "renameNamed": "Rename {{name}}",
@@ -475,6 +499,11 @@
     "deleteNamed": "Delete {{name}}",
     "deleteTitle": "Delete the document?",
     "deleteConfirm": "“{{name}}” and its PDF will be deleted, and its space freed up. This cannot be undone. If you only want to take it out of the library, archive it.",
+    "deleteInUseTitle": "It can’t be deleted",
+    "deleteInUse_one": "“{{name}}” was sent in {{count}} application: deleting it would lose what you sent. You can archive it to take it out of the library.",
+    "deleteInUse_other": "“{{name}}” was sent in {{count}} applications: deleting it would lose what you sent. You can archive it to take it out of the library.",
+    "deleteInUseArchived_one": "“{{name}}” was sent in {{count}} application and is already archived. To delete it, remove it from the application first.",
+    "deleteInUseArchived_other": "“{{name}}” was sent in {{count}} applications and is already archived. To delete it, remove it from those applications first.",
     "deleted": "Document deleted",
     "view": "View",
     "viewNamed": "View {{name}}",
@@ -519,7 +548,15 @@
       "submit": "Upload",
       "done": "Document uploaded",
       "maxSize": "PDF up to {{size}}.",
-      "storageLeft": "You have {{size}} of storage left."
+      "storageLeft": "You have {{size}} of storage left.",
+      "titleKind": {
+        "cv": "Upload a CV",
+        "cover_letter": "Upload a cover letter"
+      },
+      "newKind": {
+        "cv": "Upload new CV",
+        "cover_letter": "Upload new cover letter"
+      }
     },
     "validation": {
       "fileRequired": "Choose a PDF file",

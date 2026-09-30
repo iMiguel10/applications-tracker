@@ -17,11 +17,12 @@ import {
 } from "@/shared/components/ui/dialog";
 import { useDocumentFile } from "../hooks/queries/useDocumentFile";
 import { useDownloadDocument } from "../hooks/mutations/useDownloadDocument";
-import type { LibraryDocument } from "../types/Document";
+import type { DocumentRef } from "../types/Document";
+import { DocumentUsageList } from "./DocumentUsageList";
 
 interface DocumentViewerDialogProps {
   /** El documento que se ve; `null` cierra el visor. */
-  document: LibraryDocument | null;
+  document: DocumentRef | null;
   onClose: () => void;
 }
 
@@ -61,6 +62,7 @@ export function DocumentViewerDialog({ document, onClose }: DocumentViewerDialog
               </Button>
             )}
           </div>
+          {document && <DocumentUsageList documentId={document.id} />}
         </DialogHeader>
         <div className="min-h-0 flex-1">
           {file.isLoading && <Skeleton className="size-full" />}
