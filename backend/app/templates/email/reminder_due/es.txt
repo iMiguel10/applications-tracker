@@ -1,0 +1,14 @@
+{% if upcoming %}{% set subject = "Recordatorio: " ~ title %}{% else %}{% set subject = "Recordatorio vencido: " ~ title %}{% endif -%}
+Hola:
+
+{% if upcoming %}Uno de tus recordatorios vence pronto:{% else %}Ha llegado la fecha de uno de tus recordatorios:{% endif %}
+
+{{ title }}
+{% if upcoming %}Vence{% else %}Vencía{% endif %}: {{ due }}
+{% if application %}Solicitud: {{ application }}
+{% endif %}
+Ábrelo en Applications Tracker para marcarlo como hecho o descartarlo:
+
+{{ link }}
+
+Recibes este email porque tienes activado el aviso de recordatorios. Puedes desactivarlo o cambiar su antelación en Preferencias: {{ preferences_link }}

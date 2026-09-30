@@ -65,7 +65,7 @@ async def _count_owned(session: AsyncSession, user_id: object) -> dict[str, int]
 
 
 # RF-84: activados los avisos de lo que el usuario creó (recordatorio, entrevista);
-# apagados el resumen y la inactividad. RF-81: 24 h de antelación.
+# apagados el resumen y la inactividad. RF-80: al vencer; RF-81: 24 h antes.
 DEFAULT_PREFERENCES = {
     "language": None,
     "stale_after_days": 14,
@@ -74,6 +74,7 @@ DEFAULT_PREFERENCES = {
     "notify_interview": True,
     "notify_weekly_digest": False,
     "notify_stale": False,
+    "reminder_notice_hours": 0,
     "interview_notice_hours": 24,
 }
 
@@ -193,6 +194,8 @@ async def test_notification_preferences_are_updated(
         {"timezone": ""},
         {"interview_notice_hours": 0},
         {"interview_notice_hours": 169},
+        {"reminder_notice_hours": -1},
+        {"reminder_notice_hours": 169},
         # null solo significa algo en language y timezone: en el resto sería un
         # NULL que la BD rechaza con un 500.
         {"stale_after_days": None},
@@ -209,6 +212,8 @@ async def test_notification_preferences_are_updated(
         "timezone_empty",
         "notice_too_short",
         "notice_too_long",
+        "reminder_notice_negative",
+        "reminder_notice_too_long",
         "null_threshold",
         "null_notify",
         "null_notice",

@@ -24,7 +24,7 @@ In the **Email notifications** card you turn each notification on or off separat
 
 | Notification | When it arrives | By default |
 |---|---|---|
-| Reminder due | When a pending reminder reaches its date | On |
+| Reminder due | When a pending reminder reaches its date, or earlier with the notice you choose in **Notify** (when it is due, 1 hour or 1 day before; when it is due by default) | On |
 | Upcoming interview | Before each scheduled interview, as far ahead as you choose in **Notify** (from 1 hour to 7 days; 1 day by default) | On |
 | Weekly summary | On Monday mornings, in your time zone | Off |
 | Applications without activity | When an application goes past the days without activity in your preferences | Off |

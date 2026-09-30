@@ -479,7 +479,7 @@
     "unavailable": "Esta instalación no envía emails, así que no hay avisos por email.",
     "notify_reminder_due": {
       "label": "Recordatorio vencido",
-      "description": "Cuando llega la fecha de un recordatorio pendiente."
+      "description": "Cuando llega la fecha de un recordatorio pendiente, o antes si eliges antelación."
     },
     "notify_interview": {
       "label": "Entrevista próxima",
@@ -494,6 +494,7 @@
       "description": "Cuando una solicitud pasa los días sin actividad que marcaste en Preferencias."
     },
     "noticeLabel": "Avisar",
+    "atDue": "Al vencer",
     "noticeHours_one": "{{count}} hora antes",
     "noticeHours_other": "{{count}} horas antes",
     "noticeDays_one": "{{count}} día antes",

@@ -165,15 +165,25 @@ async def test_abandoned_claims_become_unknown_and_recent_ones_stay(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("kind", "status"),
-    [("telegram", DeliveryStatus.CLAIMED), (KIND, "delivered")],
+    ("kind", "channel", "status"),
+    [
+        ("birthday", "email", DeliveryStatus.CLAIMED),
+        # Un canal nuevo necesita su migración: la BD no admite uno a medias.
+        (KIND, "telegram", DeliveryStatus.CLAIMED),
+        (KIND, "email", "delivered"),
+    ],
 )
-async def test_database_rejects_unknown_kind_or_status(
-    db_session: AsyncSession, user: CurrentUser, kind: str, status: str
+async def test_database_rejects_unknown_kind_channel_or_status(
+    db_session: AsyncSession, user: CurrentUser, kind: str, channel: str, status: str
 ):
     db_session.add(
         NotificationDelivery(
-            user_id=user.id, kind=kind, dedupe_key="x", status=status, claimed_at=NOW
+            user_id=user.id,
+            kind=kind,
+            channel=channel,
+            dedupe_key="x",
+            status=status,
+            claimed_at=NOW,
         )
     )
     with pytest.raises(IntegrityError):

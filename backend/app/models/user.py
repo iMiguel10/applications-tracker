@@ -19,8 +19,11 @@ from app.db.constraints import enum_check
 from app.domain.dashboard import STALE_AFTER_DAYS
 from app.domain.notifications import (
     DEFAULT_INTERVIEW_NOTICE_HOURS,
+    DEFAULT_REMINDER_NOTICE_HOURS,
     MAX_INTERVIEW_NOTICE_HOURS,
+    MAX_REMINDER_NOTICE_HOURS,
     MIN_INTERVIEW_NOTICE_HOURS,
+    MIN_REMINDER_NOTICE_HOURS,
 )
 from app.domain.user import (
     MAX_STALE_AFTER_DAYS,
@@ -43,6 +46,11 @@ class User(Base):
         CheckConstraint(
             f"stale_after_days BETWEEN {MIN_STALE_AFTER_DAYS} AND {MAX_STALE_AFTER_DAYS}",
             name="stale_after_days_range",
+        ),
+        CheckConstraint(
+            "reminder_notice_hours BETWEEN "
+            f"{MIN_REMINDER_NOTICE_HOURS} AND {MAX_REMINDER_NOTICE_HOURS}",
+            name="reminder_notice_hours_range",
         ),
         CheckConstraint(
             "interview_notice_hours BETWEEN "
@@ -76,6 +84,11 @@ class User(Base):
     notify_interview: Mapped[bool] = mapped_column(Boolean, server_default=true())
     notify_weekly_digest: Mapped[bool] = mapped_column(Boolean, server_default=false())
     notify_stale: Mapped[bool] = mapped_column(Boolean, server_default=false())
+    # RF-80: cuántas horas antes de que venza un recordatorio llega su aviso (0 = al
+    # vencer).
+    reminder_notice_hours: Mapped[int] = mapped_column(
+        SmallInteger, server_default=str(DEFAULT_REMINDER_NOTICE_HOURS)
+    )
     # RF-81: cuántas horas antes de una entrevista llega su aviso.
     interview_notice_hours: Mapped[int] = mapped_column(
         SmallInteger, server_default=str(DEFAULT_INTERVIEW_NOTICE_HOURS)

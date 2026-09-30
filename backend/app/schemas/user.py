@@ -5,7 +5,9 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validat
 
 from app.domain.notifications import (
     MAX_INTERVIEW_NOTICE_HOURS,
+    MAX_REMINDER_NOTICE_HOURS,
     MIN_INTERVIEW_NOTICE_HOURS,
+    MIN_REMINDER_NOTICE_HOURS,
 )
 from app.domain.user import (
     MAX_STALE_AFTER_DAYS,
@@ -34,6 +36,9 @@ class MeRead(BaseModel):
 StaleAfterDays = Annotated[int, Field(ge=MIN_STALE_AFTER_DAYS, le=MAX_STALE_AFTER_DAYS)]
 InterviewNoticeHours = Annotated[
     int, Field(ge=MIN_INTERVIEW_NOTICE_HOURS, le=MAX_INTERVIEW_NOTICE_HOURS)
+]
+ReminderNoticeHours = Annotated[
+    int, Field(ge=MIN_REMINDER_NOTICE_HOURS, le=MAX_REMINDER_NOTICE_HOURS)
 ]
 
 
@@ -76,6 +81,10 @@ class PreferencesRead(BaseModel):
     notify_stale: bool = Field(
         description="RF-83: aviso cuando una solicitud se queda sin actividad."
     )
+    reminder_notice_hours: ReminderNoticeHours = Field(
+        description="RF-80: horas de antelación del aviso de recordatorio; 0 avisa "
+        "al vencer."
+    )
     interview_notice_hours: InterviewNoticeHours = Field(
         description="RF-81: horas de antelación del aviso de entrevista."
     )
@@ -90,6 +99,7 @@ _NOT_NULLABLE = frozenset(
         "notify_interview",
         "notify_weekly_digest",
         "notify_stale",
+        "reminder_notice_hours",
         "interview_notice_hours",
     }
 )
@@ -110,6 +120,7 @@ class PreferencesUpdate(BaseModel):
     notify_interview: bool | None = None
     notify_weekly_digest: bool | None = None
     notify_stale: bool | None = None
+    reminder_notice_hours: ReminderNoticeHours | None = None
     interview_notice_hours: InterviewNoticeHours | None = None
 
     @model_validator(mode="after")

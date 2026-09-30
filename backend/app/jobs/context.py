@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.infra.email import EmailSender
 from app.infra.pdf import PdfRenderer
+from app.infra.queue import JobQueue
 from app.infra.storage import FileStorage
 
 
@@ -13,5 +14,7 @@ class WorkerContext(Context, total=False):
 
     session_factory: async_sessionmaker[AsyncSession]
     email_sender: EmailSender
+    # Los barridos encolan el envío de lo que reclaman.
+    job_queue: JobQueue
     storage: FileStorage
     pdf_renderer: PdfRenderer

@@ -22,6 +22,8 @@ Indica el **Título** y la **Fecha límite**, y pulsa **Guardar**.
 
 Un recordatorio pendiente cuya fecha ya pasó aparece como **Vencido**. Los recordatorios no se editan: si cambió la fecha, descarta o borra el antiguo y crea otro.
 
+Si tienes activado el aviso **Recordatorio vencido** en [Preferencias](preferencias.md#elegir-los-avisos-por-email), te llega un email cuando vence, o antes si eliges antelación, con la fecha en tu zona horaria. Solo uno por recordatorio, y solo si sigue pendiente: si lo marcas como hecho antes, no llega nada.
+
 ## Dónde verlos
 
 - En **Recordatorios**, con un filtro por estado: Pendientes, Hechos, Descartados o Todos.

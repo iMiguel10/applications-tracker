@@ -1,0 +1,14 @@
+{% extends "_layout.html" %}
+{% block content %}
+<p style="margin:0 0 16px;">Hi,</p>
+<p style="margin:0 0 16px;">{% if upcoming %}One of your reminders is coming up:{% else %}One of your reminders has reached its date:{% endif %}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-left:4px solid #4f46e5;background:#f4f4f5;">
+<tr><td style="padding:12px 16px;">
+<p style="margin:0 0 4px;font-weight:bold;">{{ title }}</p>
+<p style="margin:0;font-size:14px;color:#52525b;">Due: {{ due }}</p>
+{% if application %}<p style="margin:4px 0 0;font-size:14px;color:#52525b;">Application: {{ application }}</p>{% endif %}
+</td></tr>
+</table>
+<p style="margin:0 0 24px;"><a href="{{ link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">View the reminder</a></p>
+<p style="margin:0;font-size:13px;color:#52525b;">You are getting this email because the reminder notification is on. You can turn it off or change how far ahead it arrives in <a href="{{ preferences_link }}" style="color:#4f46e5;">Preferences</a>.</p>
+{% endblock %}

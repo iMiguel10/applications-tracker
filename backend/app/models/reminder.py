@@ -58,7 +58,8 @@ class Reminder(Base):
 
     title: Mapped[str] = mapped_column(String(200))
     due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    # Costura para canales reales (RF-53): en el MVP nunca se rellena, in_app no envía.
+    # Sin uso: pensada en el MVP para canales reales, pero cuándo salió un aviso lo
+    # guarda su entrega en notification_deliveries (decisión 0012).
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     channel: Mapped[str] = mapped_column(

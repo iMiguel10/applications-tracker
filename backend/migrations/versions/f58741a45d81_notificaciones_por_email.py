@@ -20,7 +20,7 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """F12 (RF-80…87): entregas de avisos por email ("nunca dos veces", A20) y las
-    preferencias de aviso en `users` (RF-81, RF-84). Los valores de los CHECK se
+    preferencias de aviso en `users` (RF-80, RF-81, RF-84). Los valores de los CHECK se
     congelan aquí como texto."""
     op.create_table(
         "notification_deliveries",
@@ -29,6 +29,12 @@ def upgrade() -> None:
         ),
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.Column("kind", sa.String(length=30), nullable=False),
+        sa.Column(
+            "channel",
+            sa.String(length=20),
+            server_default="email",
+            nullable=False,
+        ),
         sa.Column("dedupe_key", sa.String(length=200), nullable=False),
         sa.Column("status", sa.String(length=20), nullable=False),
         sa.Column("attempts", sa.SmallInteger(), server_default="0", nullable=False),
@@ -47,6 +53,9 @@ def upgrade() -> None:
             name=op.f("ck_notification_deliveries_kind"),
         ),
         sa.CheckConstraint(
+            "channel IN ('email')", name=op.f("ck_notification_deliveries_channel")
+        ),
+        sa.CheckConstraint(
             "status IN ('claimed', 'sent', 'failed', 'unknown')",
             name=op.f("ck_notification_deliveries_status"),
         ),
@@ -60,8 +69,9 @@ def upgrade() -> None:
         sa.UniqueConstraint(
             "user_id",
             "kind",
+            "channel",
             "dedupe_key",
-            name=op.f("uq_notification_deliveries_user_id_kind_dedupe_key"),
+            name=op.f("uq_notification_deliveries_user_id_kind_channel_dedupe_key"),
         ),
     )
     op.create_index(
@@ -110,6 +120,15 @@ def upgrade() -> None:
     op.add_column(
         "users",
         sa.Column(
+            "reminder_notice_hours",
+            sa.SmallInteger(),
+            server_default="0",
+            nullable=False,
+        ),
+    )
+    op.add_column(
+        "users",
+        sa.Column(
             "interview_notice_hours",
             sa.SmallInteger(),
             server_default="24",
@@ -122,9 +141,18 @@ def upgrade() -> None:
         "users",
         "interview_notice_hours BETWEEN 1 AND 168",
     )
+    op.create_check_constraint(
+        op.f("ck_users_reminder_notice_hours_range"),
+        "users",
+        "reminder_notice_hours BETWEEN 0 AND 168",
+    )
 
 
 def downgrade() -> None:
+    op.drop_constraint(
+        op.f("ck_users_reminder_notice_hours_range"), "users", type_="check"
+    )
+    op.drop_column("users", "reminder_notice_hours")
     op.drop_constraint(
         op.f("ck_users_interview_notice_hours_range"), "users", type_="check"
     )

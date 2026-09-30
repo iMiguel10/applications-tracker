@@ -20,6 +20,7 @@ const BASE: Preferences = {
   notify_interview: true,
   notify_weekly_digest: false,
   notify_stale: false,
+  reminder_notice_hours: 0,
   interview_notice_hours: 24,
 };
 

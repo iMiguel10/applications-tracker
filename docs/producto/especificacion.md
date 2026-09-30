@@ -186,7 +186,7 @@ Usuario
 
 ### Notificaciones por email (RF-80…) · v2
 
-- **RF-80** `[F12]` **Recordatorio vencido**: cuando llega la fecha límite de un recordatorio pendiente, se envía un email. Es el canal `email` que la costura de RF-53 dejaba preparado.
+- **RF-80** `[F12]` **Recordatorio vencido**: cuando llega la fecha límite de un recordatorio pendiente, se envía un email. Con antelación opcional, elegida en la cuenta: al vencer (por defecto), 1 hora o 1 día antes (la API admite de 0 a 168 horas); con antelación, el email dice que vence pronto. Un solo aviso por recordatorio. Lo decide la preferencia de la cuenta (RF-84), no el `channel` de cada recordatorio, que sigue siendo `in_app` ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)).
 - **RF-81** `[F12]` **Entrevista próxima**: un email antes de cada entrevista programada (24 h antes por defecto).
 - **RF-82** `[F12]` **Resumen semanal**: un email a la semana, el lunes por la mañana en la zona horaria del usuario, con lo mismo que el dashboard: pendientes, vencidos, entrevistas de la semana y solicitudes sin actividad.
 - **RF-83** `[F12]` **Solicitudes sin actividad**: un aviso cuando una solicitud cruza el umbral de RF-64. Una vez por solicitud y por periodo de inactividad, no cada día.
@@ -475,7 +475,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 
 | Funcionalidad futura | Costura que se deja puesta hoy |
 |---|---|
-| Recordatorios por email, Telegram, push… | Campo `channel` en el recordatorio y campo `sent_at`. El envío pasa por una interfaz `NotificationChannel` en services, con una única implementación `in_app` que no hace nada. Un canal nuevo es una implementación nueva más un worker que recorra los pendientes. |
+| Recordatorios por email, Telegram, push… | Campo `channel` en el recordatorio y campo `sent_at`. El envío pasa por una interfaz `NotificationChannel` en services, con una única implementación `in_app` que no hace nada. Un canal nuevo es una implementación nueva más un worker que recorra los pendientes. **En F12 esta costura se retiró**: el canal va en la entrega del aviso ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)). |
 | Importación CSV / extracción desde URL | Campo `origin` en la solicitud. La creación pasa siempre por `ApplicationService.create`, así que un importador reutiliza validación y reglas. |
 | API pública, CLI | Toda la lógica vive en services; los endpoints solo validan y delegan. |
 | Periodo de gracia tras borrar una cuenta | El borrado inmediato (RNF-40) ya usa `ON DELETE CASCADE` desde `users`; un periodo de gracia añadiría un estado "pendiente de purgar" antes de ese borrado, no una costura nueva. |
@@ -485,7 +485,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | **v2** · Traducir el perfil | El CV ya separa etiquetas fijas (i18n) y contenido (perfil); traducir el contenido sería un paso de IA antes de generar. |
 | **v2** · Diseños de CV nuevos | Las plantillas son ficheros independientes del código (RF-104). |
 | **v2** · Otro almacén de ficheros | Todo acceso a ficheros pasa por una interfaz de almacenamiento; local, MinIO o S3 es configuración. |
-| **v2** · Telegram, push… | El canal `email` es la segunda implementación de `NotificationChannel`; la tercera no toca los tipos de notificación. |
+| **v2** · Telegram, push… | `notification_deliveries.channel` (hoy solo `email`) forma parte de la clave única: un canal nuevo es otro valor, su emisor en `infra/` y sus textos; los barridos y la deduplicación no cambian ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)). |
 | **v2** · Google Calendar bidireccional | El feed ICS y la vista de calendario salen del mismo servicio de eventos; una sincronización real sería otro consumidor de ese servicio. |
 
 ## 13. Riesgos y decisiones abiertas

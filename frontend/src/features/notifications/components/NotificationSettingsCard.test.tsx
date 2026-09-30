@@ -29,6 +29,7 @@ const PREFERENCES: Preferences = {
   notify_interview: true,
   notify_weekly_digest: false,
   notify_stale: false,
+  reminder_notice_hours: 0,
   interview_notice_hours: 24,
 };
 
@@ -91,13 +92,16 @@ describe("NotificationSettingsCard", () => {
     );
   });
 
-  it("offers the interview notice only while that notification is on", () => {
+  it("offers a notice only for the reminder and interview notifications that are on", () => {
+    const notices = () => screen.queryAllByText(i18n.t("notifications.noticeLabel"));
     renderCard();
-    expect(screen.getByText(i18n.t("notifications.noticeLabel"))).toBeInTheDocument();
+    expect(notices()).toHaveLength(2);
+    expect(screen.getByText(i18n.t("notifications.atDue"))).toBeInTheDocument();
+    expect(screen.getByText("1 día antes")).toBeInTheDocument();
     cleanup();
 
     renderCard({ preferences: { ...PREFERENCES, notify_interview: false } });
-    expect(screen.queryByText(i18n.t("notifications.noticeLabel"))).not.toBeInTheDocument();
+    expect(notices()).toHaveLength(1);
   });
 
   it("explains and locks the switches when the installation sends no email", async () => {

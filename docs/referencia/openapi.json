@@ -5370,6 +5370,13 @@
             "title": "Notify Stale",
             "description": "RF-83: aviso cuando una solicitud se queda sin actividad."
           },
+          "reminder_notice_hours": {
+            "type": "integer",
+            "maximum": 168.0,
+            "minimum": 0.0,
+            "title": "Reminder Notice Hours",
+            "description": "RF-80: horas de antelación del aviso de recordatorio; 0 avisa al vencer."
+          },
           "interview_notice_hours": {
             "type": "integer",
             "maximum": 168.0,
@@ -5387,6 +5394,7 @@
           "notify_interview",
           "notify_weekly_digest",
           "notify_stale",
+          "reminder_notice_hours",
           "interview_notice_hours"
         ],
         "title": "PreferencesRead"
@@ -5476,6 +5484,19 @@
             ],
             "title": "Notify Stale"
           },
+          "reminder_notice_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 168.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Notice Hours"
+          },
           "interview_notice_hours": {
             "anyOf": [
               {
@@ -5556,7 +5577,7 @@
           "in_app"
         ],
         "title": "ReminderChannel",
-        "description": "Por dónde se avisa. En el MVP solo existe `IN_APP` (RF-53): es la costura\npara futuros canales (email, Telegram…), que llegarían como una implementación\nnueva de `NotificationChannel` más este valor."
+        "description": "Dónde se ve el recordatorio: siempre `in_app` (RF-53). Los avisos por email\nno dependen de este valor: se activan en las preferencias de la cuenta\n(`notify_reminder_due`)."
       },
       "ReminderCreate": {
         "properties": {

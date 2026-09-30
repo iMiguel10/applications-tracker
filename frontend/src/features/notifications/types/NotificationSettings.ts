@@ -9,10 +9,18 @@ export const NOTIFICATION_TOGGLES = [
 ] as const;
 export type NotificationToggle = (typeof NOTIFICATION_TOGGLES)[number];
 
-export type NotificationSettings = Pick<
-  Preferences,
-  NotificationToggle | "interview_notice_hours"
->;
+/** Los avisos con antelación configurable y el campo que la guarda. */
+export const NOTICE_FIELDS = {
+  notify_reminder_due: "reminder_notice_hours",
+  notify_interview: "interview_notice_hours",
+} as const satisfies Partial<Record<NotificationToggle, keyof Preferences>>;
+export type NoticeField = (typeof NOTICE_FIELDS)[keyof typeof NOTICE_FIELDS];
 
-/** Antelaciones que ofrece la interfaz (RF-81). La API admite de 1 a 168 horas. */
-export const INTERVIEW_NOTICE_HOURS = [1, 2, 6, 12, 24, 48, 72, 168] as const;
+export type NotificationSettings = Pick<Preferences, NotificationToggle | NoticeField>;
+
+/** Antelaciones que ofrece la interfaz. La API admite de 0 a 168 horas en el
+ * recordatorio (0 = al vencer, RF-80) y de 1 a 168 en la entrevista (RF-81). */
+export const NOTICE_HOURS: Record<NoticeField, readonly number[]> = {
+  reminder_notice_hours: [0, 1, 24],
+  interview_notice_hours: [1, 2, 6, 12, 24, 48, 72, 168],
+};

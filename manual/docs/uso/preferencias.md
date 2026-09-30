@@ -24,7 +24,7 @@ En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado.
 
 | Aviso | Cuándo llega | Por defecto |
 |---|---|---|
-| Recordatorio vencido | Cuando llega la fecha de un recordatorio pendiente | Activado |
+| Recordatorio vencido | Cuando llega la fecha de un recordatorio pendiente, o antes con la antelación que elijas en **Avisar** (al vencer, 1 hora o 1 día antes; al vencer por defecto) | Activado |
 | Entrevista próxima | Antes de cada entrevista programada, con la antelación que elijas en **Avisar** (de 1 hora a 7 días; 1 día por defecto) | Activado |
 | Resumen semanal | Los lunes por la mañana, en tu zona horaria | Desactivado |
 | Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias | Desactivado |

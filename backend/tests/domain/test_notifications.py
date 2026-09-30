@@ -1,6 +1,14 @@
+import uuid
 from datetime import UTC, datetime, timedelta
 
-from app.domain.notifications import MAX_DELIVERY_ATTEMPTS, next_attempt_at
+import pytest
+
+from app.domain.notifications import (
+    MAX_DELIVERY_ATTEMPTS,
+    next_attempt_at,
+    reminder_due_key,
+    reminder_id_from_key,
+)
 
 FAILED_AT = datetime(2026, 10, 5, 8, 0, tzinfo=UTC)
 
@@ -20,3 +28,16 @@ def test_first_retry_is_minutes_away_not_immediate():
 
     assert first is not None
     assert first - FAILED_AT >= timedelta(minutes=1)
+
+
+def test_reminder_key_round_trip():
+    reminder_id = uuid.uuid4()
+
+    assert reminder_id_from_key(reminder_due_key(reminder_id)) == reminder_id
+
+
+@pytest.mark.parametrize(
+    "key", ["interview:123", "reminder:no-es-un-uuid", f"xreminder:{uuid.uuid4()}"]
+)
+def test_other_keys_are_not_reminders(key: str):
+    assert reminder_id_from_key(key) is None

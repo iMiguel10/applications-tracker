@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.notifications import DeliveryStatus, NotificationKind
+from app.domain.notifications import DeliveryChannel, DeliveryStatus, NotificationKind
 from app.models.notification_delivery import NotificationDelivery
 
 
@@ -19,6 +19,7 @@ class NotificationDeliveryRepository:
         kind: NotificationKind,
         dedupe_key: str,
         now: datetime,
+        channel: DeliveryChannel = DeliveryChannel.EMAIL,
     ) -> uuid.UUID | None:
         """Reclama el envío de un aviso y devuelve el id de la entrega, o None si
         otro ya lo tiene (RF-87, segundo plano §4).
@@ -33,6 +34,7 @@ class NotificationDeliveryRepository:
             .values(
                 user_id=user_id,
                 kind=kind,
+                channel=channel,
                 dedupe_key=dedupe_key,
                 status=DeliveryStatus.CLAIMED,
                 attempts=1,
@@ -42,6 +44,7 @@ class NotificationDeliveryRepository:
                 index_elements=[
                     NotificationDelivery.user_id,
                     NotificationDelivery.kind,
+                    NotificationDelivery.channel,
                     NotificationDelivery.dedupe_key,
                 ]
             )
@@ -56,6 +59,7 @@ class NotificationDeliveryRepository:
             .where(
                 NotificationDelivery.user_id == user_id,
                 NotificationDelivery.kind == kind,
+                NotificationDelivery.channel == channel,
                 NotificationDelivery.dedupe_key == dedupe_key,
                 NotificationDelivery.status == DeliveryStatus.FAILED,
                 NotificationDelivery.next_attempt_at <= now,

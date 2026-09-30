@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados y las preferencias de aviso (§4) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso y el aviso de recordatorio vencido (§4) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -10,9 +10,9 @@
 |---|---|---|
 | Cola | SAQ sobre Valkey (A18) | `infra/queue/`: `JobQueue` (interfaz), `SaqJobQueue`, `InMemoryJobQueue` |
 | Worker | Proceso SAQ con la misma imagen que `api` | `worker.py` (cablea), `jobs/` (funciones finas) |
-| Barridos | Tareas programadas que leen la BD y deciden qué hacer | `jobs/notifications.py`, `jobs/maintenance.py` → `services/` |
+| Barridos | Tareas programadas que leen la BD y deciden qué hacer | `jobs/notifications.py` (`CronJob` de SAQ), `jobs/maintenance.py` → `services/` |
 | Envío de email | `EmailSender` con SMTP (`aiosmtplib`) y plantillas Jinja2 | `infra/email/`, `templates/email/` |
-| Canal | `EmailChannel`, segunda implementación de `NotificationChannel` (costura de F4) | `services/notifications/email.py` |
+| Aviso | Barrido y compositor de cada tipo (sin `EmailChannel`: el canal va en la entrega, [0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)) | `services/notifications/<tipo>.py` |
 | Registro de entregas | `notification_deliveries` (A20) | repository propio |
 
 ## 2. Anatomía de un trabajo
@@ -72,13 +72,14 @@ Se descartó **un worker por tipo de trabajo**: cuatro o cinco procesos casi sie
 
 | Barrido | Cada | Qué hace |
 |---|---|---|
-| Recordatorios vencidos (RF-80) | 1 min | Recordatorios `pending` con `due_at` en `[ahora − 24 h, ahora]` |
+| Recordatorios vencidos (RF-80) | 1 min | Recordatorios `pending` cuyo momento de aviso (`due_at` menos la antelación de la cuenta) está en `(ahora − 24 h, ahora]` |
 | Entrevistas próximas (RF-81) | 5 min | Entrevistas `pending` que empiezan dentro de la antelación del usuario |
 | Resumen semanal (RF-82) | 1 h | Usuarios para los que, en su zona horaria, es lunes y ya pasó la hora de envío |
 | Solicitudes sin actividad (RF-83) | 1 h | Solicitudes que acaban de cruzar el umbral del usuario |
 | Reencolar pendientes | 5 min | Documentos `pending` con más de 5 minutos (propuestas de IA atascadas: se marcan como fallidas) |
 | Reclamos sin resultado | 5 min | Entregas `claimed` con más de 10 minutos pasan a `unknown` (§4) |
 | Ficheros huérfanos | 1 día | Ver [ficheros](ficheros.md#5-huerfanos) |
+| Entregas antiguas (al final de F12) | 1 día | Borra las entregas terminadas (`sent`, `unknown`, `failed` sin reintentos) de más de 90 días |
 
 Reglas comunes:
 
@@ -87,6 +88,8 @@ Reglas comunes:
 - Trabaja por lotes acotados (por ejemplo, 200 candidatos por pasada) sobre índices parciales. Lo que no cabe en una pasada, entra en la siguiente.
 
 > **Trampa — el primer despliegue inunda la bandeja.** Si el barrido de recordatorios buscara "todos los pendientes con `due_at` anterior a ahora", el día que se activa el canal de email se enviaría un correo por cada recordatorio vencido desde que el usuario empezó a usar la aplicación, meses atrás. La ventana de 24 h lo evita: solo avisa de lo que venció recientemente. Lo mismo con la inactividad: el primer barrido encuentra decenas de solicitudes paradas, y por eso se envía **un solo email por usuario y pasada** con la lista, no uno por solicitud (aunque cada solicitud tiene su propio reclamo, para no repetirla).
+
+> **Trampa — limpiar entregas quita la protección.** Una entrega terminada es lo único que impide reclamar otra vez su motivo: si se borrara la de un recordatorio que sigue en su ventana, el barrido lo volvería a avisar. Por eso la limpieza (decidida con el usuario en F12, sin historial visible para él) solo borra entregas terminadas de más de 90 días, muy por encima de la ventana de cualquier barrido (24 h, la entrevista futura, la semana en curso, el cruce del umbral de inactividad), y se construye al final de F12, cuando existan los cuatro barridos y se pueda probar esa regla con cada uno.
 
 > **Trampa — varios workers ejecutan el mismo barrido.** Si algún día hay dos procesos `worker`, cada uno puede disparar su tarea programada a la misma hora. El diseño no depende de que la cola lo deduplique: los barridos son seguros por construcción, porque todo envío pasa por un reclamo con clave única (§4). Dos barridos simultáneos compiten por insertar el mismo reclamo y solo uno gana.
 
@@ -134,10 +137,20 @@ La `dedupe_key` define qué es "el mismo motivo":
 - `notification_deliveries` (migración `f58741a45d81`), con dos columnas que el diseño no tenía: `claimed_at` (último reclamo, desde el que mide el barrido de abandonados, con un índice parcial sobre los `claimed`) y `next_attempt_at` (solo en `failed` con intentos restantes).
 - `NotificationDeliveryRepository.claim`: un `INSERT … ON CONFLICT DO NOTHING` y, si ya existía, un `UPDATE` que solo vuelve a reclamar una entrega `failed` cuyo reintento ya toca. Las dos sentencias son atómicas sin bloqueo previo, y cada reclamo cuenta como un intento. `sent` y `unknown` no se vuelven a reclamar nunca.
 - `NotificationDeliveryService`: `claim` (reclama y confirma), `enqueue_send` (encola `send_notification` con un solo intento; si la cola no responde, la entrega se queda en `claimed` y el barrido la da por perdida), `deliver` (carga por id **y** `user_id`, no hace nada si ya no está en `claimed`, y clasifica el resultado del envío) y `expire_abandoned_claims`.
-- **Compositores:** el contenido de cada tipo lo escribe un `NotificationComposer`, que recibe la entrega y el usuario y devuelve el email, o `None` si el motivo ya no existe (un recordatorio completado entre el barrido y el envío). En ese caso la entrega se borra: no salió nada y no hay nada que recordar. Un tipo sin compositor, o una cuenta borrada, dejan la entrega en `failed` sin más intentos. El primer compositor, el del recordatorio vencido, llega con el paso 2, y con él se decide si el envío pasa por un `EmailChannel` (la costura `NotificationChannel` de F4, pensada para un recordatorio) o solo por los compositores.
+- **Compositores:** el contenido de cada tipo lo escribe un `NotificationComposer`, que recibe la entrega y el usuario y devuelve el email, o `None` si el motivo ya no existe (un recordatorio completado entre el barrido y el envío). En ese caso la entrega se borra: no salió nada y no hay nada que recordar. Un tipo sin compositor, o una cuenta borrada, dejan la entrega en `failed` sin más intentos. El primero, el del recordatorio vencido, llegó con el paso 2; `composers_for` (`services/notifications/`) los reúne.
 - **Programación:** los barridos son `CronJob` de SAQ en `jobs/notifications.py` (`notification_cron_jobs`), y sin SMTP no se programa ninguno (B11). SAQ encola cada pasada con la clave `cron:<función>`, así que ni con dos workers se ejecuta dos veces, aunque el diseño no depende de eso. El único barrido del paso 1 es el de reclamos abandonados (cada 5 minutos).
 - **Preferencias:** `notify_reminder_due`, `notify_interview`, `notify_weekly_digest`, `notify_stale` e `interview_notice_hours` en `users`, editables en `PATCH /me/preferences`. Un `null` explícito en un campo que no admite nulos responde 422: antes, en `stale_after_days`, llegaba a la BD y daba un 500.
 - **Pruebas:** B2, B3 (dos transacciones reales), B4, B5, B6 y B11 en `tests/repositories/test_notification_delivery_repository.py` y `tests/services/test_notification_delivery_service.py`.
+
+**Construido en F12 (paso 2: recordatorio vencido, RF-80).**
+
+- **Sin `EmailChannel`** ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)): la costura `NotificationChannel` de F4 se retiró, y el canal va en la entrega (`notification_deliveries.channel`, hoy solo `email`, dentro de la clave única).
+- `ReminderDueSweep` (`services/notifications/reminder_due.py`), cada minuto: lee los candidatos con `ReminderRepository.list_due_for_notification` (pendientes vencidos en las últimas 24 h, de cuentas con `notify_reminder_due`, sin una entrega que lo impida), pregunta a SuperTokens si el email está verificado (una vez por cuenta y pasada), reclama y encola. Lee por páginas hasta agotar los candidatos o llegar a 200 reclamos: si leyera una sola página, las cuentas sin verificar, que nunca reclaman, podrían ocuparla entera y dejar sin aviso a las demás.
+- **Antelación** (añadida a petición del usuario): `users.reminder_notice_hours` (0 = al vencer, por defecto; la interfaz ofrece 1 hora y 1 día). El barrido compara el momento del aviso, `due_at` menos la antelación, y el email dice "vence pronto" si sale antes de la fecha (se compara con `claimed_at`). Sigue siendo un aviso por recordatorio: cambiar la antelación después de enviarlo no manda otro.
+- `ReminderDueComposer`: vuelve a comprobar al enviar que el recordatorio sigue pendiente y el aviso activado, y escribe el email con el título, la fecha en la zona y el idioma del usuario (`domain/dates.py`, sin Babel: con dos idiomas basta una tabla), la solicitud y su empresa, y un enlace a la solicitud o a `/reminders`. El título, que escribe el usuario, se aplana a una línea para el asunto.
+- Plantillas `templates/email/reminder_due/{es,en}.{txt,html}`.
+- Verificado en vivo: un recordatorio vencido llegó a Mailpit a la hora de Madrid, la entrega quedó en `sent` y la pasada siguiente no envió nada más.
+- Pruebas: B7 y el resto en `tests/services/test_reminder_due_notifications.py`, incluida una de punta a punta (barrido → envío → un solo email).
 
 ## 5. Emails
 
@@ -195,7 +208,7 @@ Verificación y recuperación de contraseña se envían con este mismo `EmailSen
 
 | Funcionalidad | Estado | Costura que lo permitirá |
 |---|---|---|
-| Telegram, push u otros canales | Evolución documentada | Otra implementación de `NotificationChannel`; los barridos y la deduplicación no cambian |
+| Telegram, push u otros canales | Evolución documentada | Otro valor de `DeliveryChannel` (ya en la clave única), su emisor en `infra/` y sus textos; los barridos y la deduplicación no cambian. Lo que supondría, en [0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md) |
 | Varios workers o workers en otra máquina | No hace falta con un VPS | Los barridos ya son seguros con varios procesos; los ficheros exigirían S3 ([ficheros](ficheros.md)) |
 | Panel de administración de la cola | `[C]` | SAQ trae una interfaz web propia que se podría publicar solo en local |
 | Rebotes y quejas del servidor de correo (bounces) | `[C]` | Un webhook del proveedor que marque la dirección como no entregable |

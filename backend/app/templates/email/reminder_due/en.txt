@@ -1,0 +1,14 @@
+{% if upcoming %}{% set subject = "Reminder: " ~ title %}{% else %}{% set subject = "Reminder due: " ~ title %}{% endif -%}
+Hi,
+
+{% if upcoming %}One of your reminders is coming up:{% else %}One of your reminders has reached its date:{% endif %}
+
+{{ title }}
+Due: {{ due }}
+{% if application %}Application: {{ application }}
+{% endif %}
+Open it in Applications Tracker to mark it as done or dismiss it:
+
+{{ link }}
+
+You are getting this email because the reminder notification is on. You can turn it off or change how far ahead it arrives in Preferences: {{ preferences_link }}

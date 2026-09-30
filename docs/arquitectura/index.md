@@ -212,7 +212,7 @@ Restricciones e índices:
 | Servicio | Detrás de qué | En desarrollo y pruebas |
 |---|---|---|
 | SuperTokens core | SDK `supertokens-python` inicializado en `core/supertokens.py`; el resto del código solo ve `get_current_user` | En pruebas de API, `get_current_user` se sustituye por `dependency_overrides` con un usuario de prueba. Una prueba de humo usa el core real. |
-| Canal de notificaciones | Interfaz `NotificationChannel` en `services/notifications/` | Implementación única `InAppChannel`, que no envía nada. |
+| Canal de notificaciones | Interfaz `NotificationChannel` en `services/notifications/` | Implementación única `InAppChannel`, que no enviaba nada. **Retirada en F12** ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)): el canal de un aviso va en su entrega (`notification_deliveries.channel`). |
 
 ## 7. Aislamiento entre usuarios
 
@@ -324,7 +324,7 @@ Cada prueba corre dentro de una transacción que se revierte al terminar: no que
 | **F1** | Servicios SuperTokens en compose. `core/supertokens.py`, middleware, CORS con las cabeceras de SuperTokens, tabla `users`, `get_current_user`, formularios de login y registro, loaders y layout protegido. |
 | **F2** | `companies` y `applications` completas (sin historial todavía, estado inicial fijo), CRUD, filtros, paginación, archivado y pruebas de aislamiento. |
 | **F3** | `application_status_changes`, `ApplicationStatusService`, `allowed_transitions`, deshacer y diálogo de estado en el frontend. |
-| **F4** | `interviews` y `reminders`, `NotificationChannel`/`InAppChannel` y avisos de vencidos. |
+| **F4** | `interviews` y `reminders`, `NotificationChannel`/`InAppChannel` (retirados en F12, [0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)) y avisos de vencidos. |
 | **F5** | Endpoint `GET /dashboard` y exportación CSV. |
 | **F6–F7** | CI y preparación para despliegue. |
 

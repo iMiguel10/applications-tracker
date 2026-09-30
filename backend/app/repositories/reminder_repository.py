@@ -1,15 +1,37 @@
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, String, and_, cast, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
+from app.domain.notifications import (
+    REMINDER_KEY_PREFIX,
+    DeliveryChannel,
+    DeliveryStatus,
+    NotificationKind,
+)
+from app.domain.reminder import ReminderStatus
+from app.models.application import Application
+from app.models.notification_delivery import NotificationDelivery
 from app.models.reminder import Reminder
+from app.models.user import User
 
 ReminderSort = Literal["due_at", "created_at"]
+
+
+@dataclass(frozen=True)
+class DueReminder:
+    """Un candidato del barrido de recordatorios vencidos. Lleva el id de
+    SuperTokens para preguntar si el email está verificado sin otra consulta."""
+
+    reminder_id: uuid.UUID
+    user_id: uuid.UUID
+    due_at: datetime
+    supertokens_user_id: str
 
 
 @dataclass(frozen=True)
@@ -110,3 +132,78 @@ class ReminderRepository:
         """Envía a la BD los cambios de un recordatorio ya cargado (UPDATE)."""
         await self.session.flush()
         return reminder
+
+    async def get_for_notification(
+        self, user_id: uuid.UUID, reminder_id: uuid.UUID
+    ) -> Reminder | None:
+        """El recordatorio con su solicitud y la empresa de esta: el email de aviso
+        dice de qué candidatura es (RF-80)."""
+        return await self.session.scalar(
+            select(Reminder)
+            .options(joinedload(Reminder.application).joinedload(Application.company))
+            .where(Reminder.user_id == user_id, Reminder.id == reminder_id)
+        )
+
+    async def list_due_for_notification(
+        self,
+        *,
+        notify_after: datetime,
+        now: datetime,
+        after: tuple[datetime, uuid.UUID] | None,
+        limit: int,
+    ) -> Sequence[DueReminder]:
+        """Candidatos del barrido de RF-80: recordatorios pendientes cuyo momento de
+        aviso (la fecha menos la antelación de la cuenta) cayó en
+        `(notify_after, now]`, de cuentas con el aviso activado, y sin una entrega que
+        impida avisar (reclamada, enviada, desconocida, o fallida sin reintento que
+        ya toque). Paginado por `(due_at, id)` con `after`.
+
+        Recorre los recordatorios de todos los usuarios a propósito: es un barrido
+        del sistema, y cada fila lleva su `user_id` para todo lo que venga después.
+        """
+        delivery = NotificationDelivery
+        blocking_delivery = (
+            select(delivery.id)
+            .where(
+                delivery.user_id == Reminder.user_id,
+                delivery.kind == NotificationKind.REMINDER_DUE,
+                delivery.channel == DeliveryChannel.EMAIL,
+                delivery.dedupe_key
+                == literal(REMINDER_KEY_PREFIX) + cast(Reminder.id, String),
+                or_(
+                    delivery.status != DeliveryStatus.FAILED,
+                    delivery.next_attempt_at.is_(None),
+                    delivery.next_attempt_at > now,
+                ),
+            )
+            .exists()
+        )
+        # El momento del aviso: la fecha menos la antelación de la cuenta (RF-80).
+        notify_at = Reminder.due_at - func.make_interval(
+            0, 0, 0, 0, User.reminder_notice_hours
+        )
+        query = (
+            select(
+                Reminder.id, Reminder.user_id, Reminder.due_at, User.supertokens_user_id
+            )
+            .join(User, User.id == Reminder.user_id)
+            .where(
+                Reminder.status == ReminderStatus.PENDING,
+                notify_at > notify_after,
+                notify_at <= now,
+                User.notify_reminder_due.is_(True),
+                ~blocking_delivery,
+            )
+        )
+        if after is not None:
+            after_due_at, after_id = after
+            query = query.where(
+                or_(
+                    Reminder.due_at > after_due_at,
+                    and_(Reminder.due_at == after_due_at, Reminder.id > after_id),
+                )
+            )
+        rows = await self.session.execute(
+            query.order_by(Reminder.due_at, Reminder.id).limit(limit)
+        )
+        return [DueReminder(*row) for row in rows.all()]

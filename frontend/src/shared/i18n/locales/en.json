@@ -479,7 +479,7 @@
     "unavailable": "This installation doesn't send email, so there are no email notifications.",
     "notify_reminder_due": {
       "label": "Reminder due",
-      "description": "When a pending reminder reaches its date."
+      "description": "When a pending reminder reaches its date, or earlier if you choose so."
     },
     "notify_interview": {
       "label": "Upcoming interview",
@@ -494,6 +494,7 @@
       "description": "When an application goes past the days without activity you set in Preferences."
     },
     "noticeLabel": "Notify",
+    "atDue": "When it is due",
     "noticeHours_one": "{{count}} hour before",
     "noticeHours_other": "{{count}} hours before",
     "noticeDays_one": "{{count}} day before",

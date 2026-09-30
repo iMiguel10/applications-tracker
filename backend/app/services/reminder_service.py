@@ -16,23 +16,16 @@ from app.repositories.reminder_repository import (
 )
 from app.schemas.reminder import ReminderCreate, ReminderListQuery
 from app.services.limit_service import LimitService
-from app.services.notifications.base import NotificationChannel
-from app.services.notifications.in_app import InAppChannel
 
 
 class ReminderService:
     """Reglas de negocio de los recordatorios (RF-50…53). Dueño de la transacción."""
 
-    def __init__(
-        self, session: AsyncSession, channel: NotificationChannel | None = None
-    ) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.reminders = ReminderRepository(session)
         self.applications = ApplicationRepository(session)
         self.limits = LimitService(session)
-        # Costura de RF-53: el service solo conoce la interfaz. En el MVP siempre es
-        # InAppChannel; un canal nuevo se inyecta aquí, no cambia el resto del service.
-        self.channel = channel or InAppChannel()
 
     async def list(
         self, user_id: uuid.UUID, query: ReminderListQuery
@@ -59,7 +52,6 @@ class ReminderService:
 
         reminder = Reminder(user_id=user_id, **data.model_dump())
         await self.reminders.add(reminder)
-        await self.channel.send(reminder)
         await self.session.commit()
         return await self._get_or_404(user_id, reminder.id)
 

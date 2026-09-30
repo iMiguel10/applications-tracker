@@ -22,6 +22,8 @@ Enter the **Title** and the **Due date**, and click **Save**.
 
 A pending reminder whose date has passed is shown as **Overdue**. Reminders cannot be edited: if the date changed, dismiss or delete the old one and create a new one.
 
+If the **Reminder due** notification is on in [Preferences](preferencias.md#choose-your-email-notifications), you get an email when it falls due, or earlier if you choose a notice, with the date in your time zone. Only one per reminder, and only if it is still pending: if you mark it as done first, nothing arrives.
+
 ## Where to see them
 
 - In **Reminders**, with a status filter: Pending, Done, Dismissed or All.

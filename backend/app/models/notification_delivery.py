@@ -15,21 +15,22 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.db.constraints import enum_check
-from app.domain.notifications import DeliveryStatus, NotificationKind
+from app.domain.notifications import DeliveryChannel, DeliveryStatus, NotificationKind
 
 
 class NotificationDelivery(Base):
     """Un email de aviso: lo que hace posible "nunca dos veces" (RF-87, A20).
 
     Se inserta en `claimed` y se confirma ANTES de hablar con el SMTP. La clave
-    única (usuario, tipo, motivo) hace que dos barridos que compiten por el mismo
+    única (usuario, tipo, canal, motivo) hace que dos barridos que compiten por el mismo
     aviso inserten una sola fila: el segundo no reclama nada y no envía nada.
     """
 
     __tablename__ = "notification_deliveries"
     __table_args__ = (
-        UniqueConstraint("user_id", "kind", "dedupe_key"),
+        UniqueConstraint("user_id", "kind", "channel", "dedupe_key"),
         enum_check("kind", NotificationKind, "kind"),
+        enum_check("channel", DeliveryChannel, "channel"),
         enum_check("status", DeliveryStatus, "status"),
         # Barrido de reclamos abandonados (cada 5 min): solo mira los `claimed`.
         Index(
@@ -47,6 +48,9 @@ class NotificationDelivery(Base):
         ForeignKey("users.id", ondelete="CASCADE")
     )
     kind: Mapped[str] = mapped_column(String(30))
+    channel: Mapped[str] = mapped_column(
+        String(20), server_default=DeliveryChannel.EMAIL.value
+    )
     # Qué hace único el motivo: `reminder:<id>`, `interview:<id>:<scheduled_at>`…
     # (segundo plano §4).
     dedupe_key: Mapped[str] = mapped_column(String(200))

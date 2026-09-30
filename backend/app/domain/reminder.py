@@ -4,9 +4,9 @@ from enum import StrEnum
 
 
 class ReminderChannel(StrEnum):
-    """Por dónde se avisa. En el MVP solo existe `IN_APP` (RF-53): es la costura
-    para futuros canales (email, Telegram…), que llegarían como una implementación
-    nueva de `NotificationChannel` más este valor."""
+    """Dónde se ve el recordatorio: siempre `in_app` (RF-53). Los avisos por email
+    no dependen de este valor: se activan en las preferencias de la cuenta
+    (`notify_reminder_due`)."""
 
     IN_APP = "in_app"
 

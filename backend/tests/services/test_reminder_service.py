@@ -6,10 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import ConflictError, LimitReachedError, NotFoundError
-from app.models.reminder import Reminder
 from app.schemas.reminder import ReminderCreate, ReminderListQuery
 from app.schemas.user import CurrentUser
-from app.services.notifications.base import NotificationChannel
 from app.services.reminder_service import ReminderService
 from tests.factories import make_application, make_reminder
 
@@ -159,27 +157,3 @@ async def test_list_defaults_to_pending_only(
 
     assert total == 1
     assert items[0].title == "Pendiente"
-
-
-@pytest.mark.asyncio
-async def test_create_calls_the_notification_channel(
-    db_session: AsyncSession, user: CurrentUser
-):
-    """La costura de RF-53: el service llama al canal inyectado, sea cual sea, en
-    vez de conocer directamente InAppChannel."""
-
-    class RecordingChannel(NotificationChannel):
-        def __init__(self) -> None:
-            self.sent: list[Reminder] = []
-
-        async def send(self, reminder: Reminder) -> None:
-            self.sent.append(reminder)
-
-    channel = RecordingChannel()
-
-    await ReminderService(db_session, channel=channel).create(
-        user.id,
-        ReminderCreate(title="x", due_at=datetime.now(UTC) + timedelta(days=1)),
-    )
-
-    assert len(channel.sent) == 1

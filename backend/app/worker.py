@@ -15,6 +15,7 @@ from app.core.supertokens import init_supertokens
 from app.db.session import async_session_factory
 from app.infra.email import build_email_sender
 from app.infra.pdf.weasyprint_renderer import WeasyPrintRenderer
+from app.infra.queue import SaqJobQueue
 from app.infra.storage import LocalFileStorage
 from app.jobs.auth_emails import send_password_reset_email, send_verification_email
 from app.jobs.context import WorkerContext
@@ -25,18 +26,23 @@ from app.jobs.notifications import notification_cron_jobs, send_notification
 setup_logging()
 
 
+# La misma cola que atiende el worker: los barridos encolan en ella los envíos.
+queue = Queue.from_url(config.valkey_url)
+
+
 async def startup(ctx: WorkerContext) -> None:
     # Los trabajos piden a SuperTokens el email del destinatario (A12): el SDK
     # necesita estar inicializado también en este proceso, no solo en la API.
     init_supertokens()
     ctx["session_factory"] = async_session_factory
     ctx["email_sender"] = build_email_sender(config)
+    ctx["job_queue"] = SaqJobQueue(queue)
     ctx["storage"] = LocalFileStorage(config.files_root)
     ctx["pdf_renderer"] = WeasyPrintRenderer()
 
 
 settings = {
-    "queue": Queue.from_url(config.valkey_url),
+    "queue": queue,
     "functions": [
         send_password_reset_email,
         send_verification_email,

@@ -119,7 +119,7 @@ backend/
 │   ├── services/               reglas de negocio y transacciones
 │   │   ├── application_service.py
 │   │   ├── application_status_service.py
-│   │   └── notifications/      NotificationChannel + InAppChannel (F4)
+│   │   └── notifications/      F12: un módulo por aviso, con su barrido y su compositor (la costura de F4 se retiró, 0012)
 │   └── api/v1/
 │       ├── router.py           routers públicos + `protected` (exige sesión por construcción)
 │       ├── deps.py             get_db, get_current_user, fábricas de services
@@ -264,7 +264,7 @@ Confirmadas con el usuario durante el diseño:
 | 4 | `users` es solo un enlace, sin email | Los datos de identidad se piden a SuperTokens cuando hacen falta |
 | 5 | Se mantiene `last_activity_at` | La actualizan los services al cambiar de estado y al tocar entrevistas |
 | 6 | Se mantiene `changed_at` en el historial | El orden y deshacer usan `seq` ([0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)); las métricas usan `changed_at` y `created_at` queda como dato informativo |
-| 7 | Recordatorios solo en la app, preparados para email y otros canales | `channel` + `NotificationChannel`; sin worker en el MVP |
+| 7 | Recordatorios solo en la app, preparados para email y otros canales | `channel` + `NotificationChannel`; sin worker en el MVP. En F12 la costura se movió a la entrega del aviso ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)) |
 | 8 | Documentación con MkDocs Material 9 | Imagen fijada; diagramas Mermaid |
 | 9 | Tipos del frontend escritos a mano (heredado) | Generarlos desde OpenAPI (`openapi-typescript`) queda como mejora si aparecen divergencias. Riesgo aceptado: un cambio de schema en el backend no rompe la compilación del frontend. |
 | 10 | Idioma | Identificadores de código en inglés; UI, comentarios, documentación y commits en español (heredado de GestPro) |
@@ -425,7 +425,7 @@ backend/app/
 ├── services/                   + document_service, profile_service, cv_generation_service,
 │                                 ai_proposal_service, ai_key_service, notification_service,
 │                                 limit_service, calendar_service
-│   └── notifications/          + email.py: EmailChannel (segunda implementación de NotificationChannel)
+│   └── notifications/          reminder_due.py…: barrido y compositor de cada aviso (sin EmailChannel, 0012)
 ├── api/v1/
 │   ├── router.py               + router `public` con la lista blanca (calendario, baja de avisos)
 │   ├── deps.py                 + fábricas de infra, require_verified_email, rate_limit(...)
