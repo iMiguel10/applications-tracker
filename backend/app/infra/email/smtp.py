@@ -14,6 +14,15 @@ from app.infra.email.base import (
 SmtpSecurity = Literal["none", "starttls", "tls"]
 
 
+# Líneas de hasta 998 caracteres, el límite real (RFC 5322), en vez de 78. Una
+# cabecera sin espacios más larga que 78, como la URL de List-Unsubscribe, no se
+# puede doblar, y con el límite por defecto Python la codificaba en RFC 2047
+# (=?utf-8?q?...?=): los clientes de correo no la reconocen y no muestran el botón
+# de baja (RFC 8058). El texto con tildes se sigue codificando como debe.
+_SMTP_POLICY = policy.SMTP.clone(max_line_length=998)
+_SMTPUTF8_POLICY = policy.SMTPUTF8.clone(max_line_length=998)
+
+
 class SmtpEmailSender:
     """Envío por SMTP con `aiosmtplib`, clasificando **dónde** falla cada envío.
 
@@ -95,7 +104,9 @@ class SmtpEmailSender:
 
         try:
             await client.data(
-                message.as_bytes(policy=policy.SMTPUTF8 if needs_utf8 else policy.SMTP)
+                message.as_bytes(
+                    policy=_SMTPUTF8_POLICY if needs_utf8 else _SMTP_POLICY
+                )
             )
         except aiosmtplib.SMTPResponseException as exc:
             # El servidor contestó con un código de error, al pedir DATA o al

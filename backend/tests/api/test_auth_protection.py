@@ -7,7 +7,13 @@ from app.main import app
 
 # Lista blanca de lo que responde sin sesión (limites-y-abuso.md §4). Escrita aquí,
 # no leída del router `public`: añadir un endpoint público exige tocar la prueba.
-PUBLIC_PATHS = {"/api/v1/health", "/api/v1/meta"}
+# Con lo que responde un GET sin sesión: cualquier cosa menos 401. La baja de
+# avisos (RF-85) se autentica con el token firmado del enlace; sin él, 422.
+PUBLIC_PATHS = {
+    "/api/v1/health": 200,
+    "/api/v1/meta": 200,
+    "/api/v1/notifications/unsubscribe": 422,
+}
 DUMMY_ID = "00000000-0000-0000-0000-000000000000"
 HTTP_METHODS = {"get", "post", "put", "patch", "delete"}
 
@@ -58,4 +64,4 @@ async def test_public_paths_are_exactly_the_whitelist(
 
     response = await anonymous_client.get(path)
 
-    assert response.status_code == 200
+    assert response.status_code == PUBLIC_PATHS[path]

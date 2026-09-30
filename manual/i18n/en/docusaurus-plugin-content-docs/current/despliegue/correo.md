@@ -11,6 +11,7 @@ The application sends email through an **SMTP** server of your choice: your emai
 |---|---|
 | Confirm the email | When the account is created, and when the user clicks **Resend link** |
 | Recover or change the password | The user asks for it from the sign-in screen or from Preferences |
+| Notifications (reminder due, upcoming interview, weekly summary, applications without activity) | According to each user's preferences, only to verified emails. The `worker` decides them with scheduled tasks |
 
 They go out in the account language (or, if it is not set, in the one shown on screen), in Spanish or English.
 
@@ -59,3 +60,4 @@ The script's messages are in Spanish.
 - **The server does not allow SMTP.** Many hosting providers block port 25 by default, and some also 465 and 587, on new accounts. If the test hangs until the timeout, ask the provider to unblock the port or use a sending service that accepts port 587 or 2525.
 - **The sender is not authorised.** Many services only let you send from addresses or domains you have verified with them. If `EMAIL_FROM` doesn't match, they reject the email.
 - **Emails land in spam.** Set up **SPF**, **DKIM** and **DMARC** for the domain of `EMAIL_FROM` following your sending service's instructions. Without them, many servers distrust the email even though everything works.
+- **Gmail or Outlook don't show their unsubscribe button on notifications.** Every notification carries the one-click unsubscribe headers (`List-Unsubscribe`), but Gmail and Yahoo only show the button if the email is signed with **DKIM**. The unsubscribe link at the bottom of the email works anyway.

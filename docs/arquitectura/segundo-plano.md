@@ -1,6 +1,6 @@
 # Trabajo en segundo plano y emails
 
-> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso y el aviso de recordatorio vencido (§4) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F12). Construido: la cola, el `worker` y la anatomía de un trabajo (§2), `EmailSender` (§4 y §5) y, de F12, las entregas con su máquina de estados, el barrido de reclamos abandonados, las preferencias de aviso, el aviso de recordatorio vencido y la baja con un clic (§4 y §5) · Fecha: 2026-09-30 · Depende de la [arquitectura de la v2](v2.md) (A18–A20, A35–A37) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 >
 > Las APIs de SAQ que aparecen aquí se comprueban contra la versión que se fije al construir F9; lo que no cambia son las reglas.
 
@@ -171,6 +171,19 @@ El email del destinatario **no está en nuestra BD** (A12): el barrido lo pide a
 - `POST /notifications/unsubscribe` (público, en la lista blanca) aplica la baja. `GET` con el mismo token **no** la aplica: abre una página de la aplicación que pide confirmarla.
 
 > **Trampa — los escáneres de enlaces dan de baja a la gente.** Muchos servidores de correo corporativos siguen automáticamente cada enlace de un email entrante para analizarlo. Si un `GET` al enlace de baja la aplicara, el usuario quedaría dado de baja sin haber hecho clic. Por eso el `GET` solo muestra una confirmación, y la baja real es un `POST`, que es lo que hace el botón de un clic de RFC 8058 y lo que no hace un escáner.
+
+**Construido en F12 (paso 3).**
+
+- `domain/unsubscribe.py`: el token es `<usuario>.<tipo>.<firma>`, con la firma HMAC-SHA256 de una clave derivada de `APP_SECRET` para este propósito (así otra firma futura con el mismo secreto no vale aquí). Se compara en tiempo constante. `PREFERENCE_FOR_KIND` dice qué interruptor desactiva cada tipo.
+- `APP_SECRET`: variable nueva y obligatoria, de al menos 32 caracteres. Cambiarla invalida los enlaces ya enviados.
+- `UnsubscribeService` y `GET`/`POST /api/v1/notifications/unsubscribe` (router `public`, 30 por minuto y por IP). El `POST` ignora el cuerpo: es también la URL de `List-Unsubscribe`, a la que los clientes de correo envían `List-Unsubscribe=One-Click`. Una cuenta que ya no existe responde igual que una que sí, para que el enlace no revele si sigue viva.
+- `NotificationDeliveryService.deliver` firma el token y pasa al compositor el enlace de la página (`WEBSITE_DOMAIN/unsubscribe?token=…`), y pone las cabeceras con la URL de la API (`API_DOMAIN/api/v1/notifications/unsubscribe?token=…`).
+- Frontend: `pages/UnsubscribePage.tsx` en `/unsubscribe`, sin sesión. Pide confirmar y solo el botón hace el `POST`.
+- Pruebas: B10 en `tests/api/test_unsubscribe.py` y `tests/domain/test_unsubscribe.py`; las cabeceras del email, en `test_notification_delivery_service.py`.
+
+> **Trampa — una cabecera larga sale codificada.** La URL de `List-Unsubscribe` supera los 78 caracteres y no tiene espacios por donde doblar la línea. Con la política `SMTP` por defecto, Python la codificaba en RFC 2047 (`=?utf-8?q?…?=`): el email llega, pero los clientes de correo no reconocen la cabecera y no muestran el botón de baja. Se vio en Mailpit al verificar en vivo, no en las pruebas, porque el servidor SMTP falso decodificaba las cabeceras al parsear. `SmtpEmailSender` serializa ahora con líneas de hasta 998 caracteres, el límite real (RFC 5322), y el servidor falso guarda también los bytes tal cual llegan para poder probarlo.
+
+> **Nota para producción:** Gmail y Yahoo solo muestran el botón de baja de un clic si el email lleva firma **DKIM** que cubra `List-Unsubscribe`. Es configuración del servicio de envío (manual de despliegue, correo).
 
 ### Sin SMTP configurado (RNF-34)
 

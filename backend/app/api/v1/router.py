@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     interviews,
     me,
     meta,
+    notifications,
     reminders,
 )
 from app.schemas.auth import UnauthorizedError
@@ -22,6 +23,7 @@ router = APIRouter()
 public = APIRouter()
 public.include_router(health.router)
 public.include_router(meta.router)
+public.include_router(notifications.router)
 
 router.include_router(public)
 

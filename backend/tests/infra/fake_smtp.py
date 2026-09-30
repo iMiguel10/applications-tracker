@@ -29,6 +29,9 @@ class FakeSmtpServer:
         self.behavior = behavior
         self.smtputf8 = smtputf8
         self.messages: list[EmailMessage] = []
+        # Tal cual llegan: `messages` decodifica las cabeceras al parsearlas y
+        # escondería cómo viajaron.
+        self.raw: list[bytes] = []
         self.recipients: list[str] = []  # direcciones de sobre (RCPT TO)
         self.port = 0
         self._server: asyncio.Server | None = None
@@ -102,6 +105,7 @@ class FakeSmtpServer:
                     # policy.default: devuelve EmailMessage (con iter_parts), no el
                     # Message de compat32.
                     body = data[: -len(b".\r\n")]
+                    self.raw.append(body)
                     self.messages.append(
                         message_from_bytes(body, policy=policy.default)
                     )

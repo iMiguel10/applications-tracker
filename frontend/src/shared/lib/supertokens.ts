@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  "/unsubscribe",
 ];
 
 // Los emails de la cuenta salen en el idioma de la cuenta o, si no lo tiene, en el

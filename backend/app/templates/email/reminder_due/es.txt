@@ -11,4 +11,6 @@ Hola:
 
 {{ link }}
 
-Recibes este email porque tienes activado el aviso de recordatorios. Puedes desactivarlo o cambiar su antelación en Preferencias: {{ preferences_link }}
+Recibes este email porque tienes activado el aviso de recordatorios.
+Para no recibir más estos avisos: {{ unsubscribe_link }}
+Para cambiar su antelación o tus otros avisos, ve a Preferencias: {{ preferences_link }}

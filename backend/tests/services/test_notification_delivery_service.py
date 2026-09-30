@@ -7,11 +7,13 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.domain.notifications import (
     MAX_DELIVERY_ATTEMPTS,
     DeliveryStatus,
     NotificationKind,
 )
+from app.domain.unsubscribe import verify_unsubscribe_token
 from app.infra.email import EmailDeliveryUnknownError, EmailNotSentError
 from app.infra.email.recording import RecordingEmailSender
 from app.infra.email.templates import RenderedEmail
@@ -46,11 +48,13 @@ class FakeComposer:
     def __init__(self, *, reason_gone: bool = False) -> None:
         self.reason_gone = reason_gone
         self.composed: list[str] = []
+        self.unsubscribe_links: list[str] = []
 
     async def compose(
-        self, delivery: NotificationDelivery, user: User
+        self, delivery: NotificationDelivery, user: User, unsubscribe_link: str
     ) -> RenderedEmail | None:
         self.composed.append(delivery.dedupe_key)
+        self.unsubscribe_links.append(unsubscribe_link)
         if self.reason_gone:
             return None
         return RenderedEmail(subject="Aviso", text="Texto", html="<p>Texto</p>")
@@ -100,6 +104,30 @@ async def test_accepted_email_is_sent_once(db_session: AsyncSession, user: Curre
     assert delivery.status == DeliveryStatus.SENT
     assert delivery.sent_at == NOW
     assert [email.to for email in sender.sent] == [EMAIL]
+
+
+@pytest.mark.asyncio
+async def test_every_email_carries_its_one_click_unsubscribe(
+    db_session: AsyncSession, user: CurrentUser
+):
+    # RF-85: la cabecera para el botón del cliente de correo (RFC 8058) y el enlace
+    # a la página que pide confirmar, con un token de ese usuario y ese tipo.
+    sender = RecordingEmailSender()
+    composer = FakeComposer()
+    service = _service(db_session, sender, composer=composer)
+    delivery_id = await _claim(service, user)
+
+    await service.deliver(delivery_id, user.id, NOW)
+
+    [email] = sender.sent
+    one_click = email.headers["List-Unsubscribe"]
+    assert one_click.startswith(f"<{settings.api_domain.rstrip('/')}/api/v1/")
+    assert email.headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+    [link] = composer.unsubscribe_links
+    assert link.startswith(f"{settings.website_domain.rstrip('/')}/unsubscribe?token=")
+    token = link.split("token=")[1]
+    assert f"token={token}>" in one_click
+    assert verify_unsubscribe_token(token, settings.app_secret) == (user.id, KIND)
 
 
 @pytest.mark.asyncio

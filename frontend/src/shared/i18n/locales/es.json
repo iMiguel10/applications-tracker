@@ -445,7 +445,8 @@
     "changed_at_before_last_change": "La fecha no puede ser anterior al último cambio",
     "reminders_limit_reached": "Has alcanzado tu límite de {{limit, number}} recordatorios",
     "reminder_not_pending": "Este recordatorio ya no está pendiente",
-    "rate_limited": "Demasiados intentos. Vuelve a intentarlo {{wait}}."
+    "rate_limited": "Demasiados intentos. Vuelve a intentarlo {{wait}}.",
+    "invalid_unsubscribe_token": "Este enlace de baja no es válido. Copia el enlace completo del email, o cambia tus avisos en Preferencias."
   },
   "usage": {
     "title": "Uso de la cuenta",
@@ -499,5 +500,13 @@
     "noticeHours_other": "{{count}} horas antes",
     "noticeDays_one": "{{count}} día antes",
     "noticeDays_other": "{{count}} días antes"
+  },
+  "unsubscribe": {
+    "title": "Darse de baja",
+    "subtitle": "Avisos por email de Applications Tracker",
+    "question": "¿Dejar de recibir los emails de «{{notification}}»? El resto de avisos no cambia.",
+    "confirm": "Darme de baja",
+    "done": "Listo: ya no recibirás los emails de «{{notification}}». Puedes volver a activarlos cuando quieras en Preferencias.",
+    "toPreferences": "Ir a Preferencias"
   }
 }

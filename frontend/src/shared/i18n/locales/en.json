@@ -445,7 +445,8 @@
     "changed_at_before_last_change": "The date cannot be earlier than the last change",
     "reminders_limit_reached": "You have reached your limit of {{limit, number}} reminders",
     "reminder_not_pending": "This reminder is no longer pending",
-    "rate_limited": "Too many attempts. Try again {{wait}}."
+    "rate_limited": "Too many attempts. Try again {{wait}}.",
+    "invalid_unsubscribe_token": "This unsubscribe link is not valid. Copy the full link from the email, or change your notifications in Preferences."
   },
   "usage": {
     "title": "Account usage",
@@ -499,5 +500,13 @@
     "noticeHours_other": "{{count}} hours before",
     "noticeDays_one": "{{count}} day before",
     "noticeDays_other": "{{count}} days before"
+  },
+  "unsubscribe": {
+    "title": "Unsubscribe",
+    "subtitle": "Applications Tracker email notifications",
+    "question": "Stop receiving “{{notification}}” emails? Your other notifications stay as they are.",
+    "confirm": "Unsubscribe",
+    "done": "Done: you will no longer receive “{{notification}}” emails. You can turn them back on at any time in Preferences.",
+    "toPreferences": "Go to Preferences"
   }
 }

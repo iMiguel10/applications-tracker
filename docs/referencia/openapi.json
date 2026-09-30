@@ -644,6 +644,136 @@
         }
       }
     },
+    "/api/v1/notifications/unsubscribe": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Consultar un enlace de baja de avisos",
+        "description": "Dice de qué tipo de aviso es un enlace de baja, **sin aplicarla**: la página\nde la aplicación lo usa para pedir confirmación.\n\nPúblico: el token firmado identifica al usuario y el tipo de aviso. Un `GET`\nnunca da de baja a nadie, porque muchos servidores de correo abren los enlaces\nde los emails para analizarlos.",
+        "operationId": "describe_unsubscribe_api_v1_notifications_unsubscribe_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "El token del enlace de baja que llega en cada email de aviso.",
+              "title": "Token"
+            },
+            "description": "El token del enlace de baja que llega en cada email de aviso."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribeRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Enlace de baja no válido (`invalid_unsubscribe_token`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones desde esta IP (30 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Darse de baja de un tipo de aviso",
+        "description": "Desactiva el tipo de aviso del enlace para su usuario (RF-85). Idempotente.\n\nPúblico y sin cuerpo obligatorio: es también la URL de la cabecera\n`List-Unsubscribe` de cada email, a la que los clientes de correo hacen un\n`POST` con `List-Unsubscribe=One-Click` (RFC 8058) cuando se pulsa su botón de\nbaja. El cuerpo se ignora.",
+        "operationId": "unsubscribe_api_v1_notifications_unsubscribe_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "El token del enlace de baja que llega en cada email de aviso.",
+              "title": "Token"
+            },
+            "description": "El token del enlace de baja que llega en cada email de aviso."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribeRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Enlace de baja no válido (`invalid_unsubscribe_token`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones desde esta IP (30 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "tags": [
@@ -5103,6 +5233,16 @@
         ],
         "title": "MetaRead"
       },
+      "NotificationKind": {
+        "type": "string",
+        "enum": [
+          "reminder_due",
+          "interview_upcoming",
+          "weekly_digest",
+          "stale_application"
+        ],
+        "title": "NotificationKind"
+      },
       "Page_ApplicationRead_": {
         "properties": {
           "items": {
@@ -5800,6 +5940,22 @@
         ],
         "title": "UnauthorizedError",
         "description": "Respuesta 401 de SuperTokens: no hay sesión, o el token ha caducado o es inválido."
+      },
+      "UnsubscribeRead": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind",
+            "description": "El tipo de aviso al que se refiere el enlace: `reminder_due`, `interview_upcoming`, `weekly_digest` o `stale_application`.",
+            "examples": [
+              "reminder_due"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "UnsubscribeRead"
       },
       "UpcomingInterview": {
         "properties": {

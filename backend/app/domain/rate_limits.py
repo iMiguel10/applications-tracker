@@ -34,6 +34,10 @@ RESEND_VERIFICATION_PER_USER = RateRule("resend_verification", "3/hour", RateKey
 # Límite general de toda la API con sesión (añadido en F11 a petición del
 # usuario): nadie lo nota usando la aplicación, pero frena un script que la machaque.
 API_PER_USER = RateRule("api", "600/minute", RateKey.USER)
+# Baja de avisos (RF-85): pública. El token firmado no se puede adivinar, pero sin
+# límite cualquiera podría cargar la BD a peticiones. Holgado para una persona que
+# se da de baja de varios avisos seguidos o de un cliente de correo que reintenta.
+UNSUBSCRIBE_PER_IP = RateRule("unsubscribe", "30/minute", RateKey.IP)
 
 # Rutas /auth/* de SuperTokens (POST) y sus reglas. Las sirve el middleware de
 # SuperTokens, no nuestros endpoints: las limita api/auth_rate_limit.py.

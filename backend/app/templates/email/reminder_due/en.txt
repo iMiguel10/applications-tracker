@@ -11,4 +11,6 @@ Open it in Applications Tracker to mark it as done or dismiss it:
 
 {{ link }}
 
-You are getting this email because the reminder notification is on. You can turn it off or change how far ahead it arrives in Preferences: {{ preferences_link }}
+You are getting this email because the reminder notification is on.
+To stop these notifications: {{ unsubscribe_link }}
+To change how far ahead it arrives or your other notifications, go to Preferences: {{ preferences_link }}

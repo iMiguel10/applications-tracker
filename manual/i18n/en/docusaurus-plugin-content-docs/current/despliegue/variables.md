@@ -60,6 +60,14 @@ docker compose up -d --force-recreate
 
 If either of these is missing, the API does not start.
 
+## Signed links
+
+| Variable | Required | What it is |
+|---|---|---|
+| `APP_SECRET` | Yes | A secret of at least 32 characters used to sign the unsubscribe links of email notifications. Generate a random one, for example with `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
+
+If it is missing or shorter, the API does not start. Keep it like any other password: anyone who knows it can unsubscribe any user from notifications. If you change it, the unsubscribe links in emails already sent stop working (users can still change their notifications in Preferences).
+
 ## Email
 
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_TIMEOUT_SECONDS` and `EMAIL_FROM`. They are optional: without `SMTP_HOST`, the application starts anyway and sends no email. See [Email](correo.md).

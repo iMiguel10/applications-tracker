@@ -29,7 +29,7 @@ In the **Email notifications** card you turn each notification on or off separat
 | Weekly summary | On Monday mornings, in your time zone | Off |
 | Applications without activity | When an application goes past the days without activity in your preferences | Off |
 
-You never get two emails for the same reason. Every email has a link to turn that notification off without signing in.
+You never get two emails for the same reason. Every email has a link at the bottom to **unsubscribe** from that notification without signing in: it opens a page that asks whether you want to stop receiving it, and it only applies when you click **Unsubscribe**. Your email program may also show its own unsubscribe button, which does the same. To receive it again, turn it back on here.
 
 Notifications only go to a **verified** email: until it is, the card reminds you. If the installation does not send email, the card says so and the switches cannot be changed.
 

@@ -24,3 +24,17 @@ export const NOTICE_HOURS: Record<NoticeField, readonly number[]> = {
   reminder_notice_hours: [0, 1, 24],
   interview_notice_hours: [1, 2, 6, 12, 24, 48, 72, 168],
 };
+
+/** Tipos de aviso de la API (`notification_deliveries.kind`) y el interruptor que
+ * los desactiva: la página de baja nombra el aviso con la etiqueta del interruptor. */
+export const TOGGLE_FOR_KIND = {
+  reminder_due: "notify_reminder_due",
+  interview_upcoming: "notify_interview",
+  weekly_digest: "notify_weekly_digest",
+  stale_application: "notify_stale",
+} as const satisfies Record<string, NotificationToggle>;
+export type NotificationKind = keyof typeof TOGGLE_FOR_KIND;
+
+export interface UnsubscribeResult {
+  kind: NotificationKind;
+}

@@ -65,6 +65,30 @@ async def test_accepted_email_is_multipart_with_headers() -> None:
 
 
 @pytest.mark.asyncio
+async def test_a_long_unsubscribe_url_travels_as_is() -> None:
+    # Una URL de más de 78 caracteres no tiene espacios por donde doblar la línea,
+    # y con la política SMTP por defecto Python la codificaba en RFC 2047
+    # (=?utf-8?q?...?=): los clientes de correo no la reconocen y no muestran el
+    # botón de baja (RFC 8058). El límite real de una línea es 998.
+    url = (
+        "<https://api.example.com/api/v1/notifications/unsubscribe?token="
+        + "a" * 90
+        + ">"
+    )
+    email = OutgoingEmail(
+        to="ana@example.com",
+        subject="Recordatorio: llamar a Acme",
+        text="Hola",
+        headers={"List-Unsubscribe": url},
+    )
+    async with FakeSmtpServer() as server:
+        await make_sender(server.port).send(email)
+
+    [raw] = server.raw
+    assert f"List-Unsubscribe: {url}\r\n".encode() in raw
+
+
+@pytest.mark.asyncio
 async def test_text_only_email_is_not_multipart() -> None:
     async with FakeSmtpServer() as server:
         await make_sender(server.port).send(

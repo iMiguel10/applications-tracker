@@ -268,7 +268,9 @@ async def _compose(session: AsyncSession, user: CurrentUser, reminder: Reminder)
     delivery = await NotificationDeliveryRepository(session).get(delivery_id, user.id)
     assert delivery is not None
     composer = ReminderDueComposer(session, website_domain=WEBSITE)
-    return await composer.compose(delivery, await _user(session, user))
+    return await composer.compose(
+        delivery, await _user(session, user), f"{WEBSITE}/unsubscribe?token=t"
+    )
 
 
 @pytest.mark.asyncio

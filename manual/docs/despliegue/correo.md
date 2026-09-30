@@ -11,6 +11,7 @@ La aplicación envía el correo a través de un servidor **SMTP** que eliges tú
 |---|---|
 | Confirmar el email | Al crear la cuenta, y cuando el usuario pulsa **Reenviar enlace** |
 | Recuperar o cambiar la contraseña | Lo pide el usuario desde el inicio de sesión o desde Preferencias |
+| Avisos (recordatorio vencido, entrevista próxima, resumen semanal, solicitudes sin actividad) | Según las preferencias de cada usuario, solo a emails verificados. Los decide el `worker` con tareas programadas |
 
 Salen en el idioma de la cuenta (o, si no lo ha fijado, en el que ve en pantalla), en español o en inglés.
 
@@ -57,3 +58,4 @@ docker compose exec api python -m app.scripts.send_test_email tu@email.com
 - **El servidor no permite enviar SMTP.** Muchos proveedores de servidores bloquean por defecto el puerto 25, y algunos también el 465 y el 587, en cuentas nuevas. Si la prueba se queda esperando hasta el timeout, pide al proveedor que desbloquee el puerto o usa un servicio de envío que admita el 587 o el 2525.
 - **El remitente no está autorizado.** Muchos servicios solo dejan enviar desde direcciones o dominios que hayas verificado con ellos. Si `EMAIL_FROM` no coincide, rechazan el email.
 - **Los emails llegan a spam.** Configura **SPF**, **DKIM** y **DMARC** del dominio de `EMAIL_FROM` siguiendo las instrucciones de tu servicio de envío. Sin ellos, muchos servidores desconfían aunque todo funcione.
+- **No aparece el botón de baja de Gmail u Outlook en los avisos.** Cada aviso lleva las cabeceras de baja con un clic (`List-Unsubscribe`), pero Gmail y Yahoo solo muestran el botón si el email va firmado con **DKIM**. El enlace de baja del pie del email funciona igual.

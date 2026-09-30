@@ -143,9 +143,9 @@ Todo lo que responde sin sesión, y nada más:
 | `GET /api/v1/meta` | **[nuevo]** Capacidades de la instalación: `email_enabled`, proveedores de IA habilitados, usos gratuitos por cuenta. Lo usa la página de login para ocultar la recuperación de contraseña sin SMTP | Solo datos de configuración, nada de usuarios |
 | `/auth/*` | SuperTokens (v1): registro, sesión, verificación, recuperación | Rate limit por IP y email |
 | `GET /calendar/{token}.ics` | Feed del calendario (RF-132) | Token de 32 bytes aleatorios; en la BD solo su hash (A40); rate limit por token |
-| `POST /notifications/unsubscribe` | Baja de un tipo de aviso con un clic (RF-85) | Token firmado con HMAC; rate limit por IP |
+| `GET` y `POST /api/v1/notifications/unsubscribe` | Baja de un tipo de aviso con un clic (RF-85). **Construido en F12**: `GET` solo dice de qué aviso es el enlace; `POST` la aplica | Token firmado con HMAC (`APP_SECRET`); 30 por minuto y por IP (`UNSUBSCRIBE_PER_IP`) |
 
-Viven en el router `public` de `api/v1/router.py`. **La prueba T1** (ya existe desde F1) lee las rutas del OpenAPI y exige sesión a todas; en la v2, compara las rutas sin sesión con esta lista, **escrita en la propia prueba**. Un endpoint público nuevo exige tocar la prueba, y por tanto una revisión consciente.
+Viven en el router `public` de `api/v1/router.py`. Hoy son `health`, `meta` y la baja de avisos; el feed ICS llega con F17. **La prueba T1** (ya existe desde F1) lee las rutas del OpenAPI y exige sesión a todas; en la v2, compara las rutas sin sesión con esta lista, **escrita en la propia prueba**. Un endpoint público nuevo exige tocar la prueba, y por tanto una revisión consciente.
 
 ### El feed ICS en detalle
 

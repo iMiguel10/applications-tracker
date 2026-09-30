@@ -5,10 +5,11 @@ from supertokens_python.recipe.emailverification import EmailVerificationClaim
 from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.framework.fastapi import verify_session
 
+from app.core.client_ip import client_ip, parse_trusted_proxies
 from app.core.config import settings
 from app.core.exceptions import AppException, RateLimitedError
 from app.db.session import get_db
-from app.domain.rate_limits import API_PER_USER
+from app.domain.rate_limits import API_PER_USER, UNSUBSCRIBE_PER_IP
 from app.infra.queue import JobQueue
 from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
@@ -20,6 +21,7 @@ from app.services.dashboard_service import DashboardService
 from app.services.interview_service import InterviewService
 from app.services.limit_service import LimitService
 from app.services.reminder_service import ReminderService
+from app.services.unsubscribe_service import UnsubscribeService
 from app.services.user_service import UserService
 
 # Esquemas de seguridad SOLO para el OpenAPI: hacen que Swagger muestre el botón
@@ -91,6 +93,12 @@ def get_reminder_service(
     return ReminderService(db)
 
 
+def get_unsubscribe_service(
+    db: AsyncSession = Depends(get_db),
+) -> UnsubscribeService:
+    return UnsubscribeService(db)
+
+
 def get_limit_service(
     db: AsyncSession = Depends(get_db),
 ) -> LimitService:
@@ -158,5 +166,20 @@ async def enforce_api_rate_limit(
     result = await limiter.hit(
         rule.limit, rule.name, rule.key.value, str(current_user.id)
     )
+    if not result.allowed:
+        raise RateLimitedError(result.retry_after)
+
+
+async def enforce_unsubscribe_rate_limit(request: Request) -> None:
+    """Límite por IP de la baja de avisos, que responde sin sesión (límites y abuso
+    §4). La IP real, detrás de un proxy, sale de TRUSTED_PROXIES."""
+    limiter: RateLimiter = request.app.state.rate_limiter
+    rule = UNSUBSCRIBE_PER_IP
+    ip = client_ip(
+        request.client.host if request.client else None,
+        request.headers.get("x-forwarded-for"),
+        parse_trusted_proxies(settings.trusted_proxies),
+    )
+    result = await limiter.hit(rule.limit, rule.name, rule.key.value, ip)
     if not result.allowed:
         raise RateLimitedError(result.retry_after)

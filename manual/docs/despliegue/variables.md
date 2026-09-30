@@ -60,6 +60,14 @@ docker compose up -d --force-recreate
 
 Si falta alguna de estas dos, la API no arranca.
 
+## Enlaces firmados
+
+| Variable | Obligatoria | Qué es |
+|---|---|---|
+| `APP_SECRET` | Sí | Secreto de al menos 32 caracteres con el que se firman los enlaces de baja de los avisos por email. Genera uno aleatorio, por ejemplo con `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
+
+Si falta o es más corto, la API no arranca. Guárdalo como cualquier otra contraseña: quien lo conozca puede dar de baja de los avisos a cualquier usuario. Si lo cambias, los enlaces de baja de los emails ya enviados dejan de funcionar (los usuarios pueden seguir cambiando sus avisos en Preferencias).
+
 ## Correo
 
 `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_TIMEOUT_SECONDS` y `EMAIL_FROM`. Son opcionales: sin `SMTP_HOST`, la aplicación arranca igual y no envía emails. Ver [Correo](correo.md).

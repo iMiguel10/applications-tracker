@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     supertokens_connection_uri: str
     supertokens_api_key: str
 
+    # Secreto de la instalación para firmar enlaces que funcionan sin sesión (la
+    # baja de avisos, RF-85). Obligatorio y largo: quien lo conozca puede darse de
+    # baja en nombre de cualquiera. Cambiarlo invalida los enlaces ya enviados.
+    app_secret: str = Field(min_length=32)
+
     # Cola de trabajos (SAQ sobre Valkey, A18). Obligatoria: sin cola, las
     # operaciones lentas no tienen dónde ejecutarse (RNF-12).
     valkey_url: str

@@ -29,7 +29,7 @@ En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado.
 | Resumen semanal | Los lunes por la mañana, en tu zona horaria | Desactivado |
 | Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias | Desactivado |
 
-Nunca recibes dos emails por el mismo motivo. Cada email trae un enlace para desactivar ese aviso sin iniciar sesión.
+Nunca recibes dos emails por el mismo motivo. Cada email trae al pie un enlace para **darte de baja** de ese aviso sin iniciar sesión: abre una página que te pregunta si quieres dejar de recibirlo, y solo se aplica al pulsar **Darme de baja**. Tu programa de correo también puede mostrar su propio botón de baja, que hace lo mismo. Para volver a recibirlo, actívalo aquí.
 
 Los avisos solo llegan a un email **verificado**: mientras no lo esté, la tarjeta te lo recuerda. Si la instalación no envía emails, la tarjeta lo dice y los interruptores no se pueden cambiar.
 

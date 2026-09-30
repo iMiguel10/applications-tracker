@@ -6,6 +6,7 @@ from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings, settings
 from app.domain.notifications import (
     ABANDONED_CLAIM_AFTER,
     MAX_DELIVERY_ATTEMPTS,
@@ -13,6 +14,7 @@ from app.domain.notifications import (
     NotificationKind,
     next_attempt_at,
 )
+from app.domain.unsubscribe import unsubscribe_token
 from app.infra.email import (
     EmailDeliveryUnknownError,
     EmailNotSentError,
@@ -40,10 +42,13 @@ SEND_NOTIFICATION_TIMEOUT_SECONDS = 30
 class NotificationComposer(Protocol):
     """Escribe el email de un tipo de aviso a partir de su entrega (el motivo va
     en `dedupe_key`). None si el motivo ya no existe: un recordatorio que se
-    completó entre el barrido y el envío no debe avisar de nada."""
+    completó entre el barrido y el envío no debe avisar de nada.
+
+    `unsubscribe_link` es la página de baja de ese tipo (RF-85): todo email de
+    aviso la lleva."""
 
     async def compose(
-        self, delivery: NotificationDelivery, user: User
+        self, delivery: NotificationDelivery, user: User, unsubscribe_link: str
     ) -> RenderedEmail | None: ...
 
 
@@ -58,9 +63,11 @@ class NotificationDeliveryService:
         email_sender: EmailSender | None = None,
         composers: Mapping[NotificationKind, NotificationComposer] | None = None,
         identities: IdentityRepository | None = None,
+        config: Settings = settings,
     ) -> None:
         self.session = session
         self.deliveries = NotificationDeliveryRepository(session)
+        self.config = config
         self.users = UserRepository(session)
         self.email_sender = email_sender
         self.composers = composers or {}
@@ -121,15 +128,35 @@ class NotificationDeliveryService:
             # La cuenta se borró entre el barrido y el envío (segundo plano §5).
             await self._give_up(delivery)
             return
-        content = await composer.compose(delivery, user)
+        kind = NotificationKind(delivery.kind)
+        token = unsubscribe_token(user.id, kind, self.config.app_secret)
+        content = await composer.compose(
+            delivery,
+            user,
+            f"{self.config.website_domain.rstrip('/')}/unsubscribe?token={token}",
+        )
         if content is None:
             # El motivo desapareció y no salió nada: no hay nada que recordar.
             await self.deliveries.delete(delivery)
             await self.session.commit()
             return
 
+        one_click = (
+            f"{self.config.api_domain.rstrip('/')}"
+            f"/api/v1/notifications/unsubscribe?token={token}"
+        )
         email = OutgoingEmail(
-            to=address, subject=content.subject, text=content.text, html=content.html
+            to=address,
+            subject=content.subject,
+            text=content.text,
+            html=content.html,
+            # RFC 2369 y 8058: el botón de baja de los clientes de correo hace un
+            # POST a esta URL. La página del enlace del pie, en cambio, pide
+            # confirmar: un escáner de enlaces solo hace GET.
+            headers={
+                "List-Unsubscribe": f"<{one_click}>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
         )
         try:
             await self.email_sender.send(email)

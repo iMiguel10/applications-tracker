@@ -114,7 +114,7 @@ class ReminderDueComposer:
         self.website = website_domain.rstrip("/")
 
     async def compose(
-        self, delivery: NotificationDelivery, user: User
+        self, delivery: NotificationDelivery, user: User, unsubscribe_link: str
     ) -> RenderedEmail | None:
         reminder_id = reminder_id_from_key(delivery.dedupe_key)
         if reminder_id is None or not user.notify_reminder_due:
@@ -147,5 +147,6 @@ class ReminderDueComposer:
                     else f"{self.website}/reminders"
                 ),
                 "preferences_link": f"{self.website}/preferences",
+                "unsubscribe_link": unsubscribe_link,
             },
         )

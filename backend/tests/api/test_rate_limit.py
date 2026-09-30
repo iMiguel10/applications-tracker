@@ -326,3 +326,26 @@ def test_rules_for_recognises_equivalent_paths(
     path: str, rules: tuple[RateRule, ...] | None
 ):
     assert rules_for(path) == rules
+
+
+@pytest.mark.asyncio
+async def test_unsubscribe_is_limited_per_ip(
+    anonymous_client: AsyncClient,
+    limiter: LimitsRateLimiter,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # Público y sin sesión: sin límite por IP, cualquiera cargaría la BD (§4).
+    monkeypatch.setattr(
+        deps, "UNSUBSCRIBE_PER_IP", RateRule("unsubscribe", "2/minute", RateKey.IP)
+    )
+    url = "/api/v1/notifications/unsubscribe"
+
+    statuses = [
+        (await anonymous_client.get(url, params={"token": "x.y.z"})).status_code
+        for _ in range(2)
+    ]
+    blocked = await anonymous_client.post(url, params={"token": "x.y.z"})
+
+    assert statuses == [400, 400]
+    assert blocked.status_code == 429
+    assert blocked.headers["Access-Control-Expose-Headers"] == "Retry-After"
