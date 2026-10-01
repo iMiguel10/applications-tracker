@@ -843,5 +843,30 @@
     "moved": "“{{label}}” is at position {{position}} of {{total}}.",
     "dropped": "Dropped “{{label}}” at position {{position}} of {{total}}.",
     "canceled": "Move cancelled. “{{label}}” is back in its place."
+  },
+  "board": {
+    "title": "Applications board",
+    "view": "View",
+    "viewList": "List",
+    "viewBoard": "Board",
+    "columnLabel_one": "{{column}}: {{count}} application",
+    "columnLabel_other": "{{column}}: {{count}} applications",
+    "more_one": "and {{count}} more in the list",
+    "more_other": "and {{count}} more in the list",
+    "days_one": "{{count}} day in this status",
+    "days_other": "{{count}} days in this status",
+    "sinceToday": "In this status since today",
+    "moved": "“{{label}}” moved to {{column}}",
+    "undo": "Undo",
+    "undone": "Change undone: “{{label}}” is back to its previous status",
+    "dnd": {
+      "handle": "Move {{label}}",
+      "instructions": "Press Space to pick up the card. Move it with the arrow keys and press Space to drop it in another column, or Escape to cancel.",
+      "picked": "Picked up “{{label}}”, in {{column}}.",
+      "over": "“{{label}}” over the {{column}} column.",
+      "outside": "“{{label}}” outside the columns.",
+      "dropped": "“{{label}}” dropped in {{column}}.",
+      "canceled": "Move cancelled: “{{label}}” stays where it was."
+    }
   }
 }

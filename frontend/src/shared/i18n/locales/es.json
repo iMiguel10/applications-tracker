@@ -843,5 +843,30 @@
     "moved": "«{{label}}» está en la posición {{position}} de {{total}}.",
     "dropped": "Has soltado «{{label}}» en la posición {{position}} de {{total}}.",
     "canceled": "Movimiento cancelado. «{{label}}» vuelve a su sitio."
+  },
+  "board": {
+    "title": "Tablero de solicitudes",
+    "view": "Vista",
+    "viewList": "Lista",
+    "viewBoard": "Tablero",
+    "columnLabel_one": "{{column}}: {{count}} solicitud",
+    "columnLabel_other": "{{column}}: {{count}} solicitudes",
+    "more_one": "y {{count}} más en la lista",
+    "more_other": "y {{count}} más en la lista",
+    "days_one": "{{count}} día en este estado",
+    "days_other": "{{count}} días en este estado",
+    "sinceToday": "Desde hoy en este estado",
+    "moved": "«{{label}}» movida a {{column}}",
+    "undo": "Deshacer",
+    "undone": "Cambio deshecho: «{{label}}» vuelve a su estado anterior",
+    "dnd": {
+      "handle": "Mover {{label}}",
+      "instructions": "Pulsa Espacio para coger la tarjeta. Muévela con las flechas y pulsa Espacio para soltarla en otra columna, o Escape para cancelar.",
+      "picked": "Cogida «{{label}}», en {{column}}.",
+      "over": "«{{label}}» sobre la columna {{column}}.",
+      "outside": "«{{label}}» fuera de las columnas.",
+      "dropped": "«{{label}}» soltada en {{column}}.",
+      "canceled": "Movimiento cancelado: «{{label}}» se queda donde estaba."
+    }
   }
 }

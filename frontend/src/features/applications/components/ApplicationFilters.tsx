@@ -24,6 +24,8 @@ const ALL = "__all__";
 interface ApplicationFiltersProps {
   params: ApplicationListParams;
   onChange: (changes: Partial<ApplicationListParams>) => void;
+  /** En el tablero no hay archivadas ni orden (RF-122): esos dos controles sobran. */
+  board?: boolean;
 }
 
 interface FilterSelectProps {
@@ -54,7 +56,7 @@ function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
  * Barra de filtros del listado. La API admite varios valores por filtro
  * (?status=a&status=b); la interfaz ofrece uno o "todos", que cubre el uso habitual.
  */
-export function ApplicationFilters({ params, onChange }: ApplicationFiltersProps) {
+export function ApplicationFilters({ params, onChange, board = false }: ApplicationFiltersProps) {
   const { t } = useTranslation();
 
   const withAll = (values: readonly string[], prefix: string, allLabel: string) => [
@@ -91,29 +93,33 @@ export function ApplicationFilters({ params, onChange }: ApplicationFiltersProps
         options={withAll(APPLICATION_SOURCES, "applications.source", t("applications.filters.allSources"))}
         onChange={(value) => onChange({ source: toList(value) })}
       />
-      <FilterSelect
-        label={t("applications.filters.archived")}
-        value={params.archived}
-        options={(["active", "archived", "all"] as ArchivedFilter[]).map((value) => ({
-          value,
-          label: t(`applications.filters.archivedOptions.${value}`),
-        }))}
-        onChange={(value) => onChange({ archived: value as ArchivedFilter })}
-      />
-      <FilterSelect
-        label={t("applications.filters.sortBy")}
-        value={`${params.sort_by}:${params.order}`}
-        options={sorts.flatMap((sort) =>
-          (["desc", "asc"] as const).map((order) => ({
-            value: `${sort}:${order}`,
-            label: t(`applications.sort.${sort}.${order}`),
-          })),
-        )}
-        onChange={(value) => {
-          const [sort_by, order] = value.split(":") as [ApplicationSort, "asc" | "desc"];
-          onChange({ sort_by, order });
-        }}
-      />
+      {!board && (
+        <>
+          <FilterSelect
+            label={t("applications.filters.archived")}
+            value={params.archived}
+            options={(["active", "archived", "all"] as ArchivedFilter[]).map((value) => ({
+              value,
+              label: t(`applications.filters.archivedOptions.${value}`),
+            }))}
+            onChange={(value) => onChange({ archived: value as ArchivedFilter })}
+          />
+          <FilterSelect
+            label={t("applications.filters.sortBy")}
+            value={`${params.sort_by}:${params.order}`}
+            options={sorts.flatMap((sort) =>
+              (["desc", "asc"] as const).map((order) => ({
+                value: `${sort}:${order}`,
+                label: t(`applications.sort.${sort}.${order}`),
+              })),
+            )}
+            onChange={(value) => {
+              const [sort_by, order] = value.split(":") as [ApplicationSort, "asc" | "desc"];
+              onChange({ sort_by, order });
+            }}
+          />
+        </>
+      )}
       {hasActiveFilters(params) && (
         <Button
           variant="ghost"
