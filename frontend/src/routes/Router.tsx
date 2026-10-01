@@ -6,6 +6,7 @@ import { ApplicationDetailPage } from "../pages/ApplicationDetailPage";
 import { ApplicationEditPage } from "../pages/ApplicationEditPage";
 import { ApplicationNewPage } from "../pages/ApplicationNewPage";
 import { ApplicationsPage } from "../pages/ApplicationsPage";
+import { CalendarPage } from "../pages/CalendarPage";
 import { CompaniesPage } from "../pages/CompaniesPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { DocumentsPage } from "../pages/DocumentsPage";
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
       { path: "/applications/:applicationId/edit", element: <ApplicationEditPage /> },
       { path: "/companies", element: <CompaniesPage /> },
       { path: "/reminders", element: <RemindersPage /> },
+      { path: "/calendar", element: <CalendarPage /> },
       { path: "/documents", element: <DocumentsPage /> },
       { path: "/profile", element: <ProfilePage /> },
       { path: "/preferences", element: <PreferencesPage /> },

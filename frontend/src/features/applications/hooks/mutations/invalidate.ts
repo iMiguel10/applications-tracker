@@ -1,4 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { calendarKeys } from "@/features/calendar/calendar.keys";
 import { companyKeys } from "@/features/companies/company.keys";
 import { dashboardKeys } from "@/features/dashboard/dashboard.keys";
 import { documentKeys } from "@/features/documents/document.keys";
@@ -15,4 +16,7 @@ export function invalidateAfterApplicationChange(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
   // "Usado en" de los documentos (RF-92): cambia al asignar, quitar o borrar.
   queryClient.invalidateQueries({ queryKey: documentKeys.all });
+  // El calendario (F17) muestra el puesto y la empresa de cada evento, y borrar
+  // una solicitud se lleva sus entrevistas y recordatorios.
+  queryClient.invalidateQueries({ queryKey: calendarKeys.all });
 }

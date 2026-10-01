@@ -286,6 +286,7 @@
     "applications": "Applications",
     "companies": "Companies",
     "reminders": "Reminders",
+    "calendar": "Calendar",
     "documents": "Documents",
     "profile": "Profile",
     "preferences": "Preferences",
@@ -872,5 +873,27 @@
       "dropped": "“{{label}}” dropped in {{column}}.",
       "canceled": "Move cancelled: “{{label}}” stays where it was."
     }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "view": "View",
+    "viewMonth": "Month",
+    "viewWeek": "Week",
+    "today": "Today",
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "zone": "Times in {{zone}}",
+    "interviewOf": "Interview: {{position}}",
+    "overdue": "Overdue",
+    "more_one": "{{count}} more",
+    "more_other": "{{count}} more",
+    "dayLabel_zero": "{{day}}: no events",
+    "dayLabel_one": "{{day}}: 1 event",
+    "dayLabel_other": "{{day}}: {{count}} events",
+    "noEvents": "Nothing this day",
+    "emptyMonth": "No interviews or pending reminders this month.",
+    "emptyWeek": "No interviews or pending reminders this week."
   }
 }

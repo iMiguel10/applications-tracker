@@ -5,10 +5,10 @@ import { toast } from "sonner";
 
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
-import { cn } from "@/shared/lib/utils";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { EmptyState } from "@/shared/components/common/EmptyState";
+import { ViewToggle } from "@/shared/components/common/ViewToggle";
 import { ErrorState } from "@/shared/components/common/ErrorState";
 import { Pagination } from "@/shared/components/common/Pagination";
 import { ListSkeleton, TableSkeleton } from "@/shared/components/common/Skeletons";
@@ -73,33 +73,15 @@ export function ApplicationsPage() {
             menos filtros y, a su lado, cambiaría de sitio al cambiar de vista. */}
         <div className="flex flex-wrap items-center gap-4">
           <h1 className="text-2xl font-semibold">{t("applications.title")}</h1>
-          <div
-            role="group"
-            aria-label={t("board.view")}
-            className="inline-flex rounded-lg border bg-card p-0.5 shadow-xs"
-          >
-            {([false, true] as const).map((toBoard) => {
-              const active = board === toBoard;
-              const Icon = toBoard ? Columns3 : List;
-              return (
-                <button
-                  key={String(toBoard)}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setView(toBoard)}
-                  className={cn(
-                    "inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none [&_svg]:size-4",
-                    active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <Icon aria-hidden />
-                  {t(toBoard ? "board.viewBoard" : "board.viewList")}
-                </button>
-              );
-            })}
-          </div>
+          <ViewToggle
+            label={t("board.view")}
+            options={[
+              { value: "list", label: t("board.viewList"), icon: List },
+              { value: "board", label: t("board.viewBoard"), icon: Columns3 },
+            ]}
+            value={board ? "board" : "list"}
+            onChange={(view) => setView(view === "board")}
+          />
         </div>
         <div className="flex gap-2">
           <Button

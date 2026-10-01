@@ -2,6 +2,7 @@ import {
   Bell,
   Briefcase,
   Building2,
+  CalendarDays,
   FileText,
   IdCard,
   LayoutDashboard,
@@ -20,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/applications", labelKey: "nav.applications", icon: Briefcase },
   { to: "/companies", labelKey: "nav.companies", icon: Building2 },
   { to: "/reminders", labelKey: "nav.reminders", icon: Bell },
+  { to: "/calendar", labelKey: "nav.calendar", icon: CalendarDays },
   { to: "/documents", labelKey: "nav.documents", icon: FileText },
   { to: "/profile", labelKey: "nav.profile", icon: IdCard },
 ];
