@@ -3,7 +3,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.documents import DocumentKind, DocumentOrigin, DocumentStatus
+from app.domain.documents import (
+    DocumentErrorCode,
+    DocumentKind,
+    DocumentOrigin,
+    DocumentStatus,
+)
 from app.schemas.common import RequiredName
 
 
@@ -27,6 +32,21 @@ class DocumentRead(BaseModel):
     )
     size_bytes: int | None = Field(
         description="Tamaño en bytes. `null` mientras no hay fichero."
+    )
+    template: str | None = Field(
+        description="Solo en los generados: el diseño con que se maquetó "
+        "(`GET /documents/cv-designs`).",
+        examples=["modern"],
+    )
+    language: str | None = Field(
+        description="Solo en los generados: idioma de las etiquetas fijas del CV "
+        "(RF-106).",
+        examples=["es"],
+    )
+    error_code: DocumentErrorCode | None = Field(
+        description="Solo en `failed`: `render_failed` (no se pudo maquetar) o "
+        "`storage_limit_reached` (el PDF no cabía en el almacenamiento de la "
+        "cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
     )
     archived_at: datetime | None = Field(
         description="Si está archivado (RF-93): fuera de la biblioteca, pero sigue "

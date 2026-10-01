@@ -9,7 +9,13 @@ from app.core.client_ip import client_ip, parse_trusted_proxies
 from app.core.config import settings
 from app.core.exceptions import AppException, RateLimitedError
 from app.db.session import get_db
-from app.domain.rate_limits import API_PER_USER, UNSUBSCRIBE_PER_IP, UPLOAD_PER_USER
+from app.domain.rate_limits import (
+    API_PER_USER,
+    GENERATE_PER_USER,
+    UNSUBSCRIBE_PER_IP,
+    UPLOAD_PER_USER,
+    RateRule,
+)
 from app.infra.queue import JobQueue
 from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
@@ -18,6 +24,7 @@ from app.services.account_service import AccountService
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
 from app.services.company_service import CompanyService
+from app.services.cv_generation_service import CvGenerationService
 from app.services.dashboard_service import DashboardService
 from app.services.document_service import DocumentService
 from app.services.interview_service import InterviewService
@@ -97,6 +104,12 @@ def get_document_service(
     storage: FileStorage = Depends(get_file_storage),
 ) -> DocumentService:
     return DocumentService(db, storage)
+
+
+def get_cv_generation_service(
+    db: AsyncSession = Depends(get_db),
+) -> CvGenerationService:
+    return CvGenerationService(db)
 
 
 def get_profile_entry_service(
@@ -212,19 +225,33 @@ async def enforce_api_rate_limit(
         raise RateLimitedError(result.retry_after)
 
 
+async def _enforce_user_rule(
+    request: Request, rule: RateRule, current_user: CurrentUser
+) -> None:
+    limiter: RateLimiter = request.app.state.rate_limiter
+    result = await limiter.hit(
+        rule.limit, rule.name, rule.key.value, str(current_user.id)
+    )
+    if not result.allowed:
+        raise RateLimitedError(result.retry_after)
+
+
 async def enforce_upload_rate_limit(
     request: Request,
     current_user: CurrentUser = Depends(get_current_user),
 ) -> None:
     """Límite de subidas por usuario (ficheros §2, paso 1): cada una lee hasta 5 MB
     y abre el PDF. Se comprueba antes de leer el cuerpo."""
-    limiter: RateLimiter = request.app.state.rate_limiter
-    rule = UPLOAD_PER_USER
-    result = await limiter.hit(
-        rule.limit, rule.name, rule.key.value, str(current_user.id)
-    )
-    if not result.allowed:
-        raise RateLimitedError(result.retry_after)
+    await _enforce_user_rule(request, UPLOAD_PER_USER, current_user)
+
+
+async def enforce_generate_rate_limit(
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Límite de CVs generados por usuario (F14): cada uno ocupa el `worker`
+    maquetando, y el límite de documentos no lo ve si se borran después."""
+    await _enforce_user_rule(request, GENERATE_PER_USER, current_user)
 
 
 async def enforce_unsubscribe_rate_limit(request: Request) -> None:

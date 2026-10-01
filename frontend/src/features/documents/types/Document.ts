@@ -4,6 +4,8 @@ export type DocumentKind = (typeof DOCUMENT_KINDS)[number];
 /** RF-91: subido, generado desde el perfil (F14) o adaptado con IA (F15). */
 export type DocumentOrigin = "uploaded" | "generated" | "ai_tailored";
 export type DocumentStatus = "pending" | "ready" | "failed";
+/** Por qué falló un CV generado (F14). */
+export type DocumentErrorCode = "render_failed" | "storage_limit_reached";
 
 /** Un CV o una carta de la biblioteca (RF-90). */
 export interface LibraryDocument {
@@ -14,6 +16,11 @@ export interface LibraryDocument {
   /** Nombre visible, saneado por la API. */
   name: string;
   size_bytes: number | null;
+  /** Solo en los generados: el diseño (`CvDesign.key`) y el idioma de las etiquetas. */
+  template: string | null;
+  language: string | null;
+  /** Solo en `failed`. */
+  error_code: DocumentErrorCode | null;
   /** Archivado (RF-93): fuera de la biblioteca, pero sigue ocupando espacio. */
   archived_at: string | null;
   created_at: string;
@@ -56,4 +63,36 @@ export interface DocumentListParams {
   kind: DocumentKindFilter;
   /** `true`: solo los archivados (RF-93); `false`: la biblioteca. */
   archived: boolean;
+}
+
+/** Un diseño de CV (RF-104). `names` y `descriptions` van por idioma de la interfaz. */
+export interface CvDesign {
+  key: string;
+  names: Record<string, string>;
+  descriptions: Record<string, string>;
+  /** Idiomas en que puede salir el CV (sus etiquetas fijas). */
+  languages: string[];
+  /** RF-105: `false` en un diseño gráfico que un ATS podría leer desordenado. */
+  ats_friendly: boolean;
+}
+
+export const CV_SECTIONS = [
+  "summary",
+  "experience",
+  "education",
+  "project",
+  "certification",
+  "skills",
+  "languages",
+] as const;
+export type CvSection = (typeof CV_SECTIONS)[number];
+
+/** `POST /documents/generate` (RF-103). */
+export interface CvGenerateInput {
+  design: string;
+  language: string;
+  name: string;
+  sections: CvSection[];
+  /** Entradas, logros, habilidades o idiomas que dejar fuera, por id. */
+  excluded_ids: string[];
 }

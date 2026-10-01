@@ -5,6 +5,8 @@ sidebar_label: Documentos
 
 En **Documentos** guardas los CVs y las cartas de presentación que envías, en PDF, para tenerlos a mano en cada solicitud.
 
+Además de subir los tuyos, puedes **generar** un CV desde tu perfil con uno de los diseños de la aplicación: ver [Generar un CV](generar-un-cv.md). Los generados aparecen en la misma lista, con el diseño con que se hicieron.
+
 ## Subir un documento
 
 1. En **Documentos**, pulsa **Subir PDF**.

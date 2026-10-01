@@ -42,6 +42,9 @@ UNSUBSCRIBE_PER_IP = RateRule("unsubscribe", "30/minute", RateKey.IP)
 # sobra para quien sube sus CVs; frena a quien quiera llenar el disco o la CPU a
 # golpe de subidas y borrados, que el límite de almacenamiento no ve.
 UPLOAD_PER_USER = RateRule("upload", "30/hour", RateKey.USER)
+# Generar un CV (F14, límites y abuso §2): cada uno ocupa el worker un segundo
+# maquetando. Otra ventana distinta de la de subidas: generar no gasta las subidas.
+GENERATE_PER_USER = RateRule("generate", "30/hour", RateKey.USER)
 
 # Rutas /auth/* de SuperTokens (POST) y sus reglas. Las sirve el middleware de
 # SuperTokens, no nuestros endpoints: las limita api/auth_rate_limit.py.

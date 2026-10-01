@@ -5,13 +5,18 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import StreamingResponse
 
 from app.api.v1.deps import (
+    enforce_generate_rate_limit,
     enforce_upload_rate_limit,
     get_current_user,
+    get_cv_generation_service,
     get_document_service,
+    get_job_queue,
     require_verified_email,
 )
 from app.domain.documents import DocumentKind, content_disposition
+from app.infra.queue import JobQueue
 from app.schemas.common import ErrorResponse, error_responses
+from app.schemas.cv import CvDesignRead, CvGenerateRequest
 from app.schemas.document import (
     DocumentDetailRead,
     DocumentListItemRead,
@@ -22,6 +27,7 @@ from app.schemas.document import (
 )
 from app.schemas.pagination import Page
 from app.schemas.user import CurrentUser
+from app.services.cv_generation_service import CvGenerationService
 from app.services.document_service import DocumentService
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -106,6 +112,61 @@ async def upload_document(
     document = await service.upload(
         current_user.id, kind=kind, name=name, body=request.stream()
     )
+    return DocumentRead.model_validate(document)
+
+
+# Antes que las rutas `/{document_id}`: `cv-designs` no es un UUID.
+@router.get("/cv-designs", summary="Listar los diseños de CV")
+async def list_cv_designs(
+    service: CvGenerationService = Depends(get_cv_generation_service),
+) -> list[CvDesignRead]:
+    """Los diseños con que se puede generar un CV (RF-104), con su nombre y
+    descripción en cada idioma de la interfaz, los idiomas en que puede salir el CV
+    y si es apto para ATS (RF-105)."""
+    return [
+        CvDesignRead(
+            key=design.key,
+            names=dict(design.names),
+            descriptions=dict(design.descriptions),
+            languages=list(design.languages),
+            ats_friendly=design.ats_friendly,
+        )
+        for design in service.designs()
+    ]
+
+
+@router.post(
+    "/generate",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Generar un CV desde el perfil",
+    responses=error_responses(409, 422)
+    | {
+        403: {
+            "model": ErrorResponse,
+            "description": "`email_not_verified`: generar documentos exige el email "
+            "verificado (salvo en una instalación sin correo).",
+        },
+    },
+)
+async def generate_cv(
+    data: CvGenerateRequest,
+    current_user: CurrentUser = Depends(require_verified_email),
+    _rate_limit: None = Depends(enforce_generate_rate_limit),
+    service: CvGenerationService = Depends(get_cv_generation_service),
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> DocumentRead:
+    """Genera un CV en PDF desde el perfil con un diseño, el idioma de sus
+    etiquetas y las secciones y elementos elegidos (RF-103). Responde enseguida
+    con el documento en `pending`: el PDF se maqueta en segundo plano y el
+    documento pasa a `ready` o a `failed`. Consulta `GET /documents/{document_id}`
+    cada pocos segundos mientras siga `pending`.
+
+    El CV guarda el perfil tal como era al pedirlo: editarlo después no lo cambia.
+
+    422 `unknown_design` o `design_language_unavailable`. 409
+    `documents_limit_reached` o `storage_limit_reached`, con `limit` y `used`. 30
+    por hora como máximo (429 `rate_limited`)."""
+    document = await service.request(current_user.id, data, job_queue)
     return DocumentRead.model_validate(document)
 
 
@@ -221,6 +282,36 @@ async def unarchive_document(
     return DocumentRead.model_validate(
         await service.unarchive(current_user.id, document_id)
     )
+
+
+@router.post(
+    "/{document_id}/retry",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Reintentar un documento generado que falló",
+    responses=error_responses(404, 409)
+    | {
+        403: {
+            "model": ErrorResponse,
+            "description": "`email_not_verified`: generar documentos exige el email "
+            "verificado (salvo en una instalación sin correo).",
+        },
+    },
+)
+async def retry_document(
+    document_id: uuid.UUID,
+    current_user: CurrentUser = Depends(require_verified_email),
+    _rate_limit: None = Depends(enforce_generate_rate_limit),
+    service: CvGenerationService = Depends(get_cv_generation_service),
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> DocumentRead:
+    """Vuelve a maquetar un documento en `failed`, con el mismo contenido que se
+    guardó al pedirlo. Responde con el documento en `pending`, como al generarlo.
+
+    409 `document_not_failed` si no ha fallado, o `storage_limit_reached` si la
+    cuenta no tiene almacenamiento libre. Cuenta en el mismo límite por hora que
+    generar (429 `rate_limited`)."""
+    document = await service.retry(current_user.id, document_id, job_queue)
+    return DocumentRead.model_validate(document)
 
 
 @router.delete(

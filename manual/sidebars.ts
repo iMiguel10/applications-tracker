@@ -19,6 +19,7 @@ const sidebars: SidebarsConfig = {
     "uso/dashboard",
     "uso/documentos",
     "uso/perfil",
+    "uso/generar-un-cv",
     "uso/exportar",
     "uso/preferencias",
     "uso/borrar-la-cuenta",

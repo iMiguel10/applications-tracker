@@ -6,13 +6,15 @@ Todas las operaciones deben responder 404, igual que si el recurso no existiera
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.deps import get_job_queue
+from app.infra.queue import InMemoryJobQueue
 from app.main import app
 from app.models.application import Application
 from app.models.company import Company
@@ -64,10 +66,21 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("PATCH", "/api/v1/documents/{document_id}", {"name": "Hackeado.pdf"}),
     ("POST", "/api/v1/documents/{document_id}/archive", None),
     ("POST", "/api/v1/documents/{document_id}/unarchive", None),
+    ("POST", "/api/v1/documents/{document_id}/retry", None),
     ("DELETE", "/api/v1/documents/{document_id}", None),
     ("PUT", "/api/v1/profile/entries/{entry_id}", {"title": "Hackeada"}),
     ("DELETE", "/api/v1/profile/entries/{entry_id}", None),
 ]
+
+
+@pytest.fixture(autouse=True)
+def _job_queue() -> Iterator[InMemoryJobQueue]:
+    """Las rutas que encolan (reintentar un documento) piden la cola, que en las
+    pruebas no existe sin lifespan."""
+    queue = InMemoryJobQueue()
+    app.dependency_overrides[get_job_queue] = lambda: queue
+    yield queue
+    app.dependency_overrides.pop(get_job_queue, None)
 
 
 def test_every_id_route_is_covered():

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import (
     CheckConstraint,
@@ -12,12 +13,15 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.db.constraints import enum_check
 from app.domain.documents import (
     NAME_MAX_LENGTH,
+    TEMPLATE_MAX_LENGTH,
+    DocumentErrorCode,
     DocumentKind,
     DocumentOrigin,
     DocumentStatus,
@@ -30,8 +34,9 @@ class Document(Base):
     Postgres manda (invariante 9 de v2): la fila se confirma DESPUÉS de escribir el
     fichero, así que solo pueden sobrar ficheros, nunca faltar (ficheros §5).
 
-    Las columnas de los documentos generados (`template`, `language`, `content`) y
-    de los adaptados con IA (`ai_proposal_id`) llegan con F14 y F15.
+    Los generados (F14) guardan su diseño, el idioma de las etiquetas y la foto
+    fija de lo que se maquetó (`content`, A27). La columna de los adaptados con IA
+    (`ai_proposal_id`) llega con F15.
     """
 
     __tablename__ = "documents"
@@ -50,6 +55,29 @@ class Document(Base):
             name="ready_has_storage_key",
         ),
         CheckConstraint("size_bytes >= 0", name="size_not_negative"),
+        enum_check("error_code", DocumentErrorCode, "error_code"),
+        # Un generado sin su foto fija no se podría maquetar ni reintentar, y un
+        # subido no tiene diseño ni contenido que guardar. Nunca a medias: con
+        # uno de los tres, los tres.
+        CheckConstraint(
+            "(origin = 'uploaded' AND "
+            "template IS NULL AND language IS NULL AND content IS NULL) OR "
+            "(origin <> 'uploaded' AND "
+            "template IS NOT NULL AND language IS NOT NULL AND content IS NOT NULL)",
+            name="content_matches_origin",
+        ),
+        # El motivo del fallo, solo en los fallidos: reintentar lo borra.
+        CheckConstraint(
+            "(status = 'failed') = (error_code IS NOT NULL)",
+            name="error_code_only_when_failed",
+        ),
+        # Los pendientes que el barrido reencola (segundo plano §3). Por
+        # `updated_at`: reintentar un fallido lo vuelve a poner `pending`.
+        Index(
+            "ix_documents_pending_updated_at",
+            "updated_at",
+            postgresql_where=text("status = 'pending'"),
+        ),
         Index("ix_documents_user_id_created_at", "user_id", "created_at"),
     )
 
@@ -71,6 +99,14 @@ class Document(Base):
     # almacenamiento usado.
     size_bytes: Mapped[int | None] = mapped_column(Integer)
     sha256: Mapped[str | None] = mapped_column(String(64))
+    # Solo en los generados (F14): diseño, idioma de las etiquetas y foto fija.
+    template: Mapped[str | None] = mapped_column(String(TEMPLATE_MAX_LENGTH))
+    language: Mapped[str | None] = mapped_column(String(2))
+    # `none_as_null`: sin él, `None` se guarda como el JSON `null`, que no es
+    # `NULL` para SQL, y el CHECK `content_matches_origin` no lo vería.
+    content: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    # Por qué falló, solo en los fallidos (DocumentErrorCode).
+    error_code: Mapped[str | None] = mapped_column(String(50))
     # RF-93: archivar oculta sin romper la asociación con las solicitudes.
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

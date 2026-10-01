@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Archive, ArchiveRestore, Download, Eye, FileText, Pencil, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Download,
+  Eye,
+  FileText,
+  Loader2,
+  Pencil,
+  RotateCw,
+  Trash2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -8,6 +18,9 @@ import { formatBytes, formatDateTime } from "@/shared/lib/format";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useDownloadDocument } from "../hooks/mutations/useDownloadDocument";
+import { useRetryDocument } from "../hooks/mutations/useRetryDocument";
+import { useCvDesigns } from "../hooks/queries/useCvDesigns";
+import { designName, uiCvLanguage } from "../lib/designName";
 import { useSetDocumentArchived } from "../hooks/mutations/useSetDocumentArchived";
 import type { DocumentListItem } from "../types/Document";
 import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
@@ -22,6 +35,8 @@ export function DocumentsList({ documents }: DocumentsListProps) {
   const { t, i18n } = useTranslation();
   const download = useDownloadDocument();
   const setArchived = useSetDocumentArchived();
+  const retry = useRetryDocument();
+  const { data: designs } = useCvDesigns();
   const [viewing, setViewing] = useState<DocumentListItem | null>(null);
   const [renaming, setRenaming] = useState<DocumentListItem | null>(null);
   const [deleting, setDeleting] = useState<DocumentListItem | null>(null);
@@ -39,6 +54,23 @@ export function DocumentsList({ documents }: DocumentsListProps) {
       },
     );
   };
+
+  const origin = (document: DocumentListItem) =>
+    document.origin === "generated" && document.template
+      ? t("documents.origins.generatedWith", {
+          design: designName(
+            designs?.find((design) => design.key === document.template),
+            document.template,
+            uiCvLanguage(i18n.language),
+          ),
+        })
+      : t(`documents.origins.${document.origin}`);
+
+  const retryDocument = (document: DocumentListItem) =>
+    retry.mutate(document.id, {
+      onSuccess: () => toast.success(t("documents.generate.retried")),
+      onError,
+    });
 
   return (
     <>
@@ -88,7 +120,16 @@ export function DocumentsList({ documents }: DocumentsListProps) {
                           {t("documents.usage.sentIn", { count: document.applications_count })}
                         </Badge>
                       ))}
-                    <span>{t(`documents.origins.${document.origin}`)}</span>
+                    {document.status === "pending" && (
+                      <Badge variant="outline" className="gap-1">
+                        <Loader2 className="animate-spin" aria-hidden />
+                        {t("documents.status.pending")}
+                      </Badge>
+                    )}
+                    {document.status === "failed" && (
+                      <Badge variant="destructive">{t("documents.status.failed")}</Badge>
+                    )}
+                    <span>{origin(document)}</span>
                     {document.size_bytes !== null && (
                       <span className="tabular-nums">
                         {formatBytes(document.size_bytes, i18n.language)}
@@ -96,9 +137,26 @@ export function DocumentsList({ documents }: DocumentsListProps) {
                     )}
                     <span>{formatDateTime(document.created_at, i18n.language)}</span>
                   </div>
+                  {document.status === "failed" && document.error_code && (
+                    <p className="text-sm text-destructive">
+                      {t(`documents.failure.${document.error_code}`)}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1">
+                {document.status === "failed" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label={t("documents.generate.retryNamed", { name: document.name })}
+                    disabled={retry.isPending && retry.variables === document.id}
+                    onClick={() => retryDocument(document)}
+                  >
+                    <RotateCw />
+                    {t("documents.generate.retry")}
+                  </Button>
+                )}
                 {ready && (
                   <>
                     <Button

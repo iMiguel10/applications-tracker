@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), renombrar, archivar y borrar, y los huérfanos (§5). En F14: los cuatro diseños de CV con sus fuentes y la maquetación (§7) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), renombrar, archivar y borrar, y los huérfanos (§5). En F14: los cuatro diseños de CV con sus fuentes y la maquetación, y la generación en el `worker` (§7) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -144,6 +144,18 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 > **Trampa — un elemento posicionado desordena el texto del PDF.** WeasyPrint pinta los elementos con `position` en otra capa, después del resto. El texto se ve en su sitio, pero al extraerlo (lo que hace un ATS) sale al final: con un `li { position: relative }` para dibujar un punto de color, todos los logros salían detrás de "Idiomas". En los diseños aptos para ATS, los adornos van flotantes o en línea, nunca posicionados. Lo vigila D10.
 
 > **Trampa — `::marker` con contenido propio rompe WeasyPrint.** `li::marker { content: "– " }` hace fallar la maquetación (`min-content width for TextBox not handled yet`): WeasyPrint coloca el marcador como caja absoluta y no sabe medirlo. El guion va en un `::before` con sangría francesa.
+
+### Generar un CV (F14, paso 5)
+
+**Construido en F14 (paso 5):** el flujo genérico de [v2 §5](v2.md#5-flujos) aplicado a un CV, en `CvGenerationService`:
+
+1. `POST /documents/generate` (email verificado, `GENERATE_PER_USER`: 30 por hora) comprueba el diseño y el idioma, toma la **foto fija** del perfil con lo elegido (`build_snapshot`; un id ajeno en `excluded_ids` no encuentra nada), comprueba con la fila del usuario bloqueada el límite de documentos y que quede algo de almacenamiento, guarda la fila `pending` con `template`, `language` y `content`, hace commit y **después** encola `generate_document` (solo ids). Si Valkey no responde, responde `202` igual.
+2. `generate_document` (`jobs/documents.py`) llama a `render_pending`: bloquea la fila si sigue `pending` (`FOR UPDATE SKIP LOCKED`: una segunda ejecución simultánea no la encuentra), maqueta con `CvRenderService`, comprueba el **tamaño real** contra el almacenamiento con la fila del usuario bloqueada, escribe el fichero y después confirma la fila `ready` (invariante 15). Si la maquetación falla (incluido un diseño retirado), `failed` con `render_failed`; si no cabe, `failed` con `storage_limit_reached`. Sin fichero en los dos casos.
+3. `POST /documents/{id}/retry` vuelve a poner en `pending` un `failed` con la misma foto fija (409 `document_not_failed` si no lo está). El barrido de pendientes ([segundo plano §3](segundo-plano.md#3-barridos-programados)) reencola los atascados y da por fallidos los de más de una hora.
+
+En el frontend, `GenerateCvDialog` (en **Perfil** y en **Documentos**) con el diseño, el idioma, el nombre y las casillas de `CvContentPicker`; la biblioteca consulta la página cada 2 s mientras haya algún `pending` (A35) y muestra el motivo de un `failed` con **Reintentar**. `GET /documents/cv-designs` da el catálogo a la interfaz. Una solicitud solo ofrece documentos `ready` como CV o carta enviados.
+
+> **Trampa — `None` en una columna JSONB es el JSON `null`.** SQLAlchemy guarda `None` en una columna `JSON`/`JSONB` como el valor JSON `null`, que para SQL **no** es `NULL`: un CHECK con `content IS NULL` no lo ve. `documents.content` usa `JSONB(none_as_null=True)`. La prueba del CHECK `content_matches_origin` lo detectó.
 
 > **Trampa — un fondo de página se repite.** En `@page`, un degradado se repite como cualquier imagen de fondo: la banda del diseño gráfico aparecía también como franja en el margen derecho. Va con `repeat-y`, para que cubra los márgenes de arriba y abajo y no se repita a lo ancho.
 

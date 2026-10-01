@@ -475,7 +475,10 @@
     "duplicate_skill": "A skill is repeated",
     "duplicate_language": "A language is repeated",
     "skill_not_in_profile": "A skill no longer exists. Reload the page and try again.",
-    "language_not_in_profile": "A language no longer exists. Reload the page and try again."
+    "language_not_in_profile": "A language no longer exists. Reload the page and try again.",
+    "unknown_design": "That CV design does not exist.",
+    "design_language_unavailable": "That design is not available in that language.",
+    "document_not_failed": "Only a CV that failed can be retried."
   },
   "documents": {
     "title": "Documents",
@@ -530,7 +533,8 @@
     "origins": {
       "uploaded": "Uploaded",
       "generated": "Generated from your profile",
-      "ai_tailored": "Tailored with AI"
+      "ai_tailored": "Tailored with AI",
+      "generatedWith": "Generated · {{design}} design"
     },
     "fields": {
       "kind": "Type",
@@ -572,6 +576,46 @@
       "nameRequired": "Enter the name",
       "notPdf": "The file must be a PDF",
       "tooLarge": "The file is over the maximum size"
+    },
+    "status": {
+      "pending": "Generating…",
+      "failed": "Generation failed"
+    },
+    "failure": {
+      "render_failed": "The CV could not be laid out. Try again; if it keeps failing, try another design.",
+      "storage_limit_reached": "The PDF did not fit in your storage. Free up some space and try again."
+    },
+    "generate": {
+      "open": "Generate CV",
+      "title": "Generate a CV from your profile",
+      "description": "Choose the design and what to include. The CV keeps your profile as it is now: editing it later will not change this CV.",
+      "design": "Design",
+      "designRequired": "Choose a design",
+      "ats": "ATS-friendly",
+      "notAts": "Not ATS-friendly",
+      "notAtsWarning": "This design is eye-catching, but it uses two columns: applicant tracking systems (ATS) may read it out of order. Use it when a person will read the CV.",
+      "language": "CV language",
+      "languageHint": "Only the fixed headings (\"Experience\", \"Education\"…) are translated. Your content appears as you wrote it.",
+      "languages": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "content": "What to include",
+      "emptyProfile": "Your profile is still empty: the CV would only have your contact details. Fill in your profile to make the most of it.",
+      "sections": {
+        "summary": "Professional summary",
+        "experience": "Experience",
+        "education": "Education",
+        "project": "Projects",
+        "certification": "Certifications",
+        "skills": "Skills",
+        "languages": "Languages"
+      },
+      "submit": "Generate CV",
+      "started": "Generating your CV. It will appear in Documents in a few seconds.",
+      "retry": "Retry",
+      "retryNamed": "Retry {{name}}",
+      "retried": "Generating the CV again"
     }
   },
   "usage": {

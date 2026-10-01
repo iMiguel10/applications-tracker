@@ -5,6 +5,8 @@ sidebar_label: Documents
 
 In **Documents** you keep the CVs and cover letters you send, as PDFs, to have them at hand for every application.
 
+Besides uploading your own, you can **generate** a CV from your profile with one of the app's designs: see [Generate a CV](generar-un-cv.md). Generated ones appear in the same list, with the design they were made with.
+
 ## Upload a document
 
 1. In **Documents**, click **Upload PDF**.

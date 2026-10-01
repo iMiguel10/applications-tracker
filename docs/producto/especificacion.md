@@ -198,7 +198,7 @@ Usuario
 ### Biblioteca de documentos (RF-90…) · v2
 
 - **RF-90** `[F13]` Subir CVs y cartas en PDF, con nombre y tipo. Listar, renombrar, descargar, previsualizar en la app y archivar.
-- **RF-91** `[F13]` Cada documento muestra su origen: subido, generado desde el perfil o adaptado con IA (y para qué solicitud). Hasta F14 solo existe el origen «subido»; los otros dos llegan con la generación y la IA.
+- **RF-91** `[F13]` Cada documento muestra su origen: subido, generado desde el perfil o adaptado con IA (y para qué solicitud). Desde F14 existe también «generado», con el diseño con que se hizo («Generado · diseño Moderno»); «adaptado con IA» llega con F15.
 - **RF-92** `[F13]` Un documento se puede asociar a varias solicitudes (RF-28); el detalle de cada documento lista en qué solicitudes se usó.
 - **RF-93** `[F13]` No se puede borrar un documento asociado a alguna solicitud (mismo criterio que RF-12 con las empresas): borrarlo perdería el dato de qué se envió a quién. Se puede **archivar**, que lo oculta de la biblioteca sin romper la asociación.
 - **RF-94** `[F13]` Solo se aceptan PDFs de verdad (se comprueba el contenido, no la extensión) y hasta el tamaño máximo de §10.

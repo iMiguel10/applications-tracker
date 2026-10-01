@@ -5,6 +5,8 @@ sidebar_label: Profile
 
 In **Profile** you write what you want to appear on your CVs. It is the raw material: the application never puts anything on a CV that is not in your profile.
 
+Once it is ready, click **Generate CV** to get a PDF CV with the design you choose: see [Generate a CV](generar-un-cv.md).
+
 ## Contact details
 
 These go at the top of the CV: **Full name**, **Headline** (the line under your name, for example "Backend developer"), **Contact email**, **Phone** and **Location**.

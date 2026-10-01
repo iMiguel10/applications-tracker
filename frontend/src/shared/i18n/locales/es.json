@@ -475,7 +475,10 @@
     "duplicate_skill": "Hay una habilidad repetida",
     "duplicate_language": "Hay un idioma repetido",
     "skill_not_in_profile": "Una habilidad ya no existe. Recarga la página e inténtalo de nuevo.",
-    "language_not_in_profile": "Un idioma ya no existe. Recarga la página e inténtalo de nuevo."
+    "language_not_in_profile": "Un idioma ya no existe. Recarga la página e inténtalo de nuevo.",
+    "unknown_design": "Ese diseño de CV no existe.",
+    "design_language_unavailable": "Ese diseño no está disponible en ese idioma.",
+    "document_not_failed": "Solo se puede reintentar un CV que falló."
   },
   "documents": {
     "title": "Documentos",
@@ -530,7 +533,8 @@
     "origins": {
       "uploaded": "Subido",
       "generated": "Generado desde el perfil",
-      "ai_tailored": "Adaptado con IA"
+      "ai_tailored": "Adaptado con IA",
+      "generatedWith": "Generado · diseño {{design}}"
     },
     "fields": {
       "kind": "Tipo",
@@ -572,6 +576,46 @@
       "nameRequired": "Indica el nombre",
       "notPdf": "El fichero tiene que ser un PDF",
       "tooLarge": "El fichero pasa del tamaño máximo"
+    },
+    "status": {
+      "pending": "Generando…",
+      "failed": "Error al generar"
+    },
+    "failure": {
+      "render_failed": "No se pudo maquetar el CV. Vuelve a intentarlo; si sigue fallando, prueba con otro diseño.",
+      "storage_limit_reached": "El PDF no cabía en tu almacenamiento. Libera espacio y vuelve a intentarlo."
+    },
+    "generate": {
+      "open": "Generar CV",
+      "title": "Generar un CV desde tu perfil",
+      "description": "Elige el diseño y qué incluir. El CV guarda tu perfil tal como está ahora: si lo editas después, este CV no cambia.",
+      "design": "Diseño",
+      "designRequired": "Elige un diseño",
+      "ats": "Apto para ATS",
+      "notAts": "No apto para ATS",
+      "notAtsWarning": "Este diseño es vistoso, pero va a dos columnas: los programas que filtran candidaturas (ATS) pueden leerlo desordenado. Úsalo cuando el CV lo vaya a leer una persona.",
+      "language": "Idioma del CV",
+      "languageHint": "Traduce solo los títulos fijos («Experiencia», «Formación»…). Tu contenido sale tal como lo escribiste.",
+      "languages": {
+        "es": "Español",
+        "en": "Inglés"
+      },
+      "content": "Qué incluir",
+      "emptyProfile": "Tu perfil aún está vacío: el CV saldría solo con tus datos de contacto. Completa tu perfil para sacarle partido.",
+      "sections": {
+        "summary": "Resumen profesional",
+        "experience": "Experiencia",
+        "education": "Formación",
+        "project": "Proyectos",
+        "certification": "Certificaciones",
+        "skills": "Habilidades",
+        "languages": "Idiomas"
+      },
+      "submit": "Generar CV",
+      "started": "Generando tu CV. Aparecerá en Documentos en unos segundos.",
+      "retry": "Reintentar",
+      "retryNamed": "Reintentar {{name}}",
+      "retried": "Generando de nuevo el CV"
     }
   },
   "usage": {

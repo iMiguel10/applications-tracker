@@ -22,8 +22,9 @@ Un trabajo es una función asíncrona que recibe **solo ids** y sigue siempre el
 ```python
 async def generate_document(ctx, *, document_id: str, user_id: str) -> None:
     async with ctx["session_factory"]() as session:
-        service = CvGenerationService(session, storage=ctx["storage"], pdf=ctx["pdf"])
-        await service.render_pending(document_id=UUID(document_id), user_id=UUID(user_id))
+        await CvGenerationService(
+            session, storage=ctx["storage"], renderer=ctx["pdf_renderer"]
+        ).render_pending(UUID(user_id), UUID(document_id))
 ```
 
 - La sesión se abre en el trabajo; el `commit` lo hace el service (invariante 6).
@@ -36,7 +37,7 @@ async def generate_document(ctx, *, document_id: str, user_id: str) -> None:
 
 | Trabajo | Timeout del trabajo | Intentos en la cola (`max_attempts`) | Si se queda atascado |
 |---|---|---|---|
-| Generar PDF | 60 s | 3 | El barrido lo **reencola**: generar es gratis e idempotente |
+| Generar PDF **[construido en F14]** | 60 s | 3 | El barrido lo **reencola**: generar es gratis e idempotente. Pasada una hora lo da por fallido (`render_failed`), para que un fallo que no es de la maquetación (el disco) no lo reencole para siempre |
 | Propuesta de IA | 180 s (y el cliente HTTP del proveedor, 150 s) | **1** | El barrido lo marca `failed` (`ai_interrupted`), **no** lo reencola |
 | Enviar un email | 30 s | **1** | Lo decide la máquina de estados de las entregas (§4) |
 | Barridos | 50 s | 1 | Se vuelven a ejecutar en la siguiente pasada |
@@ -50,6 +51,8 @@ async def generate_document(ctx, *, document_id: str, user_id: str) -> None:
 > **Trampa — un trabajo puede ejecutarse dos veces al arrancar un worker** (visto en F9 con SAQ 0.26). Al arrancar, el `worker` barre la lista de trabajos activos a la vez que saca el primero de la cola, y puede tomar por abandonado uno que acaba de empezar: lo marca abortado y, si le quedan intentos, lo reencola. Es otra razón para la regla de §2: todo trabajo es idempotente (comprueba el estado de su fila al empezar) y lo que no debe repetirse (un email) pasa por un reclamo en la BD, no por la cola.
 
 > **Trampa — la marca de aborto de SAQ no distingue colas.** Tras abortar un trabajo, SAQ guarda `saq:abort:<key>` unos segundos, sin el nombre de la cola: encolar otra vez esa misma clave, en cualquier cola, no hace nada y `enqueue` devuelve `False`. Con claves derivadas del id de la fila no es un problema; con claves fijas, sí.
+
+> **Trampa — SAQ recuerda la clave de un trabajo terminado** (descubierto en F14). Un trabajo acabado se queda en Valkey unos minutos (su `ttl`, 600 s por defecto) con su clave, y mientras tanto encolar otro con la misma clave no hace nada. Con la clave `document:{id}`, reintentar un CV que acaba de fallar se descartaba sin avisar y el documento se quedaba `pending` hasta el barrido. La clave lleva también el `updated_at` de la fila (`document:{id}:{updated_at}`), que cambia cada vez que el documento vuelve a `pending`: dos encolados del mismo intento se siguen deduplicando, y un reintento es otro trabajo.
 
 > **Trampa — encolar falla después del commit** (descubierto en F9). Con Valkey caído, encolar tarda unos 4 s y lanza un error. `SaqJobQueue` lo traduce a `QueueUnavailableError` para que el service decida, y lo correcto tras confirmar una fila `pending` es **registrarlo y responder igual**: la fila ya existe y el barrido de pendientes la reencola ([arquitectura §3](v2.md#3-consistencia-entre-almacenes)). Convertirlo en un 500 haría que el usuario lo repitiera y dejara dos filas. El `worker` sí se recupera solo cuando Valkey vuelve, y lo encolado sobrevive a un reinicio de Valkey gracias a `--appendonly yes`.
 
@@ -76,7 +79,7 @@ Se descartó **un worker por tipo de trabajo**: cuatro o cinco procesos casi sie
 | Entrevistas próximas (RF-81) | 5 min | Entrevistas `pending` que empiezan dentro de la antelación del usuario |
 | Resumen semanal (RF-82) | 1 h | Usuarios para los que, en su zona horaria, es lunes y ya pasó la hora de envío |
 | Solicitudes sin actividad (RF-83) | 1 h | Solicitudes que acaban de cruzar el umbral del usuario |
-| Reencolar pendientes | 5 min | Documentos `pending` con más de 5 minutos (propuestas de IA atascadas: se marcan como fallidas) |
+| Reencolar pendientes **[construido en F14]**, **también sin SMTP** | 5 min | Documentos `pending` sin cambios desde hace más de 5 minutos (por `updated_at`: un reintento los vuelve a poner en `pending`); los de más de una hora pasan a `failed`. Se salta los que un `worker` está maquetando (`SKIP LOCKED`) y lee por páginas hasta agotarlos (`requeue_pending_documents`, `jobs/documents.py`). Propuestas de IA atascadas: se marcan como fallidas (F15) |
 | Reclamos sin resultado | 5 min | Entregas `claimed` con más de 10 minutos pasan a `unknown` (§4) |
 | Ficheros huérfanos | 1 día (4:15 UTC), **también sin SMTP** | Borra los ficheros del almacén sin fila en `documents` y con más de una hora, y los temporales viejos. Ver [ficheros §5](ficheros.md#5-huerfanos) |
 | Entregas antiguas | 1 día (3:30 UTC) | Borra las entregas terminadas (`sent`, `unknown`, `failed` sin reintentos) de más de 90 días; las de inactividad, solo si su clave ya no es la de la solicitud |

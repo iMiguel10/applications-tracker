@@ -30,7 +30,18 @@ class DocumentStatus(StrEnum):
     FAILED = "failed"
 
 
+class DocumentErrorCode(StrEnum):
+    """Por qué falló un documento generado (F14). Es contrato: el frontend lo
+    traduce (`errors.<code>`) y el mismo valor que el límite de almacenamiento
+    (`LimitKey.STORAGE_BYTES`) dice lo mismo en los dos sitios."""
+
+    RENDER_FAILED = "render_failed"
+    STORAGE_LIMIT_REACHED = "storage_limit_reached"
+
+
 NAME_MAX_LENGTH = 200
+# Clave de un diseño (`templates/cv/<key>/`) y código de idioma de sus etiquetas.
+TEMPLATE_MAX_LENGTH = 50
 
 
 def storage_key(user_id: uuid.UUID, document_id: uuid.UUID) -> str:
@@ -111,6 +122,14 @@ def content_disposition(name: str, *, attachment: bool) -> str:
         f"filename*=UTF-8''{quote(filename, safe='')}"
     )
 
+
+# Barrido de pendientes (segundo plano §3). Un CV se maqueta en un segundo: uno que
+# sigue `pending` pasados 5 minutos perdió su trabajo (Valkey caído, worker
+# reiniciado) y se reencola. Pasada una hora se da por fallido, para que un fallo
+# que no es de la maquetación (el disco) no lo reencole para siempre.
+PENDING_REQUEUE_AFTER = timedelta(minutes=5)
+PENDING_GIVE_UP_AFTER = timedelta(hours=1)
+PENDING_SWEEP_BATCH = 200
 
 # Barrido de huérfanos (ficheros §5): no toca un fichero más reciente que esto.
 # Entre escribir el fichero de una subida y confirmar su fila pasan milisegundos;

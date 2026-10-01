@@ -115,8 +115,8 @@ location /api/ {
 | Toda la API con sesión **[añadido en F11]** | 600 / min | por usuario |
 | Propuestas de IA | 5 / min y 50 / día | por usuario (también con clave propia: el `worker` es de todos) |
 | Guardar o validar una clave de IA | 10 / hora | por usuario |
-| Subir documentos | 20 / hora | por usuario |
-| Generar PDF | 30 / hora | por usuario |
+| Subir documentos **[construido en F13]** | 30 / hora | por usuario (`UPLOAD_PER_USER`; el diseño decía 20, se subió a 30 al construirlo y el documento no se actualizó hasta F14) |
+| Generar PDF **[construido en F14]** | 30 / hora | por usuario (`GENERATE_PER_USER`, ventana aparte de la de subidas) |
 | Feed ICS | 60 / hora | por token |
 | Baja de avisos | 30 / hora | por IP |
 

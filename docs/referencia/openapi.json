@@ -3786,6 +3786,150 @@
         }
       }
     },
+    "/api/v1/documents/cv-designs": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Listar los diseños de CV",
+        "description": "Los diseños con que se puede generar un CV (RF-104), con su nombre y\ndescripción en cada idioma de la interfaz, los idiomas en que puede salir el CV\ny si es apto para ATS (RF-105).",
+        "operationId": "list_cv_designs_api_v1_documents_cv_designs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CvDesignRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Cv Designs Api V1 Documents Cv Designs Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/documents/generate": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Generar un CV desde el perfil",
+        "description": "Genera un CV en PDF desde el perfil con un diseño, el idioma de sus\netiquetas y las secciones y elementos elegidos (RF-103). Responde enseguida\ncon el documento en `pending`: el PDF se maqueta en segundo plano y el\ndocumento pasa a `ready` o a `failed`. Consulta `GET /documents/{document_id}`\ncada pocos segundos mientras siga `pending`.\n\nEl CV guarda el perfil tal como era al pedirlo: editarlo después no lo cambia.\n\n422 `unknown_design` o `design_language_unavailable`. 409\n`documents_limit_reached` o `storage_limit_reached`, con `limit` y `used`. 30\npor hora como máximo (429 `rate_limited`).",
+        "operationId": "generate_cv_api_v1_documents_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CvGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`email_not_verified`: generar documentos exige el email verificado (salvo en una instalación sin correo).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/documents/{document_id}/file": {
       "get": {
         "tags": [
@@ -4289,6 +4433,108 @@
           },
           "404": {
             "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/retry": {
+      "post": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Reintentar un documento generado que falló",
+        "description": "Vuelve a maquetar un documento en `failed`, con el mismo contenido que se\nguardó al pedirlo. Responde con el documento en `pending`, como al generarlo.\n\n409 `document_not_failed` si no ha fallado, o `storage_limit_reached` si la\ncuenta no tiene almacenamiento libre. Cuenta en el mismo límite por hora que\ngenerar (429 `rate_limited`).",
+        "operationId": "retry_document_api_v1_documents__document_id__retry_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`email_not_verified`: generar documentos exige el email verificado (salvo en una instalación sin correo).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6408,6 +6654,144 @@
         "title": "Currency",
         "description": "Monedas disponibles para el rango salarial (F8: desplegable cerrado, no\ntexto libre). Ampliar esta lista es un cambio pequeño y acotado."
       },
+      "CvDesignRead": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "examples": [
+              "modern"
+            ]
+          },
+          "names": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Names",
+            "description": "Nombre visible por idioma de la interfaz.",
+            "examples": [
+              {
+                "en": "Modern",
+                "es": "Moderno"
+              }
+            ]
+          },
+          "descriptions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Descriptions",
+            "description": "Descripción breve por idioma de la interfaz."
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Languages",
+            "description": "Idiomas en que puede salir el CV (sus etiquetas fijas).",
+            "examples": [
+              [
+                "es",
+                "en"
+              ]
+            ]
+          },
+          "ats_friendly": {
+            "type": "boolean",
+            "title": "Ats Friendly",
+            "description": "RF-105: `false` en un diseño gráfico que un ATS podría leer desordenado. La interfaz lo avisa antes de generar."
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "names",
+          "descriptions",
+          "languages",
+          "ats_friendly"
+        ],
+        "title": "CvDesignRead",
+        "description": "Un diseño de CV (RF-104): una carpeta de plantillas, sin código propio."
+      },
+      "CvGenerateRequest": {
+        "properties": {
+          "design": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Design",
+            "description": "Clave del diseño (`GET /documents/cv-designs`)."
+          },
+          "language": {
+            "type": "string",
+            "pattern": "^[a-z]{2}$",
+            "title": "Language",
+            "description": "Idioma de las etiquetas fijas (\"Experiencia\" / \"Experience\"). El contenido sale como está escrito en el perfil (RF-106).",
+            "examples": [
+              "es"
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Nombre visible en la biblioteca. Sin él, `CV <diseño>`.",
+            "examples": [
+              "CV backend – Moderno"
+            ]
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/CvSection"
+            },
+            "type": "array",
+            "maxItems": 7,
+            "title": "Sections",
+            "description": "Secciones que incluir; por defecto, todas. Una sección sin nada no sale. Los datos de contacto salen siempre."
+          },
+          "excluded_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 2000,
+            "title": "Excluded Ids",
+            "description": "Elementos del perfil que dejar fuera dentro de las secciones incluidas: entradas, logros, habilidades o idiomas, por id. Un id que no es de tu perfil no tiene efecto."
+          }
+        },
+        "type": "object",
+        "required": [
+          "design",
+          "language"
+        ],
+        "title": "CvGenerateRequest",
+        "description": "Qué CV generar desde el perfil (RF-103). Se guarda tal cual era el perfil al\npedirlo (foto fija, A27): editarlo después no cambia el CV."
+      },
+      "CvSection": {
+        "type": "string",
+        "enum": [
+          "summary",
+          "experience",
+          "education",
+          "project",
+          "certification",
+          "skills",
+          "languages"
+        ],
+        "title": "CvSection",
+        "description": "Secciones del CV, en el orden en que salen."
+      },
       "DashboardRead": {
         "properties": {
           "status_counts": {
@@ -6523,6 +6907,47 @@
             "title": "Size Bytes",
             "description": "Tamaño en bytes. `null` mientras no hay fichero."
           },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template",
+            "description": "Solo en los generados: el diseño con que se maquetó (`GET /documents/cv-designs`).",
+            "examples": [
+              "modern"
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Solo en los generados: idioma de las etiquetas fijas del CV (RF-106).",
+            "examples": [
+              "es"
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `failed`: `render_failed` (no se pudo maquetar) o `storage_limit_reached` (el PDF no cabía en el almacenamiento de la cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -6563,12 +6988,24 @@
           "status",
           "name",
           "size_bytes",
+          "template",
+          "language",
+          "error_code",
           "archived_at",
           "created_at",
           "updated_at",
           "used_in"
         ],
         "title": "DocumentDetailRead"
+      },
+      "DocumentErrorCode": {
+        "type": "string",
+        "enum": [
+          "render_failed",
+          "storage_limit_reached"
+        ],
+        "title": "DocumentErrorCode",
+        "description": "Por qué falló un documento generado (F14). Es contrato: el frontend lo\ntraduce (`errors.<code>`) y el mismo valor que el límite de almacenamiento\n(`LimitKey.STORAGE_BYTES`) dice lo mismo en los dos sitios."
       },
       "DocumentKind": {
         "type": "string",
@@ -6617,6 +7054,47 @@
             "title": "Size Bytes",
             "description": "Tamaño en bytes. `null` mientras no hay fichero."
           },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template",
+            "description": "Solo en los generados: el diseño con que se maquetó (`GET /documents/cv-designs`).",
+            "examples": [
+              "modern"
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Solo en los generados: idioma de las etiquetas fijas del CV (RF-106).",
+            "examples": [
+              "es"
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `failed`: `render_failed` (no se pudo maquetar) o `storage_limit_reached` (el PDF no cabía en el almacenamiento de la cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -6654,6 +7132,9 @@
           "status",
           "name",
           "size_bytes",
+          "template",
+          "language",
+          "error_code",
           "archived_at",
           "created_at",
           "updated_at",
@@ -6710,6 +7191,47 @@
             "title": "Size Bytes",
             "description": "Tamaño en bytes. `null` mientras no hay fichero."
           },
+          "template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template",
+            "description": "Solo en los generados: el diseño con que se maquetó (`GET /documents/cv-designs`).",
+            "examples": [
+              "modern"
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language",
+            "description": "Solo en los generados: idioma de las etiquetas fijas del CV (RF-106).",
+            "examples": [
+              "es"
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocumentErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `failed`: `render_failed` (no se pudo maquetar) o `storage_limit_reached` (el PDF no cabía en el almacenamiento de la cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -6742,6 +7264,9 @@
           "status",
           "name",
           "size_bytes",
+          "template",
+          "language",
+          "error_code",
           "archived_at",
           "created_at",
           "updated_at"

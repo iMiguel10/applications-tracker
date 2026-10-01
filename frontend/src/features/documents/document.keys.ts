@@ -6,4 +6,5 @@ export const documentKeys = {
   list: (params: DocumentListParams) => [...documentKeys.lists(), params] as const,
   detail: (id: string) => [...documentKeys.all, "detail", id] as const,
   file: (id: string) => [...documentKeys.all, "file", id] as const,
+  cvDesigns: () => [...documentKeys.all, "cv-designs"] as const,
 };

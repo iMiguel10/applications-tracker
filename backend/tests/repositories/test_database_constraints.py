@@ -23,7 +23,7 @@ from app.repositories.application_status_change_repository import (
 from app.repositories.interview_repository import InterviewRepository
 from app.repositories.reminder_repository import ReminderRepository
 from app.schemas.user import CurrentUser
-from tests.factories import make_application, make_company
+from tests.factories import make_application, make_company, make_document
 
 
 async def _assert_rejected(session: AsyncSession, application: Application) -> None:
@@ -307,3 +307,53 @@ async def test_every_foreign_key_to_users_or_applications_cascades_on_delete(
     assert len(rows) >= 5  # companies, applications, reminders x2, historial...
     not_cascading = {name: rule for name, _, rule in rows if rule != "c"}
     assert not_cascading == {}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "fields",
+    [
+        # Un generado sin su foto fija no se podría maquetar ni reintentar (A27).
+        {"origin": "generated", "status": "pending", "storage_key": None},
+        {
+            "origin": "generated",
+            "status": "pending",
+            "storage_key": None,
+            "template": "classic",
+            "language": "es",
+        },
+        # Un subido no tiene diseño ni foto fija que guardar.
+        {"template": "classic"},
+        {"content": {"contact": {}}},
+        # Un fallido sin motivo, o un motivo en uno que no ha fallado.
+        {"status": "failed", "storage_key": None},
+        {"error_code": "render_failed"},
+        {"status": "failed", "error_code": "out_of_ink", "storage_key": None},
+    ],
+)
+async def test_generated_document_rules_are_enforced(
+    db_session: AsyncSession, user: CurrentUser, fields: dict[str, object]
+):
+    with pytest.raises(IntegrityError):
+        await make_document(db_session, user.id, **fields)
+    await db_session.rollback()
+
+
+@pytest.mark.asyncio
+async def test_a_pending_generated_document_with_its_snapshot_is_accepted(
+    db_session: AsyncSession, user: CurrentUser
+):
+    document = await make_document(
+        db_session,
+        user.id,
+        origin="generated",
+        status="pending",
+        storage_key=None,
+        size_bytes=None,
+        sha256=None,
+        template="classic",
+        language="es",
+        content={"contact": {}},
+    )
+
+    assert document.status == "pending"

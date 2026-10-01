@@ -19,6 +19,7 @@ from app.infra.queue import SaqJobQueue
 from app.infra.storage import LocalFileStorage
 from app.jobs.auth_emails import send_password_reset_email, send_verification_email
 from app.jobs.context import WorkerContext
+from app.jobs.documents import document_cron_jobs, generate_document
 from app.jobs.files import file_cron_jobs
 from app.jobs.notifications import notification_cron_jobs, send_notification
 
@@ -48,6 +49,7 @@ settings = {
         send_password_reset_email,
         send_verification_email,
         send_notification,
+        generate_document,
     ],
     # SAQ encola cada barrido con la clave `cron:<función>`: aunque hubiera dos
     # workers, cada pasada se ejecuta una vez. Y aunque no fuera así, los reclamos
@@ -55,6 +57,7 @@ settings = {
     "cron_jobs": [
         *notification_cron_jobs(build_email_sender(config).enabled),
         *file_cron_jobs(),
+        *document_cron_jobs(),
     ],
     "startup": startup,
     "concurrency": 10,

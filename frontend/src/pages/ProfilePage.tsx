@@ -1,9 +1,14 @@
+import { useState } from "react";
+import { FilePlus2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { ErrorState } from "@/shared/components/common/ErrorState";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
+import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
+import { GenerateCvDialog } from "@/features/documents/components/GenerateCvDialog";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { EntriesSection } from "@/features/profile/components/EntriesSection";
 import { LanguagesCard } from "@/features/profile/components/LanguagesCard";
@@ -26,12 +31,20 @@ export function ProfilePage() {
   const skills = useProfileSkills();
   const languages = useProfileLanguages();
   const { data: me } = useMe();
+  const navigate = useNavigate();
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   return (
     <div className="grid gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("profile.title")}</h1>
-        <p className="text-muted-foreground">{t("profile.description")}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("profile.title")}</h1>
+          <p className="text-muted-foreground">{t("profile.description")}</p>
+        </div>
+        <Button onClick={() => setGenerateOpen(true)}>
+          <FilePlus2 />
+          {t("documents.generate.open")}
+        </Button>
       </div>
 
       {profile.isLoading && <ListSkeleton rows={4} />}
@@ -71,6 +84,13 @@ export function ProfilePage() {
       )}
       {skills.data && <SkillsCard skills={skills.data} />}
       {languages.data && <LanguagesCard languages={languages.data} />}
+
+      <GenerateCvDialog
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        // El CV aparece en la biblioteca como "Generando…" y se refresca solo.
+        onGenerated={() => navigate("/documents")}
+      />
     </div>
   );
 }

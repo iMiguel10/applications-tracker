@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, SearchX, Upload } from "lucide-react";
+import { FilePlus2, FileText, SearchX, Upload } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
@@ -11,6 +11,7 @@ import { Pagination } from "@/shared/components/common/Pagination";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { DocumentsFilters } from "@/features/documents/components/DocumentsFilters";
 import { DocumentsList } from "@/features/documents/components/DocumentsList";
+import { GenerateCvDialog } from "@/features/documents/components/GenerateCvDialog";
 import { UploadDocumentDialog } from "@/features/documents/components/UploadDocumentDialog";
 import { useDocuments } from "@/features/documents/hooks/queries/useDocuments";
 import {
@@ -30,6 +31,7 @@ export function DocumentsPage() {
   const params = parseListParams(searchParams);
   const { data, isLoading, isError, isFetching, refetch } = useDocuments(params);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   const change = (changes: Partial<DocumentListParams>) =>
     setSearchParams(serializeListParams(updateListParams(params, changes)));
@@ -48,7 +50,13 @@ export function DocumentsPage() {
           <h1 className="text-2xl font-semibold">{t("documents.title")}</h1>
           <p className="text-sm text-muted-foreground">{t("documents.subtitle")}</p>
         </div>
-        {uploadButton}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setGenerateOpen(true)}>
+            <FilePlus2 />
+            {t("documents.generate.open")}
+          </Button>
+          {uploadButton}
+        </div>
       </div>
 
       <DocumentsFilters params={params} onChange={change} />
@@ -86,6 +94,7 @@ export function DocumentsPage() {
       )}
 
       <UploadDocumentDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      <GenerateCvDialog open={generateOpen} onOpenChange={setGenerateOpen} />
     </div>
   );
 }

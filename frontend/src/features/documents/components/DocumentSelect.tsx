@@ -41,7 +41,10 @@ export function DocumentSelect<T extends FieldValues>({
   // El recién subido, hasta que llegue en el listado (la consulta se refresca sola).
   const [uploaded, setUploaded] = useState<LibraryDocument | null>(null);
 
-  const options = (data?.items ?? []).map((document) => ({
+  // Solo los que tienen PDF: uno que se está generando o que falló no se envió.
+  const options = (data?.items ?? [])
+    .filter((document) => document.status === "ready")
+    .map((document) => ({
     value: document.id,
     label: document.name,
   }));

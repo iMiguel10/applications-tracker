@@ -2,6 +2,8 @@ import { apiClient } from "@/shared/lib/apiClient";
 import { toQueryString } from "@/shared/lib/queryString";
 import type { Page } from "@/shared/types/Page";
 import type {
+  CvDesign,
+  CvGenerateInput,
   DocumentDetail,
   DocumentKind,
   DocumentListItem,
@@ -38,4 +40,14 @@ export const documentService = {
       file,
       "application/pdf",
     ),
+
+  /** Los diseños con que se puede generar un CV (RF-104). */
+  cvDesigns: () => apiClient.get<CvDesign[]>("/documents/cv-designs"),
+
+  /** Pide un CV desde el perfil: llega en `pending` y el worker lo maqueta (A35). */
+  generate: (input: CvGenerateInput) =>
+    apiClient.post<LibraryDocument>("/documents/generate", input),
+
+  /** Vuelve a maquetar un CV generado que falló, con el mismo contenido. */
+  retry: (id: string) => apiClient.post<LibraryDocument>(`/documents/${id}/retry`),
 };

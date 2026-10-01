@@ -1,10 +1,12 @@
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.documents import DocumentStatus
 from app.models.application import Application
 from app.models.document import Document
 
@@ -37,6 +39,46 @@ class DocumentRepository:
                 Document.id == document_id, Document.user_id == user_id
             )
         )
+
+    async def lock_pending(
+        self, user_id: uuid.UUID, document_id: uuid.UUID
+    ) -> Document | None:
+        """El documento si sigue `pending`, bloqueado hasta el commit. Con `SKIP
+        LOCKED`: si la misma maquetación corre dos veces a la vez, la segunda no lo
+        encuentra y termina sin hacer nada (segundo plano §2)."""
+        return await self.session.scalar(
+            select(Document)
+            .where(
+                Document.id == document_id,
+                Document.user_id == user_id,
+                Document.status == DocumentStatus.PENDING.value,
+            )
+            .with_for_update(skip_locked=True)
+        )
+
+    async def stale_pending(
+        self,
+        updated_before: datetime,
+        limit: int,
+        *,
+        after: tuple[datetime, uuid.UUID] | None = None,
+    ) -> Sequence[Document]:
+        """Pendientes desde antes de `updated_before`, de todas las cuentas: los
+        busca el barrido que los reencola (segundo plano §3), no un usuario. Los que
+        está maquetando un `worker` ahora mismo, bloqueados, se saltan. `after` es
+        el último `(updated_at, id)` de la página anterior."""
+        query = select(Document).where(
+            Document.status == DocumentStatus.PENDING.value,
+            Document.updated_at < updated_before,
+        )
+        if after is not None:
+            query = query.where(tuple_(Document.updated_at, Document.id) > after)
+        result = await self.session.scalars(
+            query.order_by(Document.updated_at, Document.id)
+            .limit(limit)
+            .with_for_update(skip_locked=True)
+        )
+        return result.all()
 
     async def save(self, document: Document) -> Document:
         """Envía a la BD los cambios de un documento ya cargado (UPDATE)."""
