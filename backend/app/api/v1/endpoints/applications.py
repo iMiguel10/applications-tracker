@@ -57,6 +57,10 @@ async def create_application(
 ) -> ApplicationDetailRead:
     """Registra una solicitud en estado `saved` o `applied` (RF-20).
 
+    El cambio inicial del historial se fecha en `applied_at` si la solicitud se
+    registra como `applied` con un día pasado (a la hora actual, en la zona del
+    usuario); si no, ahora.
+
     La empresa debe existir y ser del usuario (404 si no). 409
     `applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta
     (5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.
@@ -170,6 +174,9 @@ async def update_application(
 
     422 `salary_range_invalid` o `applied_at_required` si el resultado incumple
     las reglas teniendo en cuenta también los valores ya guardados.
+
+    Cambiar `applied_at` mueve también la fecha del cambio inicial del historial,
+    pero solo mientras sea el único y la solicitud siga en `applied`.
 
     `cv_document_id` y `cover_letter_document_id` (RF-28): 404 si el documento no
     existe o es de otro usuario; 422 `document_kind_mismatch` si no es del tipo que

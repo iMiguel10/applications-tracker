@@ -15,6 +15,7 @@ from app.domain.application_status import (
     STATUSES_WITHOUT_APPLIED_AT,
     ApplicationStatus,
     allowed_transitions,
+    initial_change_at,
 )
 from app.domain.documents import DocumentKind, DocumentStatus
 from app.domain.limits import LimitKey
@@ -31,6 +32,7 @@ from app.repositories.application_status_change_repository import (
 )
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.document_repository import DocumentRepository
+from app.repositories.user_repository import UserRepository
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationFilterQuery,
@@ -83,6 +85,7 @@ class ApplicationService:
         self.companies = CompanyRepository(session)
         self.documents = DocumentRepository(session)
         self.status_changes = ApplicationStatusChangeRepository(session)
+        self.users = UserRepository(session)
         self.limits = LimitService(session)
 
     async def list(
@@ -144,6 +147,13 @@ class ApplicationService:
         ):
             fields["applied_at"] = _today_utc()
 
+        now = datetime.now(UTC)
+        changed_at = (
+            await self._initial_change_at(user_id, fields["applied_at"], now)
+            if fields["status"] == ApplicationStatus.APPLIED
+            else now
+        )
+
         application = Application(
             user_id=user_id, origin=ApplicationOrigin.MANUAL.value, **fields
         )
@@ -157,7 +167,7 @@ class ApplicationService:
                     application_id=application.id,
                     from_status=None,
                     to_status=application.status,
-                    changed_at=datetime.now(UTC),
+                    changed_at=changed_at,
                 )
             )
             await self.session.commit()
@@ -169,9 +179,17 @@ class ApplicationService:
     async def update(
         self, user_id: uuid.UUID, application_id: uuid.UUID, data: ApplicationUpdate
     ) -> Application:
-        application = await self.get(user_id, application_id)
         # Solo los campos enviados: distinguir "no enviado" de null (vaciar).
         changes: dict[str, Any] = data.model_dump(exclude_unset=True)
+        # Cambiar la fecha de envío puede mover el cambio inicial del historial
+        # (0015): la solicitud se bloquea como al cambiar de estado (invariante 4),
+        # para que un cambio simultáneo no quede antes que el inicial.
+        moves_initial = changes.get("applied_at") is not None
+        application = (
+            await self._get_for_update(user_id, application_id)
+            if moves_initial
+            else await self.get(user_id, application_id)
+        )
 
         if "position_title" in changes and changes["position_title"] is None:
             raise AppException(
@@ -206,12 +224,46 @@ class ApplicationService:
 
         for field, value in changes.items():
             setattr(application, field, value)
+        if moves_initial:
+            await self._sync_initial_change(user_id, application)
         try:
             await self.applications.save(application)
             await self.session.commit()
         except IntegrityError as error:
             await self._raise_document_gone_or_reraise(error)
         return await self.get(user_id, application_id)
+
+    async def _get_for_update(
+        self, user_id: uuid.UUID, application_id: uuid.UUID
+    ) -> Application:
+        application = await self.applications.get_for_update(user_id, application_id)
+        if application is None:
+            raise NotFoundError("Application")
+        return application
+
+    async def _initial_change_at(
+        self, user_id: uuid.UUID, applied_at: date | None, now: datetime
+    ) -> datetime:
+        user = await self.users.get_by_id(user_id)
+        return initial_change_at(applied_at, now, user.timezone if user else None)
+
+    async def _sync_initial_change(
+        self, user_id: uuid.UUID, application: Application
+    ) -> None:
+        """La fecha de envío arrastra la del cambio inicial solo mientras sea el
+        único del historial y sea "enviada" (0015). Con cambios posteriores no se
+        toca: el historial no puede quedar desordenado, y lo que pasó después ya
+        tiene sus propias fechas.
+        """
+        changes = await self.status_changes.recent(user_id, application.id, limit=2)
+        if len(changes) != 1:
+            return
+        initial = changes[0]
+        if initial.to_status != ApplicationStatus.APPLIED:
+            return
+        initial.changed_at = await self._initial_change_at(
+            user_id, application.applied_at, datetime.now(UTC)
+        )
 
     async def archive(
         self, user_id: uuid.UUID, application_id: uuid.UUID

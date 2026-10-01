@@ -13,7 +13,7 @@ Una solicitud es una candidatura a un puesto concreto en una empresa.
 3. Escribe el **Puesto**.
 4. Elige el **Estado** con el que empieza:
     - **Guardada**: te interesa, pero todavía no has enviado la candidatura;
-    - **Enviada**: ya la has enviado. En ese caso indica la **Fecha de envío** (por defecto, hoy).
+    - **Enviada**: ya la has enviado. En ese caso indica la **Fecha de envío** (por defecto, hoy). Si la enviaste antes de registrarla, pon el día real: el historial y el tablero cuentan desde ahí.
 5. Rellena lo que quieras del resto y pulsa **Crear solicitud**.
 
 Solo la empresa y el puesto son obligatorios.

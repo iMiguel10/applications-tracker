@@ -13,7 +13,7 @@ An application is a candidacy for a specific position at a company.
 3. Enter the **Position**.
 4. Choose the **Status** it starts with:
     - **Saved**: you are interested, but have not applied yet;
-    - **Applied**: you have already sent it. In that case, set the **Applied on** date (today by default).
+    - **Applied**: you have already sent it. In that case, set the **Applied on** date (today by default). If you sent it before adding it here, use the real day: the history and the board count from it.
 5. Fill in whatever else you want and click **Create application**.
 
 Only the company and the position are required.

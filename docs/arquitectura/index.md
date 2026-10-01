@@ -82,7 +82,7 @@ Hay dos pares de datos duplicados. Para cada uno se fija cuál manda.
 |---|---|
 | Quién manda | El **historial**. `applications.status` es una copia desnormalizada del `to_status` del último cambio. |
 | Escritura | Solo desde `ApplicationStatusService`, que en **una transacción** inserta el cambio y actualiza `status` y `last_activity_at`. |
-| Creación | Crear una solicitud inserta también su primer cambio (`from_status = NULL`). Ninguna solicitud existe sin historial. |
+| Creación | Crear una solicitud inserta también su primer cambio (`from_status = NULL`). Ninguna solicitud existe sin historial. Si nace `applied` con una fecha de envío pasada, ese cambio lleva ese día; editar `applied_at` lo mueve mientras sea el único cambio ([decisión 0015](../decisiones/0015-el-cambio-inicial-lleva-la-fecha-de-envio.md)). |
 | Deshacer | Se borra el último cambio y `status` se fija al `to_status` del anterior. No se puede deshacer el cambio inicial. |
 | "Último" | El cambio con el **`seq` más alto** ([decisión 0004](../decisiones/0004-secuencia-para-ordenar-el-historial.md)): una columna `bigint GENERATED ALWAYS AS IDENTITY`, que siempre crece y no depende del reloj. **No** se ordena por `changed_at` (la declara el usuario) ni por `created_at` (viene del reloj del sistema, que puede retroceder). |
 | Detección de desviación | Una prueba de repository comprueba, tras cada operación, que `status == último to_status`. |

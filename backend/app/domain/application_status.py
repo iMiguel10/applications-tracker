@@ -5,7 +5,9 @@ Reglas puras, sin I/O: la usan services (para validar) y schemas (para exponer
 """
 
 from collections.abc import Mapping
+from datetime import UTC, date, datetime
 from enum import StrEnum
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 class ApplicationStatus(StrEnum):
@@ -76,3 +78,27 @@ def is_transition_allowed(
     from_status: ApplicationStatus, to_status: ApplicationStatus
 ) -> bool:
     return to_status in ALLOWED_TRANSITIONS[from_status]
+
+
+def initial_change_at(
+    applied_at: date | None, now: datetime, timezone: str | None
+) -> datetime:
+    """Cuándo ocurrió el cambio inicial de una solicitud registrada como enviada
+    (decisión 0015): el día de envío, no el del registro. `changed_at` es cuándo
+    ocurrió (arquitectura §4), y una candidatura apuntada hoy pero enviada el día 20
+    lleva "enviada" desde el 20.
+
+    El día se combina con la hora actual en la zona del usuario, como "Cuándo
+    ocurrió" al cambiar de estado: medianoche pintaría "0:00" en el historial. Si el
+    día es hoy o futuro, es ahora: un cambio nunca está en el futuro.
+    """
+    if applied_at is None:
+        return now
+    try:
+        zone = ZoneInfo(timezone or "UTC")
+    except ZoneInfoNotFoundError:
+        zone = ZoneInfo("UTC")
+    local_now = now.astimezone(zone)
+    if applied_at >= local_now.date():
+        return now
+    return datetime.combine(applied_at, local_now.timetz()).astimezone(UTC)

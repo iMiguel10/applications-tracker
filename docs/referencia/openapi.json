@@ -1766,7 +1766,7 @@
           "Applications"
         ],
         "summary": "Crear una solicitud",
-        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta\n(5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.\n\nPuede llevar la descripción de la oferta y el CV y la carta enviados (RF-27,\nRF-28): 404 si un documento no es del usuario, 422 `document_kind_mismatch` si\nno es del tipo que toca y 409 `document_not_ready` si aún no tiene PDF (un CV\ngenerado que sigue en `pending` o que falló).",
+        "description": "Registra una solicitud en estado `saved` o `applied` (RF-20).\n\nEl cambio inicial del historial se fecha en `applied_at` si la solicitud se\nregistra como `applied` con un día pasado (a la hora actual, en la zona del\nusuario); si no, ahora.\n\nLa empresa debe existir y ser del usuario (404 si no). 409\n`applications_limit_reached` al alcanzar el límite de solicitudes de la cuenta\n(5 000 por defecto), con `limit` y `used`; el consumo, en `GET /me/usage`.\n\nPuede llevar la descripción de la oferta y el CV y la carta enviados (RF-27,\nRF-28): 404 si un documento no es del usuario, 422 `document_kind_mismatch` si\nno es del tipo que toca y 409 `document_not_ready` si aún no tiene PDF (un CV\ngenerado que sigue en `pending` o que falló).",
         "operationId": "create_application_api_v1_applications_post",
         "security": [
           {
@@ -2161,7 +2161,7 @@
           "Applications"
         ],
         "summary": "Editar una solicitud",
-        "description": "Actualización parcial de los datos (RF-21): solo cambian los campos enviados y\n`null` vacía un campo opcional. El estado no se cambia aquí.\n\n422 `salary_range_invalid` o `applied_at_required` si el resultado incumple\nlas reglas teniendo en cuenta también los valores ya guardados.\n\n`cv_document_id` y `cover_letter_document_id` (RF-28): 404 si el documento no\nexiste o es de otro usuario; 422 `document_kind_mismatch` si no es del tipo que\ntoca (un CV como carta); 409 `document_not_ready` si aún no tiene PDF.",
+        "description": "Actualización parcial de los datos (RF-21): solo cambian los campos enviados y\n`null` vacía un campo opcional. El estado no se cambia aquí.\n\n422 `salary_range_invalid` o `applied_at_required` si el resultado incumple\nlas reglas teniendo en cuenta también los valores ya guardados.\n\nCambiar `applied_at` mueve también la fecha del cambio inicial del historial,\npero solo mientras sea el único y la solicitud siga en `applied`.\n\n`cv_document_id` y `cover_letter_document_id` (RF-28): 404 si el documento no\nexiste o es de otro usuario; 422 `document_kind_mismatch` si no es del tipo que\ntoca (un CV como carta); 409 `document_not_ready` si aún no tiene PDF.",
         "operationId": "update_application_api_v1_applications__application_id__patch",
         "security": [
           {
@@ -5571,7 +5571,7 @@
               }
             ],
             "title": "Applied At",
-            "description": "Fecha de envío. Si el estado es `applied` y no se indica, se usa la fecha de hoy (UTC)."
+            "description": "Fecha de envío. Si el estado es `applied` y no se indica, se usa la fecha de hoy (UTC). Con `applied`, el cambio inicial del historial lleva este día."
           },
           "salary_min": {
             "anyOf": [

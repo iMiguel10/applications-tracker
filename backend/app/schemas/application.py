@@ -52,7 +52,8 @@ class ApplicationCreate(BaseModel):
     applied_at: date | None = Field(
         default=None,
         description="Fecha de envío. Si el estado es `applied` y no se indica, se "
-        "usa la fecha de hoy (UTC).",
+        "usa la fecha de hoy (UTC). Con `applied`, el cambio inicial del historial "
+        "lleva este día.",
     )
     salary_min: Salary | None = Field(default=None, description="Bruto anual.")
     salary_max: Salary | None = Field(default=None, description="Bruto anual.")
