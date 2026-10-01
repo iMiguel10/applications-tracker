@@ -101,6 +101,20 @@ export function updateListParams(
   return { ...current, ...changes, page: onlyPage ? (changes.page ?? current.page) : 1 };
 }
 
+/**
+ * Los parámetros que valen en el tablero (RF-122): sin archivadas ni orden propio.
+ * Si la URL los trae de la lista, se vuelven los de por defecto; si no, "Quitar
+ * filtros" aparecería sin ningún filtro visible y "y N más" abriría las archivadas.
+ */
+export function boardViewParams(params: ApplicationListParams): ApplicationListParams {
+  return {
+    ...params,
+    archived: DEFAULT_LIST_PARAMS.archived,
+    sort_by: DEFAULT_LIST_PARAMS.sort_by,
+    order: DEFAULT_LIST_PARAMS.order,
+  };
+}
+
 export function hasActiveFilters(params: ApplicationListParams): boolean {
   return (
     !!params.q ||

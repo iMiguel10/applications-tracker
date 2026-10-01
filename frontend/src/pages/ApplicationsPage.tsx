@@ -17,6 +17,7 @@ import { ApplicationsTable } from "@/features/applications/components/Applicatio
 import { useExportApplications } from "@/features/applications/hooks/mutations/useExportApplications";
 import { useApplications } from "@/features/applications/hooks/queries/useApplications";
 import {
+  boardViewParams,
   hasActiveFilters,
   parseListParams,
   serializeListParams,
@@ -35,9 +36,10 @@ export function ApplicationsPage() {
   useDocumentTitle(t("applications.title"));
   // Filtros, orden y página viven en la URL (decisión A16): la URL es el estado.
   const [searchParams, setSearchParams] = useSearchParams();
-  const params = parseListParams(searchParams);
   // Lista o tablero (RF-122): la vista va en la URL con los filtros, que comparten.
   const board = searchParams.get("view") === "board";
+  const listParams = parseListParams(searchParams);
+  const params = board ? boardViewParams(listParams) : listParams;
   const { data, isLoading, isError, isFetching, refetch } = useApplications(params, {
     enabled: !board,
   });
@@ -51,8 +53,14 @@ export function ApplicationsPage() {
   };
   const change = (changes: Partial<ApplicationListParams>) =>
     setSearchParams(withView(serializeListParams(updateListParams(params, changes)), board));
+  // Al pasar al tablero, la URL pierde archivado y orden, que allí no se ven.
   const setView = (toBoard: boolean) =>
-    setSearchParams(withView(serializeListParams(updateListParams(params, {})), toBoard));
+    setSearchParams(
+      withView(
+        serializeListParams(updateListParams(toBoard ? boardViewParams(params) : params, {})),
+        toBoard,
+      ),
+    );
   // "y N más" de una columna: el listado con los mismos filtros y ese estado.
   const listHref = (status: ApplicationStatus) =>
     `/applications?${serializeListParams(updateListParams(params, { status: [status] }))}`;

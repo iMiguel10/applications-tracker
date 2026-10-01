@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LIST_PARAMS,
+  boardViewParams,
+  hasActiveFilters,
   parseListParams,
   serializeListParams,
   updateListParams,
@@ -63,5 +65,26 @@ describe("updateListParams", () => {
     const current = { ...DEFAULT_LIST_PARAMS, q: "dev" };
 
     expect(updateListParams(current, { page: 2 })).toEqual({ ...current, page: 2 });
+  });
+});
+
+describe("boardViewParams", () => {
+  it("drops the list-only archived filter and sort, so they never count as active filters", () => {
+    const fromList = {
+      ...DEFAULT_LIST_PARAMS,
+      archived: "archived" as const,
+      sort_by: "company" as const,
+      order: "asc" as const,
+    };
+
+    expect(hasActiveFilters(fromList)).toBe(true);
+    expect(boardViewParams(fromList)).toEqual(DEFAULT_LIST_PARAMS);
+    expect(hasActiveFilters(boardViewParams(fromList))).toBe(false);
+  });
+
+  it("keeps the filters the board shares with the list", () => {
+    const shared = { ...DEFAULT_LIST_PARAMS, q: "dev", status: ["offer" as const], archived: "all" as const };
+
+    expect(boardViewParams(shared)).toEqual({ ...shared, archived: "active" });
   });
 });
