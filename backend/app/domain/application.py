@@ -45,3 +45,7 @@ DEFAULT_CURRENCY = Currency.EUR
 MAX_NOTES_LENGTH = 5_000
 # RF-27: cabe cualquier anuncio real y acota lo que se enviará a la IA (F15).
 MAX_JOB_DESCRIPTION_LENGTH = 20_000
+
+# Tablero (F16, A41): las primeras tarjetas de cada columna. El total viaja aparte:
+# una columna con más dice cuántas faltan en vez de cargar cientos de tarjetas.
+BOARD_COLUMN_LIMIT = 50

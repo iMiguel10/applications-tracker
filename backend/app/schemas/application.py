@@ -156,12 +156,10 @@ ApplicationSortField = Literal[
 ]
 
 
-class ApplicationListQuery(BaseModel):
-    """Filtros del listado (RF-22). Los parámetros de lista se repiten:
-    `?status=applied&status=screening`."""
+class ApplicationFilterQuery(BaseModel):
+    """Filtros que comparten el listado y el tablero (RF-22, RF-122). Los
+    parámetros de lista se repiten: `?status=applied&status=screening`."""
 
-    page: int = Field(default=1, ge=1, description="Página, empezando en 1.")
-    limit: int = Field(default=20, ge=1, le=100, description="Elementos por página.")
     status: list[ApplicationStatus] = Field(default_factory=list)
     company_id: uuid.UUID | None = None
     work_mode: list[WorkMode] = Field(default_factory=list)
@@ -171,14 +169,6 @@ class ApplicationListQuery(BaseModel):
     q: str | None = Field(
         default=None, max_length=200, description="Busca en el puesto y la empresa."
     )
-    archived: ArchivedFilter = Field(
-        default="active", description="`active` (por defecto), `archived` o `all`."
-    )
-    sort_by: ApplicationSortField = Field(
-        default="applied_at",
-        description="Las solicitudes sin fecha de envío van siempre al final.",
-    )
-    order: SortOrder = "desc"
 
     @model_validator(mode="after")
     def _date_range(self) -> Self:
@@ -189,3 +179,55 @@ class ApplicationListQuery(BaseModel):
         ):
             raise ValueError("applied_from cannot be after applied_to")
         return self
+
+
+class ApplicationListQuery(ApplicationFilterQuery):
+    """Filtros, archivado, orden y página del listado (RF-22)."""
+
+    page: int = Field(default=1, ge=1, description="Página, empezando en 1.")
+    limit: int = Field(default=20, ge=1, le=100, description="Elementos por página.")
+    archived: ArchivedFilter = Field(
+        default="active", description="`active` (por defecto), `archived` o `all`."
+    )
+    sort_by: ApplicationSortField = Field(
+        default="applied_at",
+        description="Las solicitudes sin fecha de envío van siempre al final.",
+    )
+    order: SortOrder = "desc"
+
+
+class BoardCardRead(BaseModel):
+    """Una tarjeta del tablero (RF-120): lo justo para pintarla."""
+
+    id: uuid.UUID
+    position_title: str = Field(examples=["Backend Developer"])
+    company: CompanySummary
+    status_since: datetime = Field(
+        description="Desde cuándo está en su estado: la fecha de su último cambio "
+        "de estado. La interfaz la muestra como días en el estado."
+    )
+
+
+class BoardColumnRead(BaseModel):
+    """Una columna del tablero: un estado."""
+
+    status: ApplicationStatus
+    total: int = Field(
+        description="Cuántas solicitudes hay en el estado con los filtros dados, "
+        "aunque `items` traiga solo las primeras."
+    )
+    items: list[BoardCardRead] = Field(
+        description="Las primeras 50, las que entraron en el estado más "
+        "recientemente primero."
+    )
+    allowed_transitions: list[ApplicationStatus] = Field(
+        description="A qué estados se puede mover una tarjeta de esta columna "
+        "(A8). Vacío en los estados finales."
+    )
+
+
+class BoardRead(BaseModel):
+    """El tablero Kanban (RF-120…122): una columna por estado, en el orden del
+    proceso, también las vacías."""
+
+    columns: list[BoardColumnRead]

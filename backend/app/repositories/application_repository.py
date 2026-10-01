@@ -156,6 +156,64 @@ class ApplicationRepository:
         )
         return list(result.all()), total or 0
 
+    async def board(
+        self, user_id: uuid.UUID, filters: ApplicationFilters, *, per_column: int
+    ) -> tuple[
+        Sequence[Row[tuple[uuid.UUID, str, str, uuid.UUID, str, datetime]]],
+        dict[str, int],
+    ]:
+        """Tablero (F16, A41): las primeras `per_column` tarjetas de cada estado,
+        las que entraron en él más recientemente primero, y el total de cada
+        estado. Columnas sueltas, no entidades: una tarjeta solo lleva lo que
+        pinta.
+
+        Desde cuándo está en su estado es el `changed_at` de su último cambio por
+        `seq` (invariante 3), nunca por fechas."""
+        status_since = (
+            select(ApplicationStatusChange.changed_at)
+            .where(ApplicationStatusChange.application_id == Application.id)
+            .order_by(ApplicationStatusChange.seq.desc())
+            .limit(1)
+            .correlate(Application)
+            .scalar_subquery()
+        )
+        filtered = self._filtered(user_id, filters)
+        cards = filtered.with_only_columns(
+            Application.id,
+            Application.position_title,
+            Application.status,
+            Company.id.label("company_id"),
+            Company.name.label("company_name"),
+            status_since.label("status_since"),
+        ).subquery()
+        ranked = select(
+            cards,
+            func.row_number()
+            .over(
+                partition_by=cards.c.status,
+                order_by=(cards.c.status_since.desc(), cards.c.id),
+            )
+            .label("rank"),
+        ).subquery()
+        rows = await self.session.execute(
+            select(
+                ranked.c.id,
+                ranked.c.position_title,
+                ranked.c.status,
+                ranked.c.company_id,
+                ranked.c.company_name,
+                ranked.c.status_since,
+            )
+            .where(ranked.c.rank <= per_column)
+            .order_by(ranked.c.status, ranked.c.rank)
+        )
+        totals = await self.session.execute(
+            filtered.with_only_columns(Application.status, func.count()).group_by(
+                Application.status
+            )
+        )
+        return rows.all(), {status: count for status, count in totals.all()}
+
     def _filtered(
         self, user_id: uuid.UUID, filters: ApplicationFilters
     ) -> Select[tuple[Application]]:

@@ -1,5 +1,6 @@
-"""Valida los presupuestos de rendimiento RNF-10 (listado, p95 < 300 ms) y
-RNF-11 (dashboard, p95 < 500 ms) con ~2000 solicitudes por usuario, el volumen
+"""Valida los presupuestos de rendimiento RNF-10 (listado, p95 < 300 ms; desde
+F16 también el tablero, con el mismo presupuesto) y RNF-11 (dashboard, p95 <
+500 ms) con ~2000 solicitudes por usuario, el volumen
 que fija la especificación (§9).
 
     docker compose -f compose.test.yml run --rm api-test python -m app.scripts.check_performance
@@ -24,12 +25,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from app.core.config import settings
 from app.domain.application_status import ApplicationStatus
 from app.models.application import Application
+from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
 from app.models.user import User
 from app.repositories.application_repository import (
     ApplicationFilters,
     ApplicationRepository,
 )
+from app.schemas.application import ApplicationFilterQuery
+from app.services.application_service import ApplicationService
 from app.services.dashboard_service import DashboardService
 
 APPLICATIONS_PER_USER = 2000
@@ -54,7 +58,24 @@ async def _seed(
         }
         for i in range(APPLICATIONS_PER_USER)
     ]
-    await session.execute(insert(Application), rows)
+    created = await session.execute(
+        insert(Application).returning(Application.id, Application.status), rows
+    )
+    # Un cambio inicial por solicitud (invariante 5): el tablero lee del historial
+    # desde cuándo está cada una en su estado.
+    await session.execute(
+        insert(ApplicationStatusChange),
+        [
+            {
+                "application_id": application_id,
+                "from_status": None,
+                "to_status": status,
+                "changed_at": now - timedelta(days=i % 300),
+            }
+            for i, (application_id, status) in enumerate(created.all())
+        ],
+    )
+    await session.execute(text("ANALYZE application_status_changes"))
     # Sin esto, el planificador decide sobre estadísticas de una tabla que cree
     # vacía (o con las de antes del seed): el tiempo medido no sería el real.
     await session.execute(text("ANALYZE applications"))
@@ -108,21 +129,33 @@ async def main() -> None:
                 )
                 for _ in range(ITERATIONS)
             ]
+            board_service = ApplicationService(session)
+            board_samples = [
+                await _measure(
+                    lambda: board_service.board(user.id, ApplicationFilterQuery())
+                )
+                for _ in range(ITERATIONS)
+            ]
             dashboard_samples = [
                 await _measure(lambda: dashboard.get(user.id))
                 for _ in range(ITERATIONS)
             ]
 
             listing_p95 = _p95(listing_samples)
+            board_p95 = _p95(board_samples)
             dashboard_p95 = _p95(dashboard_samples)
             print(
                 f"Listado (RNF-10):   p95 = {listing_p95:7.1f} ms  (presupuesto {LISTING_BUDGET_MS} ms)"
+            )
+            print(
+                f"Tablero (RNF-10):   p95 = {board_p95:7.1f} ms  (presupuesto {LISTING_BUDGET_MS} ms)"
             )
             print(
                 f"Dashboard (RNF-11): p95 = {dashboard_p95:7.1f} ms  (presupuesto {DASHBOARD_BUDGET_MS} ms)"
             )
 
             assert listing_p95 < LISTING_BUDGET_MS, "RNF-10 incumplido"
+            assert board_p95 < LISTING_BUDGET_MS, "RNF-10 incumplido en el tablero"
             assert dashboard_p95 < DASHBOARD_BUDGET_MS, "RNF-11 incumplido"
     finally:
         # Limpieza siempre, incluso si algo de arriba falla: nunca deja los 2000

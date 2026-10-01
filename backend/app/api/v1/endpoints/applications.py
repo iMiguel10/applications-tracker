@@ -7,11 +7,16 @@ from app.api.v1.deps import get_application_service, get_current_user
 from app.schemas.application import (
     ApplicationCreate,
     ApplicationDetailRead,
+    ApplicationFilterQuery,
     ApplicationListQuery,
     ApplicationRead,
     ApplicationUpdate,
+    BoardCardRead,
+    BoardColumnRead,
+    BoardRead,
 )
 from app.schemas.common import error_responses
+from app.schemas.company import CompanySummary
 from app.schemas.pagination import Page
 from app.schemas.user import CurrentUser
 from app.services.application_service import ApplicationService
@@ -88,6 +93,47 @@ async def export_applications(
         content=content,
         media_type="text/csv",
         headers={"Content-Disposition": 'attachment; filename="applications.csv"'},
+    )
+
+
+@router.get(
+    "/board", summary="Ver el tablero de solicitudes", responses=error_responses(422)
+)
+async def get_board(
+    query: Annotated[ApplicationFilterQuery, Query()],
+    current_user: CurrentUser = Depends(get_current_user),
+    service: ApplicationService = Depends(get_application_service),
+) -> BoardRead:
+    """El tablero Kanban (RF-120…122): una columna por estado, en el orden del
+    proceso y también las vacías, con el total de cada una y sus primeras 50
+    tarjetas (las que entraron en el estado más recientemente primero). Admite los
+    mismos filtros que el listado; las solicitudes archivadas no aparecen.
+
+    Cada columna dice a qué estados se puede mover una tarjeta suya
+    (`allowed_transitions`). Mover una tarjeta es el cambio de estado de siempre,
+    `POST /applications/{application_id}/status-changes`. Antes de
+    `/{application_id}` para que `board` no se intente leer como un UUID."""
+    columns = await service.board(current_user.id, query)
+    return BoardRead(
+        columns=[
+            BoardColumnRead(
+                status=column.status,
+                total=column.total,
+                items=[
+                    BoardCardRead(
+                        id=card.id,
+                        position_title=card.position_title,
+                        company=CompanySummary(
+                            id=card.company_id, name=card.company_name
+                        ),
+                        status_since=card.status_since,
+                    )
+                    for card in column.items
+                ],
+                allowed_transitions=list(column.allowed_transitions),
+            )
+            for column in columns
+        ]
     )
 
 

@@ -1,6 +1,8 @@
 import csv
 import io
 import uuid
+from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from typing import Any, NoReturn, cast
 
@@ -8,10 +10,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException, ConflictError, NotFoundError
-from app.domain.application import ApplicationOrigin
+from app.domain.application import BOARD_COLUMN_LIMIT, ApplicationOrigin
 from app.domain.application_status import (
     STATUSES_WITHOUT_APPLIED_AT,
     ApplicationStatus,
+    allowed_transitions,
 )
 from app.domain.documents import DocumentKind, DocumentStatus
 from app.domain.limits import LimitKey
@@ -30,6 +33,7 @@ from app.repositories.company_repository import CompanyRepository
 from app.repositories.document_repository import DocumentRepository
 from app.schemas.application import (
     ApplicationCreate,
+    ApplicationFilterQuery,
     ApplicationListQuery,
     ApplicationUpdate,
 )
@@ -46,6 +50,23 @@ _ARCHIVED_FILTER: dict[str, bool | None] = {
     "archived": True,
     "all": None,
 }
+
+
+@dataclass(frozen=True)
+class BoardCard:
+    id: uuid.UUID
+    position_title: str
+    company_id: uuid.UUID
+    company_name: str
+    status_since: datetime
+
+
+@dataclass(frozen=True)
+class BoardColumn:
+    status: ApplicationStatus
+    total: int
+    items: list[BoardCard]
+    allowed_transitions: tuple[ApplicationStatus, ...]
 
 
 class ApplicationService:
@@ -67,24 +88,39 @@ class ApplicationService:
     async def list(
         self, user_id: uuid.UUID, query: ApplicationListQuery
     ) -> tuple[list[Application], int]:
-        filters = ApplicationFilters(
-            statuses=[status.value for status in query.status],
-            company_id=query.company_id,
-            work_modes=[mode.value for mode in query.work_mode],
-            sources=[source.value for source in query.source],
-            applied_from=query.applied_from,
-            applied_to=query.applied_to,
-            search=query.q,
-            archived=_ARCHIVED_FILTER[query.archived],
-        )
         return await self.applications.list(
             user_id,
-            filters,
+            _filters(query, archived=_ARCHIVED_FILTER[query.archived]),
             page=query.page,
             limit=query.limit,
             sort_by=cast(ApplicationSort, query.sort_by),
             descending=query.order == "desc",
         )
+
+    async def board(
+        self, user_id: uuid.UUID, query: ApplicationFilterQuery
+    ) -> Sequence[BoardColumn]:
+        """El tablero (RF-120…122): una columna por estado, en el orden del
+        proceso y también las vacías, con los filtros del listado. Las archivadas
+        no salen (RF-122): archivar es "esto ya no lo sigo"."""
+        rows, totals = await self.applications.board(
+            user_id, _filters(query, archived=False), per_column=BOARD_COLUMN_LIMIT
+        )
+        cards: dict[str, list[BoardCard]] = {}
+        for row in rows:
+            card_id, title, status, company_id, company_name, since = row
+            cards.setdefault(status, []).append(
+                BoardCard(card_id, title, company_id, company_name, since)
+            )
+        return [
+            BoardColumn(
+                status=status,
+                total=totals.get(status, 0),
+                items=cards.get(status, []),
+                allowed_transitions=allowed_transitions(status),
+            )
+            for status in ApplicationStatus
+        ]
 
     async def get(self, user_id: uuid.UUID, application_id: uuid.UUID) -> Application:
         application = await self.applications.get(user_id, application_id)
@@ -341,3 +377,20 @@ def _validate_merged(values: dict[str, Any]) -> None:
             status_code=422,
             code="applied_at_required",
         )
+
+
+def _filters(
+    query: ApplicationFilterQuery, *, archived: bool | None
+) -> ApplicationFilters:
+    """Los filtros de la API (RF-22) como los entiende el repository. Los comparten
+    el listado y el tablero (RF-122)."""
+    return ApplicationFilters(
+        statuses=[status.value for status in query.status],
+        company_id=query.company_id,
+        work_modes=[mode.value for mode in query.work_mode],
+        sources=[source.value for source in query.source],
+        applied_from=query.applied_from,
+        applied_to=query.applied_to,
+        search=query.q,
+        archived=archived,
+    )

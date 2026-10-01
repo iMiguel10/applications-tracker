@@ -1531,33 +1531,6 @@
         ],
         "parameters": [
           {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Página, empezando en 1.",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "Página, empezando en 1."
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "description": "Elementos por página.",
-              "default": 20,
-              "title": "Limit"
-            },
-            "description": "Elementos por página."
-          },
-          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -1666,6 +1639,33 @@
               "title": "Q"
             },
             "description": "Busca en el puesto y la empresa."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página, empezando en 1.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Página, empezando en 1."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Elementos por página.",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Elementos por página."
           },
           {
             "name": "archived",
@@ -1901,6 +1901,178 @@
             "CookieAuth": []
           }
         ]
+      }
+    },
+    "/api/v1/applications/board": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Ver el tablero de solicitudes",
+        "description": "El tablero Kanban (RF-120…122): una columna por estado, en el orden del\nproceso y también las vacías, con el total de cada una y sus primeras 50\ntarjetas (las que entraron en el estado más recientemente primero). Admite los\nmismos filtros que el listado; las solicitudes archivadas no aparecen.\n\nCada columna dice a qué estados se puede mover una tarjeta suya\n(`allowed_transitions`). Mover una tarjeta es el cambio de estado de siempre,\n`POST /applications/{application_id}/status-changes`. Antes de\n`/{application_id}` para que `board` no se intente leer como un UUID.",
+        "operationId": "get_board_api_v1_applications_board_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApplicationStatus"
+              },
+              "title": "Status"
+            }
+          },
+          {
+            "name": "company_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Company Id"
+            }
+          },
+          {
+            "name": "work_mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/WorkMode"
+              },
+              "title": "Work Mode"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApplicationSource"
+              },
+              "title": "Source"
+            }
+          },
+          {
+            "name": "applied_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fecha de envío desde.",
+              "title": "Applied From"
+            },
+            "description": "Fecha de envío desde."
+          },
+          {
+            "name": "applied_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fecha de envío hasta.",
+              "title": "Applied To"
+            },
+            "description": "Fecha de envío hasta."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en el puesto y la empresa.",
+              "title": "Q"
+            },
+            "description": "Busca en el puesto y la empresa."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/applications/{application_id}": {
@@ -6381,6 +6553,94 @@
         ],
         "title": "AuthWrongCredentials",
         "description": "Email o contraseña incorrectos. No indica cuál de los dos falla."
+      },
+      "BoardCardRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position_title": {
+            "type": "string",
+            "title": "Position Title",
+            "examples": [
+              "Backend Developer"
+            ]
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanySummary"
+          },
+          "status_since": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Status Since",
+            "description": "Desde cuándo está en su estado: la fecha de su último cambio de estado. La interfaz la muestra como días en el estado."
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position_title",
+          "company",
+          "status_since"
+        ],
+        "title": "BoardCardRead",
+        "description": "Una tarjeta del tablero (RF-120): lo justo para pintarla."
+      },
+      "BoardColumnRead": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Cuántas solicitudes hay en el estado con los filtros dados, aunque `items` traiga solo las primeras."
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BoardCardRead"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Las primeras 50, las que entraron en el estado más recientemente primero."
+          },
+          "allowed_transitions": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationStatus"
+            },
+            "type": "array",
+            "title": "Allowed Transitions",
+            "description": "A qué estados se puede mover una tarjeta de esta columna (A8). Vacío en los estados finales."
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "total",
+          "items",
+          "allowed_transitions"
+        ],
+        "title": "BoardColumnRead",
+        "description": "Una columna del tablero: un estado."
+      },
+      "BoardRead": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/BoardColumnRead"
+            },
+            "type": "array",
+            "title": "Columns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "columns"
+        ],
+        "title": "BoardRead",
+        "description": "El tablero Kanban (RF-120…122): una columna por estado, en el orden del\nproceso, también las vacías."
       },
       "BulletRead": {
         "properties": {
