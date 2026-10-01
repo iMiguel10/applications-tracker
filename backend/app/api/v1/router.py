@@ -4,6 +4,7 @@ from app.api.v1.deps import enforce_api_rate_limit, get_current_user
 from app.api.v1.endpoints import (
     application_status_changes,
     applications,
+    calendar,
     companies,
     dashboard,
     documents,
@@ -53,6 +54,7 @@ protected.include_router(application_status_changes.router)
 protected.include_router(interviews.router)
 protected.include_router(reminders.router)
 protected.include_router(dashboard.router)
+protected.include_router(calendar.router)
 protected.include_router(documents.router)
 protected.include_router(profile.router)
 

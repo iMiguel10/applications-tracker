@@ -112,6 +112,24 @@ class ReminderRepository:
         )
         return list(result.all()), total or 0
 
+    async def list_pending_between(
+        self, user_id: uuid.UUID, *, start: datetime, end: datetime
+    ) -> Sequence[Reminder]:
+        """Recordatorios pendientes que vencen en [start, end), con su solicitud y la
+        empresa de esta (calendario, RF-130). Los completados o descartados no."""
+        result = await self.session.scalars(
+            select(Reminder)
+            .options(joinedload(Reminder.application).joinedload(Application.company))
+            .where(
+                Reminder.user_id == user_id,
+                Reminder.status == ReminderStatus.PENDING,
+                Reminder.due_at >= start,
+                Reminder.due_at < end,
+            )
+            .order_by(Reminder.due_at, Reminder.id)
+        )
+        return result.all()
+
     def _filtered(
         self, user_id: uuid.UUID, filters: ReminderFilters
     ) -> Select[tuple[Reminder]]:

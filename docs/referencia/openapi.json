@@ -3718,6 +3718,92 @@
         ]
       }
     },
+    "/api/v1/calendar/events": {
+      "get": {
+        "tags": [
+          "Calendario"
+        ],
+        "summary": "Ver los eventos del calendario",
+        "description": "Entrevistas y recordatorios pendientes que caen en `[start, end)` (RF-130),\nordenados por hora, cada uno con su solicitud y su empresa para enlazarlos\n(RF-131). Entran las entrevistas de cualquier resultado salvo las canceladas, y\nsolo los recordatorios pendientes (también los vencidos).\n\nEl rango va en instantes con zona (ISO 8601): la interfaz lo calcula en la zona\nhoraria de la cuenta. 422 si `end` no es posterior a `start` o si el rango pasa\nde 62 días.",
+        "operationId": "list_calendar_events_api_v1_calendar_events_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Inicio del rango, incluido.",
+              "title": "Start"
+            },
+            "description": "Inicio del rango, incluido."
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fin del rango, excluido. Como mucho 62 días después de `start`.",
+              "title": "End"
+            },
+            "description": "Fin del rango, excluido. Como mucho 62 días después de `start`."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarEventsRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/documents": {
       "get": {
         "tags": [
@@ -6691,6 +6777,151 @@
         ],
         "title": "BulletWrite",
         "description": "Un logro. Con `id`, el existente con ese id (conserva su identidad para\nF15); sin él, uno nuevo."
+      },
+      "CalendarApplication": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position_title": {
+            "type": "string",
+            "title": "Position Title",
+            "examples": [
+              "Backend Developer"
+            ]
+          },
+          "company": {
+            "$ref": "#/components/schemas/CompanySummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position_title",
+          "company"
+        ],
+        "title": "CalendarApplication",
+        "description": "La solicitud de un evento, lo justo para nombrarlo y enlazarla (RF-131)."
+      },
+      "CalendarEvent": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/CalendarEventKind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Starts At",
+            "description": "Hora de la entrevista o vencimiento del recordatorio."
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "examples": [
+              "Enviar el test técnico"
+            ]
+          },
+          "interview_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterviewType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterviewFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InterviewOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "application": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CalendarApplication"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null` en un recordatorio que no va ligado a ninguna solicitud."
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id",
+          "starts_at",
+          "application"
+        ],
+        "title": "CalendarEvent",
+        "description": "Una entrevista o un recordatorio pendiente. Los campos de entrevista son\n`null` en un recordatorio, y `title` es `null` en una entrevista."
+      },
+      "CalendarEventKind": {
+        "type": "string",
+        "enum": [
+          "interview",
+          "reminder"
+        ],
+        "title": "CalendarEventKind"
+      },
+      "CalendarEventsRead": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarEvent"
+            },
+            "type": "array",
+            "title": "Events",
+            "description": "Ordenados por `starts_at`."
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "CalendarEventsRead"
       },
       "CompanyCreate": {
         "properties": {

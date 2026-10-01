@@ -111,6 +111,25 @@ class InterviewRepository:
         )
         return total or 0
 
+    async def list_between(
+        self, user_id: uuid.UUID, *, start: datetime, end: datetime
+    ) -> Sequence[Row[tuple[Interview, Application, Company]]]:
+        """Entrevistas que empiezan en [start, end), con su solicitud y su empresa
+        (calendario, RF-130). Las canceladas no: ya no van a ocurrir."""
+        result = await self.session.execute(
+            select(Interview, Application, Company)
+            .join(Application, Application.id == Interview.application_id)
+            .join(Company, Company.id == Application.company_id)
+            .where(
+                Application.user_id == user_id,
+                Interview.scheduled_at >= start,
+                Interview.scheduled_at < end,
+                Interview.outcome != InterviewOutcome.CANCELLED.value,
+            )
+            .order_by(Interview.scheduled_at, Interview.id)
+        )
+        return result.all()
+
     def _upcoming(
         self, user_id: uuid.UUID, *, after: datetime
     ) -> Select[tuple[Interview, Application, Company]]:

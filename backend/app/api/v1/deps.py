@@ -23,6 +23,7 @@ from app.schemas.user import CurrentUser
 from app.services.account_service import AccountService
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
+from app.services.calendar_service import CalendarService
 from app.services.company_service import CompanyService
 from app.services.cv_generation_service import CvGenerationService
 from app.services.dashboard_service import DashboardService
@@ -79,6 +80,12 @@ def get_application_status_service(
     db: AsyncSession = Depends(get_db),
 ) -> ApplicationStatusService:
     return ApplicationStatusService(db)
+
+
+def get_calendar_service(
+    db: AsyncSession = Depends(get_db),
+) -> CalendarService:
+    return CalendarService(db)
 
 
 def get_dashboard_service(
