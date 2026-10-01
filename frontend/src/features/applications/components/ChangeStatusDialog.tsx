@@ -18,15 +18,23 @@ import {
   type StatusChangeFormValues,
 } from "../schemas/statusChange.schema";
 import { useChangeStatus } from "../hooks/mutations/useChangeStatus";
-import type { Application } from "../types/Application";
+import type { Application, ApplicationStatus } from "../types/Application";
 
 interface ChangeStatusDialogProps {
-  application: Application;
+  /** Basta con el id y las transiciones: el tablero no tiene la solicitud entera. */
+  application: Pick<Application, "id" | "allowed_transitions">;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Estado ya elegido al abrir (el "Mover a…" del tablero, RF-123). */
+  initialStatus?: ApplicationStatus;
 }
 
-export function ChangeStatusDialog({ application, open, onOpenChange }: ChangeStatusDialogProps) {
+export function ChangeStatusDialog({
+  application,
+  open,
+  onOpenChange,
+  initialStatus,
+}: ChangeStatusDialogProps) {
   const { t } = useTranslation();
   const changeStatus = useChangeStatus();
 
@@ -37,8 +45,8 @@ export function ChangeStatusDialog({ application, open, onOpenChange }: ChangeSt
 
   // Cada apertura empieza en blanco: no arrastra el estado elegido la vez anterior.
   useEffect(() => {
-    if (open) form.reset(emptyStatusChangeForm);
-  }, [open, form]);
+    if (open) form.reset({ ...emptyStatusChangeForm, to_status: initialStatus ?? "" });
+  }, [open, form, initialStatus]);
 
   const options = application.allowed_transitions.map((status) => ({
     value: status,

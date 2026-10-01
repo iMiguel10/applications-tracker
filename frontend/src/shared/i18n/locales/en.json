@@ -859,6 +859,10 @@
     "moved": "“{{label}}” moved to {{column}}",
     "undo": "Undo",
     "undone": "Change undone: “{{label}}” is back to its previous status",
+    "moveTo": "Move “{{label}}” to another status",
+    "moveToTitle": "Move to…",
+    "collapse": "Collapse the {{column}} column",
+    "expand": "Expand the {{column}} column",
     "dnd": {
       "handle": "Move {{label}}",
       "instructions": "Press Space to pick up the card. Move it with the arrow keys and press Space to drop it in another column, or Escape to cancel.",

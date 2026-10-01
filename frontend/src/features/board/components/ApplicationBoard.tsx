@@ -1,4 +1,4 @@
-import { useMemo, type ComponentProps } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { Accessibility, type Draggable, type Droppable } from "@dnd-kit/dom";
 import {
   DragDropProvider,
@@ -6,17 +6,33 @@ import {
   useDraggable,
   useDroppable,
 } from "@dnd-kit/react";
-import { GripVertical } from "lucide-react";
+import {
+  ArrowRightLeft,
+  ChevronsLeftRight,
+  ChevronsRightLeft,
+  GripVertical,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu";
 import { ApplicationStatusBadge } from "@/features/applications/components/ApplicationStatusBadge";
+import { ChangeStatusDialog } from "@/features/applications/components/ChangeStatusDialog";
 import { useUndoLastStatusChange } from "@/features/applications/hooks/mutations/useUndoLastStatusChange";
 import type { ApplicationStatus } from "@/features/applications/types/Application";
 import { useMoveCard } from "../hooks/mutations/useMoveCard";
+import { useCollapsedColumns } from "../hooks/useCollapsedColumns";
 import { canMove, daysInStatus } from "../lib/board";
 import type { BoardFilters } from "../services/board.service";
 import type { Board, BoardCard, BoardColumn } from "../types/Board";
@@ -27,15 +43,23 @@ type AccessibilityOptions = NonNullable<
   ConstructorParameters<typeof Accessibility>[1]
 >;
 
-/** Lo que lleva cada tarjeta para los anuncios y para saber dónde puede caer. */
 const UNDO_TOAST_MS = 10_000;
 
-type CardData ={
+/** Lo que lleva cada tarjeta para los anuncios y para saber dónde puede caer. */
+type CardData = {
   label: string;
   status: ApplicationStatus;
   allowed: ApplicationStatus[];
 };
 type ColumnData = { label: string };
+
+/** La tarjeta del "Mover a…" abierto y el estado que se eligió en el menú. */
+type MoveTarget = {
+  id: string;
+  allowed: ApplicationStatus[];
+  to: ApplicationStatus;
+};
+type OnMoveTo = (target: MoveTarget) => void;
 
 interface ApplicationBoardProps {
   board: Board;
@@ -50,6 +74,10 @@ interface ApplicationBoardProps {
  * soltar), y solo cae en las columnas de sus transiciones permitidas: las demás
  * se atenúan mientras se arrastra. Soltar cambia el estado al momento con fecha
  * "ahora" y ofrece Deshacer (decisión 0014).
+ *
+ * Sin arrastrar (RF-123), el menú "Mover a…" de cada tarjeta abre el diálogo de
+ * cambio de estado con el destino ya elegido, con nota y fecha. Las columnas de
+ * los estados finales se pueden plegar (RF-122) y siguen aceptando tarjetas.
  */
 export function ApplicationBoard({
   board,
@@ -59,6 +87,15 @@ export function ApplicationBoard({
   const { t } = useTranslation();
   const move = useMoveCard(filters);
   const undo = useUndoLastStatusChange();
+  const collapsed = useCollapsedColumns();
+  // El destino se guarda aparte de `open` para que el diálogo no se vacíe
+  // mientras se cierra.
+  const [moveTarget, setMoveTarget] = useState<MoveTarget | null>(null);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const onMoveTo: OnMoveTo = (target) => {
+    setMoveTarget(target);
+    setMoveOpen(true);
+  };
   const statusLabel = (status: ApplicationStatus) =>
     t(`applications.status.${status}`);
 
@@ -162,10 +199,22 @@ export function ApplicationBoard({
               column={column}
               label={statusLabel(column.status)}
               listHref={listHref(column.status)}
+              collapsed={collapsed.isCollapsed(column.status)}
+              onToggle={() => collapsed.toggle(column.status)}
+              onMoveTo={onMoveTo}
             />
           ))}
         </ul>
       </div>
+      <ChangeStatusDialog
+        application={{
+          id: moveTarget?.id ?? "",
+          allowed_transitions: moveTarget?.allowed ?? [],
+        }}
+        initialStatus={moveTarget?.to}
+        open={moveOpen}
+        onOpenChange={setMoveOpen}
+      />
     </DragDropProvider>
   );
 }
@@ -174,10 +223,16 @@ function BoardColumnView({
   column,
   label,
   listHref,
+  collapsed,
+  onToggle,
+  onMoveTo,
 }: {
   column: BoardColumn;
   label: string;
   listHref: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  onMoveTo: OnMoveTo;
 }) {
   const { t } = useTranslation();
   const data: ColumnData = { label };
@@ -198,6 +253,24 @@ function BoardColumnView({
     dragged.status !== column.status &&
     !dragged.allowed.includes(column.status);
   const hidden = column.total - column.items.length;
+  // Solo se pliegan las de estados finales (RF-122): las tarjetas ya no salen de ahí.
+  const collapsible = column.allowed_transitions.length === 0;
+  const folded = collapsible && collapsed;
+  const toggleLabel = t(folded ? "board.expand" : "board.collapse", {
+    column: label,
+  });
+  const toggle = collapsible && (
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      aria-expanded={!folded}
+      aria-label={toggleLabel}
+      title={toggleLabel}
+      onClick={onToggle}
+    >
+      {folded ? <ChevronsLeftRight /> : <ChevronsRightLeft />}
+    </Button>
+  );
 
   return (
     <li
@@ -207,29 +280,53 @@ function BoardColumnView({
         count: column.total,
       })}
       className={cn(
-        "flex w-72 shrink-0 flex-col gap-2 rounded-xl border bg-muted/40 p-2 transition-colors",
+        "flex shrink-0 flex-col gap-2 rounded-xl border bg-muted/40 p-2 transition-colors",
+        folded ? "w-12 items-center" : "w-72",
         isDropTarget && "border-primary bg-primary/5",
         unavailable && "opacity-40",
       )}
     >
-      <div className="flex items-center justify-between gap-2 px-1 pt-1">
-        <ApplicationStatusBadge status={column.status} />
-        <span className="text-sm tabular-nums text-muted-foreground">
-          {column.total}
-        </span>
-      </div>
-      <ul className="grid min-h-16 gap-2">
-        {column.items.map((card) => (
-          <BoardCardView key={card.id} card={card} column={column} />
-        ))}
-      </ul>
-      {hidden > 0 && (
-        <Link
-          to={listHref}
-          className="px-1 pb-1 text-sm text-muted-foreground underline-offset-2 hover:underline"
-        >
-          {t("board.more", { count: hidden })}
-        </Link>
+      {folded ? (
+        // Plegada sigue siendo un destino: se puede soltar una tarjeta encima.
+        <>
+          {toggle}
+          <span className="text-sm tabular-nums text-muted-foreground">
+            {column.total}
+          </span>
+          <span className="text-sm font-medium text-muted-foreground [writing-mode:vertical-rl]">
+            {label}
+          </span>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2 px-1 pt-1">
+            <ApplicationStatusBadge status={column.status} />
+            <div className="flex items-center gap-1">
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {column.total}
+              </span>
+              {toggle}
+            </div>
+          </div>
+          <ul className="grid min-h-16 gap-2">
+            {column.items.map((card) => (
+              <BoardCardView
+                key={card.id}
+                card={card}
+                column={column}
+                onMoveTo={onMoveTo}
+              />
+            ))}
+          </ul>
+          {hidden > 0 && (
+            <Link
+              to={listHref}
+              className="px-1 pb-1 text-sm text-muted-foreground underline-offset-2 hover:underline"
+            >
+              {t("board.more", { count: hidden })}
+            </Link>
+          )}
+        </>
       )}
     </li>
   );
@@ -238,9 +335,11 @@ function BoardColumnView({
 function BoardCardView({
   card,
   column,
+  onMoveTo,
 }: {
   card: BoardCard;
   column: BoardColumn;
+  onMoveTo: OnMoveTo;
 }) {
   const { t } = useTranslation();
   const label = `${card.position_title} · ${card.company.name}`;
@@ -296,6 +395,42 @@ function BoardCardView({
             : t("board.days", { count: days })}
         </span>
       </div>
+      {column.allowed_transitions.length > 0 && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 text-muted-foreground"
+                aria-label={t("board.moveTo", { label })}
+                title={t("board.moveToTitle")}
+              />
+            }
+          >
+            <ArrowRightLeft />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t("board.moveToTitle")}</DropdownMenuLabel>
+              {column.allowed_transitions.map((status) => (
+                <DropdownMenuItem
+                  key={status}
+                  onClick={() =>
+                    onMoveTo({
+                      id: card.id,
+                      allowed: column.allowed_transitions,
+                      to: status,
+                    })
+                  }
+                >
+                  {t(`applications.status.${status}`)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </li>
   );
 }

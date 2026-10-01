@@ -859,6 +859,10 @@
     "moved": "«{{label}}» movida a {{column}}",
     "undo": "Deshacer",
     "undone": "Cambio deshecho: «{{label}}» vuelve a su estado anterior",
+    "moveTo": "Mover «{{label}}» a otro estado",
+    "moveToTitle": "Mover a…",
+    "collapse": "Plegar la columna {{column}}",
+    "expand": "Desplegar la columna {{column}}",
     "dnd": {
       "handle": "Mover {{label}}",
       "instructions": "Pulsa Espacio para coger la tarjeta. Muévela con las flechas y pulsa Espacio para soltarla en otra columna, o Escape para cancelar.",
