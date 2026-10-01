@@ -1,6 +1,6 @@
 # Ficheros y generación de PDF
 
-> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), renombrar, archivar y borrar, y los huérfanos (§5) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
+> Estado: **diseño, en construcción** (F9, F13, F14). Construidos en F9: el almacén (§1), la escritura y lectura en disco (§3), el volumen y el generador de PDF con su protección contra SSRF (§7). En F13: la tabla `documents`, los límites de documentos y almacenamiento, la subida y el listado (§2), y la descarga y el visor (§4), renombrar, archivar y borrar, y los huérfanos (§5). En F14: los cuatro diseños de CV con sus fuentes y la maquetación (§7) · Fecha: 2026-09-24 · Depende de la [arquitectura de la v2](v2.md) (A21–A27, A30) y de [servicios y estructura §8](servicios-y-estructura.md#8-ampliacion-de-la-v2)
 
 ## 1. Piezas
 
@@ -132,6 +132,21 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 - Se genera en un hilo (`asyncio.to_thread`) para que el `worker` siga atendiendo los demás trabajos mientras maqueta.
 - Jinja2 con `StrictUndefined`: una variable mal escrita en la plantilla hace fallar el PDF en vez de dejar un hueco en blanco que nadie ve hasta que el CV ya se ha enviado.
 
+**Construido en F14 (paso 4):** cuatro diseños en `backend/app/templates/cv/`: `classic` (Source Serif 4, sin color), `modern` (IBM Plex Sans, acento azul marino) y `compact` (Source Sans 3, 9 pt, acento verde bosque), los tres aptos para ATS, y `graphic` (banda lateral clara, Space Grotesk e IBM Plex Sans, azul marino con acento verde azulado y niveles dibujados), marcado como **no** apto: son dos columnas. Fue decisión del usuario: tres aptos y uno vistoso. Detalles:
+
+- **Colores.** Siguen lo que recomiendan las guías de selección: texto casi negro (`#1f2328`) sobre blanco y un solo acento sobrio en el nombre, los títulos y los filetes. El clásico va sin color (sectores tradicionales), el moderno en azul marino (`#1f3a5f`), el compacto en verde bosque (`#1e5b3a`) y el gráfico en azul marino con verde azulado (`#2b8a9e` en adornos, `#17697a` en textos; empezó con cobre y se cambió porque casaba peor con el azul). Todo texto de color pasa 4,5:1. El gráfico empezó con una banda índigo oscura y texto blanco, y se cambió a una banda clara (`#eef2f6`) con texto oscuro: el texto claro sobre fondo oscuro se imprime mal.
+- **Fuentes.** Las fuentes son WOFF de Fontsource 5.3.0 (OFL 1.1, con su licencia en cada carpeta `fonts/`), en dos juegos de caracteres: latino y latino extendido. WOFF2 necesitaría la dependencia `brotli`, que no está.
+- **Etiquetas fijas.** Están en `templates/cv/labels/{es,en}.json`, con los meses incluidos: la imagen no trae configuraciones regionales.
+- **Código.** El catálogo (manifiestos y etiquetas) lo lee `infra/pdf/designs.py`. Lo que entra en la foto fija y cómo se presenta (`CvSnapshot`, `build_snapshot`, `template_context`) es puro y vive en `domain/cv.py`. `CvRenderService` lo junta.
+- **Revisar un diseño a ojo.** `app/scripts/render_cv_samples.py` maqueta un perfil de ejemplo con todos los diseños.
+- **Tiempos con un CV real de una página.** Están entre 0,5 y 1 s por diseño, lejos del objetivo de 10 s de RNF-12.
+
+> **Trampa — un elemento posicionado desordena el texto del PDF.** WeasyPrint pinta los elementos con `position` en otra capa, después del resto. El texto se ve en su sitio, pero al extraerlo (lo que hace un ATS) sale al final: con un `li { position: relative }` para dibujar un punto de color, todos los logros salían detrás de "Idiomas". En los diseños aptos para ATS, los adornos van flotantes o en línea, nunca posicionados. Lo vigila D10.
+
+> **Trampa — `::marker` con contenido propio rompe WeasyPrint.** `li::marker { content: "– " }` hace fallar la maquetación (`min-content width for TextBox not handled yet`): WeasyPrint coloca el marcador como caja absoluta y no sabe medirlo. El guion va en un `::before` con sangría francesa.
+
+> **Trampa — un fondo de página se repite.** En `@page`, un degradado se repite como cualquier imagen de fondo: la banda del diseño gráfico aparecía también como franja en el margen derecho. Va con `repeat-y`, para que cubra los márgenes de arriba y abajo y no se repita a lo ancho.
+
 ## 8. Pruebas que demuestran el diseño
 
 | # | Prueba | Qué demuestra |
@@ -145,7 +160,7 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 | D7 | Una clave con `../` es rechazada por `LocalFileStorage`, y también una clave válida que atraviesa un enlace simbólico hacia fuera **[construida en F9]** | Rutas encerradas en la raíz |
 | D8 | Un nombre `currículum.pdf` se descarga con `filename*` correcto, y el `filename` ASCII es `curriculum.pdf` (normalizado con NFKD: codificar a ASCII sin más quita la letra entera, `currculum`) **[construida en F13]**, en el dominio y en la respuesta | Cabeceras |
 | D9 | Una plantilla de prueba con `<img src="http://…">` no produce ninguna petición de red **[construida en F9]**: un servidor HTTP local cuenta cero peticiones con imágenes, hojas de estilo, fuentes y fondos externos | El `url_fetcher` contra SSRF |
-| D10 | El texto extraído de un CV generado con un diseño apto para ATS sale en orden de lectura | RF-105 |
+| D10 | El texto extraído de un CV generado con un diseño apto para ATS sale en orden de lectura **[construida en F14]**, con los tres diseños aptos (`tests/services/test_cv_render.py`), junto con que cada diseño incrusta sus fuentes y maqueta un perfil vacío | RF-105 |
 | D11 | Borrar la cuenta borra `users/{user_id}/`; si falla, el barrido lo limpia **[construida en F13]**, y sin tocar los ficheros de otra cuenta | RNF-41 |
 
 ## 9. Lo que no se hace todavía

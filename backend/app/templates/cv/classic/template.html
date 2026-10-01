@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <title>{{ contact.full_name or "CV" }}</title>
+  {% if contact.full_name %}<meta name="author" content="{{ contact.full_name }}">{% endif %}
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    {% if contact.full_name %}<h1>{{ contact.full_name }}</h1>{% endif %}
+    {% if contact.headline %}<p class="headline">{{ contact.headline }}</p>{% endif %}
+    <p class="contact">
+      {% if contact.email %}<span>{{ contact.email }}</span>{% endif %}
+      {% if contact.phone %}<span>{{ contact.phone }}</span>{% endif %}
+      {% if contact.location %}<span>{{ contact.location }}</span>{% endif %}
+      {% for link in links %}<span><a href="{{ link.url }}">{{ link.display }}</a></span>{% endfor %}
+    </p>
+  </header>
+
+  {% if summary %}
+  <section>
+    <h2>{{ labels.sections.summary }}</h2>
+    <p class="summary">{{ summary }}</p>
+  </section>
+  {% endif %}
+
+  {% for section in entry_sections %}
+  <section>
+    <h2>{{ section.title }}</h2>
+    {% for entry in section.entries %}
+    <article>
+      <div class="entry-head">
+        <h3>{{ entry.title }}{% if entry.organization %}<span class="org">, {{ entry.organization }}</span>{% endif %}</h3>
+        {% if entry.period %}<p class="period">{{ entry.period }}</p>{% endif %}
+      </div>
+      {% if entry.location %}<p class="location">{{ entry.location }}</p>{% endif %}
+      {% if entry.description %}<p class="description">{{ entry.description }}</p>{% endif %}
+      {% if entry.bullets %}
+      <ul>{% for bullet in entry.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% endfor %}
+
+  {% if skill_groups %}
+  <section>
+    <h2>{{ labels.sections.skills }}</h2>
+    <dl class="skills">
+      {% for group in skill_groups %}
+      <dt>{{ group.category or labels.other_skills }}</dt>
+      <dd>{% for skill in group.skills %}{{ skill.name }}{% if skill.level %} <span class="level">({{ skill.level }})</span>{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+  {% endif %}
+
+  {% if languages %}
+  <section>
+    <h2>{{ labels.sections.languages }}</h2>
+    <p class="languages">{% for item in languages %}{{ item.language }} <span class="level">({{ item.level }})</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  </section>
+  {% endif %}
+</body>
+</html>

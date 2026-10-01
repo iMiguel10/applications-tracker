@@ -1,0 +1,9 @@
+{
+  "name": { "es": "Moderno", "en": "Modern" },
+  "description": {
+    "es": "Sans en una columna, con el nombre grande y un acento de color en los títulos.",
+    "en": "Single-column sans, with a large name and a colour accent on headings."
+  },
+  "languages": ["es", "en"],
+  "ats_friendly": true
+}

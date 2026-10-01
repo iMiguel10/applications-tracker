@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <title>{{ contact.full_name or "CV" }}</title>
+  {% if contact.full_name %}<meta name="author" content="{{ contact.full_name }}">{% endif %}
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside>
+    {% if contact.full_name %}<h1>{{ contact.full_name }}</h1>{% endif %}
+    {% if contact.headline %}<p class="headline">{{ contact.headline }}</p>{% endif %}
+
+    <div class="block">
+      <h2>{{ labels.contact }}</h2>
+      <ul class="contact">
+        {% if contact.email %}<li>{{ contact.email }}</li>{% endif %}
+        {% if contact.phone %}<li>{{ contact.phone }}</li>{% endif %}
+        {% if contact.location %}<li>{{ contact.location }}</li>{% endif %}
+        {% for link in links %}<li><span class="link-label">{{ link.label }}</span><a href="{{ link.url }}">{{ link.display }}</a></li>{% endfor %}
+      </ul>
+    </div>
+
+    {% if skill_groups %}
+    <div class="block">
+      <h2>{{ labels.sections.skills }}</h2>
+      {% for group in skill_groups %}
+      <h3 class="category">{{ group.category or labels.other_skills }}</h3>
+      <ul class="levels">
+        {% for skill in group.skills %}
+        <li>
+          <span class="name">{{ skill.name }}</span>
+          {% if skill.level %}<span class="meter"><span style="width: {{ (skill.level_rank / skill_rank_max * 100) | round(1) }}%"></span></span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if languages %}
+    <div class="block">
+      <h2>{{ labels.sections.languages }}</h2>
+      <ul class="levels">
+        {% for item in languages %}
+        <li>
+          <span class="name">{{ item.language }} <span class="level">{{ item.level }}</span></span>
+          <span class="meter"><span style="width: {{ (item.level_rank / language_rank_max * 100) | round(1) }}%"></span></span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </aside>
+
+  <main>
+    {% if summary %}
+    <p class="summary">{{ summary }}</p>
+    {% endif %}
+
+    {% for section in entry_sections %}
+    <section>
+      <h2>{{ section.title }}</h2>
+      <div class="timeline">
+        {% for entry in section.entries %}
+        <article>
+          {% if entry.period %}<p class="period">{{ entry.period }}</p>{% endif %}
+          <h3>{{ entry.title }}</h3>
+          {% if entry.organization or entry.location %}
+          <p class="where">{% if entry.organization %}<strong>{{ entry.organization }}</strong>{% endif %}{% if entry.organization and entry.location %}, {% endif %}{% if entry.location %}{{ entry.location }}{% endif %}</p>
+          {% endif %}
+          {% if entry.description %}<p class="description">{{ entry.description }}</p>{% endif %}
+          {% if entry.bullets %}
+          <ul>{% for bullet in entry.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": { "es": "Compacto", "en": "Compact" },
+  "description": {
+    "es": "Denso y ordenado, para que un perfil largo quepa en una página.",
+    "en": "Dense and tidy, so a long profile fits on one page."
+  },
+  "languages": ["es", "en"],
+  "ats_friendly": true
+}

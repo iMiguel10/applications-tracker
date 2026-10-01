@@ -1,0 +1,9 @@
+{
+  "name": { "es": "Gráfico", "en": "Graphic" },
+  "description": {
+    "es": "Banda lateral de color, titulares grandes y niveles dibujados. Vistoso, pero a dos columnas: un ATS puede leerlo desordenado.",
+    "en": "Coloured side band, large headings and drawn levels. Eye-catching, but in two columns: an ATS may read it out of order."
+  },
+  "languages": ["es", "en"],
+  "ats_friendly": false
+}

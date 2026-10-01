@@ -1,0 +1,9 @@
+{
+  "name": { "es": "Clásico", "en": "Classic" },
+  "description": {
+    "es": "Serif en una columna, sobrio y con filetes finos. Para sectores tradicionales.",
+    "en": "Single-column serif, restrained, with thin rules. For traditional sectors."
+  },
+  "languages": ["es", "en"],
+  "ats_friendly": true
+}

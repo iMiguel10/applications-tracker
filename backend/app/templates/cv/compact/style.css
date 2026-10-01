@@ -1,0 +1,128 @@
+/* Compacto: cuerpo de 9 pt, interlineado ajustado y márgenes estrechos, para que
+   un perfil largo quepa en una página. Apto para ATS: una sola columna de texto
+   en el orden del HTML (la cabecera pone el contacto a la derecha, pero se lee
+   después del nombre). */
+
+@font-face { font-family: "Source Sans 3"; font-weight: 400; font-style: normal; src: url("fonts/source-sans-3-latin-400-normal.woff"), url("fonts/source-sans-3-latin-ext-400-normal.woff"); }
+@font-face { font-family: "Source Sans 3"; font-weight: 400; font-style: italic; src: url("fonts/source-sans-3-latin-400-italic.woff"), url("fonts/source-sans-3-latin-ext-400-italic.woff"); }
+@font-face { font-family: "Source Sans 3"; font-weight: 600; font-style: normal; src: url("fonts/source-sans-3-latin-600-normal.woff"), url("fonts/source-sans-3-latin-ext-600-normal.woff"); }
+
+@page {
+  size: A4;
+  margin: 11mm 13mm;
+}
+
+:root {
+  --ink: #1f2328;
+  --muted: #4b5563;
+  --rule: #d1d5db;
+  --accent: #1e5b3a;
+}
+
+html {
+  font-family: "Source Sans 3", "DejaVu Sans", sans-serif;
+  font-size: 9.2pt;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+body { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8mm;
+  padding-bottom: 2.5mm;
+  border-bottom: 1.2pt solid var(--ink);
+}
+
+h1 {
+  font-size: 18pt;
+  font-weight: 600;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.headline {
+  margin: 0.8mm 0 0;
+  font-size: 10.5pt;
+  color: var(--accent);
+}
+
+.contact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  font-size: 8.6pt;
+  color: var(--muted);
+}
+
+.contact li { white-space: nowrap; }
+
+section { margin-top: 3mm; }
+
+h2 {
+  font-size: 9.6pt;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin: 0 0 1.4mm;
+  padding-bottom: 0.6mm;
+  border-bottom: 0.5pt solid var(--rule);
+  break-after: avoid;
+}
+
+article {
+  margin-bottom: 2mm;
+  break-inside: avoid;
+}
+
+.entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 3mm;
+}
+
+h3 {
+  font-size: 9.6pt;
+  font-weight: 600;
+  margin: 0;
+}
+
+.org { font-weight: 400; }
+.location { font-weight: 400; color: var(--muted); }
+
+.period {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 8.6pt;
+  color: var(--muted);
+}
+
+p { margin: 0; }
+.description { margin-top: 0.4mm; }
+
+ul {
+  margin: 0.6mm 0 0;
+  padding-left: 3.6mm;
+}
+
+li { margin-bottom: 0.2mm; }
+
+/* Habilidades e idiomas lado a lado: son listas cortas y en una columna dejarían
+   media página en blanco. Cada bloque se lee entero antes que el siguiente. */
+.lists {
+  display: flex;
+  gap: 8mm;
+}
+
+.lists > div:first-child { flex: 2; }
+.lists > div:last-child { flex: 1; }
+.lists p { margin-bottom: 0.6mm; }
+.category { font-weight: 600; }
+.language { white-space: nowrap; }

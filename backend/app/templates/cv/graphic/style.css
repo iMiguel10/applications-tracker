@@ -1,0 +1,222 @@
+/* Gráfico: banda lateral clara a toda altura con el nombre, el contacto y los
+   niveles dibujados; a la derecha, la trayectoria como línea de tiempo. Azul
+   marino para nombre y títulos y verde azulado como único acento vivo, solo en
+   adornos (barras, subrayados, puntos) y en textos que pasan 4,5:1. La banda es clara
+   con texto oscuro: una banda oscura con texto blanco se imprime mal.
+   NO apto para ATS (manifest): son dos columnas y un lector automático puede
+   mezclar el texto de ambas. */
+
+@font-face { font-family: "Space Grotesk"; font-weight: 500; font-style: normal; src: url("fonts/space-grotesk-latin-500-normal.woff"), url("fonts/space-grotesk-latin-ext-500-normal.woff"); }
+@font-face { font-family: "Space Grotesk"; font-weight: 700; font-style: normal; src: url("fonts/space-grotesk-latin-700-normal.woff"), url("fonts/space-grotesk-latin-ext-700-normal.woff"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: normal; src: url("fonts/ibm-plex-sans-latin-400-normal.woff"), url("fonts/ibm-plex-sans-latin-ext-400-normal.woff"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: italic; src: url("fonts/ibm-plex-sans-latin-400-italic.woff"), url("fonts/ibm-plex-sans-latin-ext-400-italic.woff"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-style: normal; src: url("fonts/ibm-plex-sans-latin-600-normal.woff"), url("fonts/ibm-plex-sans-latin-ext-600-normal.woff"); }
+
+/* La banda se pinta en el fondo de cada página: sigue en la segunda aunque su
+   contenido acabe en la primera. El degradado se repite solo en vertical (cubre
+   los márgenes de arriba y abajo); en horizontal se repetiría en el margen
+   derecho como otra franja. */
+@page {
+  size: A4;
+  margin: 14mm 14mm 14mm 0;
+  background: #ffffff linear-gradient(to right, #eef2f6 0, #eef2f6 66mm, #ffffff 66mm) repeat-y;
+}
+
+:root {
+  --band: #eef2f6;
+  --navy: #1f3a5f;
+  /* Verde azulado: el de los adornos (3,6:1 sobre la banda) y, más oscuro, el
+     de los textos (5,6:1). */
+  --accent: #2b8a9e;
+  --accent-text: #17697a;
+  --ink: #1f2328;
+  --muted: #4b5563;
+  --line: #cbd5e1;
+  --track: #d5dce6;
+}
+
+html {
+  font-family: "IBM Plex Sans", "DejaVu Sans", sans-serif;
+  font-size: 9.6pt;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+body { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+h1, h2, h3 { font-family: "Space Grotesk", "DejaVu Sans", sans-serif; }
+
+/* --- Banda lateral --------------------------------------------------------- */
+
+aside {
+  float: left;
+  width: 52mm;
+  padding: 0 7mm;
+  color: var(--ink);
+}
+
+aside h1 {
+  font-size: 25pt;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+  margin: 2mm 0 0;
+}
+
+aside .headline {
+  margin: 3mm 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 500;
+  font-size: 11pt;
+  line-height: 1.2;
+  color: var(--accent-text);
+}
+
+aside .block { margin-top: 8mm; }
+
+aside h2 {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 2.5mm;
+  padding-bottom: 1.2mm;
+  border-bottom: 0.6pt solid var(--line);
+}
+
+.contact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 8.6pt;
+}
+
+.contact li { margin-bottom: 1.6mm; overflow-wrap: anywhere; }
+
+.link-label {
+  display: block;
+  font-size: 7.6pt;
+  color: var(--muted);
+}
+
+aside .category {
+  font-size: 8.6pt;
+  font-weight: 500;
+  color: var(--accent-text);
+  margin: 3mm 0 1.2mm;
+}
+
+.levels {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.levels li { margin-bottom: 1.8mm; font-size: 8.8pt; }
+
+.levels .name { display: block; }
+
+.levels .level { color: var(--muted); font-size: 8pt; }
+
+/* Barra de nivel: la parte llena es el nivel sobre su escala. */
+.meter {
+  display: block;
+  height: 1.3mm;
+  margin-top: 0.8mm;
+  border-radius: 1mm;
+  background: var(--track);
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 1mm;
+  background: var(--accent);
+}
+
+/* --- Columna principal ----------------------------------------------------- */
+
+main { margin-left: 76mm; }
+
+.summary {
+  margin: 1mm 0 0;
+  font-size: 10.6pt;
+  line-height: 1.5;
+}
+
+section { margin-top: 7mm; }
+
+main h2 {
+  font-size: 15pt;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0 0 3.5mm;
+  break-after: avoid;
+}
+
+/* Un subrayado corto de acento bajo cada título de sección. */
+main h2::after {
+  content: "";
+  display: block;
+  width: 12mm;
+  height: 1.2mm;
+  margin-top: 1.2mm;
+  background: var(--accent);
+}
+
+/* Línea de tiempo: un trazo vertical con un punto por entrada. */
+.timeline {
+  border-left: 0.8pt solid var(--line);
+  margin-left: 1.2mm;
+  padding-left: 5mm;
+}
+
+article {
+  margin-bottom: 4.2mm;
+  break-inside: avoid;
+}
+
+/* Flotante y no `position: absolute`: un elemento posicionado se pinta en otra
+   capa y su texto saldría desordenado al extraerlo del PDF. */
+article::before {
+  content: "";
+  float: left;
+  margin: 0.9mm 0 0 -7.45mm;
+  width: 1.2mm;
+  height: 1.2mm;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 0.7mm solid var(--accent);
+}
+
+.period {
+  margin: 0;
+  font-size: 8.4pt;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+
+main h3 {
+  font-size: 11.2pt;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0.4mm 0 0;
+}
+
+.where {
+  margin: 0.3mm 0 0;
+  color: var(--muted);
+}
+
+.where strong { color: var(--ink); font-weight: 600; }
+
+.description { margin: 1mm 0 0; }
+
+main ul {
+  margin: 1.2mm 0 0;
+  padding-left: 4mm;
+}
+
+main li { margin-bottom: 0.6mm; }

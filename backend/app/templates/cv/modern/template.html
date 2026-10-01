@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <title>{{ contact.full_name or "CV" }}</title>
+  {% if contact.full_name %}<meta name="author" content="{{ contact.full_name }}">{% endif %}
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    {% if contact.full_name %}<h1>{{ contact.full_name }}</h1>{% endif %}
+    {% if contact.headline %}<p class="headline">{{ contact.headline }}</p>{% endif %}
+    <ul class="contact">
+      {% if contact.email %}<li>{{ contact.email }}</li>{% endif %}
+      {% if contact.phone %}<li>{{ contact.phone }}</li>{% endif %}
+      {% if contact.location %}<li>{{ contact.location }}</li>{% endif %}
+      {% for link in links %}<li><a href="{{ link.url }}">{{ link.display }}</a></li>{% endfor %}
+    </ul>
+  </header>
+
+  {% if summary %}
+  <section>
+    <h2>{{ labels.sections.summary }}</h2>
+    <p class="summary">{{ summary }}</p>
+  </section>
+  {% endif %}
+
+  {% for section in entry_sections %}
+  <section>
+    <h2>{{ section.title }}</h2>
+    {% for entry in section.entries %}
+    <article>
+      <div class="entry-head">
+        <h3>{{ entry.title }}</h3>
+        {% if entry.period %}<p class="period">{{ entry.period }}</p>{% endif %}
+      </div>
+      {% if entry.organization or entry.location %}
+      <p class="where">{% if entry.organization %}<span class="org">{{ entry.organization }}</span>{% endif %}{% if entry.organization and entry.location %}, {% endif %}{% if entry.location %}{{ entry.location }}{% endif %}</p>
+      {% endif %}
+      {% if entry.description %}<p class="description">{{ entry.description }}</p>{% endif %}
+      {% if entry.bullets %}
+      <ul class="bullets">{% for bullet in entry.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% endfor %}
+
+  {% if skill_groups %}
+  <section>
+    <h2>{{ labels.sections.skills }}</h2>
+    {% for group in skill_groups %}
+    <p class="skill-group"><span class="category">{{ group.category or labels.other_skills }}:</span> {% for skill in group.skills %}{{ skill.name }}{% if skill.level %} <span class="level">({{ skill.level }})</span>{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if languages %}
+  <section>
+    <h2>{{ labels.sections.languages }}</h2>
+    <p>{% for item in languages %}{{ item.language }} <span class="level">({{ item.level }})</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  </section>
+  {% endif %}
+</body>
+</html>

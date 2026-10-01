@@ -1,0 +1,140 @@
+/* Clásico: serif en una columna, jerarquía por tamaño y versalitas, filetes finos.
+   Apto para ATS: flujo normal, sin columnas ni texto en imágenes (RF-105). */
+
+@font-face { font-family: "Source Serif 4"; font-weight: 400; font-style: normal; src: url("fonts/source-serif-4-latin-400-normal.woff"), url("fonts/source-serif-4-latin-ext-400-normal.woff"); }
+@font-face { font-family: "Source Serif 4"; font-weight: 400; font-style: italic; src: url("fonts/source-serif-4-latin-400-italic.woff"), url("fonts/source-serif-4-latin-ext-400-italic.woff"); }
+@font-face { font-family: "Source Serif 4"; font-weight: 600; font-style: normal; src: url("fonts/source-serif-4-latin-600-normal.woff"), url("fonts/source-serif-4-latin-ext-600-normal.woff"); }
+
+@page {
+  size: A4;
+  margin: 18mm 20mm 18mm 20mm;
+}
+
+:root {
+  --ink: #1f2328;
+  --muted: #4b5563;
+  --rule: #9ca3af;
+}
+
+html {
+  font-family: "Source Serif 4", "DejaVu Serif", serif;
+  font-size: 10.5pt;
+  line-height: 1.42;
+  color: var(--ink);
+}
+
+body { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+header {
+  text-align: center;
+  padding-bottom: 5mm;
+  margin-bottom: 5mm;
+  border-bottom: 0.6pt solid var(--ink);
+}
+
+h1 {
+  font-size: 23pt;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.headline {
+  font-style: italic;
+  font-size: 12pt;
+  color: var(--muted);
+  margin: 1.5mm 0 0;
+}
+
+.contact {
+  margin: 3mm 0 0;
+  font-size: 9.5pt;
+  color: var(--muted);
+}
+
+/* Cada dato entero en una línea (un enlace largo no se parte). Separadores
+   dibujados, no escritos: un ATS no lee "|" entre los datos. */
+.contact span { white-space: nowrap; }
+.contact span + span {
+  border-left: 0.5pt solid var(--rule);
+  margin-left: 2.2mm;
+  padding-left: 2.6mm;
+}
+
+section { margin-top: 4.5mm; }
+
+h2 {
+  font-size: 11.5pt;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin: 0 0 2.5mm;
+  padding-bottom: 1mm;
+  border-bottom: 0.4pt solid var(--rule);
+  break-after: avoid;
+}
+
+article {
+  margin-bottom: 3.2mm;
+  break-inside: avoid;
+}
+
+.entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4mm;
+}
+
+h3 {
+  font-size: 10.5pt;
+  font-weight: 600;
+  margin: 0;
+}
+
+.org { font-weight: 400; }
+
+.period {
+  margin: 0;
+  flex-shrink: 0;
+  font-style: italic;
+  font-size: 9.5pt;
+  color: var(--muted);
+}
+
+.location {
+  margin: 0.3mm 0 0;
+  font-size: 9.5pt;
+  color: var(--muted);
+}
+
+.summary, .description { margin: 1mm 0 0; }
+
+ul {
+  margin: 1.2mm 0 0;
+  padding-left: 1mm;
+}
+
+li { margin-bottom: 0.6mm; }
+/* Con `::marker` y contenido propio WeasyPrint falla (no sabe medir el marcador,
+   que coloca como caja absoluta): el guion va en un `::before` con sangría
+   francesa. */
+li { list-style: none; padding-left: 3.5mm; text-indent: -3.5mm; }
+li::before { content: "–"; display: inline-block; width: 3.5mm; text-indent: 0; color: var(--muted); }
+
+.skills {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 5mm;
+  row-gap: 1.2mm;
+  margin: 0;
+}
+
+.skills dt { font-weight: 600; }
+.skills dd { margin: 0; }
+
+.level { color: var(--muted); font-size: 9.5pt; }
+
+.languages { margin: 0; }

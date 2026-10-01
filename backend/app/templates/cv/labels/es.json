@@ -1,0 +1,30 @@
+{
+  "sections": {
+    "summary": "Perfil",
+    "experience": "Experiencia",
+    "education": "Formación",
+    "project": "Proyectos",
+    "certification": "Certificaciones",
+    "skills": "Habilidades",
+    "languages": "Idiomas"
+  },
+  "contact": "Contacto",
+  "present": "actualidad",
+  "months": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+  "skill_levels": {
+    "basic": "Básico",
+    "intermediate": "Intermedio",
+    "advanced": "Avanzado",
+    "expert": "Experto"
+  },
+  "language_levels": {
+    "a1": "A1",
+    "a2": "A2",
+    "b1": "B1",
+    "b2": "B2",
+    "c1": "C1",
+    "c2": "C2",
+    "native": "Nativo"
+  },
+  "other_skills": "Otras"
+}
