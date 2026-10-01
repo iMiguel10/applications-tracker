@@ -58,7 +58,8 @@ async def create_application(
 
     Puede llevar la descripción de la oferta y el CV y la carta enviados (RF-27,
     RF-28): 404 si un documento no es del usuario, 422 `document_kind_mismatch` si
-    no es del tipo que toca.
+    no es del tipo que toca y 409 `document_not_ready` si aún no tiene PDF (un CV
+    generado que sigue en `pending` o que falló).
     """
     return ApplicationDetailRead.model_validate(
         await service.create(current_user.id, data)
@@ -110,7 +111,7 @@ async def get_application(
 @router.patch(
     "/{application_id}",
     summary="Editar una solicitud",
-    responses=error_responses(404, 422),
+    responses=error_responses(404, 409, 422),
 )
 async def update_application(
     application_id: uuid.UUID,
@@ -126,7 +127,7 @@ async def update_application(
 
     `cv_document_id` y `cover_letter_document_id` (RF-28): 404 si el documento no
     existe o es de otro usuario; 422 `document_kind_mismatch` si no es del tipo que
-    toca (un CV como carta).
+    toca (un CV como carta); 409 `document_not_ready` si aún no tiene PDF.
     """
     return ApplicationDetailRead.model_validate(
         await service.update(current_user.id, application_id, data)

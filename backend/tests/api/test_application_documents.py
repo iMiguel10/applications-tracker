@@ -105,6 +105,45 @@ async def test_a_cv_cannot_be_sent_as_a_cover_letter(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"status": "pending", "storage_key": None, "error_code": None},
+        {"status": "failed", "storage_key": None, "error_code": "render_failed"},
+    ],
+)
+async def test_a_cv_without_a_pdf_cannot_be_sent(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user: CurrentUser,
+    fields: dict[str, str | None],
+):
+    # F14: uno que se está generando o que falló no tiene PDF. La interfaz solo
+    # ofrece los `ready`; la API lo impone igual.
+    application = await make_application(db_session, user.id)
+    cv = await make_document(
+        db_session,
+        user.id,
+        origin="generated",
+        size_bytes=None,
+        sha256=None,
+        template="classic",
+        language="es",
+        content={"contact": {}},
+        **fields,
+    )
+
+    response = await client.patch(
+        f"{APPLICATIONS}/{application.id}", json={"cv_document_id": str(cv.id)}
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "document_not_ready"
+    await db_session.refresh(application)
+    assert application.cv_document_id is None
+
+
+@pytest.mark.asyncio
 async def test_another_users_document_is_a_404_and_nothing_changes(
     client: AsyncClient,
     db_session: AsyncSession,

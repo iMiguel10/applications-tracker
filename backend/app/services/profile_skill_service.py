@@ -1,5 +1,6 @@
 import uuid
-from collections.abc import Callable, Sequence
+from collections.abc import AsyncIterator, Callable, Sequence
+from contextlib import asynccontextmanager
 from typing import Protocol
 
 from sqlalchemy.exc import IntegrityError
@@ -50,16 +51,17 @@ class ProfileSkillService:
             row.level = item.level.value if item.level else None
             row.position = position
 
-        await self._replace(
-            current=await self.items.skills(user_id),
-            wanted=data.skills,
-            name_attr="name",
-            wanted_name=lambda item: item.name,
-            assign=assign,
-            create=lambda: ProfileSkill(profile_id=profile.id),
-            foreign_code="skill_not_in_profile",
-        )
-        await self._commit("duplicate_skill")
+        async with self._duplicates_as_422("duplicate_skill"):
+            await self._replace(
+                current=await self.items.skills(user_id),
+                wanted=data.skills,
+                name_attr="name",
+                wanted_name=lambda item: item.name,
+                assign=assign,
+                create=lambda: ProfileSkill(profile_id=profile.id),
+                foreign_code="skill_not_in_profile",
+            )
+            await self.session.commit()
         return await self.items.skills(user_id)
 
     async def replace_languages(
@@ -75,16 +77,17 @@ class ProfileSkillService:
             row.level = item.level.value
             row.position = position
 
-        await self._replace(
-            current=await self.items.languages(user_id),
-            wanted=data.languages,
-            name_attr="language",
-            wanted_name=lambda item: item.language,
-            assign=assign,
-            create=lambda: ProfileLanguage(profile_id=profile.id),
-            foreign_code="language_not_in_profile",
-        )
-        await self._commit("duplicate_language")
+        async with self._duplicates_as_422("duplicate_language"):
+            await self._replace(
+                current=await self.items.languages(user_id),
+                wanted=data.languages,
+                name_attr="language",
+                wanted_name=lambda item: item.language,
+                assign=assign,
+                create=lambda: ProfileLanguage(profile_id=profile.id),
+                foreign_code="language_not_in_profile",
+            )
+            await self.session.commit()
         return await self.items.languages(user_id)
 
     async def _locked_profile(self, user_id: uuid.UUID) -> Profile:
@@ -148,12 +151,15 @@ class ProfileSkillService:
                 self.items.add(row)
         await self.items.flush()
 
-    async def _commit(self, duplicate_code: str) -> None:
+    @asynccontextmanager
+    async def _duplicates_as_422(self, duplicate_code: str) -> AsyncIterator[None]:
+        """La comprobación previa usa `str.lower` y el índice, el `lower()` de
+        Postgres, que no coinciden en todo (`'İOS'.lower()` en Python no es
+        `'ios'`; en Postgres, sí). El índice puede saltar en cualquier `flush` de
+        `_replace`, no solo en el commit: se cubren los dos."""
         try:
-            await self.session.commit()
+            yield
         except IntegrityError as error:
-            # La comprobación previa usa `str.lower` y el índice, `lower()` de
-            # Postgres; en algún carácter raro pueden no coincidir.
             await self.session.rollback()
             raise _duplicate(duplicate_code) from error
 

@@ -7,13 +7,13 @@ from typing import Any, NoReturn, cast
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import AppException, NotFoundError
+from app.core.exceptions import AppException, ConflictError, NotFoundError
 from app.domain.application import ApplicationOrigin
 from app.domain.application_status import (
     STATUSES_WITHOUT_APPLIED_AT,
     ApplicationStatus,
 )
-from app.domain.documents import DocumentKind
+from app.domain.documents import DocumentKind, DocumentStatus
 from app.domain.limits import LimitKey
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
@@ -231,6 +231,10 @@ class ApplicationService:
                     status_code=422,
                     code="document_kind_mismatch",
                 )
+            # Un CV que se está generando o que falló no tiene PDF: no se puede
+            # decir que se envió (F14). Uno `ready` ya no deja de estarlo.
+            if document.status != DocumentStatus.READY:
+                raise ConflictError("Document not ready", code="document_not_ready")
 
     async def _raise_document_gone_or_reraise(self, error: IntegrityError) -> NoReturn:
         """Traduce la violación de las FK a documentos a 404; el resto, tal cual.

@@ -177,47 +177,60 @@ class CvGenerationService:
     async def render_pending(self, user_id: uuid.UUID, document_id: uuid.UUID) -> None:
         """Maqueta un documento pendiente y lo deja `ready` o `failed` (trabajo
         `generate_document`). Idempotente: si ya no está `pending`, o si otra
-        ejecución lo está maquetando, no hace nada.
+        ejecución lo tiene bloqueado, no hace nada.
+
+        Maqueta SIN bloquear nada y después bloquea en el orden de todo el código,
+        primero el usuario y luego el documento, revalidando que sigue pendiente.
+        Bloquear el documento antes de maquetar y el usuario después era el orden
+        contrario al de borrar la cuenta (usuario y, en cascada, sus documentos):
+        un `DELETE /me` durante la maquetación acababa en deadlock y en un 500.
 
         Escribe el fichero ANTES de confirmar la fila (invariante 15): si el commit
         falla, sobra un fichero que limpia el barrido de huérfanos."""
         assert self.storage is not None and self.renderer is not None, (
             "render_pending necesita el almacén y el generador de PDF"
         )
-        # Bloqueado hasta el commit final (SKIP LOCKED en el repository).
-        document = await self.documents.lock_pending(user_id, document_id)
-        if document is None:
+        document = await self.documents.get(user_id, document_id)
+        if document is None or document.status != DocumentStatus.PENDING:
             return
         assert document.template is not None and document.language is not None
 
         try:
             snapshot = CvSnapshot.model_validate(document.content)
-            pdf = await CvRenderService(self.renderer, self.catalog).render(
-                snapshot, document.template, document.language
-            )
+            pdf: bytes | None = await CvRenderService(
+                self.renderer, self.catalog
+            ).render(snapshot, document.template, document.language)
         except Exception:
             # Maquetar es determinista: reintentar daría lo mismo. El usuario lo ve
             # fallido y puede reintentarlo él (por si cambió un diseño).
             logger.exception("No se pudo maquetar el documento %s", document.id)
-            await self._fail(document, DocumentErrorCode.RENDER_FAILED)
-            return
+            pdf = None
 
-        # El tamaño real, con la fila del usuario bloqueada (A30): dos CVs que se
-        # terminan a la vez no se pasan juntos del almacenamiento.
+        # Usuario y luego documento. Con la fila del usuario bloqueada (A30), dos
+        # CVs que terminan a la vez no se pasan juntos del almacenamiento. Si el
+        # documento ya no está `pending` (otra ejecución lo terminó, se borró, o
+        # se borró la cuenta mientras se maquetaba), no se escribe nada.
         await self.users.lock(user_id)
+        locked = await self.documents.lock_pending(user_id, document_id)
+        if locked is None:
+            await self.session.rollback()
+            return
+        if pdf is None:
+            await self._fail(locked, DocumentErrorCode.RENDER_FAILED)
+            return
         try:
             await self.limits.check(user_id, LimitKey.STORAGE_BYTES, amount=len(pdf))
         except LimitReachedError:
-            await self._fail(document, DocumentErrorCode.STORAGE_LIMIT_REACHED)
+            await self._fail(locked, DocumentErrorCode.STORAGE_LIMIT_REACHED)
             return
 
-        key = storage_key(user_id, document.id)
+        key = storage_key(user_id, locked.id)
         size = await self.storage.put(key, _single_chunk(pdf))
-        document.storage_key = key
-        document.size_bytes = size
-        document.sha256 = hashlib.sha256(pdf).hexdigest()
-        document.status = DocumentStatus.READY.value
-        await self.documents.save(document)
+        locked.storage_key = key
+        locked.size_bytes = size
+        locked.sha256 = hashlib.sha256(pdf).hexdigest()
+        locked.status = DocumentStatus.READY.value
+        await self.documents.save(locked)
         await self.session.commit()
 
     async def sweep_pending(self, job_queue: JobQueue, now: datetime) -> None:

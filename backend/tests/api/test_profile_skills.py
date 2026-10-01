@@ -109,6 +109,36 @@ async def test_repeated_skill_names_are_rejected_ignoring_case(client: AsyncClie
     assert _names((await client.get(SKILLS)).json()) == ["Go"]
 
 
+# Añadida por el qa-verifier al cerrar F14. `str.lower` y el `lower()` de Postgres
+# no coinciden en todo: "İOS".lower() es "i̇os" (con punto combinante) y para la BD
+# (en_US.utf8) es "ios". La comprobación previa lo deja pasar y el índice único lo
+# rechaza ya en el flush de `_replace`, antes del commit.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("url", "body", "code"),
+    [
+        (SKILLS, {"skills": [{"name": "iOS"}, {"name": "İOS"}]}, "duplicate_skill"),
+        (
+            LANGUAGES,
+            {
+                "languages": [
+                    {"language": "Isleño", "level": "b2"},
+                    {"language": "İsleño", "level": "c1"},
+                ]
+            },
+            "duplicate_language",
+        ),
+    ],
+)
+async def test_names_equal_only_for_the_database_are_a_422_not_a_500(
+    client: AsyncClient, url: str, body: dict[str, Any], code: str
+):
+    response = await client.put(url, json=body)
+
+    assert response.status_code == 422
+    assert response.json()["code"] == code
+
+
 @pytest.mark.asyncio
 async def test_a_skill_of_another_user_cannot_be_taken(
     client: AsyncClient,
