@@ -14,6 +14,8 @@ En **Solicitudes** puedes combinar:
 
 Para ver todas las solicitudes de una empresa, ve a **Empresas** y pulsa su número de **Solicitudes**.
 
+La búsqueda y los filtros de estado, modalidad y fuente valen también para la vista [Tablero](tablero.md).
+
 :::tip Los filtros viven en la dirección de la página
 Búsqueda, filtros, orden y página se guardan en la URL. Puedes guardarla en marcadores para volver a esa misma vista, y el botón **atrás** del navegador deshace el último cambio de filtro.
 :::

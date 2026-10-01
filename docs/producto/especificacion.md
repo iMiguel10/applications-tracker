@@ -237,7 +237,7 @@ Usuario
 ### Tablero Kanban (RF-120…) · v2
 
 - **RF-120** `[F16]` Vista de tablero: una columna por estado; cada tarjeta muestra puesto, empresa y cuántos días lleva en ese estado.
-- **RF-121** `[F16]` Arrastrar una tarjeta a otra columna cambia su estado **solo si la transición está permitida** (§6): mientras se arrastra, las columnas no permitidas se ven deshabilitadas. El cambio es el mismo de RF-30 (fecha "ahora", nota opcional).
+- **RF-121** `[F16]` Arrastrar una tarjeta a otra columna cambia su estado **solo si la transición está permitida** (§6): mientras se arrastra, las columnas no permitidas se ven deshabilitadas. El cambio es el mismo de RF-30: al soltar, con fecha "ahora", sin nota y con opción de deshacer; con nota o con otra fecha, desde el menú de RF-123 ([0014](../decisiones/0014-f16-y-f17-antes-que-f15.md)).
 - **RF-122** `[F16]` Los filtros del listado se aplican también al tablero (comparten URL). Las archivadas no aparecen; las columnas de estados finales se pueden plegar.
 - **RF-123** `[F16]` Se puede mover una tarjeta sin arrastrar, con teclado o con un menú "mover a…".
 

@@ -30,6 +30,8 @@ If you move to **Applied** an application that had no application date, it is se
 
 The date of a change cannot be in the future or earlier than the last recorded change: the history always moves forward.
 
+You can also change the status from the [board](tablero.md), by dragging the card or with its **Move to…** menu.
+
 ### From each status you can move to
 
 | From | To |

@@ -56,7 +56,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F13: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email y la biblioteca de documentos.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F14 y F16: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email, la biblioteca de documentos, el perfil con CVs generados y el tablero Kanban. F17 (calendario) va antes que F15 (IA), que queda para el final.
 
 | Fase | Contenido |
 |---|---|
@@ -65,9 +65,9 @@ Especificada en la [especificación](docs/producto/especificacion.md) y diseñad
 | ✔ F11 | Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
 | ✔ F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad, nunca dos veces por el mismo motivo y con baja de un clic |
 | ✔ F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
-| F14 | Perfil profesional y generación de CVs con varios diseños |
+| ✔ F14 | Perfil profesional y generación de CVs con varios diseños |
 | F15 | IA que adapta el CV y la carta a una oferta **sin inventar experiencia**, con cuota gratuita y clave propia del usuario |
-| F16 | Tablero Kanban |
+| ✔ F16 | Tablero Kanban, con arrastrar y soltar accesible por teclado |
 | F17 | Calendario con suscripción desde Google Calendar, Outlook o Apple |
 
 ## Arquitectura

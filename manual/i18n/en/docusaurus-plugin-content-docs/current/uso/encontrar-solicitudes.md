@@ -14,6 +14,8 @@ In **Applications** you can combine:
 
 To see all the applications for a company, go to **Companies** and click its number of **Applications**.
 
+The search and the status, work mode and source filters also apply to the [Board](tablero.md) view.
+
 :::tip Filters live in the page address
 Search, filters, sorting and page are kept in the URL. You can bookmark it to come back to the same view, and the browser's **back** button undoes the last filter change.
 :::

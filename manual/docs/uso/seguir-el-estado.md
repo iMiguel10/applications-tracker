@@ -30,6 +30,8 @@ Si pasas a **Enviada** una solicitud que no tenía fecha de envío, se rellena c
 
 La fecha de un cambio no puede ser futura ni anterior al último cambio registrado: el historial siempre va hacia delante.
 
+También puedes cambiar el estado desde el [tablero](tablero.md), arrastrando la tarjeta o con su menú **Mover a…**.
+
 ### Desde cada estado se puede pasar a
 
 | Desde | A |

@@ -12,6 +12,7 @@ const sidebars: SidebarsConfig = {
     "uso/primeros-pasos",
     "uso/registrar-una-solicitud",
     "uso/seguir-el-estado",
+    "uso/tablero",
     "uso/entrevistas",
     "uso/recordatorios",
     "uso/encontrar-solicitudes",
