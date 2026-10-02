@@ -21,7 +21,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 ---
 
 > [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11), recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12), y guardar tus CVs y cartas en PDF y asociarlos a cada solicitud junto con la descripción de la oferta (F13). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11), recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12), guardar tus CVs y cartas en PDF y asociarlos a cada solicitud junto con la descripción de la oferta (F13), y ver tus entrevistas y recordatorios en un calendario, con eventos sueltos a Google Calendar o `.ics` (F17). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Contenido
 
@@ -56,7 +56,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F14 y F16: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email, la biblioteca de documentos, el perfil con CVs generados y el tablero Kanban. F17 (calendario) va antes que F15 (IA), que queda para el final.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F14, F16 y F17: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email, la biblioteca de documentos, el perfil con CVs generados y el tablero Kanban y el calendario (con eventos sueltos a Google Calendar o `.ics`). F15 (IA) queda para el final.
 
 | Fase | Contenido |
 |---|---|
@@ -68,7 +68,7 @@ Especificada en la [especificación](docs/producto/especificacion.md) y diseñad
 | ✔ F14 | Perfil profesional y generación de CVs con varios diseños |
 | F15 | IA que adapta el CV y la carta a una oferta **sin inventar experiencia**, con cuota gratuita y clave propia del usuario |
 | ✔ F16 | Tablero Kanban, con arrastrar y soltar accesible por teclado |
-| F17 | Calendario con suscripción desde Google Calendar, Outlook o Apple |
+| ✔ F17 | Calendario de entrevistas y recordatorios, con eventos sueltos a Google Calendar o `.ics` (la suscripción se descartó, [0016](docs/decisiones/0016-sin-suscripcion-ics.md)) |
 
 ## Arquitectura
 

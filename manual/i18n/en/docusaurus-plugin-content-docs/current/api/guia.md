@@ -166,6 +166,10 @@ To record the CV and cover letter sent in an application, send `cv_document_id` 
 
 `GET /api/v1/documents/{document_id}/file` returns the PDF, always as `application/pdf`. By default with `Content-Disposition: inline`; with `?download=true`, `attachment`. The name is sent in ASCII (`filename`) and in UTF-8 (`filename*`).
 
+## Calendar
+
+`GET /api/v1/calendar/events?start=…&end=…` returns, ordered by time, the interviews (except cancelled ones) and the pending reminders (overdue ones included) whose time falls in `[start, end)`, each with its application and company. `start` and `end` are datetimes with a time zone (for example `2026-10-01T00:00:00+02:00`), `end` is after `start` and the range cannot exceed 62 days (422 otherwise). Notes are not returned.
+
 ## Calls from a browser
 
 For security, the API only accepts browser requests from the origins configured in the installation (`CORS_ORIGINS`), which are usually just the web application's own. A server-to-server integration is not affected.

@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
     "uso/tablero",
     "uso/entrevistas",
     "uso/recordatorios",
+    "uso/calendario",
     "uso/encontrar-solicitudes",
     "uso/archivar-y-borrar",
     "uso/dashboard",

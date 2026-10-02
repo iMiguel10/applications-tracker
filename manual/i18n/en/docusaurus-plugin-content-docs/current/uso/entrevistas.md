@@ -26,6 +26,8 @@ Edit the interview and choose the **Outcome**: Pending, Passed, Failed or Cancel
 
 Each interview has its own **Edit** and **Delete** buttons. Deleting asks for confirmation and cannot be undone.
 
+To put an interview in your calendar (Google Calendar, Outlook, Apple…), use the **Add to calendar** menu on the interview; more in [Calendar](calendario.md#add-an-event-to-another-calendar). Interviews also appear on the **Calendar** page.
+
 Upcoming interviews from all your applications also appear on the [Dashboard](dashboard.md).
 
 If the **Upcoming interview** notification is on in [Preferences](preferencias.md#choose-your-email-notifications), you get an email before each pending interview, as far ahead as you choose (1 day by default) and with the time in your time zone. If you change the date or time, you get another notification with the new one; if you record an outcome first, none arrives.

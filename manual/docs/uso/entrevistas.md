@@ -26,6 +26,8 @@ Edita la entrevista y elige el **Resultado**: Pendiente, Superada, No superada o
 
 Cada entrevista tiene sus botones **Editar** y **Borrar**. Borrar pide confirmación y no se puede deshacer.
 
+Para llevar una entrevista a tu calendario (Google Calendar, Outlook, Apple…), usa el menú **Añadir al calendario** de la entrevista; más en [Calendario](calendario.md#añadir-un-evento-a-otro-calendario). Las entrevistas aparecen además en la página **Calendario**.
+
 Las próximas entrevistas de todas tus solicitudes aparecen también en el [Dashboard](dashboard.md).
 
 Si tienes activado el aviso **Entrevista próxima** en [Preferencias](preferencias.md#elegir-los-avisos-por-email), te llega un email antes de cada entrevista pendiente, con la antelación que elijas (1 día por defecto) y la hora en tu zona horaria. Si cambias la fecha o la hora, te llega otro aviso con la nueva; si apuntas un resultado antes, no llega ninguno.

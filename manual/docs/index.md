@@ -15,5 +15,5 @@ Este manual tiene tres partes, según lo que vengas a hacer:
 | [API](api/guia.md) | Quien integra otro sistema | Autenticación, errores y paginación, y la referencia completa de cada endpoint |
 
 :::note Lo que describe este manual
-Solo lo que la aplicación hace hoy. Las funciones que están en desarrollo (recuperar la contraseña por email, avisos por email, CVs, IA, tablero y calendario) se añadirán aquí cuando existan.
+Solo lo que la aplicación hace hoy. La función que está en desarrollo (IA) se añadirá aquí cuando exista.
 :::

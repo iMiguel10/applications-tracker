@@ -422,7 +422,7 @@ backend/app/
 ├── domain/                     + notifications.py (tipos y claves de deduplicación), limits.py (LimitKey),
 │                                 profile.py (enumerados del perfil), ai.py (esquema de la propuesta)
 ├── repositories/               + document, profile, ai_proposal, ai_provider_key, ai_consent,
-│                                 notification_delivery, calendar_feed, user_limit_override
+│                                 notification_delivery, user_limit_override (calendar_feed se descartó, 0016)
 ├── services/                   + document_service, profile_service, cv_generation_service,
 │                                 ai_proposal_service, ai_key_service, notification_service,
 │                                 limit_service, calendar_service
@@ -531,7 +531,7 @@ Van a `.env.example` y `.env.test.example`, y al manual de despliegue. Ninguna t
 
 Dependencias nuevas previstas (versiones fijadas al añadirlas, siempre con `docker compose exec api uv add`):
 
-- **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `icalendar`, `pypdf` **[construido en F13]** (comprobar que un PDF subido se abre, sin renderizarlo); `python-multipart` ya no hace falta: la subida recibe el PDF en crudo ([ficheros §2](ficheros.md#2-subir-un-documento)) y el SDK de cada proveedor de IA habilitado.
+- **Backend:** `saq`, `limits[redis]`, `weasyprint`, `jinja2`, `aiosmtplib`, `cryptography`, `pypdf` **[construido en F13]** (comprobar que un PDF subido se abre, sin renderizarlo); `python-multipart` ya no hace falta: la subida recibe el PDF en crudo ([ficheros §2](ficheros.md#2-subir-un-documento)) y el SDK de cada proveedor de IA habilitado. `icalendar` ya no hace falta: el `.ics` de un evento se genera en el navegador y la suscripción ICS se descartó ([0016](../decisiones/0016-sin-suscripcion-ics.md)).
 - **Imagen del backend:** las librerías de sistema de WeasyPrint (Pango, HarfBuzz) **[construido en F9]**; `fonts-dejavu-core` llega con ellas ([ficheros §7](ficheros.md#fuentes)).
 
 Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPrint no publica tipos (`py.typed`): sus imports llevan `# type: ignore[import-untyped]`, confinados a `weasyprint_renderer.py` y su prueba. En F11: `tzdata`, que no estaba prevista.

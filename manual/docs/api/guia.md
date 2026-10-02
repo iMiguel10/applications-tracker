@@ -162,6 +162,10 @@ Para indicar el CV y la carta enviados en una solicitud, envía `cv_document_id`
 
 `GET /api/v1/documents/{document_id}/file` devuelve el PDF, siempre como `application/pdf`. Por defecto con `Content-Disposition: inline`; con `?download=true`, `attachment`. El nombre va en ASCII (`filename`) y en UTF-8 (`filename*`).
 
+## Calendario
+
+`GET /api/v1/calendar/events?start=…&end=…` devuelve, ordenadas por hora, las entrevistas (salvo las canceladas) y los recordatorios pendientes (también los vencidos) cuya hora cae en `[start, end)`, cada uno con su solicitud y su empresa. `start` y `end` son fechas con zona horaria (por ejemplo `2026-10-01T00:00:00+02:00`), `end` va después de `start` y el rango no puede pasar de 62 días (422 si no). Las notas no se devuelven.
+
 ## Llamadas desde un navegador
 
 Por seguridad, la API solo acepta peticiones de navegador desde los orígenes configurados en la instalación (`CORS_ORIGINS`), que normalmente son solo los de la propia aplicación web. Una integración de servidor a servidor no se ve afectada.

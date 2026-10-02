@@ -15,5 +15,5 @@ This manual has three parts, depending on what you are here for:
 | [API](api/guia.md) | People integrating another system | Authentication, errors and pagination, plus the full reference of every endpoint |
 
 :::note What this manual covers
-Only what the application does today. Features still in development (password recovery by email, email notifications, CVs, AI, board and calendar) will be added here once they exist.
+Only what the application does today. The feature still in development (AI) will be added here once it exists.
 :::

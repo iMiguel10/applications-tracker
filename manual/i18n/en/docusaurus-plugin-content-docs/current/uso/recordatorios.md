@@ -24,11 +24,14 @@ A pending reminder whose date has passed is shown as **Overdue**. Reminders cann
 
 If the **Reminder due** notification is on in [Preferences](preferencias.md#choose-your-email-notifications), you get an email when it falls due, or earlier if you choose a notice, with the date in your time zone. Only one per reminder, and only if it is still pending: if you mark it as done first, nothing arrives.
 
+A pending reminder has the **Add to calendar** menu, to copy it to Google Calendar or download it as an `.ics`; see [Calendar](calendario.md#add-an-event-to-another-calendar).
+
 ## Where to see them
 
 - In **Reminders**, with a status filter: Pending, Done, Dismissed or All.
 - In each application's details, its own reminders.
 - On the [Dashboard](dashboard.md), the pending and overdue ones.
+- On the [Calendar](calendario.md), the pending ones on their date.
 
 :::info Limit
 Up to 5,000 reminders per account, unless the installation sets another value, **done and dismissed ones included**. To free up room, delete the ones you no longer need: completing or dismissing them doesn't free up room. Past 80 %, the form tells you how many you have left.
