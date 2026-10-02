@@ -8,6 +8,8 @@ import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { formatDateTime } from "@/shared/lib/format";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
+import { AddToCalendarMenu } from "@/features/calendar/components/AddToCalendarMenu";
+import { entryFromReminder } from "@/features/calendar/lib/addToCalendar";
 import { useCompleteReminder } from "../hooks/mutations/useCompleteReminder";
 import { useDismissReminder } from "../hooks/mutations/useDismissReminder";
 import { DeleteReminderDialog } from "./DeleteReminderDialog";
@@ -58,6 +60,9 @@ export function RemindersList({ reminders, showApplication = true }: RemindersLi
               <div className="flex gap-1">
                 {reminder.status === "pending" && (
                   <>
+                    <AddToCalendarMenu
+                      entry={entryFromReminder(reminder, t, window.location.origin)}
+                    />
                     <Button
                       variant="ghost"
                       size="icon-sm"

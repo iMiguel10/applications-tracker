@@ -39,6 +39,7 @@ class CalendarService:
                 duration_minutes=interview.duration_minutes,
                 interview_type=interview.interview_type,
                 format=interview.format,
+                interviewers=interview.interviewers,
                 outcome=interview.outcome,
                 application=CalendarApplication(
                     id=application.id,

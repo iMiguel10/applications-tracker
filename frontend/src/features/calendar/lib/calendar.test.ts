@@ -27,6 +27,7 @@ const event = (fields: Partial<CalendarEvent>): CalendarEvent => ({
   title: "Llamar",
   interview_type: null,
   format: null,
+  interviewers: null,
   outcome: null,
   application: null,
   ...fields,

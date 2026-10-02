@@ -8,6 +8,8 @@ import { formatDateTime } from "@/shared/lib/format";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/common/EmptyState";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
+import { AddToCalendarMenu } from "@/features/calendar/components/AddToCalendarMenu";
+import { entryFromInterview } from "@/features/calendar/lib/addToCalendar";
 import { useInterviews } from "../hooks/queries/useInterviews";
 import { InterviewFormDialog } from "./InterviewFormDialog";
 import { DeleteInterviewDialog } from "./DeleteInterviewDialog";
@@ -81,6 +83,12 @@ export function InterviewsSection({ application, onSuggestInterviewing }: Interv
                 </p>
               </div>
               <div className="flex gap-1">
+                {/* Una cancelada ya no va a ocurrir: no se lleva a ningún calendario. */}
+                {interview.outcome !== "cancelled" && (
+                  <AddToCalendarMenu
+                    entry={entryFromInterview(interview, application, t, window.location.origin)}
+                  />
+                )}
                 <Button
                   variant="ghost"
                   size="icon-sm"

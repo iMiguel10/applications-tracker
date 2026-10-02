@@ -11,10 +11,16 @@ interface CalendarEventItemProps {
   zone: string;
   /** En la celda de un mes: una sola línea, recortada. */
   compact?: boolean;
+  className?: string;
 }
 
 /** Un evento del calendario, enlazado a su solicitud o a los recordatorios (RF-131). */
-export function CalendarEventItem({ event, zone, compact = false }: CalendarEventItemProps) {
+export function CalendarEventItem({
+  event,
+  zone,
+  compact = false,
+  className,
+}: CalendarEventItemProps) {
   const { t, i18n } = useTranslation();
   const time = formatTime(event.starts_at, zone, i18n.language);
   const overdue = isOverdue(event);
@@ -55,6 +61,7 @@ export function CalendarEventItem({ event, zone, compact = false }: CalendarEven
           : overdue
             ? "bg-destructive/10 text-foreground hover:bg-destructive/15"
             : "border bg-card text-foreground hover:bg-muted",
+        className,
       )}
     >
       <Icon

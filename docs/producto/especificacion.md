@@ -54,7 +54,7 @@ Applications Tracker es un **cuaderno de bitácora de una búsqueda de empleo**:
 | **v2** · IA | Ajuste guiado en un paso, con revisión | Una propuesta estructurada que el usuario revisa y edita antes de generar nada. Sin chat. |
 | **v2** · Quién paga la IA (cierra R7) | Cuota gratuita **fija y sin renovación** con la clave de la plataforma; después, **clave propia** del usuario | Cada cuenta tiene N usos gratis para probar; quien quiera más aporta su clave de uno de los proveedores habilitados en la instalación. Hay que soportar varios proveedores de verdad y guardar secretos de usuarios cifrados (RF-150…156). |
 | **v2** · Notificaciones | Email, mejor esfuerzo con reintentos | Cuatro tipos, cada uno desactivable. No es entrega garantizada; sí es **nunca dos veces** por el mismo motivo (RF-87). |
-| **v2** · Calendario externo | Suscripción ICS, sin OAuth | Google, Outlook y Apple se sincronizan solos con un enlace privado. La sincronización bidireccional con la API de Google no se construye. |
+| **v2** · Calendario externo | Eventos sueltos, sin suscripción ni OAuth | Cada entrevista o recordatorio se lleva a Google Calendar con un enlace o a cualquier calendario con su `.ics`. La suscripción ICS se descartó al detallar F17 ([0016](../decisiones/0016-sin-suscripcion-ics.md)) y la sincronización bidireccional con la API de Google no se construye. |
 | **v2** · Servidor de correo | Mailpit en desarrollo; en producción, el que configure quien despliega | La aplicación no elige ni trae proveedor: el SMTP se configura con variables de entorno al levantar el servicio. Sin configurar, la aplicación arranca igual y lo que depende del email se muestra como no disponible (RNF-34). |
 | **v2** · Documentación de producción | Docusaurus, español e inglés | Sitio aparte del MkDocs de desarrollo, con tres partes: **despliegue** en producción, **manual de uso** de las funcionalidades y **referencia de la API** de todo el sistema. MkDocs sigue siendo para quien trabaja en el código. |
 
@@ -108,7 +108,6 @@ Usuario
 ├── Envío de notificación        registro de cada email enviado: tipo, motivo, fecha
 ├── Uso de IA                    cada llamada: modelo, versión del prompt, tokens, coste estimado
 ├── Clave de IA                  clave de API propia de un proveedor habilitado, cifrada
-└── Calendario                   token secreto del enlace de suscripción ICS
 ```
 
 - **Perfil profesional**: la materia prima de los CVs. Lo que no esté aquí no puede aparecer en ningún CV generado ni adaptado.
@@ -245,9 +244,9 @@ Usuario
 
 - **RF-130** `[F17]` Vista de calendario mensual y semanal con recordatorios pendientes y entrevistas, en la zona horaria del usuario.
 - **RF-131** `[F17]` Pulsar un evento abre su solicitud o su recordatorio.
-- **RF-132** `[F17]` **Suscripción ICS**: un enlace privado por usuario con entrevistas y recordatorios pendientes, para añadirlo a Google Calendar, Outlook, Apple Calendar u otros, que se actualizan solos. Se puede regenerar (invalida el anterior) o desactivar.
-- **RF-133** `[F17]` Añadir un evento suelto a Google Calendar (enlace) o descargar su `.ics`.
-- **RF-134** `[F17]` El enlace de suscripción solo expone lo imprescindible (título, empresa, fecha y hora), nunca notas ni descripciones: quien lo obtenga no debe poder leer más que un calendario.
+- ~~**RF-132**~~ `[descartado]` **Suscripción ICS**: un enlace privado por usuario con entrevistas y recordatorios pendientes, para añadirlo a Google Calendar, Outlook, Apple Calendar u otros, que se actualizan solos. Se puede regenerar (invalida el anterior) o desactivar. Descartado al detallar F17: no aporta tanto valor como lo que cuesta ([0016](../decisiones/0016-sin-suscripcion-ics.md)).
+- **RF-133** `[F17]` Añadir un evento suelto a Google Calendar (enlace) o descargar su `.ics`, que importa cualquier calendario. Se genera en el navegador, sin notas ([0016](../decisiones/0016-sin-suscripcion-ics.md)).
+- ~~**RF-134**~~ `[descartado con RF-132]` El enlace de suscripción solo expone lo imprescindible (título, empresa, fecha y hora), nunca notas ni descripciones: quien lo obtenga no debe poder leer más que un calendario.
 
 ### Límites y uso (RF-140…) · v2
 
@@ -463,11 +462,11 @@ Cada fase se define por el riesgo que quita de en medio. Van en orden de depende
 | **F14 — Perfil y CVs generados** | Perfil profesional, plantillas y generación de PDF (RF-100…106). | Modelo de datos del perfil y generación de PDF con varias plantillas. |
 | **F15 — IA: CV y carta adaptados** | Ajuste de CV, carencias, revisión, carta de presentación y consentimiento (RF-110…119); cuota gratuita, claves propias y proveedores (RF-150…156). Al empezar se fijan con precios reales la cuota y el tope global (R7). | Integración con un modelo de lenguaje sin que invente, con coste acotado y probable sin llamar al proveedor. |
 | **F16 — Tablero Kanban** | RF-120…123. | Poco riesgo: reutiliza `allowed_transitions` y el cambio de estado existente. Enseña arrastrar y soltar accesible. |
-| **F17 — Calendario** | Vista de calendario y suscripción ICS (RF-130…134). | Zonas horarias y un endpoint público autenticado solo por token. |
+| **F17 — Calendario** | Vista de calendario y eventos sueltos a otros calendarios (RF-130, RF-131, RF-133); la suscripción ICS (RF-132, RF-134) se descartó ([0016](../decisiones/0016-sin-suscripcion-ics.md)). | Zonas horarias. |
 
 F7 (puesta en producción) sigue en espera hasta que haya un VPS. Cuando se retome, además de lo previsto incluye los servicios nuevos de la v2 (cola, worker, almacén de ficheros y la configuración SMTP por variables de entorno de RNF-34) y completa el manual de despliegue de F10. F16 y F17 no dependen de F12–F15 y pueden adelantarse si conviene.
 
-**Evolución documentada que no se construye:** recordatorios por otros canales (Telegram, push), importación CSV, extracción de datos desde la URL de la oferta, login social, etiquetas libres, contactos de recruiters, **asistente de IA conversacional** (iterar el CV por chat), **traducción del perfil con IA**, **sincronización bidireccional con Google Calendar** (exige OAuth y verificación de la app por Google), periodo de gracia al borrar la cuenta.
+**Evolución documentada que no se construye:** recordatorios por otros canales (Telegram, push), importación CSV, extracción de datos desde la URL de la oferta, login social, etiquetas libres, contactos de recruiters, **asistente de IA conversacional** (iterar el CV por chat), **traducción del perfil con IA**, **suscripción ICS al calendario** (diseñada y descartada en F17, [0016](../decisiones/0016-sin-suscripcion-ics.md)), **sincronización bidireccional con Google Calendar** (exige OAuth y verificación de la app por Google), atajos a Outlook y otros calendarios web además del de Google, periodo de gracia al borrar la cuenta.
 
 ## 12. Puntos de extensión
 
@@ -486,7 +485,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | **v2** · Diseños de CV nuevos | Las plantillas son ficheros independientes del código (RF-104). |
 | **v2** · Otro almacén de ficheros | Todo acceso a ficheros pasa por una interfaz de almacenamiento; local, MinIO o S3 es configuración. |
 | **v2** · Telegram, push… | `notification_deliveries.channel` (hoy solo `email`) forma parte de la clave única: un canal nuevo es otro valor, su emisor en `infra/` y sus textos; los barridos y la deduplicación no cambian ([0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)). |
-| **v2** · Google Calendar bidireccional | El feed ICS y la vista de calendario salen del mismo servicio de eventos; una sincronización real sería otro consumidor de ese servicio. |
+| **v2** · Suscripción ICS o Google Calendar bidireccional | La vista de calendario sale de un servicio de eventos (`CalendarService`); un feed o una sincronización real serían otro consumidor de ese servicio. El diseño del feed sigue en la arquitectura de la v2 (A40). |
 
 ## 13. Riesgos y decisiones abiertas
 
@@ -497,7 +496,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | R3 | Métricas engañosas por datos incompletos (ver §8). | Medio: el dashboard sería poco fiable. | Mitigado con RF-65 y RF-66. |
 | R4 | MkDocs 2.0 romperá plugins y temas, sin migración. | Bajo: la imagen está fijada a Material 9 (MkDocs 1.x). | Solo si hay que actualizar. La alternativa es Zensical. |
 | R5 | ¿Monedas múltiples en el salario? | Bajo. | Resuelto en F8: una moneda por solicitud (EUR por defecto), sin conversiones, pero de una lista **cerrada** de 4 (EUR, USD, GBP, CHF) — no cualquier código ISO 4217 en texto libre, como se había dejado abierto al principio. |
-| R6 | ¿Zona horaria de fechas y horas (entrevistas)? | Medio: bugs de "un día menos". | Decidido en la arquitectura: `timestamptz` en UTC y conversión en el frontend. `applied_at` es de tipo `date`, sin hora. En la v2 los emails programados y el ICS necesitan además la zona del usuario (RF-07). |
+| R6 | ¿Zona horaria de fechas y horas (entrevistas)? | Medio: bugs de "un día menos". | Decidido en la arquitectura: `timestamptz` en UTC y conversión en el frontend. `applied_at` es de tipo `date`, sin hora. En la v2 los emails programados y el calendario necesitan además la zona del usuario (RF-07). |
 | R7 | **¿Quién paga la IA y cuánto se permite?** | Alto: coste real con registro abierto. | **Resuelto (2026-09-24):** cuota gratuita fija sin renovación con la clave de la plataforma, y después clave propia de un proveedor habilitado (RF-150…156). Queda por fijar con precios reales, al empezar F15, el valor de la cuota y del tope global. |
 | R16 | **Custodiar claves de API de terceros**: una fuga expone dinero de los usuarios. | Alto. | Cifrado con clave maestra fuera de la BD, sin exponerlas nunca tras guardarlas y descifrado solo en el worker (RNF-08). Pruebas adversas: la clave no aparece en respuestas, logs ni errores. |
 | R17 | **Calidad desigual entre proveedores**: un modelo puede inventar más que otro o romper el formato de respuesta. | Medio. | Solo se habilitan proveedores con adaptador y evaluación propios (RNF-23); la validación de RF-111 es la misma para todos, así que un modelo que inventa produce errores de validación, no CVs falsos. |
@@ -505,7 +504,7 @@ Cada costura se deja puesta **solo si hoy cuesta casi nada**.
 | R9 | El generador de PDF necesita librerías de sistema (tipografías, renderizado) que pueden no estar en la imagen o comportarse distinto en producción. | Medio. | **Resuelto en F9:** tres paquetes de sistema en la imagen, DejaVu como fuente de respaldo y ~130 ms por PDF simple ([ficheros §7](../arquitectura/ficheros.md#fuentes)). |
 | R10 | **Entregabilidad**: los emails de un dominio nuevo sin SPF/DKIM acaban en spam o se rechazan. | Medio: las notificaciones parecen no funcionar. | Depende del servidor que configure quien despliega (RNF-34): el manual de despliegue explica SPF, DKIM y cómo probar el envío. En desarrollo no aplica (Mailpit). |
 | R11 | **Inyección de instrucciones**: la descripción de la oferta es texto de terceros y puede contener "ignora lo anterior y…". | Medio. | Sin herramientas para la IA, respuesta validada contra esquema y RF-111 (RNF-07). Lo peor posible es una propuesta mala, que el usuario revisa. |
-| R12 | Fuga del enlace de calendario (compartido por error). | Bajo. | Token largo y regenerable, datos mínimos (RF-134). |
+| R12 | Fuga del enlace de calendario (compartido por error). | — | **Desaparece:** la suscripción ICS no se construye ([0016](../decisiones/0016-sin-suscripcion-ics.md)). |
 | R13 | PDF malicioso subido por un usuario. | Medio. | Nunca se procesa ni se renderiza en el servidor, se comprueba el tipo por contenido y se sirve como descarga (RNF-05). |
 | R14 | Mantener dos sitios de documentación en dos idiomas cuadruplica lo que puede quedar desactualizado. | Medio. | El agente documentador los mantiene en el mismo commit; el manual documenta **tareas del usuario**, no pantallas, para que envejezca menos. |
 | R15 | **Sobreingeniería en la v2** (R1 otra vez): cola, almacén de ficheros e IA invitan a construir de más. | Alto. | Mismas reglas: F9 desechable primero, costuras solo si son baratas, y cada fase se puede cortar sin romper las anteriores. |

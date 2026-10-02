@@ -44,6 +44,7 @@ async def test_lists_interviews_and_pending_reminders_in_order(
         duration_minutes=45,
         interview_type="technical",
         format="online",
+        interviewers="Ana López",
         notes="No debe salir",
     )
     linked = await make_reminder(
@@ -77,6 +78,7 @@ async def test_lists_interviews_and_pending_reminders_in_order(
     assert meeting["duration_minutes"] == 45
     assert meeting["interview_type"] == "technical"
     assert meeting["format"] == "online"
+    assert meeting["interviewers"] == "Ana López"
     assert meeting["outcome"] == "pending"
     assert meeting["title"] is None
     assert meeting["application"]["company"]["name"] == "Globex"

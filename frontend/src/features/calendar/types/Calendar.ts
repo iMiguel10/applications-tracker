@@ -17,6 +17,7 @@ export interface CalendarEvent {
   title: string | null;
   interview_type: string | null;
   format: string | null;
+  interviewers: string | null;
   outcome: string | null;
   application: CalendarApplication | null;
 }

@@ -894,6 +894,13 @@
     "dayLabel_other": "{{day}}: {{count}} events",
     "noEvents": "Nothing this day",
     "emptyMonth": "No interviews or pending reminders this month.",
-    "emptyWeek": "No interviews or pending reminders this week."
+    "emptyWeek": "No interviews or pending reminders this week.",
+    "add": {
+      "menu": "Add to calendar",
+      "google": "Google Calendar",
+      "ics": "Download .ics",
+      "interviewTitle": "Interview: {{position}} — {{company}}",
+      "application": "Application"
+    }
   }
 }

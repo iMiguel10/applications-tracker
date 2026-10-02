@@ -6866,6 +6866,20 @@
               }
             ]
           },
+          "interviewers": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Interviewers",
+            "examples": [
+              "Ana López (CTO)"
+            ]
+          },
           "outcome": {
             "anyOf": [
               {

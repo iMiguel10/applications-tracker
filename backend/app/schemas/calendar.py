@@ -49,6 +49,7 @@ class CalendarEvent(BaseModel):
     title: str | None = Field(default=None, examples=["Enviar el test técnico"])
     interview_type: InterviewType | None = None
     format: InterviewFormat | None = None
+    interviewers: str | None = Field(default=None, examples=["Ana López (CTO)"])
     outcome: InterviewOutcome | None = None
     application: CalendarApplication | None = Field(
         description="`null` en un recordatorio que no va ligado a ninguna solicitud."

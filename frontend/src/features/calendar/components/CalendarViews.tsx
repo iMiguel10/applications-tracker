@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { entryFromEvent } from "../lib/addToCalendar";
 import { formatDay, isSameMonth } from "../lib/calendar";
 import type { CalendarEvent } from "../types/Calendar";
+import { AddToCalendarMenu } from "./AddToCalendarMenu";
 import { CalendarEventItem } from "./CalendarEventItem";
 
 /** Cuántos eventos caben en la celda de un día del mes; el resto, "N más". */
@@ -152,8 +154,14 @@ function DaySection({
       {events.length > 0 ? (
         <ul className="grid grid-cols-1 gap-1.5">
           {events.map((event) => (
-            <li key={`${event.kind}-${event.id}`}>
-              <CalendarEventItem event={event} zone={zone} />
+            // El menú va dentro de la tarjeta, en su esquina: al lado le quitaría ancho
+            // al evento en las columnas estrechas de la semana.
+            <li key={`${event.kind}-${event.id}`} className="relative">
+              <CalendarEventItem event={event} zone={zone} className="pr-8" />
+              <AddToCalendarMenu
+                entry={entryFromEvent(event, t, window.location.origin)}
+                className="absolute top-1 right-1 size-6"
+              />
             </li>
           ))}
         </ul>
