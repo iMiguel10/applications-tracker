@@ -154,13 +154,22 @@ export function googleCalendarUrl(entry: CalendarEntry): string {
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
-/** Escape de un texto de iCalendar (RFC 5545 §3.3.11). */
+/**
+ * Escape de un texto de iCalendar (RFC 5545 §3.3.11). Todo salto de línea, también
+ * un retorno de carro suelto (la API lo admite en un título), pasa a `\n`: en crudo,
+ * un lector lo tomaría como fin de línea y leería lo que sigue como otra propiedad.
+ * El resto de caracteres de control, que TEXT no admite salvo el tabulador, se quita.
+ */
 function escapeText(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\r?\n/g, "\\n");
+  return (
+    value
+      .replace(/\\/g, "\\\\")
+      .replace(/;/g, "\\;")
+      .replace(/,/g, "\\,")
+      .replace(/\r\n|\r|\n/g, "\\n")
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
+  );
 }
 
 /**

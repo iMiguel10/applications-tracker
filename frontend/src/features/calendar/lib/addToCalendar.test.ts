@@ -167,6 +167,12 @@ describe("buildIcs", () => {
     );
   });
 
+  it("quita los caracteres de control que TEXT no admite", () => {
+    const lines = unfold(buildIcs({ ...entry, title: "Llamar\u0007 a\u0000 Ana\u001b" }, now));
+
+    expect(lines).toContain("SUMMARY:Llamar a Ana");
+  });
+
   it("pliega las líneas largas sin pasar de 75 octetos ni partir un carácter", () => {
     const long = { ...entry, title: "Entrevista técnica ñandú ".repeat(10) };
     const ics = buildIcs(long, now);
