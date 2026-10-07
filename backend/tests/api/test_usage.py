@@ -28,6 +28,8 @@ async def test_usage_lists_every_limit_with_used_limit_and_remaining(
         "reminders",
         "documents",
         "storage_bytes",
+        "ai_cv_proposals",
+        "ai_cover_letter_proposals",
     }
     assert by_key["companies"] == {
         "key": "companies",

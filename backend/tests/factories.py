@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.profile import EntryKind
+from app.models.ai_proposal import AiProposal
 from app.models.application import Application
 from app.models.application_status_change import ApplicationStatusChange
 from app.models.company import Company
@@ -127,6 +128,27 @@ async def make_document(
     return await DocumentRepository(session).add(
         Document(id=document_id, user_id=user_id, **values)
     )
+
+
+async def make_ai_proposal(
+    session: AsyncSession, application: Application, **fields: Any
+) -> AiProposal:
+    """Una propuesta de IA de la solicitud, en cola por defecto."""
+    values: dict[str, Any] = {
+        "kind": "cv",
+        "status": "queued",
+        "key_source": "platform",
+        "provider": "groq",
+        "model": "openai/gpt-oss-120b",
+        "prompt_version": "cv/v1",
+        "language": "es",
+    } | fields
+    proposal = AiProposal(
+        user_id=application.user_id, application_id=application.id, **values
+    )
+    session.add(proposal)
+    await session.flush()
+    return proposal
 
 
 async def make_profile_entry(

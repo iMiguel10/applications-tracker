@@ -5564,10 +5564,699 @@
           }
         ]
       }
+    },
+    "/api/v1/applications/{application_id}/ai-proposals": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Pedir una propuesta de CV adaptado a la oferta",
+        "description": "Pide a la IA una propuesta de CV adaptado a la descripción de la oferta de\nla solicitud (RF-110): qué experiencias y logros destacar y en qué orden, cómo\nreformularlos, qué habilidades priorizar, un resumen y las carencias (RF-112).\nResponde enseguida con la propuesta en `queued`: consulta\n`GET /applications/{application_id}/ai-proposals/{proposal_id}` cada pocos\nsegundos hasta que termine.\n\nCon la clave de la plataforma gasta un uso gratuito, también si la respuesta\nno pasa la validación (`invalid`) o la oferta no da para adaptar (`rejected`).\n\nErrores (409 salvo indicación): `ai_consent_required` (falta el\nconsentimiento para el proveedor, `PUT /ai/consents/{provider}`),\n`job_description_missing`, `job_description_too_short` (422, con\n`min_length`), `profile_incomplete` (el perfil no tiene experiencia),\n`ai_free_quota_exhausted` (con `limit` y `used`), `ai_unavailable` (la\ninstalación no tiene IA) y 429 `rate_limited` (5 por minuto y 50 al día).",
+        "operationId": "request_ai_proposal_api_v1_applications__application_id__ai_proposals_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiProposalCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProposalRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`email_not_verified`: la IA exige el email verificado (salvo en una instalación sin correo).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Listar las propuestas de IA de una solicitud",
+        "description": "Las últimas 20 propuestas de la solicitud, las más recientes primero.",
+        "operationId": "list_ai_proposals_api_v1_applications__application_id__ai_proposals_get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiProposalRead"
+                  },
+                  "title": "Response List Ai Proposals Api V1 Applications  Application Id  Ai Proposals Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{application_id}/ai-proposals/{proposal_id}": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Ver una propuesta de IA",
+        "description": "Una propuesta y su estado. En `succeeded`, la propuesta que se revisa antes\nde generar el PDF (RF-113): cada experiencia, logro y habilidad referencia por\nid un elemento del perfil.",
+        "operationId": "get_ai_proposal_api_v1_applications__application_id__ai_proposals__proposal_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          },
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProposalRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/consents": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Ver los consentimientos para la IA",
+        "description": "A qué proveedor envía datos el uso gratuito de esta instalación y a qué\nproveedores ha dado el usuario su consentimiento (RF-116, RF-154).",
+        "operationId": "get_ai_consents_api_v1_ai_consents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentsRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/consents/{provider}": {
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Dar el consentimiento para un proveedor de IA",
+        "description": "Acepta que los datos del perfil necesarios para adaptar el CV (nunca los de\ncontacto) y la descripción de la oferta se envíen a `provider` (RF-116). Vale\npara la versión actual del texto: si cambia, hay que volver a darlo. 422\n`ai_provider_not_offered` si esta instalación no usa ese proveedor.",
+        "operationId": "grant_ai_consent_api_v1_ai_consents__provider__put",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AiProvider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConsentsRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Retirar el consentimiento para un proveedor de IA",
+        "description": "Desde ahora no se envía nada a `provider` (RF-116). Lo ya enviado y las\npropuestas hechas se quedan como están.",
+        "operationId": "revoke_ai_consent_api_v1_ai_consents__provider__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AiProvider"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AiConsentRead": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider"
+          },
+          "granted": {
+            "type": "boolean",
+            "title": "Granted",
+            "description": "Vigente: dado sobre la versión actual del texto y sin retirar."
+          },
+          "granted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Granted At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "granted",
+          "granted_at",
+          "revoked_at"
+        ],
+        "title": "AiConsentRead"
+      },
+      "AiConsentsRead": {
+        "properties": {
+          "text_version": {
+            "type": "integer",
+            "title": "Text Version",
+            "description": "Versión del texto del consentimiento. Si sube, el anterior ya no vale y hay que volver a darlo (RF-154).",
+            "examples": [
+              1
+            ]
+          },
+          "platform_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiProvider"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proveedor de los usos gratuitos de esta instalación, al que se envían los datos. `null`: sin uso gratuito."
+          },
+          "platform_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform Model",
+            "examples": [
+              "openai/gpt-oss-120b"
+            ]
+          },
+          "consents": {
+            "items": {
+              "$ref": "#/components/schemas/AiConsentRead"
+            },
+            "type": "array",
+            "title": "Consents",
+            "description": "Uno por cada proveedor al que el usuario ha dado (o retirado) su consentimiento."
+          }
+        },
+        "type": "object",
+        "required": [
+          "text_version",
+          "platform_provider",
+          "platform_model",
+          "consents"
+        ],
+        "title": "AiConsentsRead"
+      },
+      "AiProposalCreate": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/AiTask",
+            "description": "`cv` (adaptar el CV, RF-110). `cover_letter` llega en un paso posterior de F15."
+          },
+          "language": {
+            "$ref": "#/components/schemas/ProposalLanguage",
+            "description": "Idioma en que se escriben el resumen, los logros y las carencias."
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "language"
+        ],
+        "title": "AiProposalCreate"
+      },
+      "AiProposalRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Application Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AiTask"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus",
+            "description": "`queued` y `running` mientras se genera: consulta `GET .../ai-proposals/{proposal_id}` cada pocos segundos. Termina en `succeeded` (con `proposal`), `invalid` (la respuesta no pasó la validación), `rejected` (la oferta no da para adaptar, RF-119) o `failed`."
+          },
+          "language": {
+            "$ref": "#/components/schemas/ProposalLanguage"
+          },
+          "key_source": {
+            "$ref": "#/components/schemas/KeySource",
+            "description": "`platform`: un uso gratuito. `user`: la clave propia del usuario."
+          },
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "examples": [
+              "openai/gpt-oss-120b"
+            ]
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `invalid`, `rejected` y `failed`: por qué no salió."
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CvProposal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en `succeeded`. Cada experiencia, logro y habilidad referencia por id un elemento del perfil; los puestos, empresas y fechas no se proponen: salen del perfil (RF-111)."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "application_id",
+          "kind",
+          "status",
+          "language",
+          "key_source",
+          "provider",
+          "model",
+          "error_code",
+          "proposal",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AiProposalRead",
+        "description": "Un uso de la IA y, si salió bien, la propuesta que se revisa (RF-113)."
+      },
+      "AiProvider": {
+        "type": "string",
+        "enum": [
+          "anthropic",
+          "openai",
+          "groq"
+        ],
+        "title": "AiProvider",
+        "description": "Proveedores con adaptador en `infra/llm/` (A31). Quien despliega decide cuáles\nse ofrecen y con qué modelos (decisión 0017); uno nuevo es un adaptador más."
+      },
+      "AiTask": {
+        "type": "string",
+        "enum": [
+          "cv",
+          "cover_letter"
+        ],
+        "title": "AiTask"
+      },
       "ApplicationCreate": {
         "properties": {
           "company_id": {
@@ -7293,6 +7982,45 @@
         "title": "CvGenerateRequest",
         "description": "Qué CV generar desde el perfil (RF-103). Se guarda tal cual era el perfil al\npedirlo (foto fija, A27): editarlo después no cambia el CV."
       },
+      "CvProposal": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "experiences": {
+            "items": {
+              "$ref": "#/components/schemas/ValidatedExperience"
+            },
+            "type": "array",
+            "title": "Experiences"
+          },
+          "skill_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Skill Ids"
+          },
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/ProposedGap"
+            },
+            "type": "array",
+            "title": "Gaps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "experiences",
+          "skill_ids",
+          "gaps"
+        ],
+        "title": "CvProposal",
+        "description": "La propuesta ya validada, con los UUID reales: lo que se guarda y se revisa."
+      },
       "CvSection": {
         "type": "string",
         "enum": [
@@ -8718,6 +9446,15 @@
         "title": "InterviewUpdate",
         "description": "Actualización parcial: solo se modifican los campos enviados; `null` vacía un\ncampo opcional. Incluye `outcome`: es como se registra el resultado (RF-41)."
       },
+      "KeySource": {
+        "type": "string",
+        "enum": [
+          "platform",
+          "user"
+        ],
+        "title": "KeySource",
+        "description": "Con qué clave se hizo la llamada. Solo `platform` cuenta para la cuota\ngratuita (RF-152); `user` llega con las claves propias."
+      },
       "Language": {
         "type": "string",
         "enum": [
@@ -8822,7 +9559,9 @@
           "companies",
           "reminders",
           "documents",
-          "storage_bytes"
+          "storage_bytes",
+          "ai_cv_proposals",
+          "ai_cover_letter_proposals"
         ],
         "title": "LimitKey"
       },
@@ -9651,6 +10390,63 @@
         "title": "ProfileUpdate",
         "description": "Sustituye los datos básicos enteros (PUT): un campo que no se envía queda\nvacío."
       },
+      "ProposalErrorCode": {
+        "type": "string",
+        "enum": [
+          "ai_provider_auth",
+          "ai_provider_quota",
+          "ai_provider_unavailable",
+          "ai_provider_rejected",
+          "ai_response_invalid",
+          "ai_response_refused",
+          "ai_offer_insufficient",
+          "profile_incomplete",
+          "ai_interrupted"
+        ],
+        "title": "ProposalErrorCode",
+        "description": "Por qué una propuesta no salió. Los `ai_provider_*` y `ai_response_invalid`\nlos da el adaptador (`infra/llm/base.py`)."
+      },
+      "ProposalLanguage": {
+        "type": "string",
+        "enum": [
+          "es",
+          "en"
+        ],
+        "title": "ProposalLanguage",
+        "description": "Idioma en que se escribe la propuesta: los de las etiquetas de los CV."
+      },
+      "ProposalStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "invalid",
+          "rejected",
+          "failed"
+        ],
+        "title": "ProposalStatus"
+      },
+      "ProposedGap": {
+        "properties": {
+          "requirement": {
+            "type": "string",
+            "title": "Requirement",
+            "description": "Lo que pide la oferta"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "description": "Por qué no aparece en el perfil"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requirement",
+          "note"
+        ],
+        "title": "ProposedGap"
+      },
       "RateLimitedRead": {
         "properties": {
           "detail": {
@@ -10151,6 +10947,47 @@
           "warning_ratio"
         ],
         "title": "UsageRead"
+      },
+      "ValidatedBullet": {
+        "properties": {
+          "bullet_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Bullet Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bullet_id",
+          "text"
+        ],
+        "title": "ValidatedBullet"
+      },
+      "ValidatedExperience": {
+        "properties": {
+          "entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entry Id"
+          },
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/ValidatedBullet"
+            },
+            "type": "array",
+            "title": "Bullets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entry_id",
+          "bullets"
+        ],
+        "title": "ValidatedExperience"
       },
       "ValidationError": {
         "properties": {

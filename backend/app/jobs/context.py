@@ -1,7 +1,9 @@
 from saq.types import Context
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.domain.ai import AiProvider
 from app.infra.email import EmailSender
+from app.infra.llm import LLMProvider
 from app.infra.pdf import PdfRenderer
 from app.infra.queue import JobQueue
 from app.infra.storage import FileStorage
@@ -18,3 +20,5 @@ class WorkerContext(Context, total=False):
     job_queue: JobQueue
     storage: FileStorage
     pdf_renderer: PdfRenderer
+    # Un adaptador por proveedor de IA (F15).
+    llm_providers: dict[AiProvider, LLMProvider]

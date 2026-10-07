@@ -622,13 +622,15 @@
   },
   "usage": {
     "title": "Account usage",
-    "description": "How much of each limit of your account you have used. They don’t renew: you free up room by deleting applications, companies, reminders or documents. Archiving an application or a document, or completing a reminder, doesn’t free up room.",
+    "description": "How much of each limit of your account you have used. They don’t renew: you free up room by deleting applications, companies, reminders or documents. Archiving an application or a document, or completing a reminder, doesn’t free up room. Free AI uses do not come back.",
     "limits": {
       "applications": "Applications",
       "companies": "Companies",
       "reminders": "Reminders",
       "documents": "Documents",
-      "storage_bytes": "Storage"
+      "storage_bytes": "Storage",
+      "ai_cv_proposals": "AI-tailored CVs (free)",
+      "ai_cover_letter_proposals": "AI cover letters (free)"
     },
     "warning": {
       "applications_one": "You have {{remaining, number}} of your {{limit, number}} applications left.",

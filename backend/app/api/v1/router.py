@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.v1.deps import enforce_api_rate_limit, get_current_user
 from app.api.v1.endpoints import (
+    ai,
     application_status_changes,
     applications,
     calendar,
@@ -57,5 +58,7 @@ protected.include_router(dashboard.router)
 protected.include_router(calendar.router)
 protected.include_router(documents.router)
 protected.include_router(profile.router)
+protected.include_router(ai.proposals)
+protected.include_router(ai.consents)
 
 router.include_router(protected)

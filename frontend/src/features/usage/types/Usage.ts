@@ -4,6 +4,9 @@ export const LIMIT_KEYS = [
   "reminders",
   "documents",
   "storage_bytes",
+  // Usos gratuitos de IA con la clave de la plataforma (F15, decisión 0017).
+  "ai_cv_proposals",
+  "ai_cover_letter_proposals",
 ] as const;
 export type LimitKey = (typeof LIMIT_KEYS)[number];
 

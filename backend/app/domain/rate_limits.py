@@ -45,6 +45,11 @@ UPLOAD_PER_USER = RateRule("upload", "30/hour", RateKey.USER)
 # Generar un CV (F14, límites y abuso §2): cada uno ocupa el worker un segundo
 # maquetando. Otra ventana distinta de la de subidas: generar no gasta las subidas.
 GENERATE_PER_USER = RateRule("generate", "30/hour", RateKey.USER)
+# Propuestas de IA (F15, límites y abuso §2): cada una cuesta dinero, con la clave
+# de la plataforma o con la del usuario (el worker es de todos). La cuota gratuita
+# acota la plataforma; esto frena ráfagas y a quien entrara en una cuenta ajena.
+AI_PER_USER_MINUTE = RateRule("ai_minute", "5/minute", RateKey.USER)
+AI_PER_USER_DAY = RateRule("ai_day", "50/day", RateKey.USER)
 
 # Rutas /auth/* de SuperTokens (POST) y sus reglas. Las sirve el middleware de
 # SuperTokens, no nuestros endpoints: las limita api/auth_rate_limit.py.

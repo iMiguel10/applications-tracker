@@ -20,6 +20,7 @@ from app.models.application import Application
 from app.models.company import Company
 from app.schemas.user import CurrentUser
 from tests.factories import (
+    make_ai_proposal,
     make_application,
     make_company,
     make_document,
@@ -58,6 +59,13 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
         {"notes": "Hackeada"},
     ),
     ("DELETE", "/api/v1/applications/{application_id}/interviews/{interview_id}", None),
+    ("GET", "/api/v1/applications/{application_id}/ai-proposals", None),
+    (
+        "POST",
+        "/api/v1/applications/{application_id}/ai-proposals",
+        {"kind": "cv", "language": "es"},
+    ),
+    ("GET", "/api/v1/applications/{application_id}/ai-proposals/{proposal_id}", None),
     ("POST", "/api/v1/reminders/{reminder_id}/complete", None),
     ("POST", "/api/v1/reminders/{reminder_id}/dismiss", None),
     ("DELETE", "/api/v1/reminders/{reminder_id}", None),
@@ -117,6 +125,7 @@ async def test_other_user_gets_404_and_nothing_changes(
     )
     document = await make_document(db_session, user.id, name="Original.pdf")
     entry = await make_profile_entry(db_session, user.id, title="Original")
+    proposal = await make_ai_proposal(db_session, application)
     url = path.format(
         company_id=company.id,
         application_id=application.id,
@@ -124,6 +133,7 @@ async def test_other_user_gets_404_and_nothing_changes(
         reminder_id=reminder.id,
         document_id=document.id,
         entry_id=entry.id,
+        proposal_id=proposal.id,
     )
 
     as_user(other_user)

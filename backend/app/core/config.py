@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     # Tamaño máximo de un PDF subido (5 MB). No es un límite por cuenta: vale para
     # todas y lo publica GET /meta para que la interfaz avise antes de subir.
     document_max_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    # Usos gratuitos de IA por cuenta y tarea, con la plataforma (0017). Sin renovar.
+    limit_ai_cv_proposals: int = Field(default=1, ge=0)
+    limit_ai_cover_letter_proposals: int = Field(default=1, ge=0)
 
     # Rate limiting (RNF-04, límites y abuso §2). Desactivable solo para las
     # pruebas, que si no fallarían de forma intermitente por 429.

@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
 from app.core.exceptions import LimitReachedError
+from app.domain.ai import AiTask
 from app.domain.limits import LIMIT_RULES, LimitKey, LimitUnit, remaining
+from app.repositories.ai_proposal_repository import AiProposalRepository
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.company_repository import CompanyRepository
 from app.repositories.document_repository import DocumentRepository
@@ -51,6 +53,7 @@ class LimitService:
         self.companies = CompanyRepository(session)
         self.reminders = ReminderRepository(session)
         self.documents = DocumentRepository(session)
+        self.ai_proposals = AiProposalRepository(session)
 
     def global_limit(self, key: LimitKey) -> int:
         value: int = getattr(self.config, f"limit_{key.value}")
@@ -73,6 +76,12 @@ class LimitService:
                 return await self.documents.count(user_id)
             case LimitKey.STORAGE_BYTES:
                 return await self.documents.total_size(user_id)
+            case LimitKey.AI_CV_PROPOSALS:
+                return await self.ai_proposals.count_platform_usage(user_id, AiTask.CV)
+            case LimitKey.AI_COVER_LETTER_PROPOSALS:
+                return await self.ai_proposals.count_platform_usage(
+                    user_id, AiTask.COVER_LETTER
+                )
 
     async def check(self, user_id: uuid.UUID, key: LimitKey, amount: int = 1) -> None:
         """Lanza LimitReachedError si crear `amount` más superaría el límite."""

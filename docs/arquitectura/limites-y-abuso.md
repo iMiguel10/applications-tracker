@@ -113,7 +113,7 @@ location /api/ {
 | Pedir recuperación de contraseña | 10 / hora | por IP |
 | Reenviar verificación de email | 3 / hora | por usuario |
 | Toda la API con sesión **[añadido en F11]** | 600 / min | por usuario |
-| Propuestas de IA | 5 / min y 50 / día | por usuario (también con clave propia: el `worker` es de todos) |
+| Propuestas de IA **[construido en F15]** | 5 / min y 50 / día | por usuario (también con clave propia: el `worker` es de todos). `AI_PER_USER_MINUTE` y `AI_PER_USER_DAY`, en `POST /applications/{id}/ai-proposals` |
 | Guardar o validar una clave de IA | 10 / hora | por usuario |
 | Subir documentos **[construido en F13]** | 30 / hora | por usuario (`UPLOAD_PER_USER`; el diseño decía 20, se subió a 30 al construirlo y el documento no se actualizó hasta F14) |
 | Generar PDF **[construido en F14]** | 30 / hora | por usuario (`GENERATE_PER_USER`, ventana aparte de la de subidas) |

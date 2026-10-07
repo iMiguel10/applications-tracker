@@ -18,6 +18,10 @@ class LimitKey(StrEnum):
     DOCUMENTS = "documents"
     # Suma de los tamaños de los documentos, archivados incluidos (siguen en disco).
     STORAGE_BYTES = "storage_bytes"
+    # Usos gratuitos de IA con la clave de la plataforma, por tarea (decisión 0017):
+    # lo facturado más lo que está en curso (ia.md §6). No se renuevan.
+    AI_CV_PROPOSALS = "ai_cv_proposals"
+    AI_COVER_LETTER_PROPOSALS = "ai_cover_letter_proposals"
 
 
 class LimitUnit(StrEnum):
@@ -61,6 +65,10 @@ LIMIT_RULES: dict[LimitKey, LimitRule] = {
     LimitKey.STORAGE_BYTES: LimitRule(
         error_code="storage_limit_reached", unit=LimitUnit.BYTES
     ),
+    # Cuestan dinero de la plataforma: nunca "sin límite" (F11). Mismo código para
+    # las dos: la interfaz explica cómo seguir con una clave propia (RF-156).
+    LimitKey.AI_CV_PROPOSALS: LimitRule(error_code="ai_free_quota_exhausted"),
+    LimitKey.AI_COVER_LETTER_PROPOSALS: LimitRule(error_code="ai_free_quota_exhausted"),
 }
 
 

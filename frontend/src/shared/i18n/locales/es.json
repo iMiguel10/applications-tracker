@@ -622,13 +622,15 @@
   },
   "usage": {
     "title": "Uso de la cuenta",
-    "description": "Cuánto llevas de cada límite de tu cuenta. No se renuevan: se libera espacio al borrar solicitudes, empresas, recordatorios o documentos. Archivar una solicitud o un documento, o completar un recordatorio, no libera espacio.",
+    "description": "Cuánto llevas de cada límite de tu cuenta. No se renuevan: se libera espacio al borrar solicitudes, empresas, recordatorios o documentos. Archivar una solicitud o un documento, o completar un recordatorio, no libera espacio. Los usos gratuitos de IA no se recuperan.",
     "limits": {
       "applications": "Solicitudes",
       "companies": "Empresas",
       "reminders": "Recordatorios",
       "documents": "Documentos",
-      "storage_bytes": "Almacenamiento"
+      "storage_bytes": "Almacenamiento",
+      "ai_cv_proposals": "CV adaptados con IA (gratis)",
+      "ai_cover_letter_proposals": "Cartas con IA (gratis)"
     },
     "warning": {
       "applications_one": "Te queda {{remaining, number}} de las {{limit, number}} solicitudes de tu cuenta.",

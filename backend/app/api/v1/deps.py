@@ -10,6 +10,8 @@ from app.core.config import settings
 from app.core.exceptions import AppException, RateLimitedError
 from app.db.session import get_db
 from app.domain.rate_limits import (
+    AI_PER_USER_DAY,
+    AI_PER_USER_MINUTE,
     API_PER_USER,
     GENERATE_PER_USER,
     UNSUBSCRIBE_PER_IP,
@@ -21,6 +23,8 @@ from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
 from app.schemas.user import CurrentUser
 from app.services.account_service import AccountService
+from app.services.ai_consent_service import AiConsentService
+from app.services.ai_proposal_service import AiProposalService
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
 from app.services.calendar_service import CalendarService
@@ -111,6 +115,18 @@ def get_document_service(
     storage: FileStorage = Depends(get_file_storage),
 ) -> DocumentService:
     return DocumentService(db, storage)
+
+
+def get_ai_proposal_service(
+    db: AsyncSession = Depends(get_db),
+) -> AiProposalService:
+    return AiProposalService(db)
+
+
+def get_ai_consent_service(
+    db: AsyncSession = Depends(get_db),
+) -> AiConsentService:
+    return AiConsentService(db)
 
 
 def get_cv_generation_service(
@@ -259,6 +275,16 @@ async def enforce_generate_rate_limit(
     """Límite de CVs generados por usuario (F14): cada uno ocupa el `worker`
     maquetando, y el límite de documentos no lo ve si se borran después."""
     await _enforce_user_rule(request, GENERATE_PER_USER, current_user)
+
+
+async def enforce_ai_rate_limit(
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Límite de propuestas de IA por usuario (F15): 5 por minuto y 50 al día.
+    Cada una cuesta dinero, de la plataforma o del propio usuario."""
+    await _enforce_user_rule(request, AI_PER_USER_MINUTE, current_user)
+    await _enforce_user_rule(request, AI_PER_USER_DAY, current_user)
 
 
 async def enforce_unsubscribe_rate_limit(request: Request) -> None:
