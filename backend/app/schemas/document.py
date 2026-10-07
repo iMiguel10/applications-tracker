@@ -48,6 +48,12 @@ class DocumentRead(BaseModel):
         "`storage_limit_reached` (el PDF no cabía en el almacenamiento de la "
         "cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
     )
+    ai_proposal_id: uuid.UUID | None = Field(
+        default=None,
+        description="Solo en los adaptados con IA (`ai_tailored`): la propuesta de "
+        "la que sale, con su modelo y su versión del prompt (RF-115). `null` si se "
+        "borró la solicitud a la que pertenecía.",
+    )
     archived_at: datetime | None = Field(
         description="Si está archivado (RF-93): fuera de la biblioteca, pero sigue "
         "asociado a sus solicitudes y ocupando almacenamiento."

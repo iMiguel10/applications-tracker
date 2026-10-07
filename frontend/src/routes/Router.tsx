@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { PageFallback } from "@/shared/components/common/PageFallback";
 import { AppLayout } from "@/shared/components/layout/AppLayout";
+import { AiProposalReviewPage } from "../pages/AiProposalReviewPage";
 import { ApplicationDetailPage } from "../pages/ApplicationDetailPage";
 import { ApplicationEditPage } from "../pages/ApplicationEditPage";
 import { ApplicationNewPage } from "../pages/ApplicationNewPage";
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
       { path: "/applications/new", element: <ApplicationNewPage /> },
       { path: "/applications/:applicationId", element: <ApplicationDetailPage /> },
       { path: "/applications/:applicationId/edit", element: <ApplicationEditPage /> },
+      {
+        path: "/applications/:applicationId/ai/:proposalId",
+        element: <AiProposalReviewPage />,
+      },
       { path: "/companies", element: <CompaniesPage /> },
       { path: "/reminders", element: <RemindersPage /> },
       { path: "/calendar", element: <CalendarPage /> },

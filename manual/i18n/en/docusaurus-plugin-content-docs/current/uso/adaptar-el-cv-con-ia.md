@@ -1,0 +1,57 @@
+---
+title: Tailor your CV to a job offer with AI
+sidebar_label: Tailor your CV with AI
+---
+
+The AI suggests how to tailor your CV to a specific job offer: which experience and achievements to highlight and in what order, how to reword them, which skills to put first and a summary written for that offer. It also tells you what the offer asks for that isn't in your profile. You review everything and, at the end, the PDF is created.
+
+The AI only works with what is in your [profile](perfil.md): it **cannot add** experience, companies, job titles, dates or skills you don't have. If the offer asks for something that isn't in your profile, it shows it as a gap instead of making it up.
+
+## Before you start
+
+- The application needs the **job description** (see [Record an application](registrar-una-solicitud.md)), at least 200 characters long. Paste the text of the job ad: the application doesn't download it from the link.
+- Your profile needs at least one **experience**. The more achievements you write for each one, the more the AI has to choose from.
+- You need to have [confirmed your email](primeros-pasos.md#confirm-your-email), unless the installation doesn't send emails.
+
+Each account has **one free use** for the CV. It doesn't renew. It is spent as soon as the AI answers, even if the proposal doesn't work out.
+
+## Ask for a proposal
+
+1. Open the application and find **Tailor with AI**.
+2. Choose the **CV language** for the summary and achievements.
+3. Click **Tailor my CV to this job**.
+4. The first time, the application explains which data is sent to the AI provider and asks for your permission. Click **Accept and continue**.
+
+In a few seconds, the proposal goes from **Preparing the proposal…** to **Proposal ready to review**. Click **Review**.
+
+:::info What is sent to the AI provider
+Your experience and achievements, your education, projects and certifications, your skills and languages, your headline, your summary and the job description. **Never** your name, email, phone, location or links: they are added when the PDF is created.
+:::
+
+## Review the proposal
+
+The **Review the tailored CV** page puts every suggestion next to what your profile says:
+
+- **Summary**: the suggested one, editable, next to the one in your profile.
+- **Experience**: each chosen experience, in the suggested order, with each reworded achievement next to the original. The ones that change are marked **Rewritten**. You can edit the text, remove an achievement, remove an experience or move it with the arrows. Job title, company and dates always come from your profile.
+- **Highlighted skills**: the chosen ones, by importance for the job. Remove the ones you don't want.
+- **What the job asks for that isn't in your profile**: it isn't added to the CV. If you have it, add it to your profile.
+
+:::caution Review before creating the PDF
+The AI rewords to match the offer and can exaggerate ("helped with" may end up as "led"). Compare each achievement with its original: what you leave on this page is what the PDF will say.
+:::
+
+## Create the PDF
+
+In **Create the PDF**, choose the design (the same ones as in [Generate a CV](generar-un-cv.md)), check the **Name** and click **Create CV**. The CV appears in [Documents](documentos.md) labelled **Tailored with AI** and, in a few seconds, it is ready. To record that you sent it for this application, edit the application and choose it as the CV sent.
+
+Creating the PDF doesn't use the AI again: you can create several designs from the same proposal.
+
+## If something goes wrong
+
+| Message | What it means |
+|---|---|
+| The proposal did not pass the check | The AI's answer mentioned something that isn't in your profile or didn't have the expected shape, and the application discarded it. The use is spent |
+| The description doesn't look like a job offer | The text isn't enough to tailor the CV. The use is spent |
+| The AI provider could not be reached | The provider didn't answer. The use is **not** spent: try again later |
+| Your profile has changed since the proposal was made | You deleted something from your profile that the proposal uses. Ask for a new proposal |

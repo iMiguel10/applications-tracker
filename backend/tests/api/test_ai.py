@@ -22,11 +22,13 @@ from app.db.session import get_db
 from app.infra.queue import InMemoryJobQueue
 from app.infra.rate_limit import DisabledRateLimiter, LimitsRateLimiter
 from app.main import app
+from app.models.application import Application
+from app.models.document import Document
 from app.schemas.user import CurrentUser
 from app.services.ai_consent_service import AiConsentService
 from app.services.ai_proposal_service import AiProposalService
 from tests.auth_helpers import PASSWORD, form
-from tests.factories import make_application, make_profile_entry
+from tests.factories import make_ai_proposal, make_application, make_profile_entry
 
 MODEL = "openai/gpt-oss-120b"
 PLATFORM_KEY = "gsk_platform_SECRET_api_tests"
@@ -321,3 +323,142 @@ async def test_an_unverified_email_cannot_request_a_proposal(
 
     assert response.status_code == 403
     assert response.json()["code"] == "email_not_verified"
+
+
+# --- Generar el CV adaptado (RF-113) ------------------------------------------
+
+
+async def succeeded_proposal(
+    db_session: AsyncSession, user: CurrentUser
+) -> tuple[uuid.UUID, uuid.UUID, dict[str, object]]:
+    """Una solicitud con una propuesta terminada sobre el perfil del usuario, y la
+    propuesta revisada que se envía para generar el PDF."""
+    entry = await make_profile_entry(
+        db_session, user.id, title="Backend", organization="Acme", bullets=["SQL"]
+    )
+    bullet = entry.bullets[0]
+    application = await make_application(
+        db_session, user.id, job_description=JOB_DESCRIPTION
+    )
+    proposal = await make_ai_proposal(
+        db_session,
+        application,
+        status="succeeded",
+        billable=True,
+        proposal={
+            "summary": "Propuesto",
+            "experiences": [
+                {
+                    "entry_id": str(entry.id),
+                    "bullets": [{"bullet_id": str(bullet.id), "text": "SQL afinado"}],
+                }
+            ],
+            "skill_ids": [],
+            "gaps": [],
+        },
+    )
+    reviewed: dict[str, object] = {
+        "summary": "Revisado por mí",
+        "experiences": [
+            {
+                "entry_id": str(entry.id),
+                "bullets": [{"bullet_id": str(bullet.id), "text": "Optimicé SQL"}],
+            }
+        ],
+        "skill_ids": [],
+    }
+    return application.id, proposal.id, reviewed
+
+
+@pytest.mark.asyncio
+async def test_a_reviewed_proposal_becomes_a_pending_tailored_cv(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user: CurrentUser,
+    queue: InMemoryJobQueue,
+):
+    application_id, proposal_id, reviewed = await succeeded_proposal(db_session, user)
+
+    response = await client.post(
+        f"{proposals_url(application_id)}/{proposal_id}/document",
+        json={"design": "modern", "proposal": reviewed},
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert (body["origin"], body["status"], body["kind"]) == (
+        "ai_tailored",
+        "pending",
+        "cv",
+    )
+    assert (body["template"], body["language"]) == ("modern", "es")
+    assert body["ai_proposal_id"] == str(proposal_id)
+    assert body["name"] == "CV Backend Developer – " + body["name"].split(" – ")[1]
+    document = await db_session.get(Document, uuid.UUID(body["id"]))
+    assert document is not None and document.content is not None
+    # Lo revisado por el usuario, no lo que propuso la IA.
+    assert document.content["summary"] == "Revisado por mí"
+    [section] = document.content["entry_sections"]
+    assert section["entries"][0]["title"] == "Backend"
+    assert section["entries"][0]["organization"] == "Acme"
+    assert section["entries"][0]["bullets"][0]["text"] == "Optimicé SQL"
+    [job] = queue.jobs
+    assert job.job == "generate_document"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("queue")
+async def test_a_proposal_referencing_what_is_no_longer_in_the_profile_is_outdated(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    application_id, proposal_id, reviewed = await succeeded_proposal(db_session, user)
+    reviewed["skill_ids"] = [str(uuid.uuid4())]
+
+    response = await client.post(
+        f"{proposals_url(application_id)}/{proposal_id}/document",
+        json={"design": "modern", "proposal": reviewed},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "ai_proposal_outdated"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("queue")
+async def test_only_a_succeeded_proposal_can_become_a_cv(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    application_id, _, reviewed = await succeeded_proposal(db_session, user)
+    application = await db_session.get(Application, application_id)
+    assert application is not None
+    queued = await make_ai_proposal(db_session, application)
+
+    response = await client.post(
+        f"{proposals_url(application_id)}/{queued.id}/document",
+        json={"design": "modern", "proposal": reviewed},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "ai_proposal_not_ready"
+
+
+@pytest.mark.asyncio
+async def test_deleting_the_application_keeps_the_tailored_cv(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user: CurrentUser,
+    queue: InMemoryJobQueue,
+):
+    application_id, proposal_id, reviewed = await succeeded_proposal(db_session, user)
+    created = await client.post(
+        f"{proposals_url(application_id)}/{proposal_id}/document",
+        json={"design": "classic", "proposal": reviewed},
+    )
+
+    deleted = await client.delete(f"/api/v1/applications/{application_id}")
+    document = await client.get(f"/api/v1/documents/{created.json()['id']}")
+
+    assert deleted.status_code == 204
+    assert document.status_code == 200
+    assert document.json()["ai_proposal_id"] is None
+    assert queue.jobs

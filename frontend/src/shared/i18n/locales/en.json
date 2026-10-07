@@ -480,7 +480,17 @@
     "language_not_in_profile": "A language no longer exists. Reload the page and try again.",
     "unknown_design": "That CV design does not exist.",
     "design_language_unavailable": "That design is not available in that language.",
-    "document_not_failed": "Only a CV that failed can be retried."
+    "document_not_failed": "Only a CV that failed can be retried.",
+    "ai_consent_required": "Before using the AI you have to accept sending data to the provider.",
+    "ai_free_quota_exhausted": "You have already used your {{limit, number}} free proposals.",
+    "ai_unavailable": "AI is not available in this installation.",
+    "job_description_missing": "Add the job description to tailor the CV.",
+    "job_description_too_short": "The job description is too short: it needs at least {{min_length, number}} characters.",
+    "profile_incomplete": "Add at least one experience to your profile to tailor the CV.",
+    "ai_task_unavailable": "This feature is not available yet.",
+    "ai_provider_not_offered": "This installation doesn't use that AI provider.",
+    "ai_proposal_not_ready": "The proposal is not ready yet.",
+    "ai_proposal_outdated": "Your profile has changed since the proposal was made. Ask for a new proposal."
   },
   "documents": {
     "title": "Documents",
@@ -904,6 +914,89 @@
       "ics": "Download .ics",
       "interviewTitle": "Interview: {{position}} — {{company}}",
       "application": "Application"
+    }
+  },
+  "ai": {
+    "tailor": {
+      "title": "Tailor with AI",
+      "description": "Suggests which experience and achievements to highlight for this job, reworded, and tells you what the job asks for that isn't in your profile. You review everything before the PDF is created.",
+      "request": "Tailor my CV to this job",
+      "language": "CV language",
+      "languages": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "freeUses_one": "You have {{count}} free proposal left (with {{provider}}).",
+      "freeUses_other": "You have {{count}} free proposals left (with {{provider}}).",
+      "noDescription": "To tailor your CV, first add the job description.",
+      "shortDescription": "The job description is too short to tailor the CV: it needs at least {{min}} characters.",
+      "noUses": "You have already used your free CV proposal.",
+      "history": "Proposals for this application",
+      "review": "Review"
+    },
+    "status": {
+      "running": "Preparing the proposal…",
+      "succeeded": "Proposal ready to review"
+    },
+    "errors": {
+      "ai_provider_auth": "The AI provider rejected the key.",
+      "ai_provider_quota": "The AI provider has reached its usage limit. Try again later.",
+      "ai_provider_unavailable": "The AI provider could not be reached.",
+      "ai_provider_rejected": "The AI provider rejected the request.",
+      "ai_response_invalid": "The proposal did not pass the check: it referred to something that isn't in your profile or didn't have the expected shape.",
+      "ai_response_refused": "The AI provider refused to answer.",
+      "ai_offer_insufficient": "The description doesn't look like a job offer or isn't enough to tailor the CV.",
+      "profile_incomplete": "Your profile has no experience.",
+      "ai_interrupted": "The proposal was interrupted before it finished."
+    },
+    "consent": {
+      "title": "Send data to {{provider}}",
+      "description": "To tailor your CV, the application sends part of your profile and the job offer to {{provider}}, this installation's AI provider.",
+      "sentTitle": "What is sent",
+      "sent": {
+        "profile": "Your experience and achievements, your education, projects and certifications, your skills and languages, your headline and your summary.",
+        "offer": "The job description of this application."
+      },
+      "notSentTitle": "Never sent",
+      "notSent": "Your name, email, phone, location or links: they are added when the PDF is created.",
+      "revoke": "You can withdraw this consent whenever you want.",
+      "accept": "Accept and continue"
+    },
+    "review": {
+      "title": "Review the tailored CV",
+      "generatedWith": "Suggested by AI · {{model}}",
+      "warning": "Review every change before creating the PDF: the AI reorders and rewords what is in your profile, but it can exaggerate. What you leave here is what the PDF will say.",
+      "outdated": "Your profile has changed since this proposal was made and no longer includes something it suggests. Ask for a new proposal.",
+      "summary": "Summary",
+      "inProfile": "In your profile",
+      "proposed": "Suggested",
+      "rewritten": "Rewritten",
+      "noProfileSummary": "Your profile has no summary.",
+      "missing": "No longer in your profile",
+      "experience": "Experience",
+      "experienceHint": "Experience follows the suggested order. Job title, company and dates come from your profile.",
+      "noExperience": "The CV needs at least one experience.",
+      "noBullets": "No highlighted achievements.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeExperience": "Remove this experience",
+      "removeBullet": "Remove this achievement",
+      "bulletLabel": "Achievement {{index}} of {{entry}}",
+      "skills": "Highlighted skills",
+      "skillsHint": "The ones in the CV, by importance for the job.",
+      "noSkills": "No highlighted skills.",
+      "removeSkill": "Remove {{skill}}",
+      "gaps": "What the job asks for that isn't in your profile",
+      "gapsHint": "It isn't added to the CV: if you have it, add it to your profile.",
+      "noGaps": "Nothing was detected.",
+      "generate": "Create the PDF",
+      "generateHint": "Choose the design. It doesn't use the AI again: you can create several designs from this proposal.",
+      "submit": "Create CV",
+      "problems": {
+        "summary": "Write the summary.",
+        "experiences": "The CV needs at least one experience.",
+        "bullets": "An achievement is empty."
+      }
     }
   }
 }

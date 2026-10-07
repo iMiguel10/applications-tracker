@@ -480,7 +480,17 @@
     "language_not_in_profile": "Un idioma ya no existe. Recarga la página e inténtalo de nuevo.",
     "unknown_design": "Ese diseño de CV no existe.",
     "design_language_unavailable": "Ese diseño no está disponible en ese idioma.",
-    "document_not_failed": "Solo se puede reintentar un CV que falló."
+    "document_not_failed": "Solo se puede reintentar un CV que falló.",
+    "ai_consent_required": "Antes de usar la IA tienes que aceptar el envío de datos al proveedor.",
+    "ai_free_quota_exhausted": "Ya has usado tus {{limit, number}} propuestas gratuitas.",
+    "ai_unavailable": "La IA no está disponible en esta instalación.",
+    "job_description_missing": "Añade la descripción de la oferta para adaptar el CV.",
+    "job_description_too_short": "La descripción de la oferta es demasiado corta: necesita al menos {{min_length, number}} caracteres.",
+    "profile_incomplete": "Añade al menos una experiencia a tu perfil para adaptar el CV.",
+    "ai_task_unavailable": "Esta función todavía no está disponible.",
+    "ai_provider_not_offered": "Esta instalación no usa ese proveedor de IA.",
+    "ai_proposal_not_ready": "La propuesta todavía no está lista.",
+    "ai_proposal_outdated": "Tu perfil ha cambiado desde que se hizo la propuesta. Pide una propuesta nueva."
   },
   "documents": {
     "title": "Documentos",
@@ -904,6 +914,89 @@
       "ics": "Descargar .ics",
       "interviewTitle": "Entrevista: {{position}} — {{company}}",
       "application": "Solicitud"
+    }
+  },
+  "ai": {
+    "tailor": {
+      "title": "Adaptar con IA",
+      "description": "Propone qué experiencias y logros destacar para esta oferta, reformulados, y te dice lo que la oferta pide y no está en tu perfil. Lo revisas todo antes de generar el PDF.",
+      "request": "Adaptar mi CV a esta oferta",
+      "language": "Idioma del CV",
+      "languages": {
+        "es": "Español",
+        "en": "Inglés"
+      },
+      "freeUses_one": "Te queda {{count}} propuesta gratuita (con {{provider}}).",
+      "freeUses_other": "Te quedan {{count}} propuestas gratuitas (con {{provider}}).",
+      "noDescription": "Para adaptar tu CV, añade antes la descripción de la oferta.",
+      "shortDescription": "La descripción de la oferta es demasiado corta para adaptar el CV: necesita al menos {{min}} caracteres.",
+      "noUses": "Ya has usado tu propuesta gratuita de CV.",
+      "history": "Propuestas de esta solicitud",
+      "review": "Revisar"
+    },
+    "status": {
+      "running": "Preparando la propuesta…",
+      "succeeded": "Propuesta lista para revisar"
+    },
+    "errors": {
+      "ai_provider_auth": "El proveedor de IA rechazó la clave.",
+      "ai_provider_quota": "El proveedor de IA ha alcanzado su límite de uso. Prueba más tarde.",
+      "ai_provider_unavailable": "No se pudo contactar con el proveedor de IA.",
+      "ai_provider_rejected": "El proveedor de IA rechazó la petición.",
+      "ai_response_invalid": "La propuesta no superó la comprobación: hacía referencia a algo que no está en tu perfil o no tenía la forma esperada.",
+      "ai_response_refused": "El proveedor de IA se negó a responder.",
+      "ai_offer_insufficient": "La descripción no parece una oferta de empleo o no da para adaptar el CV.",
+      "profile_incomplete": "Tu perfil no tiene ninguna experiencia.",
+      "ai_interrupted": "La propuesta se interrumpió antes de terminar."
+    },
+    "consent": {
+      "title": "Enviar datos a {{provider}}",
+      "description": "Para adaptar tu CV, la aplicación envía parte de tu perfil y la oferta a {{provider}}, el proveedor de IA de esta instalación.",
+      "sentTitle": "Se envía",
+      "sent": {
+        "profile": "Tu experiencia con sus logros, tu formación, proyectos y certificaciones, tus habilidades e idiomas, tu titular y tu resumen.",
+        "offer": "La descripción de la oferta de esta solicitud."
+      },
+      "notSentTitle": "No se envía nunca",
+      "notSent": "Tu nombre, email, teléfono, ubicación ni enlaces: se añaden al generar el PDF.",
+      "revoke": "Puedes retirar este consentimiento cuando quieras.",
+      "accept": "Aceptar y continuar"
+    },
+    "review": {
+      "title": "Revisar el CV adaptado",
+      "generatedWith": "Propuesto con IA · {{model}}",
+      "warning": "Revisa cada cambio antes de generar: la IA reordena y reformula lo que hay en tu perfil, pero puede exagerar. Lo que dejes aquí es lo que saldrá en el PDF.",
+      "outdated": "Tu perfil ha cambiado desde que se hizo esta propuesta y ya no incluye algo de lo que propone. Pide una propuesta nueva.",
+      "summary": "Resumen",
+      "inProfile": "En tu perfil",
+      "proposed": "Propuesto",
+      "rewritten": "Reescrito",
+      "noProfileSummary": "Tu perfil no tiene resumen.",
+      "missing": "Ya no está en tu perfil",
+      "experience": "Experiencia",
+      "experienceHint": "Las experiencias van en el orden propuesto. El puesto, la empresa y las fechas salen de tu perfil.",
+      "noExperience": "El CV necesita al menos una experiencia.",
+      "noBullets": "Sin logros destacados.",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "removeExperience": "Quitar esta experiencia",
+      "removeBullet": "Quitar este logro",
+      "bulletLabel": "Logro {{index}} de {{entry}}",
+      "skills": "Habilidades destacadas",
+      "skillsHint": "Las que salen en el CV, por orden de importancia para la oferta.",
+      "noSkills": "Ninguna habilidad destacada.",
+      "removeSkill": "Quitar {{skill}}",
+      "gaps": "Lo que la oferta pide y no está en tu perfil",
+      "gapsHint": "No se añade al CV: si lo tienes, añádelo a tu perfil.",
+      "noGaps": "No se ha detectado nada.",
+      "generate": "Generar el PDF",
+      "generateHint": "Elige el diseño. No vuelve a usar la IA: puedes generar varios diseños de esta propuesta.",
+      "submit": "Generar CV",
+      "problems": {
+        "summary": "Escribe el resumen.",
+        "experiences": "El CV necesita al menos una experiencia.",
+        "bullets": "Hay un logro vacío."
+      }
     }
   }
 }

@@ -14,6 +14,13 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from app.domain.cv import (
+    CvSection,
+    CvSnapshot,
+    SnapshotBullet,
+    SnapshotEntry,
+    SnapshotEntrySection,
+)
 from app.domain.profile import BULLET_MAX_LENGTH, EntryKind
 
 
@@ -343,6 +350,62 @@ def validate_cv_output(output: CvProposalOutput, ids: ProfileIds) -> CvProposal:
         experiences=experiences,
         skill_ids=skill_ids,
         gaps=[gap for gap in output.gaps if gap.requirement.strip()],
+    )
+
+
+class OutdatedProposalError(Exception):
+    """La propuesta revisada referencia algo que ya no está en el perfil: se editó
+    el perfil después de pedirla."""
+
+
+def apply_cv_proposal(base: CvSnapshot, proposal: CvProposal) -> CvSnapshot:
+    """El CV adaptado (RF-110, RF-113): la foto fija del perfil completo con la
+    propuesta revisada aplicada.
+
+    De la propuesta salen solo el resumen, qué experiencias y logros van y en qué
+    orden, el texto de cada logro y qué habilidades destacar. Puestos, empresas y
+    fechas salen de la foto del perfil (RF-111): la propuesta no tiene dónde
+    escribirlos. Formación, proyectos, certificaciones e idiomas van como en el
+    perfil."""
+    experience = next(
+        (s for s in base.entry_sections if s.section == CvSection.EXPERIENCE), None
+    )
+    entries = {entry.id: entry for entry in experience.entries} if experience else {}
+    adapted: list[SnapshotEntry] = []
+    for proposed in proposal.experiences:
+        entry = entries.get(proposed.entry_id)
+        if entry is None:
+            raise OutdatedProposalError("experiencia que ya no está en el perfil")
+        bullets = {bullet.id for bullet in entry.bullets}
+        if any(bullet.bullet_id not in bullets for bullet in proposed.bullets):
+            raise OutdatedProposalError("logro que ya no está en esa experiencia")
+        adapted.append(
+            entry.model_copy(
+                update={
+                    "bullets": [
+                        SnapshotBullet(id=bullet.bullet_id, text=bullet.text)
+                        for bullet in proposed.bullets
+                    ]
+                }
+            )
+        )
+
+    skills = {skill.id: skill for skill in base.skills}
+    if any(skill_id not in skills for skill_id in proposal.skill_ids):
+        raise OutdatedProposalError("habilidad que ya no está en el perfil")
+
+    sections = [
+        SnapshotEntrySection(section=CvSection.EXPERIENCE, entries=adapted)
+        if section.section == CvSection.EXPERIENCE
+        else section
+        for section in base.entry_sections
+    ]
+    return base.model_copy(
+        update={
+            "summary": proposal.summary,
+            "entry_sections": [section for section in sections if section.entries],
+            "skills": [skills[skill_id] for skill_id in proposal.skill_ids],
+        }
     )
 
 

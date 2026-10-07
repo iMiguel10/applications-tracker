@@ -104,6 +104,30 @@ class CvGenerationService:
             ),
         )
 
+        return await self.create_pending(
+            user_id,
+            snapshot,
+            design=design,
+            language=data.language,
+            name=data.name or f"CV {design.names[data.language]}",
+            origin=DocumentOrigin.GENERATED,
+            job_queue=job_queue,
+        )
+
+    async def create_pending(
+        self,
+        user_id: uuid.UUID,
+        snapshot: CvSnapshot,
+        *,
+        design: CvDesign,
+        language: str,
+        name: str,
+        origin: DocumentOrigin,
+        job_queue: JobQueue,
+        ai_proposal_id: uuid.UUID | None = None,
+    ) -> Document:
+        """Crea el CV `pending` con su foto fija y encola su maquetación: lo comparten
+        el generado desde el perfil y el adaptado con IA (F15)."""
         # Cuotas con la fila del usuario bloqueada (A30), como en una subida. El
         # tamaño del PDF no se sabe hasta maquetarlo: aquí solo se exige que quede
         # algo de almacenamiento, y el `worker` comprueba el tamaño real.
@@ -115,12 +139,13 @@ class CvGenerationService:
             Document(
                 user_id=user_id,
                 kind=DocumentKind.CV.value,
-                origin=DocumentOrigin.GENERATED.value,
+                origin=origin.value,
                 status=DocumentStatus.PENDING.value,
-                name=sanitize_name(data.name or f"CV {design.names[data.language]}"),
+                name=sanitize_name(name),
                 template=design.key,
-                language=data.language,
+                language=language,
                 content=snapshot.model_dump(mode="json"),
+                ai_proposal_id=ai_proposal_id,
             )
         )
         await self.session.commit()

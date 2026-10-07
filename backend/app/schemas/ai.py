@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.domain.ai import (
     AI_CONSENT_VERSION,
@@ -12,7 +13,19 @@ from app.domain.ai import (
     ProposalErrorCode,
     ProposalLanguage,
     ProposalStatus,
+    ValidatedBullet,
+    ValidatedExperience,
 )
+from app.domain.documents import TEMPLATE_MAX_LENGTH
+from app.domain.profile import (
+    BULLET_MAX_LENGTH,
+    MAX_BULLETS_PER_ENTRY,
+    MAX_ENTRIES,
+    MAX_SKILLS,
+    SUMMARY_MAX_LENGTH,
+    EntryKind,
+)
+from app.schemas.common import OptionalShortText
 
 
 class AiProposalCreate(BaseModel):
@@ -81,3 +94,66 @@ class AiConsentsRead(BaseModel):
         description="Uno por cada proveedor al que el usuario ha dado (o retirado) "
         "su consentimiento."
     )
+
+
+class ReviewedBullet(BaseModel):
+    bullet_id: uuid.UUID = Field(description="Un logro de esa experiencia del perfil.")
+    text: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True, min_length=1, max_length=BULLET_MAX_LENGTH
+        ),
+    ]
+
+
+class ReviewedExperience(BaseModel):
+    entry_id: uuid.UUID = Field(description="Una experiencia del perfil.")
+    bullets: list[ReviewedBullet] = Field(max_length=MAX_BULLETS_PER_ENTRY)
+
+
+class ReviewedCvProposal(BaseModel):
+    """La propuesta tal como queda tras revisarla (RF-113): el usuario puede
+    reescribir el resumen y los logros, quitar experiencias, logros o habilidades y
+    cambiar su orden. Los ids siguen siendo los del perfil."""
+
+    summary: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True, min_length=1, max_length=SUMMARY_MAX_LENGTH
+        ),
+    ]
+    experiences: list[ReviewedExperience] = Field(
+        min_length=1, max_length=MAX_ENTRIES[EntryKind.EXPERIENCE]
+    )
+    skill_ids: list[uuid.UUID] = Field(max_length=MAX_SKILLS)
+
+    def to_domain(self) -> CvProposal:
+        return CvProposal(
+            summary=self.summary,
+            experiences=[
+                ValidatedExperience(
+                    entry_id=experience.entry_id,
+                    bullets=[
+                        ValidatedBullet(bullet_id=bullet.bullet_id, text=bullet.text)
+                        for bullet in experience.bullets
+                    ],
+                )
+                for experience in self.experiences
+            ],
+            skill_ids=list(dict.fromkeys(self.skill_ids)),
+            gaps=[],
+        )
+
+
+class AiProposalDocumentCreate(BaseModel):
+    """Generar el CV adaptado desde una propuesta revisada (RF-113, RF-114)."""
+
+    design: Annotated[
+        str, StringConstraints(min_length=1, max_length=TEMPLATE_MAX_LENGTH)
+    ] = Field(description="Clave del diseño (`GET /documents/cv-designs`).")
+    name: OptionalShortText = Field(
+        default=None,
+        description="Nombre visible en la biblioteca. Sin él, `CV <puesto> – "
+        "<empresa>`.",
+    )
+    proposal: ReviewedCvProposal

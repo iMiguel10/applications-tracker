@@ -1,6 +1,6 @@
 # IA: CV y carta adaptados
 
-> Estado: **en construcción** (F15, pasos 1 y 2 de 6: la interfaz, el adaptador de Groq y la propuesta de CV en el backend) · Fecha: 2026-10-07 · Cambios al empezar la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
+> Estado: **en construcción** (F15, pasos 1 a 3 de 6: la interfaz, el adaptador de Groq y la propuesta de CV de punta a punta) · Fecha: 2026-10-07 · Cambios al empezar la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
 >
 > Los nombres de las APIs de cada proveedor (salida estructurada, recuento de tokens, errores) se fijan al construir su adaptador, contra la versión del SDK de ese momento. Lo que no cambia son las reglas de este documento.
 
@@ -35,6 +35,10 @@ En Groq, una respuesta que el modelo generó sin cumplir el esquema estricto lle
 > **Trampa — la misma propuesta ejecutada dos veces factura dos veces.** SAQ puede relanzar un trabajo que acaba de empezar. Si las dos ejecuciones leyeran la fila en `queued` antes de que ninguna la marcara, las dos llamarían al proveedor. `AiProposalRepository.claim` pasa de `queued` a `running` en una sola sentencia y solo una ejecución la encuentra; la otra no llama a nadie (`test_a_proposal_runs_only_once`).
 
 > **Trampa — una conexión retenida mientras responde el proveedor.** Una llamada puede tardar decenas de segundos; si la sesión mantuviera abierta su transacción (o un `FOR UPDATE`) durante la llamada, diez propuestas a la vez agotarían el pool y bloquearían un `DELETE /me`. El `worker` confirma lo leído antes de llamar y escribe el resultado después con un UPDATE condicionado al estado `running`: si mientras tanto se borró la solicitud o la cuenta, o el barrido la cerró, no actualiza nada.
+
+**Construido en F15 (paso 3), revisar y generar el CV:** `POST /applications/{id}/ai-proposals/{proposal_id}/document` recibe la propuesta tal como queda tras revisarla (`ReviewedCvProposal`: resumen, experiencias con sus logros reescritos y habilidades, por ids del perfil) y un diseño. `apply_cv_proposal` (`domain/ai.py`) la aplica a la foto fija del perfil completo: de la propuesta salen solo el resumen, qué experiencias y logros van y en qué orden, el texto de cada logro y las habilidades; puestos, empresas, fechas, formación, idiomas y contacto salen del perfil. El documento es un `ai_tailored` que sigue el camino de los generados (`CvGenerationService.create_pending`, F14) y apunta a la propuesta (`documents.ai_proposal_id`). No vuelve a llamar a la IA. Si la propuesta referencia algo que ya no está en el perfil, 409 `ai_proposal_outdated`.
+
+En el frontend, `features/ai/`: la tarjeta **Adaptar con IA** del detalle de la solicitud (`AiTailorCard`: explica por qué no se puede pedir —sin oferta, oferta corta, sin usos—, pide el consentimiento la primera vez con `AiConsentDialog` y consulta la propuesta cada 2 s mientras está en cola o en curso) y la página `/applications/{id}/ai/{proposalId}` (`AiProposalReviewPage` y `ProposalReview`): cada logro reformulado junto a su original, con la marca **Reescrito** (RF-118), todo editable, y se puede quitar y reordenar pero no añadir. `lib/review.ts` cruza la propuesta con el perfil actual y detecta si quedó desfasada antes de enviarla.
 
 ## 3. La entrada: qué se envía y qué no
 

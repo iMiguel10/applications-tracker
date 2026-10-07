@@ -21,6 +21,8 @@ export interface LibraryDocument {
   language: string | null;
   /** Solo en `failed`. */
   error_code: DocumentErrorCode | null;
+  /** Solo en los adaptados con IA: la propuesta de la que salen (RF-115). */
+  ai_proposal_id?: string | null;
   /** Archivado (RF-93): fuera de la biblioteca, pero sigue ocupando espacio. */
   archived_at: string | null;
   created_at: string;

@@ -25,13 +25,17 @@ from app.domain.ai import (
     CvProposalOutput,
     InvalidProposalError,
     KeySource,
+    OutdatedProposalError,
     ProposalErrorCode,
     ProposalStatus,
+    apply_cv_proposal,
     build_cv_input,
     cost_micros,
     validate_cv_output,
     wrap_job_description,
 )
+from app.domain.cv import CvSelection
+from app.domain.documents import DocumentOrigin
 from app.domain.limits import LimitKey
 from app.domain.profile import EntryKind
 from app.infra.llm import (
@@ -47,14 +51,17 @@ from app.infra.llm import (
 from app.infra.llm.prompts import load_prompt
 from app.infra.queue import JobQueue, QueueUnavailableError
 from app.models.ai_proposal import AiProposal
+from app.models.document import Document
 from app.repositories.ai_proposal_repository import AiProposalRepository
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.profile_entry_repository import ProfileEntryRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.profile_skill_repository import ProfileSkillRepository
 from app.repositories.user_repository import UserRepository
-from app.schemas.ai import AiProposalCreate
+from app.schemas.ai import AiProposalCreate, AiProposalDocumentCreate
 from app.services.ai_consent_service import AiConsentService
+from app.services.cv_generation_service import CvGenerationService
+from app.services.cv_render_service import resolve_design
 from app.services.limit_service import LimitService
 
 logger = logging.getLogger(__name__)
@@ -98,6 +105,7 @@ class AiProposalService:
         self.users = UserRepository(session)
         self.limits = LimitService(session, config)
         self.consents = AiConsentService(session, config)
+        self.cv_generation = CvGenerationService(session, config=config)
 
     # --- Pedir y consultar (API) --------------------------------------------
 
@@ -202,6 +210,52 @@ class AiProposalService:
         if proposal is None:
             raise NotFoundError("AI proposal")
         return proposal
+
+    async def create_document(
+        self,
+        user_id: uuid.UUID,
+        application_id: uuid.UUID,
+        proposal_id: uuid.UUID,
+        data: AiProposalDocumentCreate,
+        job_queue: JobQueue,
+    ) -> Document:
+        """Genera el CV adaptado con la propuesta tal como la dejó el usuario tras
+        revisarla (RF-113): la foto fija del perfil actual con la propuesta
+        aplicada, maquetada como cualquier CV generado. No vuelve a llamar a la IA
+        ni gasta otro uso: se pueden generar varios diseños de la misma propuesta.
+
+        409 `ai_proposal_not_ready` si la propuesta no terminó bien y
+        `ai_proposal_outdated` si referencia algo que ya no está en el perfil."""
+        proposal = await self.get(user_id, application_id, proposal_id)
+        if proposal.status != ProposalStatus.SUCCEEDED or proposal.kind != AiTask.CV:
+            raise ConflictError(
+                "The AI proposal is not ready", code="ai_proposal_not_ready"
+            )
+        design = resolve_design(
+            self.cv_generation.catalog, data.design, proposal.language
+        )
+        base = await self.cv_generation.snapshot(user_id, CvSelection())
+        try:
+            snapshot = apply_cv_proposal(base, data.proposal.to_domain())
+        except OutdatedProposalError as exc:
+            logger.info("Propuesta %s desfasada: %s", proposal.id, exc)
+            raise ConflictError(
+                "The profile changed since the proposal", code="ai_proposal_outdated"
+            ) from None
+
+        application = await self.applications.get(user_id, application_id)
+        assert application is not None  # get() ya lo comprobó con la propuesta
+        return await self.cv_generation.create_pending(
+            user_id,
+            snapshot,
+            design=design,
+            language=proposal.language,
+            name=data.name
+            or f"CV {application.position_title} – {application.company.name}",
+            origin=DocumentOrigin.AI_TAILORED,
+            job_queue=job_queue,
+            ai_proposal_id=proposal.id,
+        )
 
     # --- Ejecutar (worker) --------------------------------------------------
 

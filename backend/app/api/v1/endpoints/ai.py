@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Response, status
 
 from app.api.v1.deps import (
     enforce_ai_rate_limit,
+    enforce_generate_rate_limit,
     get_ai_consent_service,
     get_ai_proposal_service,
     get_current_user,
@@ -12,8 +13,14 @@ from app.api.v1.deps import (
 )
 from app.domain.ai import AiProvider
 from app.infra.queue import JobQueue
-from app.schemas.ai import AiConsentsRead, AiProposalCreate, AiProposalRead
+from app.schemas.ai import (
+    AiConsentsRead,
+    AiProposalCreate,
+    AiProposalDocumentCreate,
+    AiProposalRead,
+)
 from app.schemas.common import ErrorResponse, error_responses
+from app.schemas.document import DocumentRead
 from app.schemas.user import CurrentUser
 from app.services.ai_consent_service import AiConsentService
 from app.services.ai_proposal_service import AiProposalService
@@ -94,6 +101,44 @@ async def get_ai_proposal(
     id un elemento del perfil."""
     proposal = await service.get(current_user.id, application_id, proposal_id)
     return AiProposalRead.model_validate(proposal)
+
+
+@proposals.post(
+    "/{proposal_id}/document",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Generar el CV adaptado desde una propuesta revisada",
+    responses=error_responses(404, 409, 422)
+    | {
+        403: {
+            "model": ErrorResponse,
+            "description": "`email_not_verified`: generar documentos exige el email "
+            "verificado (salvo en una instalación sin correo).",
+        },
+    },
+)
+async def create_ai_proposal_document(
+    application_id: uuid.UUID,
+    proposal_id: uuid.UUID,
+    data: AiProposalDocumentCreate,
+    current_user: CurrentUser = Depends(require_verified_email),
+    _rate_limit: None = Depends(enforce_generate_rate_limit),
+    service: AiProposalService = Depends(get_ai_proposal_service),
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> DocumentRead:
+    """Genera en PDF el CV adaptado con la propuesta tal como queda tras revisarla
+    (RF-113): el resumen y los logros reescritos, qué experiencias, logros y
+    habilidades van y en qué orden. Puestos, empresas, fechas, formación y el
+    resto salen del perfil actual (RF-111). Responde enseguida con el documento
+    `ai_tailored` en `pending`, como al generar un CV; no vuelve a llamar a la
+    IA ni gasta otro uso.
+
+    409 `ai_proposal_not_ready` si la propuesta no terminó en `succeeded`, y
+    `ai_proposal_outdated` si referencia algo que ya no está en el perfil (se
+    editó después de pedirla): hay que pedir otra."""
+    document = await service.create_document(
+        current_user.id, application_id, proposal_id, data, job_queue
+    )
+    return DocumentRead.model_validate(document)
 
 
 @consents.get("", summary="Ver los consentimientos para la IA")

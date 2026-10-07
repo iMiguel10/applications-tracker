@@ -35,8 +35,8 @@ class Document(Base):
     fichero, así que solo pueden sobrar ficheros, nunca faltar (ficheros §5).
 
     Los generados (F14) guardan su diseño, el idioma de las etiquetas y la foto
-    fija de lo que se maquetó (`content`, A27). La columna de los adaptados con IA
-    (`ai_proposal_id`) llega con F15.
+    fija de lo que se maquetó (`content`, A27). Los adaptados con IA (F15) apuntan
+    además a la propuesta de la que salen (`ai_proposal_id`).
     """
 
     __tablename__ = "documents"
@@ -79,6 +79,13 @@ class Document(Base):
             postgresql_where=text("status = 'pending'"),
         ),
         Index("ix_documents_user_id_created_at", "user_id", "created_at"),
+        # Borrar una propuesta (en cascada con su solicitud) pone a NULL la columna
+        # en sus documentos: sin índice, Postgres recorrería toda la tabla.
+        Index(
+            "ix_documents_ai_proposal_id",
+            "ai_proposal_id",
+            postgresql_where=text("ai_proposal_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -105,6 +112,15 @@ class Document(Base):
     # `none_as_null`: sin él, `None` se guarda como el JSON `null`, que no es
     # `NULL` para SQL, y el CHECK `content_matches_origin` no lo vería.
     content: Mapped[dict[str, Any] | None] = mapped_column(JSONB(none_as_null=True))
+    # La propuesta de IA de la que sale un `ai_tailored` (RF-115: con qué modelo y
+    # versión del prompt). FK simple y no compuesta con `user_id`: borrar la
+    # solicitud borra sus propuestas, y el documento se queda en la biblioteca sin
+    # ese enlace (SET NULL); una FK compuesta pondría a NULL también `user_id`. Que
+    # la propuesta sea del mismo usuario lo garantiza el service, que la lee por
+    # `user_id`.
+    ai_proposal_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("ai_proposals.id", ondelete="SET NULL")
+    )
     # Por qué falló, solo en los fallidos (DocumentErrorCode).
     error_code: Mapped[str | None] = mapped_column(String(50))
     # RF-93: archivar oculta sin romper la asociación con las solicitudes.

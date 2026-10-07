@@ -10,15 +10,29 @@ from app.domain.ai import (
     AiEntry,
     AiProfile,
     AiSkill,
+    CvProposal,
     CvProposalOutput,
     InvalidProposalError,
+    OutdatedProposalError,
     ProposedBullet,
     ProposedExperience,
     ProposedGap,
+    ValidatedBullet,
+    ValidatedExperience,
+    apply_cv_proposal,
     build_cv_input,
     cost_micros,
     validate_cv_output,
     wrap_job_description,
+)
+from app.domain.cv import (
+    CvSection,
+    CvSnapshot,
+    SnapshotBullet,
+    SnapshotContact,
+    SnapshotEntry,
+    SnapshotEntrySection,
+    SnapshotSkill,
 )
 from app.domain.profile import EntryKind
 
@@ -220,3 +234,101 @@ def test_ids_from_another_profile_do_not_exist_in_this_one() -> None:
 def test_cost_is_price_per_million_times_tokens_in_micros() -> None:
     # 0,15 $ y 0,60 $ por millón: 5 000 de entrada y 2 500 de salida = 0,00225 $.
     assert cost_micros(5_000, 2_500, 0.15, 0.60) == 2_250
+
+
+# --- Aplicar la propuesta revisada a la foto del perfil (RF-113) -------------
+
+
+def base_snapshot() -> CvSnapshot:
+    return CvSnapshot(
+        contact=SnapshotContact(full_name="Ana"),
+        summary="Resumen del perfil",
+        entry_sections=[
+            SnapshotEntrySection(
+                section=CvSection.EXPERIENCE,
+                entries=[
+                    SnapshotEntry(
+                        id=JOB_A,
+                        title="Backend Developer",
+                        organization="Acme",
+                        bullets=[
+                            SnapshotBullet(id=BULLET_A1, text="SQL"),
+                            SnapshotBullet(id=BULLET_A2, text="APIs"),
+                        ],
+                    ),
+                    SnapshotEntry(
+                        id=JOB_B,
+                        title="Junior",
+                        bullets=[SnapshotBullet(id=BULLET_B1, text="Tests")],
+                    ),
+                ],
+            ),
+            SnapshotEntrySection(
+                section=CvSection.EDUCATION,
+                entries=[SnapshotEntry(id=DEGREE, title="Ingeniería")],
+            ),
+        ],
+        skills=[
+            SnapshotSkill(id=SKILL_SQL, name="PostgreSQL"),
+            SnapshotSkill(id=SKILL_GO, name="Go"),
+        ],
+    )
+
+
+def reviewed(**changes: object) -> CvProposal:
+    values: dict[str, object] = {
+        "summary": "Resumen adaptado",
+        "experiences": [
+            ValidatedExperience(
+                entry_id=JOB_B,
+                bullets=[ValidatedBullet(bullet_id=BULLET_B1, text="Tests con pytest")],
+            ),
+            ValidatedExperience(
+                entry_id=JOB_A,
+                bullets=[ValidatedBullet(bullet_id=BULLET_A2, text="APIs REST")],
+            ),
+        ],
+        "skill_ids": [SKILL_GO],
+        "gaps": [],
+    } | changes
+    return CvProposal.model_validate(values)
+
+
+def test_the_proposal_decides_order_texts_and_skills_but_not_the_facts() -> None:
+    snapshot = apply_cv_proposal(base_snapshot(), reviewed())
+
+    assert snapshot.summary == "Resumen adaptado"
+    experience, education = snapshot.entry_sections
+    assert [entry.id for entry in experience.entries] == [JOB_B, JOB_A]
+    # El puesto y la empresa, del perfil (RF-111); el logro, el reescrito.
+    assert experience.entries[1].title == "Backend Developer"
+    assert experience.entries[1].organization == "Acme"
+    assert [b.text for b in experience.entries[1].bullets] == ["APIs REST"]
+    assert education.entries[0].title == "Ingeniería"
+    assert [skill.name for skill in snapshot.skills] == ["Go"]
+    assert snapshot.contact.full_name == "Ana"
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"experiences": [ValidatedExperience(entry_id=uuid.uuid4(), bullets=[])]},
+        # Un logro llevado a otra experiencia, o uno que ya se borró del perfil.
+        {
+            "experiences": [
+                ValidatedExperience(
+                    entry_id=JOB_B,
+                    bullets=[ValidatedBullet(bullet_id=BULLET_A1, text="SQL")],
+                )
+            ]
+        },
+        # La formación no es una experiencia.
+        {"experiences": [ValidatedExperience(entry_id=DEGREE, bullets=[])]},
+        {"skill_ids": [uuid.uuid4()]},
+    ],
+)
+def test_a_reference_missing_from_the_profile_is_outdated(
+    changes: dict[str, object],
+) -> None:
+    with pytest.raises(OutdatedProposalError):
+        apply_cv_proposal(base_snapshot(), reviewed(**changes))

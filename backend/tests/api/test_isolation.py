@@ -6,6 +6,7 @@ Todas las operaciones deben responder 404, igual que si el recurso no existiera
 """
 
 import re
+import uuid
 from collections.abc import Callable, Iterator
 from typing import Any
 
@@ -66,6 +67,18 @@ ID_OPERATIONS: list[tuple[str, str, dict[str, Any] | None]] = [
         {"kind": "cv", "language": "es"},
     ),
     ("GET", "/api/v1/applications/{application_id}/ai-proposals/{proposal_id}", None),
+    (
+        "POST",
+        "/api/v1/applications/{application_id}/ai-proposals/{proposal_id}/document",
+        {
+            "design": "modern",
+            "proposal": {
+                "summary": "Hackeada",
+                "experiences": [{"entry_id": str(uuid.uuid4()), "bullets": []}],
+                "skill_ids": [],
+            },
+        },
+    ),
     ("POST", "/api/v1/reminders/{reminder_id}/complete", None),
     ("POST", "/api/v1/reminders/{reminder_id}/dismiss", None),
     ("DELETE", "/api/v1/reminders/{reminder_id}", None),

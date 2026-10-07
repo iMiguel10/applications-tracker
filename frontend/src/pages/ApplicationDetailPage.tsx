@@ -26,6 +26,7 @@ import { DeleteApplicationDialog } from "@/features/applications/components/Dele
 import { StatusHistoryTimeline } from "@/features/applications/components/StatusHistoryTimeline";
 import { useApplication } from "@/features/applications/hooks/queries/useApplication";
 import { useSetArchived } from "@/features/applications/hooks/mutations/useSetArchived";
+import { AiTailorCard } from "@/features/ai/components/AiTailorCard";
 import { InterviewsSection } from "@/features/interviews/components/InterviewsSection";
 import { RemindersSection } from "@/features/reminders/components/RemindersSection";
 
@@ -162,6 +163,7 @@ export function ApplicationDetailPage() {
           </CardContent>
         </Card>
           <ApplicationOfferCard application={application} />
+          <AiTailorCard application={application} />
         </div>
 
         <div className="grid gap-6">

@@ -5853,6 +5853,128 @@
         }
       }
     },
+    "/api/v1/applications/{application_id}/ai-proposals/{proposal_id}/document": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Generar el CV adaptado desde una propuesta revisada",
+        "description": "Genera en PDF el CV adaptado con la propuesta tal como queda tras revisarla\n(RF-113): el resumen y los logros reescritos, qué experiencias, logros y\nhabilidades van y en qué orden. Puestos, empresas, fechas, formación y el\nresto salen del perfil actual (RF-111). Responde enseguida con el documento\n`ai_tailored` en `pending`, como al generar un CV; no vuelve a llamar a la\nIA ni gasta otro uso.\n\n409 `ai_proposal_not_ready` si la propuesta no terminó en `succeeded`, y\n`ai_proposal_outdated` si referencia algo que ya no está en el perfil (se\neditó después de pedirla): hay que pedir otra.",
+        "operationId": "create_ai_proposal_document_api_v1_applications__application_id__ai_proposals__proposal_id__document_post",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "application_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Application Id"
+            }
+          },
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiProposalDocumentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "`email_not_verified`: generar documentos exige el email verificado (salvo en una instalación sin correo).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ai/consents": {
       "get": {
         "tags": [
@@ -6151,6 +6273,40 @@
           "language"
         ],
         "title": "AiProposalCreate"
+      },
+      "AiProposalDocumentCreate": {
+        "properties": {
+          "design": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Design",
+            "description": "Clave del diseño (`GET /documents/cv-designs`)."
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Nombre visible en la biblioteca. Sin él, `CV <puesto> – <empresa>`."
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/ReviewedCvProposal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "design",
+          "proposal"
+        ],
+        "title": "AiProposalDocumentCreate",
+        "description": "Generar el CV adaptado desde una propuesta revisada (RF-113, RF-114)."
       },
       "AiProposalRead": {
         "properties": {
@@ -8191,6 +8347,19 @@
             ],
             "description": "Solo en `failed`: `render_failed` (no se pudo maquetar) o `storage_limit_reached` (el PDF no cabía en el almacenamiento de la cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
           },
+          "ai_proposal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Proposal Id",
+            "description": "Solo en los adaptados con IA (`ai_tailored`): la propuesta de la que sale, con su modelo y su versión del prompt (RF-115). `null` si se borró la solicitud a la que pertenecía."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -8338,6 +8507,19 @@
             ],
             "description": "Solo en `failed`: `render_failed` (no se pudo maquetar) o `storage_limit_reached` (el PDF no cabía en el almacenamiento de la cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
           },
+          "ai_proposal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Proposal Id",
+            "description": "Solo en los adaptados con IA (`ai_tailored`): la propuesta de la que sale, con su modelo y su versión del prompt (RF-115). `null` si se borró la solicitud a la que pertenecía."
+          },
           "archived_at": {
             "anyOf": [
               {
@@ -8474,6 +8656,19 @@
               }
             ],
             "description": "Solo en `failed`: `render_failed` (no se pudo maquetar) o `storage_limit_reached` (el PDF no cabía en el almacenamiento de la cuenta). `POST /documents/{document_id}/retry` lo vuelve a intentar."
+          },
+          "ai_proposal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Proposal Id",
+            "description": "Solo en los adaptados con IA (`ai_tailored`): la propuesta de la que sale, con su modelo y su versión del prompt (RF-115). `null` si se borró la solicitud a la que pertenecía."
           },
           "archived_at": {
             "anyOf": [
@@ -10675,6 +10870,88 @@
         ],
         "title": "ResponseRate",
         "description": "RF-62 y RF-66: siempre se indica sobre cuántas solicitudes se calcula, y\n`rate` es `null` con una base menor que `MIN_SAMPLE_FOR_RATE` (RF-66)."
+      },
+      "ReviewedBullet": {
+        "properties": {
+          "bullet_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Bullet Id",
+            "description": "Un logro de esa experiencia del perfil."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bullet_id",
+          "text"
+        ],
+        "title": "ReviewedBullet"
+      },
+      "ReviewedCvProposal": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "experiences": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewedExperience"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Experiences"
+          },
+          "skill_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Skill Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "experiences",
+          "skill_ids"
+        ],
+        "title": "ReviewedCvProposal",
+        "description": "La propuesta tal como queda tras revisarla (RF-113): el usuario puede\nreescribir el resumen y los logros, quitar experiencias, logros o habilidades y\ncambiar su orden. Los ids siguen siendo los del perfil."
+      },
+      "ReviewedExperience": {
+        "properties": {
+          "entry_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entry Id",
+            "description": "Una experiencia del perfil."
+          },
+          "bullets": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewedBullet"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Bullets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entry_id",
+          "bullets"
+        ],
+        "title": "ReviewedExperience"
       },
       "SkillLevel": {
         "type": "string",
