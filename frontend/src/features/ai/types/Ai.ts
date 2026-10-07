@@ -31,6 +31,26 @@ export interface ProposedGap {
   note: string;
 }
 
+export type RequirementImportance = "required" | "preferred";
+
+/** Un elemento del perfil que demuestra un requisito. `entry` es una experiencia,
+ * formación, proyecto o certificación. */
+export interface RequirementEvidence {
+  kind: "entry" | "bullet" | "skill" | "language";
+  id: string;
+}
+
+/** Un requisito de la oferta. El porcentaje de encaje no lo da la IA: se calcula
+ * aquí buscando `keywords` en el texto del CV (`lib/match.ts`). */
+export interface Requirement {
+  name: string;
+  importance: RequirementImportance;
+  keywords: string[];
+  evidence: RequirementEvidence[];
+  /** Sin evidencia: por qué no aparece en el perfil. */
+  note: string;
+}
+
 /** La propuesta validada (RF-110): solo referencias a elementos del perfil por id,
  * más los textos reescritos y las carencias (RF-112). */
 export interface CvProposal {
@@ -38,6 +58,8 @@ export interface CvProposal {
   experiences: ProposedExperience[];
   skill_ids: string[];
   gaps: ProposedGap[];
+  /** Desde cv/v2; null en las propuestas anteriores, que no tienen encaje. */
+  requirements?: Requirement[] | null;
 }
 
 export interface AiProposal {

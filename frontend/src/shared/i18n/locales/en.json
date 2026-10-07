@@ -997,6 +997,31 @@
         "experiences": "The CV needs at least one experience.",
         "bullets": "An achievement is empty."
       }
+    },
+    "match": {
+      "title": "Match with the job",
+      "description": "How much of what the job asks for appears in the CV, in the same words. It is what an ATS filter looks at, not the chance of getting a call. It changes as you edit.",
+      "before": "Your profile as is",
+      "after": "This CV",
+      "toImprove_one": "{{count}} requirement you have does not count: check the ones in amber.",
+      "toImprove_other": "{{count}} requirements you have do not count: check the ones in amber.",
+      "requirements": "Job requirements",
+      "importance": {
+        "required": "Required",
+        "preferred": "Nice to have"
+      },
+      "states": {
+        "covered": "In the CV",
+        "unnamed": "You have it, in other words",
+        "dropped": "In your profile, but not in this CV",
+        "missing": "Not in your profile"
+      },
+      "hints": {
+        "unnamed": "According to the AI, your profile shows it here, but not in the words the job uses. If it is true, name it in the achievement.",
+        "dropped": "Your profile names it, but this version of the CV does not: bring back the achievement or skill that says it.",
+        "missing": "It is not in your profile. If you have it, add it to your profile."
+      },
+      "keywords": "It counts if it says: {{keywords}}"
     }
   }
 }

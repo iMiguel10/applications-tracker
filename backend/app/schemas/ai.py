@@ -64,7 +64,10 @@ class AiProposalRead(BaseModel):
     proposal: CvProposal | None = Field(
         description="Solo en `succeeded`. Cada experiencia, logro y habilidad "
         "referencia por id un elemento del perfil; los puestos, empresas y fechas "
-        "no se proponen: salen del perfil (RF-111)."
+        "no se proponen: salen del perfil (RF-111). `requirements` (desde el prompt "
+        "`cv/v2`; `null` en las anteriores) son los requisitos de la oferta, con las "
+        "palabras con que se buscarían en un CV y los elementos del perfil que los "
+        "demuestran; el porcentaje de encaje lo calcula el cliente con ellos."
     )
     created_at: datetime
     updated_at: datetime

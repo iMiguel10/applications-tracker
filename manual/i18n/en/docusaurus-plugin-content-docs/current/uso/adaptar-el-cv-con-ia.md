@@ -30,12 +30,30 @@ Your experience and achievements, your education, projects and certifications, y
 
 ## Review the proposal
 
-The **Review the tailored CV** page puts every suggestion next to what your profile says:
+The **Review the tailored CV** page starts with the match with the job and, below it, puts every suggestion next to what your profile says.
+
+### Match with the job
+
+Two percentages: **Your profile as is** and **This CV**. They measure how many of the job's requirements appear in the CV, **in the same words** the job uses or their usual variants. Required ones count twice as much as nice-to-have ones. **This CV** changes as you edit: if you remove the achievement that named a requirement, you see it drop before creating the PDF.
+
+It is what an automatic applicant filter (ATS) looks at, not the chance of getting a call. The AI only says what the job asks for; the application calculates the percentage.
+
+Below, each requirement of the job:
+
+| Mark | What it means | What you can do |
+|---|---|---|
+| Green | It appears in the CV | Nothing |
+| Amber, in other words | According to the AI, your profile shows it (it tells you where), but not in the words the job uses | If it is true, name it in that achievement. Below you'll see the words that count |
+| Amber, not in this CV | Your profile names it, but you removed the achievement or skill that said it | Bring it back if you want |
+| Grey | It isn't in your profile | If you have it, add it to your profile. It isn't added to the CV |
+
+Amber requirements don't raise the percentage until the CV names them: the AI may consider something proven that is only similar, and that is your call.
+
+### The rest of the proposal
 
 - **Summary**: the suggested one, editable, next to the one in your profile.
 - **Experience**: each chosen experience, in the suggested order, with each reworded achievement next to the original. The ones that change are marked **Rewritten**. You can edit the text, remove an achievement, remove an experience or move it with the arrows. Job title, company and dates always come from your profile.
 - **Highlighted skills**: the chosen ones, by importance for the job. Remove the ones you don't want.
-- **What the job asks for that isn't in your profile**: it isn't added to the CV. If you have it, add it to your profile.
 
 :::caution Review before creating the PDF
 The AI rewords to match the offer and can exaggerate ("helped with" may end up as "led"). Compare each achievement with its original: what you leave on this page is what the PDF will say.

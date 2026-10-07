@@ -64,6 +64,22 @@ CV = AiProposalCreate(kind=AiTask.CV, language=ProposalLanguage.ES)
 def valid_output(**changes: Any) -> str:
     values: dict[str, Any] = {
         "insufficient_offer": False,
+        "requirements": [
+            {
+                "requirement": "PostgreSQL",
+                "importance": "required",
+                "keywords": ["PostgreSQL", "Postgres"],
+                "evidence": ["s1", "e1.b1"],
+                "note": "",
+            },
+            {
+                "requirement": "Kubernetes",
+                "importance": "preferred",
+                "keywords": ["Kubernetes", "K8s"],
+                "evidence": [],
+                "note": "No aparece en el perfil",
+            },
+        ],
         "summary": "Backend con PostgreSQL y APIs.",
         "experiences": [
             {
@@ -72,7 +88,6 @@ def valid_output(**changes: Any) -> str:
             }
         ],
         "skills": ["s1"],
-        "gaps": [{"requirement": "Kubernetes", "note": "No aparece en el perfil"}],
     } | changes
     return json.dumps(values)
 
@@ -141,7 +156,7 @@ async def test_request_queues_a_platform_proposal_and_enqueues_only_ids(
 
     assert proposal.status == ProposalStatus.QUEUED
     assert (proposal.provider, proposal.model) == ("groq", MODEL)
-    assert (proposal.key_source, proposal.prompt_version) == ("platform", "cv/v1")
+    assert (proposal.key_source, proposal.prompt_version) == ("platform", "cv/v2")
     [job] = queue.jobs
     assert job.job == RUN_AI_PROPOSAL
     assert job.max_attempts == 1
@@ -254,11 +269,44 @@ async def test_a_valid_answer_succeeds_with_real_ids_cost_and_usage(
     profile_entries = await ProfileEntryRepository(db_session).list(user.id)
     assert experience["entry_id"] == str(profile_entries[0].id)
     assert experience["bullets"][0]["text"] == "Diseñé APIs REST"
+    # Los requisitos, con la evidencia en UUID reales; las carencias salen de ellos.
+    postgres, kubernetes = proposal.proposal["requirements"]
+    assert postgres["evidence"][0]["kind"] == "skill"
+    assert kubernetes["evidence"] == []
+    assert proposal.proposal["gaps"] == [
+        {"requirement": "Kubernetes", "note": "No aparece en el perfil"}
+    ]
     # La llamada, con la clave de la plataforma y el modelo de la propuesta.
     [call] = fake.calls
     assert (call.model, call.api_key) == (MODEL, PLATFORM_KEY)
     assert call.request.max_output_tokens > 0
     assert "español" in call.request.system
+
+
+@pytest.mark.asyncio
+async def test_a_proposal_queued_with_v1_runs_with_the_v1_schema(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    # A33: una propuesta en cola al cambiar de versión se ejecuta con la suya.
+    application_id = await prepare(db_session, user)
+    proposal = await requested(db_session, user, application_id)
+    proposal.prompt_version = "cv/v1"
+    await db_session.commit()
+    fake = FakeLLMProvider()
+    output = json.loads(valid_output())
+    del output["requirements"]
+    output["gaps"] = [{"requirement": "Kubernetes", "note": "No aparece"}]
+    fake.reply(json.dumps(output))
+
+    proposal = await run(db_session, fake, proposal)
+
+    assert proposal.status == ProposalStatus.SUCCEEDED
+    assert proposal.proposal is not None
+    assert proposal.proposal["requirements"] is None
+    assert proposal.proposal["gaps"][0]["requirement"] == "Kubernetes"
+    [call] = fake.calls
+    assert "gaps" in call.request.json_schema["properties"]
+    assert "requirements" not in call.request.json_schema["properties"]
 
 
 @pytest.mark.asyncio

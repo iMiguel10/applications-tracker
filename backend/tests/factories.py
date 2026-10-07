@@ -140,7 +140,7 @@ async def make_ai_proposal(
         "key_source": "platform",
         "provider": "groq",
         "model": "openai/gpt-oss-120b",
-        "prompt_version": "cv/v1",
+        "prompt_version": "cv/v2",
         "language": "es",
     } | fields
     proposal = AiProposal(

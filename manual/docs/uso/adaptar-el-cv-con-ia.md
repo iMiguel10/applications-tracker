@@ -30,12 +30,30 @@ Se envían tu experiencia con sus logros, tu formación, proyectos y certificaci
 
 ## Revisar la propuesta
 
-La página **Revisar el CV adaptado** pone cada cosa propuesta al lado de lo que dice tu perfil:
+La página **Revisar el CV adaptado** empieza por el encaje con la oferta y, debajo, pone cada cosa propuesta al lado de lo que dice tu perfil.
+
+### Encaje con la oferta
+
+Dos porcentajes: **Tu perfil tal cual** y **Este CV**. Miden cuántos de los requisitos de la oferta aparecen en el CV, **con las mismas palabras** que usa la oferta o con sus variantes habituales. Los imprescindibles cuentan el doble que los valorables. **Este CV** cambia mientras editas: si quitas el logro que nombraba un requisito, lo ves bajar antes de generar el PDF.
+
+Es lo que mira un filtro automático de candidaturas (ATS), no la probabilidad de que te llamen. La IA solo dice qué pide la oferta; el porcentaje lo calcula la aplicación.
+
+Debajo, cada requisito de la oferta:
+
+| Marca | Qué significa | Qué puedes hacer |
+|---|---|---|
+| Verde | Aparece en el CV | Nada |
+| Ámbar, con otras palabras | Según la IA, tu perfil lo demuestra (te enseña dónde), pero no con las palabras que busca la oferta | Si es cierto, nómbralo en ese logro. Debajo verás las palabras que cuentan |
+| Ámbar, no en este CV | Tu perfil lo nombra, pero quitaste el logro o la habilidad que lo decía | Recupéralo si te interesa |
+| Gris | No está en tu perfil | Si lo tienes, añádelo a tu perfil. No se añade al CV |
+
+Los requisitos en ámbar no suben el porcentaje hasta que el CV los nombre: la IA puede dar por demostrado algo que solo se parece, y eso lo decides tú.
+
+### El resto de la propuesta
 
 - **Resumen**: el propuesto, editable, junto al de tu perfil.
 - **Experiencia**: cada experiencia elegida, en el orden propuesto, con cada logro reformulado al lado del original. Los que cambian llevan la marca **Reescrito**. Puedes editar el texto, quitar un logro, quitar una experiencia o cambiarla de orden con las flechas. El puesto, la empresa y las fechas salen siempre de tu perfil.
 - **Habilidades destacadas**: las elegidas, por orden de importancia para la oferta. Quita las que no quieras.
-- **Lo que la oferta pide y no está en tu perfil**: no se añade al CV. Si lo tienes, añádelo a tu perfil.
 
 :::caution Revisa antes de generar
 La IA reformula para que encaje con la oferta y puede exagerar ("colaboré en" puede acabar como "lideré"). Compara cada logro con su original: lo que dejes en esta página es lo que saldrá en el PDF.

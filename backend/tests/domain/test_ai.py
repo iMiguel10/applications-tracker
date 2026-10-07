@@ -8,15 +8,19 @@ import pytest
 
 from app.domain.ai import (
     AiEntry,
+    AiLanguage,
     AiProfile,
     AiSkill,
     CvProposal,
     CvProposalOutput,
+    CvProposalOutputV1,
     InvalidProposalError,
     OutdatedProposalError,
     ProposedBullet,
     ProposedExperience,
     ProposedGap,
+    ProposedRequirement,
+    RequirementImportance,
     ValidatedBullet,
     ValidatedExperience,
     apply_cv_proposal,
@@ -41,6 +45,7 @@ JOB_B = uuid.uuid4()
 BULLET_A1, BULLET_A2, BULLET_B1 = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
 SKILL_SQL, SKILL_GO = uuid.uuid4(), uuid.uuid4()
 DEGREE = uuid.uuid4()
+ENGLISH = uuid.uuid4()
 
 
 def entry(
@@ -74,13 +79,36 @@ PROFILE = AiProfile(
         AiSkill(SKILL_SQL, "PostgreSQL", "Bases de datos", "advanced"),
         AiSkill(SKILL_GO, "Go", None, None),
     ],
-    languages=[("Inglés", "c1")],
+    languages=[AiLanguage(ENGLISH, "Inglés", "c1")],
 )
+
+
+def requirement(
+    name: str,
+    evidence: list[str],
+    *,
+    keywords: list[str] | None = None,
+    importance: RequirementImportance = RequirementImportance.REQUIRED,
+    note: str = "",
+) -> ProposedRequirement:
+    return ProposedRequirement(
+        requirement=name,
+        importance=importance,
+        keywords=keywords if keywords is not None else [name],
+        evidence=evidence,
+        note=note,
+    )
 
 
 def output(**changes: object) -> CvProposalOutput:
     values: dict[str, object] = {
         "insufficient_offer": False,
+        "requirements": [
+            requirement(
+                "PostgreSQL", ["s1", "e1.b1"], keywords=["PostgreSQL", "Postgres"]
+            ),
+            requirement("Kubernetes", [], note="No aparece en el perfil"),
+        ],
         "summary": "Backend con Postgres",
         "experiences": [
             ProposedExperience(
@@ -90,7 +118,6 @@ def output(**changes: object) -> CvProposalOutput:
             ProposedExperience(entry_id="e2", bullets=[]),
         ],
         "skills": ["s2", "s1"],
-        "gaps": [ProposedGap(requirement="Kubernetes", note="No aparece")],
     } | changes
     return CvProposalOutput.model_validate(values)
 
@@ -111,11 +138,13 @@ def test_input_gives_short_ids_only_to_what_can_be_referenced() -> None:
     assert "[e1] Backend Developer — Acme (2022-01 → actualidad)" in text
     assert "    [e1.b2] APIs" in text
     assert "[s1] PostgreSQL (Bases de datos, advanced)" in text
-    # La formación y los idiomas, como contexto y sin id.
-    assert "- education: Ingeniería Informática — Acme" in text
-    assert "- idioma: Inglés (c1)" in text
+    # La formación y los idiomas, como contexto: solo pueden citarse como evidencia.
+    assert ids.context == {"c1": DEGREE}
+    assert ids.languages == {"l1": ENGLISH}
+    assert "[c1] education: Ingeniería Informática — Acme" in text
+    assert "[l1] idioma: Inglés (c1)" in text
     # Nunca un UUID: los modelos los copian mal (ia.md §3, trampa).
-    for real in (JOB_A, BULLET_A1, SKILL_SQL, DEGREE):
+    for real in (JOB_A, BULLET_A1, SKILL_SQL, DEGREE, ENGLISH):
         assert str(real) not in text
 
 
@@ -139,6 +168,104 @@ def test_a_valid_output_becomes_real_uuids_in_the_proposed_order() -> None:
     assert proposal.experiences[0].bullets[0].bullet_id == BULLET_A2
     assert proposal.experiences[0].bullets[0].text == "Diseñé APIs"
     assert proposal.skill_ids == [SKILL_GO, SKILL_SQL]
+    # Las carencias salen de los requisitos sin evidencia.
+    assert proposal.gaps == [
+        ProposedGap(requirement="Kubernetes", note="No aparece en el perfil")
+    ]
+    assert proposal.requirements is not None
+    postgres = proposal.requirements[0]
+    assert [(e.kind, e.id) for e in postgres.evidence] == [
+        ("skill", SKILL_SQL),
+        ("bullet", BULLET_A1),
+    ]
+    assert postgres.keywords == ["PostgreSQL", "Postgres"]
+
+
+def test_context_and_languages_can_only_be_evidence() -> None:
+    _, ids = build_cv_input(PROFILE)
+
+    proposal = validate_cv_output(
+        output(
+            requirements=[
+                requirement("Ingeniería", ["c1"]),
+                requirement("Inglés", ["l1"]),
+            ]
+        ),
+        ids,
+    )
+
+    assert proposal.requirements is not None
+    assert [(r.evidence[0].kind, r.evidence[0].id) for r in proposal.requirements] == [
+        ("entry", DEGREE),
+        ("language", ENGLISH),
+    ]
+    with pytest.raises(InvalidProposalError, match="experiencia inexistente"):
+        validate_cv_output(
+            output(experiences=[ProposedExperience(entry_id="c1", bullets=[])]), ids
+        )
+    with pytest.raises(InvalidProposalError, match="habilidad inexistente"):
+        validate_cv_output(output(skills=["l1"]), ids)
+
+
+def test_invented_evidence_invalidates_the_proposal() -> None:
+    # Citar como evidencia algo que no está en el perfil es inventar, como un logro.
+    _, ids = build_cv_input(PROFILE)
+
+    with pytest.raises(InvalidProposalError, match="evidencia inexistente"):
+        validate_cv_output(output(requirements=[requirement("Go", ["s9"])]), ids)
+
+
+def test_requirements_are_trimmed_instead_of_spending_the_use() -> None:
+    _, ids = build_cv_input(PROFILE)
+    many = [requirement(f"Req {n}", []) for n in range(30)]
+    noisy = requirement(
+        "  React  ",
+        ["s1", "s1"],
+        keywords=["react", "", "x" * 61, "React.js", "a", "b", "c", "d", "e"],
+        note="Se ignora: tiene evidencia",
+    )
+
+    proposal = validate_cv_output(
+        output(requirements=[noisy, requirement(" ", []), *many]), ids
+    )
+
+    assert proposal.requirements is not None
+    assert len(proposal.requirements) == 15
+    react = proposal.requirements[0]
+    assert react.name == "React"
+    # Sin vacíos, largos ni repetidos (sin distinguir mayúsculas), y como mucho 6.
+    assert react.keywords == ["react", "React.js", "a", "b", "c", "d"]
+    assert len(react.evidence) == 1
+    assert react.note == ""
+    # Un requisito sin nombre se descarta.
+    assert proposal.requirements[1].name == "Req 0"
+
+
+def test_the_requirement_name_is_always_a_keyword() -> None:
+    _, ids = build_cv_input(PROFILE)
+
+    proposal = validate_cv_output(
+        output(requirements=[requirement("Docker", [], keywords=[])]), ids
+    )
+
+    assert proposal.requirements is not None
+    assert proposal.requirements[0].keywords == ["Docker"]
+
+
+def test_a_v1_output_still_validates_without_requirements() -> None:
+    # Una propuesta pedida con cv/v1 se ejecuta con su esquema (A33).
+    _, ids = build_cv_input(PROFILE)
+    v1 = CvProposalOutputV1(
+        insufficient_offer=False,
+        summary="Backend",
+        experiences=[ProposedExperience(entry_id="e1", bullets=[])],
+        skills=[],
+        gaps=[ProposedGap(requirement="Kubernetes", note="No aparece")],
+    )
+
+    proposal = validate_cv_output(v1, ids)
+
+    assert proposal.requirements is None
     assert proposal.gaps[0].requirement == "Kubernetes"
 
 

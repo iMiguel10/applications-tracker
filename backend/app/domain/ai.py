@@ -11,6 +11,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -105,7 +106,14 @@ MIN_JOB_DESCRIPTION_LENGTH = 200
 
 # Versión del prompt de cada tarea (A33): un fichero de `infra/llm/prompts/`. Se
 # cambia añadiendo uno nuevo, nunca editando el que ya produjo propuestas.
-PROMPT_VERSIONS: dict[AiTask, str] = {AiTask.CV: "cv/v1"}
+PROMPT_VERSIONS: dict[AiTask, str] = {AiTask.CV: "cv/v2"}
+
+# Requisitos de la oferta (cv/v2, el encaje con la oferta): lo que pase de aquí se
+# recorta en lugar de invalidar la propuesta, porque no cambia lo que dice el CV.
+MAX_REQUIREMENTS = 15
+MAX_KEYWORDS = 6
+REQUIREMENT_MAX_LENGTH = 120
+KEYWORD_MAX_LENGTH = 60
 
 # Salida máxima de una propuesta: un CV con muchas experiencias reformuladas, más
 # el razonamiento en los modelos que lo cuentan como salida.
@@ -146,6 +154,13 @@ class AiSkill:
 
 
 @dataclass(frozen=True)
+class AiLanguage:
+    id: uuid.UUID
+    language: str
+    level: str
+
+
+@dataclass(frozen=True)
 class AiProfile:
     """Lo que la IA puede ver del perfil. Sin datos de contacto (nombre, email,
     teléfono, ubicación, enlaces): no salen de la aplicación (RNF-06)."""
@@ -154,8 +169,8 @@ class AiProfile:
     summary: str | None
     entries: Sequence[AiEntry]
     skills: Sequence[AiSkill]
-    # Idioma y nivel, solo como contexto para detectar carencias: no se proponen.
-    languages: Sequence[tuple[str, str]]
+    # Solo como contexto (carencias y evidencia de un requisito): no se proponen.
+    languages: Sequence[AiLanguage]
 
     @property
     def experiences(self) -> list[AiEntry]:
@@ -175,6 +190,24 @@ class ProfileIds:
     # Cada logro, con la experiencia a la que pertenece.
     bullets: dict[str, tuple[str, uuid.UUID]] = field(default_factory=dict)
     skills: dict[str, uuid.UUID] = field(default_factory=dict)
+    # Formación, proyectos y certificaciones (`c1`) e idiomas (`l1`): solo pueden
+    # citarse como evidencia de un requisito, nunca entran en la propuesta del CV.
+    context: dict[str, uuid.UUID] = field(default_factory=dict)
+    languages: dict[str, uuid.UUID] = field(default_factory=dict)
+
+    def evidence(self, short_id: str) -> "RequirementEvidence | None":
+        """El elemento del perfil al que apunta un id corto citado como evidencia."""
+        if short_id in self.entries:
+            return RequirementEvidence(kind="entry", id=self.entries[short_id])
+        if short_id in self.context:
+            return RequirementEvidence(kind="entry", id=self.context[short_id])
+        if short_id in self.bullets:
+            return RequirementEvidence(kind="bullet", id=self.bullets[short_id][1])
+        if short_id in self.skills:
+            return RequirementEvidence(kind="skill", id=self.skills[short_id])
+        if short_id in self.languages:
+            return RequirementEvidence(kind="language", id=self.languages[short_id])
+        return None
 
 
 def _month(value: date | None) -> str:
@@ -189,8 +222,9 @@ def _period(entry: AiEntry) -> str:
 def build_cv_input(profile: AiProfile) -> tuple[str, ProfileIds]:
     """El perfil como datos para el modelo, con un id corto en cada elemento que la
     propuesta puede referenciar: experiencias, logros y habilidades. El resto
-    (formación, proyectos, certificaciones, idiomas) va sin id, como contexto para
-    las carencias (RF-112): la propuesta no los toca."""
+    (formación, proyectos, certificaciones, idiomas) es contexto para las carencias
+    (RF-112) y, desde cv/v2, evidencia de un requisito: lleva id (`c1`, `l1`), pero
+    la propuesta del CV no puede tocarlo."""
     ids = ProfileIds()
     lines: list[str] = []
     if profile.headline:
@@ -220,14 +254,25 @@ def build_cv_input(profile: AiProfile) -> tuple[str, ProfileIds]:
 
     context = [entry for entry in profile.entries if entry.kind != EntryKind.EXPERIENCE]
     if context or profile.languages:
-        lines.append("\n## Contexto (no referenciable)")
-        for entry in context:
+        lines.append("\n## Contexto (solo como evidencia de un requisito)")
+        for index, entry in enumerate(context, start=1):
+            context_id = f"c{index}"
+            ids.context[context_id] = entry.id
             organization = f" — {entry.organization}" if entry.organization else ""
             lines.append(
-                f"- {entry.kind.value}: {entry.title}{organization} ({_period(entry)})"
+                f"[{context_id}] {entry.kind.value}: {entry.title}{organization} "
+                f"({_period(entry)})"
             )
-        for language, level in profile.languages:
-            lines.append(f"- idioma: {language} ({level})")
+            if entry.description:
+                lines.append(f"    Descripción: {entry.description}")
+            for _, text in entry.bullets:
+                lines.append(f"    - {text}")
+        for index, language in enumerate(profile.languages, start=1):
+            language_id = f"l{index}"
+            ids.languages[language_id] = language.id
+            lines.append(
+                f"[{language_id}] idioma: {language.language} ({language.level})"
+            )
 
     return "\n".join(lines), ids
 
@@ -259,9 +304,10 @@ class ProposedGap(BaseModel):
     note: str = Field(description="Por qué no aparece en el perfil")
 
 
-class CvProposalOutput(BaseModel):
-    """El esquema que el modelo tiene que cumplir. Las experiencias van en el orden
-    propuesto; las que no aparecen quedan fuera del CV."""
+class CvProposalOutputV1(BaseModel):
+    """El esquema de cv/v1. Se conserva para poder ejecutar una propuesta pedida
+    con esa versión (A33). Las experiencias van en el orden propuesto; las que no
+    aparecen quedan fuera del CV."""
 
     insufficient_offer: bool = Field(
         description="true si el texto no es una oferta de empleo o no da para adaptar"
@@ -274,6 +320,52 @@ class CvProposalOutput(BaseModel):
     )
 
 
+class RequirementImportance(StrEnum):
+    REQUIRED = "required"
+    PREFERRED = "preferred"
+
+
+class ProposedRequirement(BaseModel):
+    requirement: str = Field(description="El requisito, en pocas palabras")
+    importance: RequirementImportance = Field(
+        description="required si la oferta lo exige; preferred si lo valora"
+    )
+    keywords: list[str] = Field(
+        description="Cómo se buscaría en un CV: como lo dice la oferta, sinónimos, "
+        "siglas y variantes"
+    )
+    evidence: list[str] = Field(
+        description="Ids cortos del perfil que lo demuestran; vacío si ninguno"
+    )
+    note: str = Field(
+        description="Sin evidencia: por qué no aparece en el perfil. Con ella, vacío"
+    )
+
+
+class CvProposalOutput(BaseModel):
+    """El esquema de cv/v2: el de v1 con los requisitos de la oferta en lugar de las
+    carencias sueltas. Los requisitos van primero para que el modelo los tenga
+    delante al reformular (los campos se generan en este orden)."""
+
+    insufficient_offer: bool = Field(
+        description="true si el texto no es una oferta de empleo o no da para adaptar"
+    )
+    requirements: list[ProposedRequirement] = Field(
+        description="Requisitos de la oferta comprobables en un CV, los más "
+        "importantes primero"
+    )
+    summary: str = Field(description="Resumen profesional adaptado a la oferta")
+    experiences: list[ProposedExperience]
+    skills: list[str] = Field(description="Ids cortos de habilidades, por prioridad")
+
+
+# El esquema que corresponde a cada versión del prompt (A33).
+CV_OUTPUT_MODELS: dict[str, type[CvProposalOutput] | type[CvProposalOutputV1]] = {
+    "cv/v1": CvProposalOutputV1,
+    "cv/v2": CvProposalOutput,
+}
+
+
 class ValidatedBullet(BaseModel):
     bullet_id: uuid.UUID
     text: str
@@ -284,13 +376,36 @@ class ValidatedExperience(BaseModel):
     bullets: list[ValidatedBullet]
 
 
+class RequirementEvidence(BaseModel):
+    """Un elemento del perfil que demuestra un requisito. `entry` es una
+    experiencia, formación, proyecto o certificación."""
+
+    kind: Literal["entry", "bullet", "skill", "language"]
+    id: uuid.UUID
+
+
+class Requirement(BaseModel):
+    """Un requisito de la oferta. El porcentaje de encaje no lo da la IA: lo
+    calcula la interfaz buscando `keywords` en el texto del CV (ia.md §4)."""
+
+    name: str
+    importance: RequirementImportance
+    keywords: list[str]
+    evidence: list[RequirementEvidence]
+    note: str
+
+
 class CvProposal(BaseModel):
     """La propuesta ya validada, con los UUID reales: lo que se guarda y se revisa."""
 
     summary: str
     experiences: list[ValidatedExperience]
     skill_ids: list[uuid.UUID]
+    # Lo que la oferta pide y no está en el perfil (RF-112). Desde cv/v2 sale de
+    # los requisitos sin evidencia.
     gaps: list[ProposedGap]
+    # Solo desde cv/v2: las propuestas de v1 no tienen encaje con la oferta.
+    requirements: list[Requirement] | None = None
 
 
 class InvalidProposalError(Exception):
@@ -298,7 +413,9 @@ class InvalidProposalError(Exception):
     motivo es para el log: no lleva texto del modelo ni del perfil."""
 
 
-def validate_cv_output(output: CvProposalOutput, ids: ProfileIds) -> CvProposal:
+def validate_cv_output(
+    output: CvProposalOutput | CvProposalOutputV1, ids: ProfileIds
+) -> CvProposal:
     """Segunda capa de A32: cada referencia existe en el perfil de ESTE usuario en
     el momento de la petición. Una sola que no exista invalida toda la propuesta:
     no se corrige ni se descarta en silencio, porque una propuesta con una
@@ -345,12 +462,65 @@ def validate_cv_output(output: CvProposalOutput, ids: ProfileIds) -> CvProposal:
             raise InvalidProposalError("habilidad repetida")
         skill_ids.append(ids.skills[skill])
 
+    if isinstance(output, CvProposalOutputV1):
+        return CvProposal(
+            summary=output.summary.strip(),
+            experiences=experiences,
+            skill_ids=skill_ids,
+            gaps=[gap for gap in output.gaps if gap.requirement.strip()],
+        )
+    requirements = _validate_requirements(output.requirements, ids)
     return CvProposal(
         summary=output.summary.strip(),
         experiences=experiences,
         skill_ids=skill_ids,
-        gaps=[gap for gap in output.gaps if gap.requirement.strip()],
+        gaps=[
+            ProposedGap(requirement=item.name, note=item.note)
+            for item in requirements
+            if not item.evidence
+        ],
+        requirements=requirements,
     )
+
+
+def _validate_requirements(
+    proposed: Sequence[ProposedRequirement], ids: ProfileIds
+) -> list[Requirement]:
+    """La evidencia se valida como cualquier otra referencia: un id que no existe
+    invalida la propuesta. Lo demás (cuántos, su longitud) se recorta, porque no
+    cambia lo que dice el CV y no merece gastar el uso."""
+    requirements: list[Requirement] = []
+    for item in proposed:
+        evidence: list[RequirementEvidence] = []
+        for short_id in item.evidence:
+            found = ids.evidence(short_id.strip())
+            if found is None:
+                raise InvalidProposalError("evidencia inexistente")
+            if found not in evidence:
+                evidence.append(found)
+        name = item.requirement.strip()[:REQUIREMENT_MAX_LENGTH]
+        if not name:
+            continue
+        # El nombre también se busca: así nunca queda un requisito sin palabras.
+        keywords: list[str] = []
+        for keyword in (*item.keywords, name):
+            keyword = keyword.strip()
+            if (
+                keyword
+                and len(keyword) <= KEYWORD_MAX_LENGTH
+                and keyword.casefold() not in {k.casefold() for k in keywords}
+            ):
+                keywords.append(keyword)
+        requirements.append(
+            Requirement(
+                name=name,
+                importance=item.importance,
+                keywords=keywords[:MAX_KEYWORDS],
+                evidence=evidence,
+                note="" if evidence else item.note.strip(),
+            )
+        )
+    return requirements[:MAX_REQUIREMENTS]
 
 
 class OutdatedProposalError(Exception):

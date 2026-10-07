@@ -22,7 +22,9 @@ interface ProposalReviewProps {
   onChange: (state: ReviewState) => void;
   /** El resumen del perfil, para compararlo con el propuesto. */
   profileSummary: string | null;
-  gaps: ProposedGap[];
+  /** null: no se enseñan aquí (las propuestas con requisitos las enseñan en el
+   * encaje con la oferta). */
+  gaps: ProposedGap[] | null;
 }
 
 /**
@@ -212,26 +214,28 @@ export function ProposalReview({ state, onChange, profileSummary, gaps }: Propos
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("ai.review.gaps")}</CardTitle>
-          <CardDescription>{t("ai.review.gapsHint")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {gaps.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("ai.review.noGaps")}</p>
-          ) : (
-            <ul className="grid gap-2 text-sm">
-              {gaps.map((gap) => (
-                <li key={gap.requirement}>
-                  <span className="font-medium">{gap.requirement}</span>
-                  {gap.note && <span className="text-muted-foreground">: {gap.note}</span>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      {gaps && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("ai.review.gaps")}</CardTitle>
+            <CardDescription>{t("ai.review.gapsHint")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {gaps.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("ai.review.noGaps")}</p>
+            ) : (
+              <ul className="grid gap-2 text-sm">
+                {gaps.map((gap) => (
+                  <li key={gap.requirement}>
+                    <span className="font-medium">{gap.requirement}</span>
+                    {gap.note && <span className="text-muted-foreground">: {gap.note}</span>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

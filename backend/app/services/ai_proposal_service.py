@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, settings
 from app.core.exceptions import AppException, ConflictError, NotFoundError
 from app.domain.ai import (
+    CV_OUTPUT_MODELS,
     MAX_OUTPUT_TOKENS,
     MIN_JOB_DESCRIPTION_LENGTH,
     PROMPT_VERSIONS,
@@ -18,11 +19,11 @@ from app.domain.ai import (
     RUNNING_GRACE,
     SWEEP_BATCH,
     AiEntry,
+    AiLanguage,
     AiProfile,
     AiProvider,
     AiSkill,
     AiTask,
-    CvProposalOutput,
     InvalidProposalError,
     KeySource,
     OutdatedProposalError,
@@ -302,12 +303,15 @@ class AiProposalService:
             return _failed(ProposalErrorCode.PROFILE_INCOMPLETE)
 
         profile_text, ids = build_cv_input(profile)
+        # El esquema de la versión con que se pidió (A33): una propuesta en cola
+        # al cambiar de versión se ejecuta con el prompt y el esquema de la suya.
+        output_model = CV_OUTPUT_MODELS[proposal.prompt_version]
         request = LLMRequest(
             system=load_prompt(proposal.prompt_version, language=proposal.language),
             user=f"{profile_text}\n\n"
             f"{wrap_job_description(application.job_description or '')}",
             schema_name="cv_proposal",
-            json_schema=strict_json_schema(CvProposalOutput),
+            json_schema=strict_json_schema(output_model),
             max_output_tokens=MAX_OUTPUT_TOKENS,
         )
         try:
@@ -334,7 +338,7 @@ class AiProposalService:
             logger.warning("Propuesta %s cortada por longitud", proposal.id)
             return billed | _invalid(ProposalErrorCode.RESPONSE_INVALID)
         try:
-            output = CvProposalOutput.model_validate_json(response.text)
+            output = output_model.model_validate_json(response.text)
         except ValidationError:
             logger.warning("Propuesta %s no cumple el esquema", proposal.id)
             return billed | _invalid(ProposalErrorCode.RESPONSE_INVALID)
@@ -386,7 +390,10 @@ class AiProposalService:
                 )
                 for skill in skills
             ],
-            languages=[(item.language, item.level) for item in languages],
+            languages=[
+                AiLanguage(id=item.id, language=item.language, level=item.level)
+                for item in languages
+            ],
         )
 
     # --- Barrido (worker) ---------------------------------------------------

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -17,10 +17,12 @@ import { ErrorState } from "@/shared/components/common/ErrorState";
 import { ApplicationLoadError } from "@/features/applications/components/ApplicationLoadError";
 import { useApplication } from "@/features/applications/hooks/queries/useApplication";
 import type { ApplicationDetail } from "@/features/applications/types/Application";
+import { OfferMatchCard } from "@/features/ai/components/OfferMatchCard";
 import { ProposalReview } from "@/features/ai/components/ProposalReview";
 import { useCreateTailoredCv } from "@/features/ai/hooks/mutations/useCreateTailoredCv";
 import { useAiProposal } from "@/features/ai/hooks/queries/useAiProposal";
 import { isInFlight } from "@/features/ai/hooks/queries/useAiProposals";
+import { offerMatch, type CvSource } from "@/features/ai/lib/match";
 import {
   reviewFromProposal,
   reviewProblem,
@@ -33,9 +35,13 @@ import { designName, uiCvLanguage } from "@/features/documents/lib/designName";
 import type { CvDesign } from "@/features/documents/types/Document";
 import { useProfile } from "@/features/profile/hooks/queries/useProfile";
 import { useProfileEntries } from "@/features/profile/hooks/queries/useProfileEntries";
-import { useProfileSkills } from "@/features/profile/hooks/queries/useProfileSkills";
+import {
+  useProfileLanguages,
+  useProfileSkills,
+} from "@/features/profile/hooks/queries/useProfileSkills";
+import type { Profile } from "@/features/profile/types/Profile";
 import type { ProfileEntry } from "@/features/profile/types/ProfileEntry";
-import type { ProfileSkill } from "@/features/profile/types/ProfileSkill";
+import type { ProfileLanguage, ProfileSkill } from "@/features/profile/types/ProfileSkill";
 
 /** Revisar una propuesta de CV adaptado y generar el PDF (RF-113, RF-118). */
 export function AiProposalReviewPage() {
@@ -47,9 +53,10 @@ export function AiProposalReviewPage() {
   const profile = useProfile();
   const entries = useProfileEntries();
   const skills = useProfileSkills();
+  const languages = useProfileLanguages();
   const designs = useCvDesigns();
 
-  const queries = [proposal, profile, entries, skills, designs];
+  const queries = [proposal, profile, entries, skills, languages, designs];
   if (application.isLoading || queries.some((query) => query.isLoading)) {
     return <DetailSkeleton />;
   }
@@ -104,7 +111,12 @@ export function AiProposalReviewPage() {
           {t(`ai.errors.${data.error_code ?? "ai_interrupted"}`)}
         </p>
       )}
-      {data?.status === "succeeded" && data.proposal && entries.data && skills.data && designs.data && (
+      {data?.status === "succeeded" &&
+        data.proposal &&
+        entries.data &&
+        skills.data &&
+        languages.data &&
+        designs.data && (
         // Se monta con la propuesta ya cargada: el estado inicial sale de ella, sin
         // un efecto que la reinicie mientras se edita.
         <ReviewEditor
@@ -114,7 +126,8 @@ export function AiProposalReviewPage() {
           content={data.proposal}
           entries={entries.data}
           skills={skills.data}
-          profileSummary={profile.data?.summary ?? null}
+          languages={languages.data}
+          profile={profile.data ?? null}
           designs={designs.data}
         />
       )}
@@ -128,7 +141,8 @@ interface ReviewEditorProps {
   content: CvProposal;
   entries: ProfileEntry[];
   skills: ProfileSkill[];
-  profileSummary: string | null;
+  languages: ProfileLanguage[];
+  profile: Profile | null;
   designs: CvDesign[];
 }
 
@@ -138,7 +152,8 @@ function ReviewEditor({
   content,
   entries,
   skills,
-  profileSummary,
+  languages,
+  profile,
   designs,
 }: ReviewEditorProps) {
   const { t, i18n } = useTranslation();
@@ -155,6 +170,15 @@ function ReviewEditor({
     `CV ${application.position_title} – ${application.company.name}`,
   );
   const problem = reviewProblem(state);
+  const source: CvSource = useMemo(
+    () => ({ profile, entries, skills, languages }),
+    [profile, entries, skills, languages],
+  );
+  // Se recalcula con cada cambio de la revisión: el "después" es este CV.
+  const match = useMemo(
+    () => offerMatch(content.requirements, state, source),
+    [content.requirements, state, source],
+  );
   const chosen = usable.find((item) => item.key === design);
   const uiLanguage = uiCvLanguage(i18n.language);
 
@@ -185,11 +209,14 @@ function ReviewEditor({
         </p>
       )}
 
+      {match && <OfferMatchCard match={match} source={source} />}
+
       <ProposalReview
         state={state}
         onChange={setState}
-        profileSummary={profileSummary}
-        gaps={content.gaps}
+        profileSummary={profile?.summary ?? null}
+        // Con requisitos, las carencias ya salen en el encaje con la oferta.
+        gaps={match ? null : content.gaps}
       />
 
       <Card>

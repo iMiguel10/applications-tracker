@@ -6364,7 +6364,7 @@
                 "type": "null"
               }
             ],
-            "description": "Solo en `succeeded`. Cada experiencia, logro y habilidad referencia por id un elemento del perfil; los puestos, empresas y fechas no se proponen: salen del perfil (RF-111)."
+            "description": "Solo en `succeeded`. Cada experiencia, logro y habilidad referencia por id un elemento del perfil; los puestos, empresas y fechas no se proponen: salen del perfil (RF-111). `requirements` (desde el prompt `cv/v2`; `null` en las anteriores) son los requisitos de la oferta, con las palabras con que se buscarían en un CV y los elementos del perfil que los demuestran; el porcentaje de encaje lo calcula el cliente con ellos."
           },
           "created_at": {
             "type": "string",
@@ -8165,6 +8165,20 @@
             },
             "type": "array",
             "title": "Gaps"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Requirement"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requirements"
           }
         },
         "type": "object",
@@ -10838,6 +10852,79 @@
           "dismissed"
         ],
         "title": "ReminderStatus"
+      },
+      "Requirement": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "importance": {
+            "$ref": "#/components/schemas/RequirementImportance"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Keywords"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementEvidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "importance",
+          "keywords",
+          "evidence",
+          "note"
+        ],
+        "title": "Requirement",
+        "description": "Un requisito de la oferta. El porcentaje de encaje no lo da la IA: lo\ncalcula la interfaz buscando `keywords` en el texto del CV (ia.md §4)."
+      },
+      "RequirementEvidence": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "bullet",
+              "skill",
+              "language"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "RequirementEvidence",
+        "description": "Un elemento del perfil que demuestra un requisito. `entry` es una\nexperiencia, formación, proyecto o certificación."
+      },
+      "RequirementImportance": {
+        "type": "string",
+        "enum": [
+          "required",
+          "preferred"
+        ],
+        "title": "RequirementImportance"
       },
       "ResponseRate": {
         "properties": {

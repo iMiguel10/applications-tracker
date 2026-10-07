@@ -997,6 +997,31 @@
         "experiences": "El CV necesita al menos una experiencia.",
         "bullets": "Hay un logro vacío."
       }
+    },
+    "match": {
+      "title": "Encaje con la oferta",
+      "description": "Cuánto de lo que pide la oferta aparece, con sus mismas palabras, en el CV. Es lo que mira un filtro ATS, no la probabilidad de que te llamen. Cambia mientras editas.",
+      "before": "Tu perfil tal cual",
+      "after": "Este CV",
+      "toImprove_one": "Hay {{count}} requisito que tienes y no cuenta: revisa los marcados en ámbar.",
+      "toImprove_other": "Hay {{count}} requisitos que tienes y no cuentan: revisa los marcados en ámbar.",
+      "requirements": "Requisitos de la oferta",
+      "importance": {
+        "required": "Imprescindible",
+        "preferred": "Valorable"
+      },
+      "states": {
+        "covered": "Aparece en el CV",
+        "unnamed": "Lo tienes, con otras palabras",
+        "dropped": "En tu perfil, pero no en este CV",
+        "missing": "No está en tu perfil"
+      },
+      "hints": {
+        "unnamed": "Según la IA, tu perfil lo demuestra aquí, pero no con las palabras que busca la oferta. Si es cierto, nómbralo en el logro.",
+        "dropped": "Tu perfil lo nombra, pero esta versión del CV no: recupera el logro o la habilidad que lo dice.",
+        "missing": "No está en tu perfil. Si lo tienes, añádelo a tu perfil."
+      },
+      "keywords": "Cuenta si aparece: {{keywords}}"
     }
   }
 }
