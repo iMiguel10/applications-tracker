@@ -8,11 +8,13 @@ In **Preferences** you can change:
 | Preference | Options | Where it is stored |
 |---|---|---|
 | Interface language | Follow the browser language, Español or English | In your account: it applies on every device |
-| Time zone | Any zone: type a city or region to search for it | In your account. It is detected from your browser the first time you sign in |
+| Time zone | Any zone: type a city or region to search for it | In your account. It is detected from your browser the first time you sign in. The whole application shows and asks for times in this zone, including the emails and the [calendar](calendario.md) |
 | Flag applications with no activity after (days) | Between 1 and 90 (14 by default) | In your account |
 | Theme | Light or Dark | In this browser |
 
 Language, time zone and days are saved with **Save**.
+
+If your time zone is not the one of the device you sign in from (for example, when travelling), date and time fields say so underneath with **Times in** followed by the zone: the time you type is read in your account's zone.
 
 The **theme** can also be switched with the sun and moon switch in your account menu. It is stored in the browser, not in the account: you can use the dark theme on your computer and the light one on your phone.
 
@@ -26,7 +28,7 @@ In the **Email notifications** card you turn each notification on or off separat
 |---|---|---|
 | Reminder due | When a pending reminder reaches its date, or earlier with the notice you choose in **Notify** (when it is due, 1 hour or 1 day before; when it is due by default) | On |
 | Upcoming interview | Before each scheduled interview, as far ahead as you choose in **Notify** (from 1 hour to 7 days; 1 day by default) | On |
-| Weekly summary | On Mondays at 8:00 in your time zone, with this week's interviews and reminders and your stalled applications. It arrives even if there is nothing pending | Off |
+| Weekly summary | On Mondays at 8:00 in your time zone, with your interviews and reminders for the next 7 days and your stalled applications. It arrives even if there is nothing pending | Off |
 | Applications without activity | When an application goes past the days without activity in your preferences. If there are several, they all go in a single email | Off |
 
 You never get two emails for the same reason. Every email has a link at the bottom to **unsubscribe** from that notification without signing in: it opens a page that asks whether you want to stop receiving it, and it only applies when you click **Unsubscribe**. Your email program may also show its own unsubscribe button, which does the same. To receive it again, turn it back on here.

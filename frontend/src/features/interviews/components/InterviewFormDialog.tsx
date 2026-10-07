@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { toDateTimeLocal } from "@/shared/lib/dates";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import {
   FormActions,
   FormDateTimePicker,
@@ -43,10 +44,10 @@ interface InterviewFormDialogProps {
   onCreated?: () => void;
 }
 
-function toFormValues(interview: Interview | null | undefined): InterviewFormValues {
+function toFormValues(interview: Interview | null | undefined, zone: string): InterviewFormValues {
   if (!interview) return emptyInterviewForm;
   return {
-    scheduled_at: toDateTimeLocal(interview.scheduled_at),
+    scheduled_at: toDateTimeLocal(interview.scheduled_at, zone),
     duration_minutes: interview.duration_minutes?.toString() ?? "",
     interviewers: interview.interviewers ?? "",
     interview_type: interview.interview_type,
@@ -67,15 +68,16 @@ export function InterviewFormDialog({
   const create = useCreateInterview(applicationId);
   const update = useUpdateInterview(applicationId);
   const isEdit = !!interview;
+  const zone = useAccountZone();
 
   const form = useForm<InterviewFormValues>({
     resolver: zodResolver(interviewSchema),
-    defaultValues: toFormValues(interview),
+    defaultValues: toFormValues(interview, zone),
   });
 
   useEffect(() => {
-    if (open) form.reset(toFormValues(interview));
-  }, [open, interview, form]);
+    if (open) form.reset(toFormValues(interview, zone));
+  }, [open, interview, form, zone]);
 
   const options = <T extends string>(values: readonly T[], prefix: string) =>
     values.map((value) => ({ value, label: t(`${prefix}.${value}`) }));

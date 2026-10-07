@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
@@ -39,6 +40,15 @@ function Harness({ renderField, withError }: { renderField: FieldRenderer; withE
   return <>{renderField(form)}</>;
 }
 
+// FormDateTimePicker lee la zona de la cuenta (usePreferences): sin datos, la del
+// navegador, y sin aviso de zona.
+const renderHarness = (renderField: FieldRenderer, withError: boolean) =>
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <Harness renderField={renderField} withError={withError} />
+    </QueryClientProvider>,
+  );
+
 describe.each(fields)("%s accessibility", (_name, renderField) => {
   afterEach(cleanup);
 
@@ -47,7 +57,7 @@ describe.each(fields)("%s accessibility", (_name, renderField) => {
   });
 
   it("is reachable through its label and has no aria-describedby while valid", () => {
-    render(<Harness renderField={renderField} withError={false} />);
+    renderHarness(renderField, false);
 
     const control = screen.getByLabelText(LABEL);
     expect(control).not.toHaveAttribute("aria-describedby");
@@ -55,7 +65,7 @@ describe.each(fields)("%s accessibility", (_name, renderField) => {
   });
 
   it("points aria-describedby at the rendered error message when invalid", async () => {
-    render(<Harness renderField={renderField} withError />);
+    renderHarness(renderField, true);
 
     const message = await screen.findByText(i18n.t(ERROR_KEY));
     const control = screen.getByLabelText(LABEL);

@@ -1,9 +1,9 @@
-import { toDateOnly } from "@/shared/lib/dates";
 import type { ApplicationFormValues } from "../schemas/application.schema";
 import type { ApplicationDetail } from "../types/Application";
 
-/** Formulario vacío para crear: enviada hoy, en euros. */
-export function emptyApplicationForm(companyId = ""): ApplicationFormValues {
+/** Formulario vacío para crear: enviada hoy (`today`, "yyyy-MM-dd" en la zona de
+ * la cuenta), en euros. */
+export function emptyApplicationForm(today: string, companyId = ""): ApplicationFormValues {
   return {
     company_id: companyId,
     position_title: "",
@@ -12,7 +12,7 @@ export function emptyApplicationForm(companyId = ""): ApplicationFormValues {
     work_mode: null,
     source: null,
     status: "applied",
-    applied_at: toDateOnly(new Date()),
+    applied_at: today,
     salary_min: "",
     salary_max: "",
     salary_currency: "EUR",

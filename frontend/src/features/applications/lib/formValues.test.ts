@@ -36,7 +36,8 @@ const application: ApplicationDetail = {
 
 describe("formValues de la solicitud (RF-27, RF-28)", () => {
   it("nace sin descripción ni documentos", () => {
-    const values = emptyApplicationForm();
+    const values = emptyApplicationForm("2026-10-07");
+    expect(values.applied_at).toBe("2026-10-07");
     expect(values.job_description).toBe("");
     expect(values.cv_document_id).toBeNull();
     expect(values.cover_letter_document_id).toBeNull();

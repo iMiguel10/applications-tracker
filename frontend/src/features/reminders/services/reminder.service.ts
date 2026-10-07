@@ -9,10 +9,11 @@ export const reminderService = {
   list: (params: ReminderListParams) =>
     apiClient.get<Page<Reminder>>(`/reminders${toQueryString({ ...params })}`),
 
-  create: (values: ReminderFormValues) =>
+  /** `zone`: la de la cuenta, en la que se escribió la hora (`useAccountZone`). */
+  create: (values: ReminderFormValues, zone: string) =>
     apiClient.post<Reminder>("/reminders", {
       title: values.title,
-      due_at: datetimeLocalToIso(values.due_at),
+      due_at: datetimeLocalToIso(values.due_at, zone),
       application_id: values.application_id || null,
     }),
 

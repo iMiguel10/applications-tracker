@@ -3,9 +3,9 @@ import { datetimeLocalToIso } from "@/shared/lib/dates";
 import type { Interview } from "../types/Interview";
 import type { InterviewFormValues } from "../schemas/interview.schema";
 
-function toPayload(values: InterviewFormValues) {
+function toPayload(values: InterviewFormValues, zone: string) {
   return {
-    scheduled_at: datetimeLocalToIso(values.scheduled_at),
+    scheduled_at: datetimeLocalToIso(values.scheduled_at, zone),
     duration_minutes: values.duration_minutes === "" ? null : Number(values.duration_minutes),
     interviewers: values.interviewers || null,
     interview_type: values.interview_type,
@@ -20,13 +20,22 @@ export const interviewService = {
   list: (applicationId: string) =>
     apiClient.get<Interview[]>(`/applications/${applicationId}/interviews`),
 
-  create: (applicationId: string, values: InterviewFormValues) =>
-    apiClient.post<Interview>(`/applications/${applicationId}/interviews`, toPayload(values)),
+  /** `zone`: la de la cuenta, en la que se escribió la hora (`useAccountZone`). */
+  create: (applicationId: string, values: InterviewFormValues, zone: string) =>
+    apiClient.post<Interview>(
+      `/applications/${applicationId}/interviews`,
+      toPayload(values, zone),
+    ),
 
-  update: (applicationId: string, interviewId: string, values: InterviewFormValues) =>
+  update: (
+    applicationId: string,
+    interviewId: string,
+    values: InterviewFormValues,
+    zone: string,
+  ) =>
     apiClient.patch<Interview>(
       `/applications/${applicationId}/interviews/${interviewId}`,
-      toPayload(values),
+      toPayload(values, zone),
     ),
 
   remove: (applicationId: string, interviewId: string) =>

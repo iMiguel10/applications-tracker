@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { invalidateAfterApplicationChange } from "@/features/applications/hooks/mutations/invalidate";
 import { applicationStatusChangeService } from "@/features/applications/services/applicationStatusChange.service";
 import type { ApplicationStatus } from "@/features/applications/types/Application";
@@ -21,6 +22,7 @@ export interface MoveCardInput {
 export function useMoveCard(filters: BoardFilters) {
   const queryClient = useQueryClient();
   const key = boardKeys.board(filters);
+  const zone = useAccountZone();
 
   return useMutation({
     mutationFn: ({ cardId, to }: MoveCardInput) =>
@@ -28,7 +30,7 @@ export function useMoveCard(filters: BoardFilters) {
         to_status: to,
         changed_at: null,
         note: "",
-      }),
+      }, zone),
     onMutate: async ({ cardId, from, to }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<Board>(key);

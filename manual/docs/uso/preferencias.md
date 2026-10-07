@@ -8,11 +8,13 @@ En **Preferencias** puedes cambiar:
 | Preferencia | Opciones | Dónde se guarda |
 |---|---|---|
 | Idioma de la interfaz | Seguir el idioma del navegador, Español o English | En tu cuenta: se aplica en cualquier dispositivo |
-| Zona horaria | Cualquier zona: escribe una ciudad o región para buscarla | En tu cuenta. Se detecta de tu navegador la primera vez que entras |
+| Zona horaria | Cualquier zona: escribe una ciudad o región para buscarla | En tu cuenta. Se detecta de tu navegador la primera vez que entras. Toda la aplicación muestra y pide las horas en esta zona, también los emails y el [calendario](calendario.md) |
 | Avisar de solicitudes sin actividad tras (días) | Entre 1 y 90 (14 por defecto) | En tu cuenta |
 | Tema | Claro u Oscuro | En este navegador |
 
 Los cambios de idioma, zona horaria y días se guardan con **Guardar**.
+
+Si tu zona horaria no es la del dispositivo desde el que entras (por ejemplo, de viaje), los campos de fecha y hora lo indican debajo con **Horas en** seguido de la zona: la hora que escribas se entiende en la zona de tu cuenta.
 
 El **tema** también se cambia con el interruptor de sol y luna del menú de tu cuenta. Se guarda en el navegador, no en la cuenta: puedes tener el tema oscuro en el ordenador y el claro en el móvil.
 
@@ -26,7 +28,7 @@ En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado.
 |---|---|---|
 | Recordatorio vencido | Cuando llega la fecha de un recordatorio pendiente, o antes con la antelación que elijas en **Avisar** (al vencer, 1 hora o 1 día antes; al vencer por defecto) | Activado |
 | Entrevista próxima | Antes de cada entrevista programada, con la antelación que elijas en **Avisar** (de 1 hora a 7 días; 1 día por defecto) | Activado |
-| Resumen semanal | Los lunes a las 8:00 de tu zona horaria, con tus entrevistas y recordatorios de la semana y las solicitudes paradas. Llega aunque no tengas nada pendiente | Desactivado |
+| Resumen semanal | Los lunes a las 8:00 de tu zona horaria, con tus entrevistas y recordatorios de los próximos 7 días y las solicitudes paradas. Llega aunque no tengas nada pendiente | Desactivado |
 | Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias. Si hay varias, van todas en un solo email | Desactivado |
 
 Nunca recibes dos emails por el mismo motivo. Cada email trae al pie un enlace para **darte de baja** de ese aviso sin iniciar sesión: abre una página que te pregunta si quieres dejar de recibirlo, y solo se aplica al pulsar **Darme de baja**. Tu programa de correo también puede mostrar su propio botón de baja, que hace lo mismo. Para volver a recibirlo, actívalo aquí.

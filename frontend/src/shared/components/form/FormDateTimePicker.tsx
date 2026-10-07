@@ -10,7 +10,8 @@ import {
   useController,
 } from "react-hook-form";
 
-import { toDateOnly } from "@/shared/lib/dates";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
+import { browserZone, toDateOnly, todayIn } from "@/shared/lib/dates";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Calendar } from "@/shared/components/ui/calendar";
@@ -34,8 +35,9 @@ type FormDateTimePickerProps<T extends FieldValues> = {
 /**
  * Fecha y hora con el mismo calendario que `FormDatePicker`, en vez del
  * `datetime-local` nativo (que pinta el navegador y no sigue la paleta ni el tema).
- * El valor es el mismo texto que daba ese input, "yyyy-MM-ddTHH:mm" en hora LOCAL,
- * así que `datetimeLocalToIso`/`toDateTimeLocal` siguen sirviendo tal cual.
+ * El valor es el mismo texto que daba ese input, "yyyy-MM-ddTHH:mm": una hora de
+ * reloj en la zona de la cuenta, que `datetimeLocalToIso`/`toDateTimeLocal` convierten
+ * con esa zona. Si no es la del navegador, el campo lo dice debajo.
  */
 export function FormDateTimePicker<T extends FieldValues>({
   form,
@@ -47,6 +49,7 @@ export function FormDateTimePicker<T extends FieldValues>({
   const { t, i18n } = useTranslation();
   const locale = LOCALES[i18n.language as keyof typeof LOCALES] ?? enUS;
   const timeId = useId();
+  const zone = useAccountZone();
 
   const {
     field,
@@ -64,7 +67,7 @@ export function FormDateTimePicker<T extends FieldValues>({
 
   const setTime = (value: string) => {
     if (!value) return;
-    field.onChange(`${toDateOnly(selected ?? new Date())}T${value}`);
+    field.onChange(`${selected ? toDateOnly(selected) : todayIn(zone)}T${value}`);
   };
 
   return (
@@ -119,6 +122,10 @@ export function FormDateTimePicker<T extends FieldValues>({
           </div>
         </PopoverContent>
       </Popover>
+
+      {zone !== browserZone() && (
+        <p className="text-xs text-muted-foreground">{t("common.timesIn", { zone })}</p>
+      )}
 
       {error && (
         <p id={`${String(name)}-error`} className="text-sm text-destructive">

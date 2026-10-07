@@ -43,7 +43,8 @@
       "description": "Check your connection and try again."
     },
     "selectDateTime": "Pick a date and time",
-    "time": "Time"
+    "time": "Time",
+    "timesIn": "Times in {{zone}}"
   },
   "applications": {
     "title": "Applications",

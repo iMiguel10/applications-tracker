@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { ApplicationForm } from "@/features/applications/components/ApplicationForm";
 import { useCreateApplication } from "@/features/applications/hooks/mutations/useCreateApplication";
 import { emptyApplicationForm } from "@/features/applications/lib/formValues";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
+import { todayIn } from "@/shared/lib/dates";
 
 export function ApplicationNewPage() {
   const { t } = useTranslation();
+  const zone = useAccountZone();
   useDocumentTitle(t("applications.newTitle"));
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -22,7 +25,7 @@ export function ApplicationNewPage() {
         <CardContent>
           <ApplicationForm
             mode="create"
-            defaultValues={emptyApplicationForm(searchParams.get("company_id") ?? "")}
+            defaultValues={emptyApplicationForm(todayIn(zone), searchParams.get("company_id") ?? "")}
             submitting={create.isPending}
             onSubmit={async (values) => {
               const application = await create.mutateAsync(values);

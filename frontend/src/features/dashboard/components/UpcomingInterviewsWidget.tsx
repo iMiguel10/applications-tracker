@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { formatDateTime } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ interface UpcomingInterviewsWidgetProps {
 
 export function UpcomingInterviewsWidget({ interviews, total }: UpcomingInterviewsWidgetProps) {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
   const extra = total - interviews.length;
 
   return (
@@ -39,7 +41,7 @@ export function UpcomingInterviewsWidget({ interviews, total }: UpcomingIntervie
                   {interview.application.position_title} · {interview.application.company.name}
                 </Link>
                 <span className="text-sm text-muted-foreground">
-                  {formatDateTime(interview.scheduled_at, i18n.language)}
+                  {formatDateTime(interview.scheduled_at, i18n.language, zone)}
                 </span>
               </li>
             ))}

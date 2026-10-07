@@ -20,15 +20,8 @@ import type { CalendarEvent, CalendarParams } from "../types/Calendar";
 const WEEK = { weekStartsOn: 1 } as const;
 const DAY_FORMAT = "yyyy-MM-dd";
 
-/** La zona de la cuenta (RF-130) o, si no tiene, la del navegador. */
-export function calendarZone(accountZone: string | null | undefined): string {
-  return accountZone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-
-/** El día de hoy ("yyyy-MM-dd") en la zona dada. */
-export function todayIn(zone: string, now: Date = new Date()): string {
-  return format(new TZDate(now, zone), DAY_FORMAT);
-}
+// La zona de la cuenta y el día de hoy en ella son comunes a toda la interfaz.
+export { todayIn } from "@/shared/lib/dates";
 
 /** El día ("yyyy-MM-dd") en que cae un instante ISO, en la zona dada. */
 export function dayOf(instant: string, zone: string): string {

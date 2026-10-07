@@ -6,11 +6,13 @@ export function formatDateOnly(value: string | null, locale: string): string {
   return date ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date) : "—";
 }
 
-/** Instante ISO (UTC) en la hora local del navegador. */
-export function formatDateTime(value: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(value),
-  );
+/** Instante ISO (UTC) en la zona dada: la de la cuenta, con `useAccountZone`. */
+export function formatDateTime(value: string, locale: string, zone: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: zone,
+  }).format(new Date(value));
 }
 
 export function formatSalaryRange(

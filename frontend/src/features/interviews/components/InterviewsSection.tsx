@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import type { Application } from "@/features/applications/types/Application";
 import { formatDateTime } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { Button } from "@/shared/components/ui/button";
 import { EmptyState } from "@/shared/components/common/EmptyState";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
@@ -24,6 +25,7 @@ interface InterviewsSectionProps {
 
 export function InterviewsSection({ application, onSuggestInterviewing }: InterviewsSectionProps) {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
   const { data: interviews, isLoading } = useInterviews(application.id);
   const [formTarget, setFormTarget] = useState<Interview | null | undefined>(undefined);
   const [deleteTarget, setDeleteTarget] = useState<Interview | null>(null);
@@ -66,7 +68,7 @@ export function InterviewsSection({ application, onSuggestInterviewing }: Interv
               <div className="grid gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">
-                    {formatDateTime(interview.scheduled_at, i18n.language)}
+                    {formatDateTime(interview.scheduled_at, i18n.language, zone)}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {t(`interviews.outcome.${interview.outcome}`)}

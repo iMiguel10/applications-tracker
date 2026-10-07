@@ -43,7 +43,8 @@
       "description": "Comprueba tu conexión e inténtalo de nuevo."
     },
     "selectDateTime": "Elegir fecha y hora",
-    "time": "Hora"
+    "time": "Hora",
+    "timesIn": "Horas en {{zone}}"
   },
   "applications": {
     "title": "Solicitudes",

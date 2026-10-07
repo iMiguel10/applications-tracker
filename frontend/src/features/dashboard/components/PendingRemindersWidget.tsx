@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { formatDateTime } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { Badge } from "@/shared/components/ui/badge";
 import {
   Card,
@@ -21,6 +22,7 @@ interface PendingRemindersWidgetProps {
 // o descartar directamente desde aquí se decide una vez terminado F6.
 export function PendingRemindersWidget({ reminders, total }: PendingRemindersWidgetProps) {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
 
   return (
     <Card>
@@ -47,7 +49,7 @@ export function PendingRemindersWidget({ reminders, total }: PendingRemindersWid
                 <li key={reminder.id} className="grid gap-0.5">
                   <span className="font-medium">{reminder.title}</span>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{formatDateTime(reminder.due_at, i18n.language)}</span>
+                    <span>{formatDateTime(reminder.due_at, i18n.language, zone)}</span>
                     {overdue && <Badge variant="destructive">{t("reminders.overdue")}</Badge>}
                   </div>
                 </li>

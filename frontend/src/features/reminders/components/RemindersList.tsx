@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { formatDateTime } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { AddToCalendarMenu } from "@/features/calendar/components/AddToCalendarMenu";
@@ -23,6 +24,7 @@ interface RemindersListProps {
 
 export function RemindersList({ reminders, showApplication = true }: RemindersListProps) {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
   const complete = useCompleteReminder();
   const dismiss = useDismissReminder();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function RemindersList({ reminders, showApplication = true }: RemindersLi
               <div className="grid gap-1">
                 <span className="font-medium">{reminder.title}</span>
                 <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  <span>{formatDateTime(reminder.due_at, i18n.language)}</span>
+                  <span>{formatDateTime(reminder.due_at, i18n.language, zone)}</span>
                   {overdue && <Badge variant="destructive">{t("reminders.overdue")}</Badge>}
                   {showApplication &&
                     (reminder.application ? (

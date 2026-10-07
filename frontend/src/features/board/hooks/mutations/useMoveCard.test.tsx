@@ -147,11 +147,11 @@ describe("useMoveCard", () => {
     });
 
     await waitFor(() => expect(hook.result.current.isSuccess).toBe(true));
-    expect(applicationStatusChangeService.create).toHaveBeenCalledWith("app-1", {
-      to_status: "screening",
-      changed_at: null,
-      note: "",
-    });
+    expect(applicationStatusChangeService.create).toHaveBeenCalledWith(
+      "app-1",
+      { to_status: "screening", changed_at: null, note: "" },
+      expect.any(String),
+    );
     await waitFor(() =>
       expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true),
     );

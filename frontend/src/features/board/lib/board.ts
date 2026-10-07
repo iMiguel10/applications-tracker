@@ -1,13 +1,19 @@
+import { TZDate } from "@date-fns/tz";
 import { differenceInCalendarDays } from "date-fns";
 import type { ApplicationStatus } from "@/features/applications/types/Application";
 import type { Board, BoardCard } from "../types/Board";
 
-/** Días completos en el estado, contados en días del calendario local (RF-120). */
+/** Días completos en el estado, contados en días del calendario de la zona dada
+ * (la de la cuenta, RF-120). */
 export function daysInStatus(
   statusSince: string,
+  zone: string,
   now: Date = new Date(),
 ): number {
-  return Math.max(0, differenceInCalendarDays(now, new Date(statusSince)));
+  return Math.max(
+    0,
+    differenceInCalendarDays(new TZDate(now, zone), new TZDate(new Date(statusSince), zone)),
+  );
 }
 
 /** La columna desde la que se arrastra una tarjeta admite soltarla en `to`. */

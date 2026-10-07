@@ -29,13 +29,20 @@ const board: Board = {
 
 describe("board", () => {
   it("counts whole calendar days in the status, never negative", () => {
-    expect(
-      daysInStatus("2026-09-01T23:30:00", new Date(2026, 8, 2, 0, 10)),
-    ).toBe(1);
-    expect(daysInStatus("2026-09-01T10:00:00", new Date(2026, 8, 1, 18))).toBe(
-      0,
-    );
-    expect(daysInStatus("2026-09-05T10:00:00", new Date(2026, 8, 1))).toBe(0);
+    const zone = "Europe/Madrid";
+    // 23:30 y 00:10 de Madrid: un día de calendario aunque sean 40 minutos.
+    expect(daysInStatus("2026-09-01T21:30:00Z", zone, new Date("2026-09-01T22:10:00Z"))).toBe(1);
+    expect(daysInStatus("2026-09-01T08:00:00Z", zone, new Date("2026-09-01T16:00:00Z"))).toBe(0);
+    expect(daysInStatus("2026-09-05T08:00:00Z", zone, new Date("2026-09-01T08:00:00Z"))).toBe(0);
+  });
+
+  it("counts the days in the account zone, not the browser's", () => {
+    const since = "2026-09-01T21:30:00Z";
+    const now = new Date("2026-09-01T22:10:00Z");
+
+    // En Madrid ya es día 2; en Nueva York sigue siendo día 1.
+    expect(daysInStatus(since, "Europe/Madrid", now)).toBe(1);
+    expect(daysInStatus(since, "America/New_York", now)).toBe(0);
   });
 
   it("only allows the column's transitions", () => {

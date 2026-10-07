@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { formatBytes, formatDateTime } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useDownloadDocument } from "../hooks/mutations/useDownloadDocument";
@@ -33,6 +34,7 @@ interface DocumentsListProps {
 
 export function DocumentsList({ documents }: DocumentsListProps) {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
   const download = useDownloadDocument();
   const setArchived = useSetDocumentArchived();
   const retry = useRetryDocument();
@@ -135,7 +137,7 @@ export function DocumentsList({ documents }: DocumentsListProps) {
                         {formatBytes(document.size_bytes, i18n.language)}
                       </span>
                     )}
-                    <span>{formatDateTime(document.created_at, i18n.language)}</span>
+                    <span>{formatDateTime(document.created_at, i18n.language, zone)}</span>
                   </div>
                   {document.status === "failed" && document.error_code && (
                     <p className="text-sm text-destructive">

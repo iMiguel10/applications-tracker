@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
 import { formatDateOnly, formatDateTime, formatSalaryRange } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { DetailSkeleton } from "@/shared/components/common/Skeletons";
@@ -39,6 +40,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 export function ApplicationDetailPage() {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
   const navigate = useNavigate();
   const { applicationId = "" } = useParams();
   const { data: application, isLoading, error, isFetching, refetch } =
@@ -153,8 +155,8 @@ export function ApplicationDetailPage() {
             )}
             <p className="mt-6 border-t pt-4 text-xs text-muted-foreground">
               {t("applications.timestamps", {
-                created: formatDateTime(application.created_at, lang),
-                updated: formatDateTime(application.updated_at, lang),
+                created: formatDateTime(application.created_at, lang, zone),
+                updated: formatDateTime(application.updated_at, lang, zone),
               })}
             </p>
           </CardContent>

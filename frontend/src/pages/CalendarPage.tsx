@@ -9,10 +9,10 @@ import { ErrorState } from "@/shared/components/common/ErrorState";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { ViewToggle } from "@/shared/components/common/ViewToggle";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
+import { accountZone } from "@/shared/lib/dates";
 import { MonthView, WeekView } from "@/features/calendar/components/CalendarViews";
 import { useCalendarEvents } from "@/features/calendar/hooks/queries/useCalendarEvents";
 import {
-  calendarZone,
   eventsByDay,
   isSameMonth,
   parseCalendarParams,
@@ -32,7 +32,7 @@ export function CalendarPage() {
   const preferences = usePreferences();
   // La zona de la cuenta (RF-130, decisión del usuario en F17): la misma que usan
   // los emails. Sin zona en la cuenta, la del navegador.
-  const zone = calendarZone(preferences.data?.timezone);
+  const zone = accountZone(preferences.data?.timezone);
   const today = todayIn(zone);
 
   // Vista y día de referencia en la URL, como los filtros de los listados.

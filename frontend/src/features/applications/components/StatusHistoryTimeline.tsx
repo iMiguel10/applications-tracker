@@ -3,6 +3,7 @@ import { Undo2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { formatDateTime } from "@/shared/lib/format";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
@@ -12,6 +13,7 @@ import { useApplicationStatusChanges } from "../hooks/queries/useApplicationStat
 
 export function StatusHistoryTimeline({ applicationId }: { applicationId: string }) {
   const { t, i18n } = useTranslation();
+  const zone = useAccountZone();
   const { data: history, isLoading } = useApplicationStatusChanges(applicationId);
   const [undoOpen, setUndoOpen] = useState(false);
 
@@ -41,7 +43,7 @@ export function StatusHistoryTimeline({ applicationId }: { applicationId: string
                 <div className="flex flex-wrap items-center gap-2">
                   <ApplicationStatusBadge status={change.to_status} />
                   <span className="text-sm text-muted-foreground">
-                    {formatDateTime(change.changed_at, i18n.language)}
+                    {formatDateTime(change.changed_at, i18n.language, zone)}
                   </span>
                 </div>
                 {change.note && <p className="text-sm whitespace-pre-wrap">{change.note}</p>}

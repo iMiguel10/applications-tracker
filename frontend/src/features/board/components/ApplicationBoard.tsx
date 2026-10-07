@@ -33,6 +33,7 @@ import { useUndoLastStatusChange } from "@/features/applications/hooks/mutations
 import type { ApplicationStatus } from "@/features/applications/types/Application";
 import { useMoveCard } from "../hooks/mutations/useMoveCard";
 import { useCollapsedColumns } from "../hooks/useCollapsedColumns";
+import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { canMove, daysInStatus } from "../lib/board";
 import type { BoardFilters } from "../services/board.service";
 import type { Board, BoardCard, BoardColumn } from "../types/Board";
@@ -354,7 +355,8 @@ function BoardCardView({
     // Un estado final no tiene a dónde ir: la tarjeta no se arrastra.
     disabled: column.allowed_transitions.length === 0,
   });
-  const days = daysInStatus(card.status_since);
+  const zone = useAccountZone();
+  const days = daysInStatus(card.status_since, zone);
 
   return (
     <li
