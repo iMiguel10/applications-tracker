@@ -299,6 +299,10 @@ def build_cv_input(profile: AiProfile) -> tuple[str, ProfileIds]:
 # Un id corto escrito dentro del texto ("con Python ([e1.b1])"): el modelo a veces
 # cita así además de en las fuentes, y saldría tal cual en el PDF.
 _SHORT_ID = re.compile(r"\[(?:e\d+(?:\.b\d+)?|[scl]\d+)\]")
+# También sin corchetes, entre paréntesis: "(e1.b1)", "(s1, s3)". Sin `c`: "(c1)"
+# puede ser el nivel de un idioma, y quitarlo borraría un dato.
+_BARE_ID = r"(?:e\d+(?:\.b\d+)?|[sl]\d+)"
+_PARENTHESIZED_IDS = re.compile(rf"\s*\(\s*{_BARE_ID}(?:\s*[,;]\s*{_BARE_ID})*\s*\)")
 _EMPTY_PARENS = re.compile(r"\s*\(\s*(?:[,;]\s*)*\)")
 _SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([.,;:])")
 _REPEATED_SPACES = re.compile(r"[ \t]{2,}")
@@ -326,7 +330,8 @@ def unknown_reference(what: str, short_id: str) -> "InvalidProposalError":
 def clean_text(text: str) -> str:
     """El texto del modelo sin ids cortos citados dentro, ni los paréntesis o
     espacios que deja quitarlos."""
-    cleaned = _SHORT_ID.sub("", text)
+    cleaned = _PARENTHESIZED_IDS.sub("", text)
+    cleaned = _SHORT_ID.sub("", cleaned)
     cleaned = _EMPTY_PARENS.sub("", cleaned)
     cleaned = _SPACE_BEFORE_PUNCTUATION.sub(r"\1", cleaned)
     return _REPEATED_SPACES.sub(" ", cleaned).strip()

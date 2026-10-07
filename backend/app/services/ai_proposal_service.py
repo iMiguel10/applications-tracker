@@ -373,6 +373,10 @@ class AiProposalService:
                 request, model=proposal.model, api_key=platform.api_key
             )
         except LLMError as exc:
+            # Solo el código: el mensaje del proveedor puede llevar la clave (ia.md §7).
+            logger.warning(
+                "Propuesta %s: el proveedor falló (%s)", proposal.id, exc.code
+            )
             status = (
                 ProposalStatus.INVALID
                 if isinstance(exc, LLMInvalidOutputError)

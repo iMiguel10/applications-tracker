@@ -577,6 +577,11 @@ def test_the_letter_context_writes_the_subject_in_the_letter_language() -> None:
         ("Inglés B2 [l1] e Ingeniería ([c1])", "Inglés B2 e Ingeniería"),
         # Un corchete que no es un id se queda.
         ("Arrays [0] y [x]", "Arrays [0] y [x]"),
+        # Sin corchetes, entre paréntesis (pasó con reasoning high).
+        ("APIs REST robustas (e1.b1). Además", "APIs REST robustas. Además"),
+        ("con Python (s1) y Docker (s1, s3)", "con Python y Docker"),
+        # "(c1)" puede ser un nivel de idioma: se queda.
+        ("Inglés (c1)", "Inglés (c1)"),
     ],
 )
 def test_short_ids_written_inside_the_text_are_removed(raw: str, clean: str) -> None:
