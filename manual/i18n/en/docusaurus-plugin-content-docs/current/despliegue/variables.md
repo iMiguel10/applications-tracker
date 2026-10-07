@@ -97,6 +97,27 @@ Storage is also in bytes in the script (`storage_bytes 524288000` is 500 MB), an
 
 Lowering a limit below what the account already has deletes nothing: it only stops it from creating more. An account with no limit sees in Preferences how much it has used and "no limit", and never gets warnings.
 
+## Artificial intelligence
+
+The AI feature (tailoring a CV or cover letter to a job offer) is under construction. These variables set the model the installation uses for the free uses.
+
+| Variable | Default | What it is |
+|---|---|---|
+| `AI_PLATFORM_PROVIDER` | empty | Provider for the free uses: `groq`, `anthropic` or `openai`. Empty: no free use |
+| `AI_PLATFORM_MODEL` | empty | Model of that provider, for example `openai/gpt-oss-120b` on Groq |
+| `AI_PLATFORM_API_KEY` | empty | The installation's API key for that provider |
+| `AI_PLATFORM_INPUT_USD_PER_MTOK` | 0 | Model price per million input tokens, in dollars. Only used to estimate the cost of each use |
+| `AI_PLATFORM_OUTPUT_USD_PER_MTOK` | 0 | The same for output tokens |
+| `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Maximum time to wait for an answer from the provider |
+
+If you set `AI_PLATFORM_PROVIDER`, the model and the key are required: without them, the API does not start. To check they work, with a real call that costs a few dozen tokens:
+
+```bash
+docker compose exec api python -m app.scripts.check_ai_provider
+```
+
+Keep the key like any other password: whoever has it spends on your provider account. Also set a spending cap in the provider's console.
+
 ## Request limits
 
 | Variable | Default | What it is |

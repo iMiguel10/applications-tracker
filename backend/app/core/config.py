@@ -1,7 +1,9 @@
 from typing import Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.domain.ai import AiProvider
 
 
 class Settings(BaseSettings):
@@ -61,10 +63,56 @@ class Settings(BaseSettings):
     # por comas. Vacío (desarrollo, sin proxy): se usa la IP de la conexión.
     trusted_proxies: str = ""
 
+    # IA (F15, decisión 0017). La plataforma: proveedor, modelo y clave con los que
+    # se sirven los usos gratuitos. Sin proveedor, la instalación no tiene uso
+    # gratuito y la IA solo funciona con claves propias.
+    ai_platform_provider: AiProvider | None = None
+    ai_platform_model: str | None = None
+    ai_platform_api_key: str | None = None
+    # Precio por millón de tokens del modelo de la plataforma, en dólares. Solo
+    # estima el coste de cada propuesta (cost_micros): no hay tope de gasto (0017).
+    ai_platform_input_usd_per_mtok: float = Field(default=0, ge=0)
+    ai_platform_output_usd_per_mtok: float = Field(default=0, ge=0)
+    # Modelos que un usuario puede elegir con su clave propia, separados por comas;
+    # el primero es el de por defecto. Un proveedor con la lista vacía no se ofrece.
+    ai_anthropic_models: str = ""
+    ai_openai_models: str = ""
+    ai_groq_models: str = ""
+    # Una propuesta tarda segundos; un modelo que razona, algo más. Sin tope, un
+    # proveedor colgado retendría al worker indefinidamente.
+    ai_request_timeout_seconds: float = Field(default=120, gt=0)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
     )
+
+    @field_validator(
+        "ai_platform_provider",
+        "ai_platform_model",
+        "ai_platform_api_key",
+        mode="before",
+    )
+    @classmethod
+    def _blank_is_unset(cls, value: object) -> object:
+        # AI_PLATFORM_PROVIDER= en el .env es "sin plataforma", no un proveedor
+        # llamado "" (que el enumerado rechazaría al arrancar).
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @model_validator(mode="after")
+    def _platform_complete(self) -> Self:
+        # Una plataforma configurada a medias fallaría en el primer uso gratuito,
+        # dentro del worker. Mejor no arrancar.
+        if self.ai_platform_provider and not (
+            self.ai_platform_model and self.ai_platform_api_key
+        ):
+            raise ValueError(
+                "AI_PLATFORM_MODEL y AI_PLATFORM_API_KEY son obligatorias "
+                "si se configura AI_PLATFORM_PROVIDER"
+            )
+        return self
 
     @model_validator(mode="after")
     def _email_from_required_with_smtp(self) -> Self:
@@ -77,6 +125,20 @@ class Settings(BaseSettings):
     @property
     def email_enabled(self) -> bool:
         return bool(self.smtp_host)
+
+    def ai_models(self, provider: AiProvider) -> list[str]:
+        """Modelos que un usuario puede elegir con su clave de `provider`, en orden
+        (el primero es el de por defecto). Vacía: el proveedor no se ofrece."""
+        raw = {
+            AiProvider.ANTHROPIC: self.ai_anthropic_models,
+            AiProvider.OPENAI: self.ai_openai_models,
+            AiProvider.GROQ: self.ai_groq_models,
+        }[provider]
+        models: list[str] = []
+        for model in (item.strip() for item in raw.split(",")):
+            if model and model not in models:
+                models.append(model)
+        return models
 
     @property
     def cors_origins_list(self) -> list[str]:

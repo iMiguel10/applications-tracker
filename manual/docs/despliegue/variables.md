@@ -97,6 +97,27 @@ El almacenamiento también va en bytes en el script (`storage_bytes 524288000` s
 
 Rebajar un límite por debajo de lo que la cuenta ya tiene no borra nada: solo le impide crear más. Una cuenta sin límite ve en Preferencias cuánto lleva y "sin límite", y nunca recibe avisos.
 
+## Inteligencia artificial
+
+La función de IA (adaptar un CV o una carta a una oferta) está en construcción. Estas variables configuran el modelo con el que la instalación ofrece los usos gratuitos.
+
+| Variable | Por defecto | Qué es |
+|---|---|---|
+| `AI_PLATFORM_PROVIDER` | vacía | Proveedor de los usos gratuitos: `groq`, `anthropic` u `openai`. Vacía: no hay uso gratuito |
+| `AI_PLATFORM_MODEL` | vacía | Modelo de ese proveedor, por ejemplo `openai/gpt-oss-120b` en Groq |
+| `AI_PLATFORM_API_KEY` | vacía | Clave de API de la instalación en ese proveedor |
+| `AI_PLATFORM_INPUT_USD_PER_MTOK` | 0 | Precio del modelo por millón de tokens de entrada, en dólares. Solo sirve para estimar el coste de cada uso |
+| `AI_PLATFORM_OUTPUT_USD_PER_MTOK` | 0 | Lo mismo para los tokens de salida |
+| `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Tiempo máximo de espera de una respuesta del proveedor |
+
+Si defines `AI_PLATFORM_PROVIDER`, el modelo y la clave son obligatorios: sin ellos, la API no arranca. Para comprobar que funcionan, con una llamada real que cuesta unas decenas de tokens:
+
+```bash
+docker compose exec api python -m app.scripts.check_ai_provider
+```
+
+La clave se guarda como cualquier otra contraseña: quien la tenga gasta a cargo de tu cuenta en el proveedor. Pon también un tope de gasto en la consola del proveedor.
+
 ## Límite de peticiones
 
 | Variable | Por defecto | Qué es |

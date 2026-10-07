@@ -225,12 +225,12 @@ Usuario
 
 ### Proveedores y claves de IA (RF-150…) · v2
 
-- **RF-150** `[F15]` **Cuota gratuita fija**: cada cuenta dispone de un número de usos de IA con la clave de la plataforma (un uso = una propuesta de CV o de carta). **No se renueva**: está para probar la función, no para uso continuado. Valor configurable por quien despliega (propuesta inicial: 10) y ajustable por usuario (RF-143). Con valor 0, la instalación solo funciona con claves propias.
-- **RF-151** `[F15]` **Clave propia**: el usuario puede añadir su clave de API de uno de los **proveedores habilitados en la instalación**, elegido de una lista. Quien despliega decide qué proveedores se ofrecen y qué modelo usa cada uno. El usuario elige proveedor, no modelo: la validación de RF-111 se prueba con cada modelo concreto (RNF-23).
+- **RF-150** `[F15]` **Cuota gratuita fija por tipo**: cada cuenta dispone de **1 propuesta de CV y 1 de carta** con la IA de la plataforma, que no se renuevan: están para probar la función, no para uso continuado. Valores configurables por quien despliega y ajustables por cuenta (RF-143). El proveedor, el modelo y la clave de la plataforma se configuran por entorno; sin proveedor, la instalación solo funciona con claves propias ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)).
+- **RF-151** `[F15]` **Clave propia**: el usuario elige uno de los **proveedores habilitados en la instalación** (Anthropic, OpenAI o Groq), añade su clave de API y **elige el modelo** de la lista que quien despliega permite para ese proveedor. Cada modelo de la lista se evalúa antes de ofrecerlo (RNF-23) ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)).
 - **RF-152** `[F15]` Con clave propia configurada **se usa siempre esa**, sin consumir la cuota gratuita ni contar para el tope global. Si la llamada falla (clave inválida o revocada, sin saldo, límite del proveedor), el error lo dice con claridad y **nunca se pasa en silencio a la clave de la plataforma**: el usuario gastaría su cuota gratuita sin saberlo.
 - **RF-153** `[F15]` Al guardar una clave se comprueba con una llamada mínima al proveedor antes de aceptarla. Se puede sustituir o borrar en cualquier momento; después de guardarla nunca se vuelve a mostrar entera (solo el proveedor y sus últimos 4 caracteres).
 - **RF-154** `[F15]` El consentimiento (RF-116) nombra el proveedor al que se envían los datos: el de la plataforma o el que eligió el usuario con su clave. Cambiar de proveedor pide consentimiento de nuevo.
-- **RF-155** `[F15]` **Tope de gasto global** de la plataforma: solo cuenta el uso con la clave de la plataforma. Al alcanzarlo, la cuota gratuita queda en pausa para todos con un mensaje claro; las claves propias siguen funcionando.
+- ~~**RF-155**~~ `[descartado]` **Tope de gasto global** de la plataforma: solo cuenta el uso con la clave de la plataforma. Al alcanzarlo, la cuota gratuita queda en pausa para todos con un mensaje claro; las claves propias siguen funcionando. Descartado al empezar F15: la plataforma se limita solo por uso ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)).
 - **RF-156** `[F15]` Cuando se agota la cuota gratuita, la interfaz explica cómo seguir: añadir una clave propia, con los proveedores disponibles y un enlace a cómo obtener la clave de cada uno (manual de uso).
 
 ### Tablero Kanban (RF-120…) · v2
@@ -425,8 +425,8 @@ Requisitos derivados:
 | **v2** · Almacenamiento total | 100 MB por usuario | Con registro abierto, el disco es el recurso más fácil de agotar. |
 | **v2** · Descripción de la oferta | 20 000 caracteres | Cabe cualquier anuncio real; acota lo que se envía a la IA. |
 | **v2** · Elementos del perfil | 50 experiencias, 100 habilidades, 30 de cada otra sección | Acota el tamaño de la entrada a la IA y del PDF. |
-| **v2** · Uso de IA gratuito | 10 usos por cuenta, **sin renovación** (configurable por instalación) | Para probar la función; el uso continuado va con clave propia (RF-150). |
-| **v2** · Gasto global de IA de la plataforma | Tope mensual configurable por instalación | Solo cuenta la clave de la plataforma; protege a quien despliega con registro abierto (RF-155). |
+| **v2** · Uso de IA gratuito | 1 propuesta de CV y 1 de carta por cuenta, **sin renovación** (configurable por instalación) | Para probar la función; el uso continuado va con clave propia (RF-150, [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)). |
+| ~~**v2** · Gasto global de IA de la plataforma~~ | Sin tope: solo por uso | Descartado al empezar F15 ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)). |
 | **v2** · Claves de IA propias | Una por proveedor habilitado | Con una basta; más de una permite cambiar de proveedor sin borrar la anterior. |
 | **v2** · Emails | Como mucho uno por motivo (RF-87); el resumen, uno por semana | Nunca emails masivos desde una cuenta. |
 

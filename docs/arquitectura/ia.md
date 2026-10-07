@@ -1,6 +1,6 @@
 # IA: CV y carta adaptados
 
-> Estado: **diseño, sin construir** (F15) · Fecha: 2026-09-24 · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
+> Estado: **en construcción** (F15, paso 1 de 6: la interfaz y el adaptador de Groq) · Fecha: 2026-10-07 · Cambios al empezar la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
 >
 > Los nombres de las APIs de cada proveedor (salida estructurada, recuento de tokens, errores) se fijan al construir su adaptador, contra la versión del SDK de ese momento. Lo que no cambia son las reglas de este documento.
 
@@ -15,12 +15,20 @@ La pieza central es que **"no inventar" se garantiza con la forma de la respuest
 | Pieza | Qué es | Dónde |
 |---|---|---|
 | `LLMProvider` | Interfaz: recibe un prompt y un esquema, devuelve la salida estructurada, tokens y un error normalizado | `infra/llm/` |
-| Adaptadores | Uno por proveedor, cada uno con su SDK oficial dentro | `infra/llm/adapters/` |
+| Adaptadores | Uno por proveedor, cada uno con su SDK oficial dentro | `infra/llm/<proveedor>.py` |
 | Prompts | Ficheros versionados (A33) | `infra/llm/prompts/<tarea>/v<N>.md` |
 | Esquema de la propuesta | Modelo Pydantic de la salida | `domain/ai.py` |
 | `AiProposalService` | Requisitos, elección de clave, cuota, entrada, validación y resultado | `services/` |
 | `AiKeyService` | Guardar, validar, sustituir y borrar claves propias | `services/` + `infra/crypto.py` |
 | `FakeLLMProvider` | Respuestas grabadas para las pruebas (RNF-23) | `infra/llm/` |
+
+**Construido en F15 (paso 1):** `infra/llm/base.py` (`LLMRequest`, `LLMResponse` con los tokens y cómo terminó —completa, cortada por `max_output_tokens` o rechazada—, y los errores normalizados: `ai_provider_auth`, `ai_provider_quota`, `ai_provider_unavailable`, `ai_provider_rejected` para un modelo inexistente o una entrada demasiado grande, y `ai_response_invalid`), `strict_json_schema` (`infra/llm/schema.py`: el esquema de un modelo Pydantic sin `$ref`, con `additionalProperties: false` y todos los campos en `required`, que es lo que exige la salida estructurada estricta), el adaptador de Groq (`infra/llm/groq.py`, la plataforma de [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)), `FakeLLMProvider` (`infra/llm/fake.py`), `build_llm_providers` y `platform_model` (la configuración `AI_PLATFORM_*`). Cada llamada recibe la clave como argumento: el adaptador no la guarda. `app/scripts/check_ai_provider.py` comprueba la plataforma con una llamada real mínima.
+
+> **Trampa — un reintento automático factura dos veces.** Los SDK de los proveedores reintentan por defecto un tiempo agotado o un 5xx. Si el proveedor sí llegó a generar la respuesta, el reintento la genera otra vez y se paga dos veces la misma propuesta. Los adaptadores crean el cliente con `max_retries=0`; reintentar o no es decisión del service.
+
+> **Trampa — la excepción del SDK viaja encadenada.** Traducir el error con un `raise LLMAuthError() from exc` deja la excepción original en `__cause__`, con el mensaje del proveedor (que puede repetir la clave), y cualquier traceback la imprime. Los adaptadores traducen con `from None`. Lo prueba `tests/infra/test_llm.py`.
+
+En Groq, una respuesta que el modelo generó sin cumplir el esquema estricto llega como un 400 `json_validate_failed` (o un 422): se generó, así que se factura y cuenta como `ai_response_invalid`. Los 5xx no se facturan. La salida estructurada de Groq no admite *streaming*, que tampoco hace falta: la propuesta se valida entera. Para comprobar una clave, `check_access` **lista** los modelos de la cuenta y busca el pedido: consultar uno (`/models/{id}`) da 404 con los ids que llevan barra, como `openai/gpt-oss-120b`, aunque el modelo exista (pasó con la primera clave real).
 
 ## 3. La entrada: qué se envía y qué no
 
@@ -97,7 +105,10 @@ flowchart TD
 
 > **Trampa — contar solo lo facturado deja pasar ráfagas.** Si la cuota contara solo las propuestas ya `billable`, un usuario con 1 uso restante podría lanzar 5 peticiones a la vez: las 5 ven "queda 1" al encolar, porque ninguna ha respondido aún, y las 5 acaban facturadas. Por eso, con la fila del usuario bloqueada (A30), la cuenta incluye lo `billable` **más lo que está en curso** (`queued`, `running`) con la clave de la plataforma.
 
-### Tope de gasto global (RF-155)
+### Tope de gasto global (RF-155) · descartado
+
+**No se construye** ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)): la plataforma se limita solo por uso. `cost_micros` se sigue guardando para saber cuánto se gasta. Lo de abajo es el diseño original.
+
 
 - Es la suma de `cost_micros` del mes en curso de las propuestas `billable` con la clave de la plataforma, calculada con los precios por token de cada modelo que fija la configuración.
 - Se comprueba al encolar. Por eso es un tope **blando**: las peticiones que ya estaban en curso pueden pasarlo por poco. Se acepta, y el valor configurado debe dejar ese margen.
