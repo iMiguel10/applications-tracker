@@ -6,6 +6,7 @@ empresas, puestos, fechas ni nombres de habilidades: solo referencias a elemento
 del perfil, por ids cortos que se traducen aquí de vuelta a sus UUID (A32).
 """
 
+import re
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -106,7 +107,16 @@ MIN_JOB_DESCRIPTION_LENGTH = 200
 
 # Versión del prompt de cada tarea (A33): un fichero de `infra/llm/prompts/`. Se
 # cambia añadiendo uno nuevo, nunca editando el que ya produjo propuestas.
-PROMPT_VERSIONS: dict[AiTask, str] = {AiTask.CV: "cv/v2"}
+PROMPT_VERSIONS: dict[AiTask, str] = {
+    AiTask.CV: "cv/v2",
+    AiTask.COVER_LETTER: "cover_letter/v1",
+}
+
+# La carta (RF-114): el prompt pide 3 a 5 párrafos, unas 250-350 palabras. Los
+# topes de aquí son los de la validación y la revisión, con margen.
+MAX_LETTER_PARAGRAPHS = 8
+LETTER_PARAGRAPH_MAX_LENGTH = 1500
+LETTER_LINE_MAX_LENGTH = 200
 
 # Requisitos de la oferta (cv/v2, el encaje con la oferta): lo que pase de aquí se
 # recorta en lugar de invalidar la propuesta, porque no cambia lo que dice el CV.
@@ -114,6 +124,15 @@ MAX_REQUIREMENTS = 15
 MAX_KEYWORDS = 6
 REQUIREMENT_MAX_LENGTH = 120
 KEYWORD_MAX_LENGTH = 60
+
+# Temperatura de las propuestas: reformular sin crear (ia.md §9).
+TEMPERATURE = 0.4
+# Cuánto razona el modelo antes de responder. La carta es casi toda texto libre y,
+# con `medium`, Groq adornaba más (ia.md §9): se prueba con `high`.
+REASONING: dict[AiTask, Literal["low", "medium", "high"]] = {
+    AiTask.CV: "medium",
+    AiTask.COVER_LETTER: "high",
+}
 
 # Salida máxima de una propuesta: un CV con muchas experiencias reformuladas, más
 # el razonamiento en los modelos que lo cuentan como salida.
@@ -195,18 +214,18 @@ class ProfileIds:
     context: dict[str, uuid.UUID] = field(default_factory=dict)
     languages: dict[str, uuid.UUID] = field(default_factory=dict)
 
-    def evidence(self, short_id: str) -> "RequirementEvidence | None":
+    def evidence(self, short_id: str) -> "ProfileReference | None":
         """El elemento del perfil al que apunta un id corto citado como evidencia."""
         if short_id in self.entries:
-            return RequirementEvidence(kind="entry", id=self.entries[short_id])
+            return ProfileReference(kind="entry", id=self.entries[short_id])
         if short_id in self.context:
-            return RequirementEvidence(kind="entry", id=self.context[short_id])
+            return ProfileReference(kind="entry", id=self.context[short_id])
         if short_id in self.bullets:
-            return RequirementEvidence(kind="bullet", id=self.bullets[short_id][1])
+            return ProfileReference(kind="bullet", id=self.bullets[short_id][1])
         if short_id in self.skills:
-            return RequirementEvidence(kind="skill", id=self.skills[short_id])
+            return ProfileReference(kind="skill", id=self.skills[short_id])
         if short_id in self.languages:
-            return RequirementEvidence(kind="language", id=self.languages[short_id])
+            return ProfileReference(kind="language", id=self.languages[short_id])
         return None
 
 
@@ -275,6 +294,42 @@ def build_cv_input(profile: AiProfile) -> tuple[str, ProfileIds]:
             )
 
     return "\n".join(lines), ids
+
+
+# Un id corto escrito dentro del texto ("con Python ([e1.b1])"): el modelo a veces
+# cita así además de en las fuentes, y saldría tal cual en el PDF.
+_SHORT_ID = re.compile(r"\[(?:e\d+(?:\.b\d+)?|[scl]\d+)\]")
+_EMPTY_PARENS = re.compile(r"\s*\(\s*(?:[,;]\s*)*\)")
+_SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([.,;:])")
+_REPEATED_SPACES = re.compile(r"[ \t]{2,}")
+
+
+_ID_SHAPE = re.compile(r"^(?:e\d+(?:\.b\d+)?|[scl]\d+)$")
+
+
+def normalize_id(short_id: str) -> str:
+    """Un id corto tal como lo escribió el modelo, sin el formato con que lo vio en
+    la entrada: "[e1.b2]" o " e1.b2 " son `e1.b2`. Es formato, no invención; y
+    rechazarlo le gastaría al usuario el uso."""
+    return short_id.strip().strip("[]").strip()
+
+
+def unknown_reference(what: str, short_id: str) -> "InvalidProposalError":
+    """El motivo para el log dice si el id tenía forma de id (uno inventado) o era
+    otra cosa, sin copiar lo que escribió el modelo."""
+    shape = (
+        "con forma de id" if _ID_SHAPE.match(normalize_id(short_id)) else "otro texto"
+    )
+    return InvalidProposalError(f"{what} inexistente ({shape})")
+
+
+def clean_text(text: str) -> str:
+    """El texto del modelo sin ids cortos citados dentro, ni los paréntesis o
+    espacios que deja quitarlos."""
+    cleaned = _SHORT_ID.sub("", text)
+    cleaned = _EMPTY_PARENS.sub("", cleaned)
+    cleaned = _SPACE_BEFORE_PUNCTUATION.sub(r"\1", cleaned)
+    return _REPEATED_SPACES.sub(" ", cleaned).strip()
 
 
 def wrap_job_description(text: str) -> str:
@@ -359,13 +414,6 @@ class CvProposalOutput(BaseModel):
     skills: list[str] = Field(description="Ids cortos de habilidades, por prioridad")
 
 
-# El esquema que corresponde a cada versión del prompt (A33).
-CV_OUTPUT_MODELS: dict[str, type[CvProposalOutput] | type[CvProposalOutputV1]] = {
-    "cv/v1": CvProposalOutputV1,
-    "cv/v2": CvProposalOutput,
-}
-
-
 class ValidatedBullet(BaseModel):
     bullet_id: uuid.UUID
     text: str
@@ -376,9 +424,10 @@ class ValidatedExperience(BaseModel):
     bullets: list[ValidatedBullet]
 
 
-class RequirementEvidence(BaseModel):
-    """Un elemento del perfil que demuestra un requisito. `entry` es una
-    experiencia, formación, proyecto o certificación."""
+class ProfileReference(BaseModel):
+    """Un elemento del perfil citado: la evidencia de un requisito o la fuente de un
+    párrafo de la carta. `entry` es una experiencia, formación, proyecto o
+    certificación."""
 
     kind: Literal["entry", "bullet", "skill", "language"]
     id: uuid.UUID
@@ -391,7 +440,7 @@ class Requirement(BaseModel):
     name: str
     importance: RequirementImportance
     keywords: list[str]
-    evidence: list[RequirementEvidence]
+    evidence: list[ProfileReference]
     note: str
 
 
@@ -420,7 +469,8 @@ def validate_cv_output(
     el momento de la petición. Una sola que no exista invalida toda la propuesta:
     no se corrige ni se descarta en silencio, porque una propuesta con una
     referencia inventada no es de fiar en el resto (ia.md §4)."""
-    if not output.summary.strip():
+    summary = clean_text(output.summary)
+    if not summary:
         raise InvalidProposalError("resumen vacío")
     if not output.experiences:
         raise InvalidProposalError("sin experiencias")
@@ -429,33 +479,34 @@ def validate_cv_output(
     seen_entries: set[str] = set()
     seen_bullets: set[str] = set()
     for experience in output.experiences:
-        if experience.entry_id not in ids.entries:
+        entry_id = normalize_id(experience.entry_id)
+        if entry_id not in ids.entries:
             raise InvalidProposalError("experiencia inexistente")
-        if experience.entry_id in seen_entries:
+        if entry_id in seen_entries:
             raise InvalidProposalError("experiencia repetida")
-        seen_entries.add(experience.entry_id)
+        seen_entries.add(entry_id)
         bullets: list[ValidatedBullet] = []
         for bullet in experience.bullets:
-            owner = ids.bullets.get(bullet.bullet_id)
+            bullet_id = normalize_id(bullet.bullet_id)
+            owner = ids.bullets.get(bullet_id)
             if owner is None:
                 raise InvalidProposalError("logro inexistente")
-            if owner[0] != experience.entry_id:
+            if owner[0] != entry_id:
                 raise InvalidProposalError("logro de otra experiencia")
-            if bullet.bullet_id in seen_bullets:
+            if bullet_id in seen_bullets:
                 raise InvalidProposalError("logro repetido")
-            seen_bullets.add(bullet.bullet_id)
-            text = bullet.text.strip()
+            seen_bullets.add(bullet_id)
+            text = clean_text(bullet.text)
             if not text or len(text) > BULLET_MAX_LENGTH:
                 raise InvalidProposalError("logro vacío o demasiado largo")
             bullets.append(ValidatedBullet(bullet_id=owner[1], text=text))
         experiences.append(
-            ValidatedExperience(
-                entry_id=ids.entries[experience.entry_id], bullets=bullets
-            )
+            ValidatedExperience(entry_id=ids.entries[entry_id], bullets=bullets)
         )
 
     skill_ids: list[uuid.UUID] = []
-    for skill in output.skills:
+    for raw_skill in output.skills:
+        skill = normalize_id(raw_skill)
         if skill not in ids.skills:
             raise InvalidProposalError("habilidad inexistente")
         if ids.skills[skill] in skill_ids:
@@ -464,14 +515,14 @@ def validate_cv_output(
 
     if isinstance(output, CvProposalOutputV1):
         return CvProposal(
-            summary=output.summary.strip(),
+            summary=summary,
             experiences=experiences,
             skill_ids=skill_ids,
             gaps=[gap for gap in output.gaps if gap.requirement.strip()],
         )
     requirements = _validate_requirements(output.requirements, ids)
     return CvProposal(
-        summary=output.summary.strip(),
+        summary=summary,
         experiences=experiences,
         skill_ids=skill_ids,
         gaps=[
@@ -491,11 +542,11 @@ def _validate_requirements(
     cambia lo que dice el CV y no merece gastar el uso."""
     requirements: list[Requirement] = []
     for item in proposed:
-        evidence: list[RequirementEvidence] = []
+        evidence: list[ProfileReference] = []
         for short_id in item.evidence:
-            found = ids.evidence(short_id.strip())
+            found = ids.evidence(normalize_id(short_id))
             if found is None:
-                raise InvalidProposalError("evidencia inexistente")
+                raise unknown_reference("evidencia", short_id)
             if found not in evidence:
                 evidence.append(found)
         name = item.requirement.strip()[:REQUIREMENT_MAX_LENGTH]
@@ -521,6 +572,102 @@ def _validate_requirements(
             )
         )
     return requirements[:MAX_REQUIREMENTS]
+
+
+# --- La carta de presentación (RF-114, ia.md §5) -----------------------------
+
+
+def describe_application(position_title: str, company: str) -> str:
+    """El puesto y la empresa a los que va la carta. Los escribe el usuario, no son
+    texto de terceros, pero van delimitados igual que la oferta."""
+    safe = f"Puesto: {position_title}\nEmpresa: {company}".replace(
+        "</solicitud>", "</ solicitud>"
+    )
+    return f"<solicitud>\n{safe}\n</solicitud>"
+
+
+class ProposedParagraph(BaseModel):
+    text: str = Field(description="Un párrafo de la carta")
+    sources: list[str] = Field(
+        description="Ids cortos del perfil en que se apoya lo que dice el párrafo; "
+        "vacío solo si no afirma nada del perfil"
+    )
+
+
+class CoverLetterOutput(BaseModel):
+    """El esquema de cover_letter/v1. La carta es casi toda texto libre: lo que
+    impide inventar aquí no es la forma, sino que cada párrafo diga en qué se apoya
+    y que la revisión lo enseñe al lado (ia.md §5). Nombre, contacto, fecha,
+    empresa y puesto los pone la plantilla."""
+
+    insufficient_offer: bool = Field(
+        description="true si el texto no es una oferta de empleo o no da para una carta"
+    )
+    greeting: str = Field(description="El saludo, p. ej. 'Estimado equipo de Acme:'")
+    paragraphs: list[ProposedParagraph] = Field(
+        description="De 3 a 5 párrafos, en orden"
+    )
+    closing: str = Field(description="La despedida, p. ej. 'Atentamente,'")
+
+
+class LetterParagraph(BaseModel):
+    text: str
+    sources: list[ProfileReference]
+
+
+class CoverLetterProposal(BaseModel):
+    """La carta ya validada, con las fuentes como UUID reales: lo que se guarda y
+    se revisa (RF-113)."""
+
+    greeting: str
+    paragraphs: list[LetterParagraph]
+    closing: str
+
+
+def validate_letter_output(
+    output: CoverLetterOutput, ids: ProfileIds
+) -> CoverLetterProposal:
+    """Como en el CV, una fuente que no existe invalida toda la carta: si cita algo
+    inventado, el resto tampoco es de fiar. Un párrafo sin fuentes es válido (el que
+    habla de la empresa o el cierre), y la revisión lo marca."""
+    greeting = output.greeting.strip()
+    closing = output.closing.strip()
+    if not greeting or len(greeting) > LETTER_LINE_MAX_LENGTH:
+        raise InvalidProposalError("saludo vacío o demasiado largo")
+    if not closing or len(closing) > LETTER_LINE_MAX_LENGTH:
+        raise InvalidProposalError("despedida vacía o demasiado larga")
+    paragraphs: list[LetterParagraph] = []
+    for paragraph in output.paragraphs:
+        text = clean_text(paragraph.text)
+        sources: list[ProfileReference] = []
+        for short_id in paragraph.sources:
+            found = ids.evidence(normalize_id(short_id))
+            if found is None:
+                raise unknown_reference("fuente", short_id)
+            if found not in sources:
+                sources.append(found)
+        if not text:
+            continue
+        if len(text) > LETTER_PARAGRAPH_MAX_LENGTH:
+            raise InvalidProposalError("párrafo demasiado largo")
+        paragraphs.append(LetterParagraph(text=text, sources=sources))
+    if not paragraphs:
+        raise InvalidProposalError("sin párrafos")
+    if len(paragraphs) > MAX_LETTER_PARAGRAPHS:
+        raise InvalidProposalError("demasiados párrafos")
+    return CoverLetterProposal(
+        greeting=greeting, paragraphs=paragraphs, closing=closing
+    )
+
+
+# El esquema que corresponde a cada versión del prompt (A33).
+OUTPUT_MODELS: dict[
+    str, type[CvProposalOutput] | type[CvProposalOutputV1] | type[CoverLetterOutput]
+] = {
+    "cv/v1": CvProposalOutputV1,
+    "cv/v2": CvProposalOutput,
+    "cover_letter/v1": CoverLetterOutput,
+}
 
 
 class OutdatedProposalError(Exception):

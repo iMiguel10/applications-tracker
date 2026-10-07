@@ -1,7 +1,7 @@
 import type { Profile } from "@/features/profile/types/Profile";
 import type { ProfileEntry } from "@/features/profile/types/ProfileEntry";
 import type { ProfileLanguage, ProfileSkill } from "@/features/profile/types/ProfileSkill";
-import type { Requirement } from "../types/Ai";
+import type { ProfileReference, Requirement } from "../types/Ai";
 import type { ReviewState } from "./review";
 
 /**
@@ -182,8 +182,9 @@ export function offerMatch(
   };
 }
 
-/** Cómo se llama en el perfil lo que la IA dio como evidencia de un requisito. */
-export function evidenceLabels(requirement: Requirement, source: CvSource): string[] {
+/** Cómo se llama en el perfil cada elemento citado: la evidencia de un requisito o
+ * la fuente de un párrafo de la carta. Lo que ya no está en el perfil se omite. */
+export function referenceLabels(references: ProfileReference[], source: CvSource): string[] {
   const bullets = new Map(
     source.entries.flatMap((entry) => entry.bullets.map((bullet) => [bullet.id, bullet.text])),
   );
@@ -196,7 +197,11 @@ export function evidenceLabels(requirement: Requirement, source: CvSource): stri
     skill: skills,
     language: languages,
   };
-  return requirement.evidence
+  return references
     .map((item) => lookup[item.kind].get(item.id))
     .filter((label): label is string => !!label);
 }
+
+/** Cómo se llama en el perfil lo que la IA dio como evidencia de un requisito. */
+export const evidenceLabels = (requirement: Requirement, source: CvSource): string[] =>
+  referenceLabels(requirement.evidence, source);

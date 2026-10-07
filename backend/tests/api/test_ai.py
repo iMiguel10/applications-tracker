@@ -23,6 +23,7 @@ from app.infra.queue import InMemoryJobQueue
 from app.infra.rate_limit import DisabledRateLimiter, LimitsRateLimiter
 from app.main import app
 from app.models.application import Application
+from app.models.company import Company
 from app.models.document import Document
 from app.schemas.user import CurrentUser
 from app.services.ai_consent_service import AiConsentService
@@ -462,3 +463,146 @@ async def test_deleting_the_application_keeps_the_tailored_cv(
     assert document.status_code == 200
     assert document.json()["ai_proposal_id"] is None
     assert queue.jobs
+
+
+# --- La carta de presentación (RF-114) ----------------------------------------
+
+LETTER = {
+    "greeting": "Estimado equipo de Acme:",
+    "paragraphs": ["Me presento al puesto.", "Optimicé SQL en Acme."],
+    "closing": "Atentamente,",
+}
+
+
+async def succeeded_letter(
+    db_session: AsyncSession, user: CurrentUser
+) -> tuple[uuid.UUID, uuid.UUID]:
+    entry = await make_profile_entry(
+        db_session, user.id, title="Backend", bullets=["SQL"]
+    )
+    application = await make_application(
+        db_session, user.id, job_description=JOB_DESCRIPTION
+    )
+    proposal = await make_ai_proposal(
+        db_session,
+        application,
+        kind="cover_letter",
+        prompt_version="cover_letter/v1",
+        status="succeeded",
+        billable=True,
+        proposal={
+            "greeting": "Hola:",
+            "paragraphs": [
+                {
+                    "text": "Optimicé SQL.",
+                    "sources": [{"kind": "bullet", "id": str(entry.bullets[0].id)}],
+                }
+            ],
+            "closing": "Saludos,",
+        },
+    )
+    return application.id, proposal.id
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("platform", "queue")
+async def test_a_letter_can_be_requested_after_the_cv(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    application_id = await ready_application(client, db_session, user)
+    cv = await client.post(proposals_url(application_id), json=CV)
+
+    letter = await client.post(
+        proposals_url(application_id), json={"kind": "cover_letter", "language": "en"}
+    )
+    usage = {
+        item["key"]: item
+        for item in (await client.get("/api/v1/me/usage")).json()["limits"]
+    }
+
+    assert (cv.status_code, letter.status_code) == (202, 202)
+    assert (letter.json()["kind"], letter.json()["language"]) == ("cover_letter", "en")
+    assert usage["ai_cover_letter_proposals"]["used"] == 1
+
+
+@pytest.mark.asyncio
+async def test_a_succeeded_letter_is_read_with_its_sources(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    application_id, proposal_id = await succeeded_letter(db_session, user)
+
+    response = await client.get(f"{proposals_url(application_id)}/{proposal_id}")
+
+    assert response.status_code == 200
+    content = response.json()["proposal"]
+    assert content["greeting"] == "Hola:"
+    assert content["paragraphs"][0]["sources"][0]["kind"] == "bullet"
+
+
+@pytest.mark.asyncio
+async def test_a_reviewed_letter_becomes_a_pending_cover_letter(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    user: CurrentUser,
+    queue: InMemoryJobQueue,
+):
+    application_id, proposal_id = await succeeded_letter(db_session, user)
+
+    response = await client.post(
+        f"{proposals_url(application_id)}/{proposal_id}/document",
+        json={"design": "graphic", "letter": LETTER},
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert (body["kind"], body["origin"], body["status"]) == (
+        "cover_letter",
+        "ai_tailored",
+        "pending",
+    )
+    assert body["name"].startswith("Carta Backend Developer – ")
+    document = await db_session.get(Document, uuid.UUID(body["id"]))
+    assert document is not None and document.content is not None
+    application = await db_session.get(Application, application_id)
+    assert application is not None
+    # Lo revisado por el usuario; la empresa, el puesto y la fecha, de la aplicación.
+    assert document.content["paragraphs"] == LETTER["paragraphs"]
+    company = await db_session.get(Company, application.company_id)
+    assert company is not None
+    assert document.content["company"] == company.name
+    assert document.content["position"] == application.position_title
+    assert " de 20" in document.content["date"]
+    [job] = queue.jobs
+    assert job.job == "generate_document"
+
+
+@pytest.mark.asyncio
+@pytest.mark.usefixtures("queue")
+async def test_the_content_must_match_the_proposal_kind(
+    client: AsyncClient, db_session: AsyncSession, user: CurrentUser
+):
+    letter_app, letter_id = await succeeded_letter(db_session, user)
+    cv_app, cv_id, reviewed = await succeeded_proposal(db_session, user)
+
+    letter_as_cv = await client.post(
+        f"{proposals_url(letter_app)}/{letter_id}/document",
+        json={"design": "classic", "proposal": reviewed},
+    )
+    cv_as_letter = await client.post(
+        f"{proposals_url(cv_app)}/{cv_id}/document",
+        json={"design": "classic", "letter": LETTER},
+    )
+    both = await client.post(
+        f"{proposals_url(cv_app)}/{cv_id}/document",
+        json={"design": "classic", "letter": LETTER, "proposal": reviewed},
+    )
+    empty_paragraph = await client.post(
+        f"{proposals_url(letter_app)}/{letter_id}/document",
+        json={"design": "classic", "letter": LETTER | {"paragraphs": ["  "]}},
+    )
+
+    assert letter_as_cv.json()["code"] == "ai_document_mismatch"
+    assert cv_as_letter.json()["code"] == "ai_document_mismatch"
+    assert [
+        r.status_code for r in (letter_as_cv, cv_as_letter, both, empty_paragraph)
+    ] == [422] * 4

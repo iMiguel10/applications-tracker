@@ -1,4 +1,9 @@
 from app.core.exceptions import AppException
+from app.domain.cover_letter import (
+    LETTER_TEMPLATE_FILE,
+    CoverLetterSnapshot,
+    letter_context,
+)
 from app.domain.cv import CvDesign, CvSnapshot, template_context
 from app.infra.pdf import PdfRenderer
 from app.infra.pdf.designs import CvDesignCatalog
@@ -41,3 +46,13 @@ class CvRenderService:
         design = self.design(design_key, language)
         context = template_context(snapshot, self.catalog.labels(language), language)
         return await self.renderer.render(self.catalog.design_dir(design.key), context)
+
+    async def render_letter(
+        self, snapshot: CoverLetterSnapshot, design_key: str, language: str
+    ) -> bytes:
+        """La carta de presentación con el diseño de un CV (decisión 0017)."""
+        design = self.design(design_key, language)
+        context = letter_context(snapshot, self.catalog.labels(language), language)
+        return await self.renderer.render(
+            self.catalog.design_dir(design.key), context, LETTER_TEMPLATE_FILE
+        )

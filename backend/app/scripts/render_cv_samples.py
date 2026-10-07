@@ -1,8 +1,10 @@
-"""Maqueta un perfil de ejemplo con cada diseño de CV, para revisarlos a ojo.
+"""Maqueta un perfil de ejemplo con cada diseño de CV, y una carta de ejemplo con
+cada uno, para revisarlos a ojo.
 
     docker compose exec api python -m app.scripts.render_cv_samples /tmp/cv [es|en]
 
-Escribe `<diseño>-<idioma>.pdf` en la carpeta indicada y el tiempo de cada uno.
+Escribe `<diseño>-<idioma>.pdf` y `<diseño>-carta-<idioma>.pdf` en la carpeta
+indicada y el tiempo de cada uno.
 Sirve al crear o retocar un diseño (A25): no toca la BD ni el almacén.
 """
 
@@ -13,6 +15,7 @@ import uuid
 from datetime import date
 from pathlib import Path
 
+from app.domain.cover_letter import CoverLetterSnapshot
 from app.domain.cv import (
     CvSection,
     CvSnapshot,
@@ -164,17 +167,65 @@ def sample_snapshot() -> CvSnapshot:
     )
 
 
+def sample_letter(contact: SnapshotContact) -> CoverLetterSnapshot:
+    """Una carta de longitud normal (unas 300 palabras), para ver si cabe en una
+    página con la cabecera de cada diseño."""
+    return CoverLetterSnapshot(
+        contact=contact,
+        company="Nimbus Data",
+        position="Senior Backend Engineer",
+        date="7 de octubre de 2026",
+        greeting="Estimado equipo de Nimbus Data:",
+        paragraphs=[
+            (
+                "Me presento a la posición de Senior Backend Engineer porque el reto "
+                "que describís, escalar una plataforma de datos que ya procesa millones "
+                "de eventos al día, es justo el tipo de problema en el que he trabajado "
+                "los últimos años."
+            ),
+            (
+                "En Acme Fintech lideré la migración de un monolito en Django a servicios "
+                "en Go y Python, reduciendo el tiempo de despliegue de 45 a 8 minutos. "
+                "Diseñé además la canalización de eventos con Kafka que hoy procesa "
+                "40 millones de mensajes diarios, con métricas y alertas de extremo a "
+                "extremo."
+            ),
+            (
+                "Vuestra oferta pide experiencia con PostgreSQL a escala y con "
+                "Kubernetes. Optimicé consultas críticas en PostgreSQL hasta bajar la "
+                "latencia p95 de 900 a 120 ms, y mantuve los despliegues en Kubernetes "
+                "con Terraform para tres equipos de producto."
+            ),
+            (
+                "También me interesa la parte humana del puesto: he acompañado a cuatro "
+                "personas en sus primeros meses como desarrolladoras, con revisiones de "
+                "código y sesiones de diseño semanales."
+            ),
+            (
+                "Me encantaría contaros con más detalle cómo podría aportar al equipo. "
+                "Quedo a vuestra disposición para hablar cuando os venga bien."
+            ),
+        ],
+        closing="Atentamente,",
+    )
+
+
 async def main(output: Path, language: str) -> None:
     output.mkdir(parents=True, exist_ok=True)
     service = CvRenderService(WeasyPrintRenderer())
     snapshot = sample_snapshot()
+    letter = sample_letter(snapshot.contact)
     for key in service.designs():
-        started = time.perf_counter()
-        pdf = await service.render(snapshot, key, language)
-        elapsed = time.perf_counter() - started
-        target = output / f"{key}-{language}.pdf"
-        target.write_bytes(pdf)
-        print(f"{target}  {len(pdf) / 1024:.0f} KB  {elapsed * 1000:.0f} ms")
+        for suffix, render in (
+            ("", service.render(snapshot, key, language)),
+            ("-carta", service.render_letter(letter, key, language)),
+        ):
+            started = time.perf_counter()
+            pdf = await render
+            elapsed = time.perf_counter() - started
+            target = output / f"{key}{suffix}-{language}.pdf"
+            target.write_bytes(pdf)
+            print(f"{target}  {len(pdf) / 1024:.0f} KB  {elapsed * 1000:.0f} ms")
 
 
 if __name__ == "__main__":

@@ -83,7 +83,11 @@ class GroqProvider:
                     },
                 },
                 max_completion_tokens=request.max_output_tokens,
-                reasoning_effort=self._reasoning_effort,
+                # Sin temperatura pedida, no se envía: el SDK mandaría `null`.
+                temperature=(
+                    groq.omit if request.temperature is None else request.temperature
+                ),
+                reasoning_effort=request.reasoning or self._reasoning_effort,
                 # El razonamiento no se usa y ocuparía la respuesta.
                 include_reasoning=False,
             )

@@ -919,8 +919,11 @@
   "ai": {
     "tailor": {
       "title": "Adaptar con IA",
-      "description": "Propone qué experiencias y logros destacar para esta oferta, reformulados, y te dice lo que la oferta pide y no está en tu perfil. Lo revisas todo antes de generar el PDF.",
-      "request": "Adaptar mi CV a esta oferta",
+      "description": "Propone cómo adaptar tu CV a esta oferta, o escribe una carta de presentación, con lo que hay en tu perfil. Lo revisas todo antes de generar el PDF.",
+      "request": {
+        "cv": "Adaptar mi CV a esta oferta",
+        "cover_letter": "Escribir una carta para esta oferta"
+      },
       "language": "Idioma del CV",
       "languages": {
         "es": "Español",
@@ -930,9 +933,16 @@
       "freeUses_other": "Te quedan {{count}} propuestas gratuitas (con {{provider}}).",
       "noDescription": "Para adaptar tu CV, añade antes la descripción de la oferta.",
       "shortDescription": "La descripción de la oferta es demasiado corta para adaptar el CV: necesita al menos {{min}} caracteres.",
-      "noUses": "Ya has usado tu propuesta gratuita de CV.",
+      "noUses": {
+        "cv": "Ya has usado tu propuesta gratuita de CV.",
+        "cover_letter": "Ya has usado tu carta gratuita."
+      },
       "history": "Propuestas de esta solicitud",
-      "review": "Revisar"
+      "review": "Revisar",
+      "kinds": {
+        "cv": "CV",
+        "cover_letter": "Carta"
+      }
     },
     "status": {
       "running": "Preparando la propuesta…",
@@ -1022,6 +1032,32 @@
         "missing": "No está en tu perfil. Si lo tienes, añádelo a tu perfil."
       },
       "keywords": "Cuenta si aparece: {{keywords}}"
+    },
+    "letter": {
+      "reviewTitle": "Revisar la carta de presentación",
+      "warning": "Revisa la carta antes de generar: la IA escribe a partir de tu perfil, pero puede exagerar o afirmar algo que no está en él. Lo que dejes aquí es lo que saldrá en el PDF.",
+      "title": "Carta",
+      "hint": "Tu nombre, tu contacto, la fecha, la empresa y el puesto los añade la plantilla.",
+      "greeting": "Saludo",
+      "closing": "Despedida",
+      "paragraph": "Párrafo {{index}}",
+      "moveUp": "Subir el párrafo {{index}}",
+      "moveDown": "Bajar el párrafo {{index}}",
+      "remove": "Quitar el párrafo {{index}}",
+      "sources": "Se apoya en tu perfil",
+      "noSources": "Sin apoyo en tu perfil. Es normal en el saludo inicial o en el cierre; si afirma algo sobre ti, comprueba que es cierto.",
+      "noParagraphs": "La carta necesita al menos un párrafo.",
+      "words_one": "{{count}} palabra",
+      "words_other": "{{count}} palabras",
+      "generateHint": "Elige el diseño: la carta usa el mismo que el CV. No vuelve a usar la IA.",
+      "submit": "Generar carta",
+      "defaultName": "Carta",
+      "problems": {
+        "greeting": "Escribe el saludo.",
+        "closing": "Escribe la despedida.",
+        "paragraphs": "La carta necesita al menos un párrafo.",
+        "emptyParagraph": "Hay un párrafo vacío."
+      }
     }
   }
 }

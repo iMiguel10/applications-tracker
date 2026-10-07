@@ -1,7 +1,7 @@
 import logging
 import uuid
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from pydantic import ValidationError
@@ -10,20 +10,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, settings
 from app.core.exceptions import AppException, ConflictError, NotFoundError
 from app.domain.ai import (
-    CV_OUTPUT_MODELS,
     MAX_OUTPUT_TOKENS,
     MIN_JOB_DESCRIPTION_LENGTH,
+    OUTPUT_MODELS,
     PROMPT_VERSIONS,
     QUEUED_GIVE_UP_AFTER,
     QUEUED_REQUEUE_AFTER,
+    REASONING,
     RUNNING_GRACE,
     SWEEP_BATCH,
+    TEMPERATURE,
     AiEntry,
     AiLanguage,
     AiProfile,
     AiProvider,
     AiSkill,
     AiTask,
+    CoverLetterOutput,
     InvalidProposalError,
     KeySource,
     OutdatedProposalError,
@@ -32,13 +35,18 @@ from app.domain.ai import (
     apply_cv_proposal,
     build_cv_input,
     cost_micros,
+    describe_application,
     validate_cv_output,
+    validate_letter_output,
     wrap_job_description,
 )
-from app.domain.cv import CvSelection
+from app.domain.cover_letter import CoverLetterSnapshot
+from app.domain.cv import CvSelection, CvSnapshot
+from app.domain.dates import format_local_date
 from app.domain.documents import DocumentOrigin
 from app.domain.limits import LimitKey
 from app.domain.profile import EntryKind
+from app.domain.user import Language
 from app.infra.llm import (
     LLMError,
     LLMFinish,
@@ -74,6 +82,13 @@ RUN_AI_PROPOSAL = "run_ai_proposal"
 RUN_AI_PROPOSAL_MAX_ATTEMPTS = 1
 # Cuántas propuestas de una solicitud devuelve el listado.
 LIST_LIMIT = 20
+# Nombre de una carta en la biblioteca si no se da otro, en el idioma de la carta.
+LETTER_NAMES = {"es": "Carta", "en": "Cover letter"}
+# La cuota gratuita de cada tarea (RF-150, decisión 0017).
+QUOTA_KEYS = {
+    AiTask.CV: LimitKey.AI_CV_PROPOSALS,
+    AiTask.COVER_LETTER: LimitKey.AI_COVER_LETTER_PROPOSALS,
+}
 
 
 class AiProposalService:
@@ -119,9 +134,6 @@ class AiProposalService:
     ) -> AiProposal:
         """Crea la propuesta `queued` y la encola. La sesión, el email verificado y
         el rate limit los comprueba el endpoint."""
-        if data.kind != AiTask.CV:
-            # La carta llega en el paso 4 de F15.
-            raise ConflictError("AI task not available", code="ai_task_unavailable")
         application = await self.applications.get(user_id, application_id)
         if application is None:
             raise NotFoundError("Application")
@@ -156,7 +168,7 @@ class AiProposalService:
         # lo que está en curso, así que cinco peticiones a la vez con un uso
         # restante no pasan juntas (ia.md I5).
         await self.users.lock(user_id)
-        await self.limits.check(user_id, LimitKey.AI_CV_PROPOSALS)
+        await self.limits.check(user_id, QUOTA_KEYS[data.kind])
 
         proposal = await self.proposals.add(
             AiProposal(
@@ -219,40 +231,73 @@ class AiProposalService:
         proposal_id: uuid.UUID,
         data: AiProposalDocumentCreate,
         job_queue: JobQueue,
+        now: datetime | None = None,
     ) -> Document:
-        """Genera el CV adaptado con la propuesta tal como la dejó el usuario tras
-        revisarla (RF-113): la foto fija del perfil actual con la propuesta
-        aplicada, maquetada como cualquier CV generado. No vuelve a llamar a la IA
-        ni gasta otro uso: se pueden generar varios diseños de la misma propuesta.
+        """Genera el CV adaptado o la carta con la propuesta tal como la dejó el
+        usuario tras revisarla (RF-113, RF-114), maquetados como cualquier
+        documento generado. No vuelve a llamar a la IA ni gasta otro uso: se pueden
+        generar varios diseños de la misma propuesta.
 
         409 `ai_proposal_not_ready` si la propuesta no terminó bien y
-        `ai_proposal_outdated` si referencia algo que ya no está en el perfil."""
+        `ai_proposal_outdated` si referencia algo que ya no está en el perfil; 422
+        `ai_document_mismatch` si el contenido no es del tipo de la propuesta."""
         proposal = await self.get(user_id, application_id, proposal_id)
-        if proposal.status != ProposalStatus.SUCCEEDED or proposal.kind != AiTask.CV:
+        if proposal.status != ProposalStatus.SUCCEEDED:
             raise ConflictError(
                 "The AI proposal is not ready", code="ai_proposal_not_ready"
+            )
+        letter = proposal.kind == AiTask.COVER_LETTER
+        if (data.letter is not None) != letter:
+            raise AppException(
+                "The content does not match the proposal kind",
+                status_code=422,
+                code="ai_document_mismatch",
             )
         design = resolve_design(
             self.cv_generation.catalog, data.design, proposal.language
         )
-        base = await self.cv_generation.snapshot(user_id, CvSelection())
-        try:
-            snapshot = apply_cv_proposal(base, data.proposal.to_domain())
-        except OutdatedProposalError as exc:
-            logger.info("Propuesta %s desfasada: %s", proposal.id, exc)
-            raise ConflictError(
-                "The profile changed since the proposal", code="ai_proposal_outdated"
-            ) from None
-
         application = await self.applications.get(user_id, application_id)
         assert application is not None  # get() ya lo comprobó con la propuesta
+        target = f"{application.position_title} – {application.company.name}"
+        base = await self.cv_generation.snapshot(user_id, CvSelection())
+
+        snapshot: CvSnapshot | CoverLetterSnapshot
+        if data.letter is not None:
+            # Nombre, contacto, empresa, puesto y fecha no salen de la IA: los pone
+            # la aplicación. La fecha, el día de hoy en la zona del usuario.
+            user = await self.users.get_by_id(user_id)
+            snapshot = CoverLetterSnapshot(
+                contact=base.contact,
+                company=application.company.name,
+                position=application.position_title,
+                date=format_local_date(
+                    now or datetime.now(UTC),
+                    user.timezone if user else None,
+                    Language(proposal.language),
+                ),
+                greeting=data.letter.greeting,
+                paragraphs=list(data.letter.paragraphs),
+                closing=data.letter.closing,
+            )
+            name = data.name or f"{LETTER_NAMES[proposal.language]} {target}"
+        else:
+            assert data.proposal is not None  # el schema exige uno de los dos
+            try:
+                snapshot = apply_cv_proposal(base, data.proposal.to_domain())
+            except OutdatedProposalError as exc:
+                logger.info("Propuesta %s desfasada: %s", proposal.id, exc)
+                raise ConflictError(
+                    "The profile changed since the proposal",
+                    code="ai_proposal_outdated",
+                ) from None
+            name = data.name or f"CV {target}"
+
         return await self.cv_generation.create_pending(
             user_id,
             snapshot,
             design=design,
             language=proposal.language,
-            name=data.name
-            or f"CV {application.position_title} – {application.company.name}",
+            name=name,
             origin=DocumentOrigin.AI_TAILORED,
             job_queue=job_queue,
             ai_proposal_id=proposal.id,
@@ -303,16 +348,25 @@ class AiProposalService:
             return _failed(ProposalErrorCode.PROFILE_INCOMPLETE)
 
         profile_text, ids = build_cv_input(profile)
+        letter = proposal.kind == AiTask.COVER_LETTER
         # El esquema de la versión con que se pidió (A33): una propuesta en cola
         # al cambiar de versión se ejecuta con el prompt y el esquema de la suya.
-        output_model = CV_OUTPUT_MODELS[proposal.prompt_version]
+        output_model = OUTPUT_MODELS[proposal.prompt_version]
+        offer = wrap_job_description(application.job_description or "")
+        if letter:
+            # La carta va a un puesto y una empresa concretos.
+            target = describe_application(
+                application.position_title, application.company.name
+            )
+            offer = f"{target}\n\n{offer}"
         request = LLMRequest(
             system=load_prompt(proposal.prompt_version, language=proposal.language),
-            user=f"{profile_text}\n\n"
-            f"{wrap_job_description(application.job_description or '')}",
-            schema_name="cv_proposal",
+            user=f"{profile_text}\n\n{offer}",
+            schema_name="cover_letter" if letter else "cv_proposal",
             json_schema=strict_json_schema(output_model),
             max_output_tokens=MAX_OUTPUT_TOKENS,
+            temperature=TEMPERATURE,
+            reasoning=REASONING[AiTask(proposal.kind)],
         )
         try:
             response = await adapter.complete(
@@ -348,7 +402,11 @@ class AiProposalService:
                 "error_code": ProposalErrorCode.OFFER_INSUFFICIENT.value,
             }
         try:
-            validated = validate_cv_output(output, ids)
+            validated = (
+                validate_letter_output(output, ids)
+                if isinstance(output, CoverLetterOutput)
+                else validate_cv_output(output, ids)
+            )
         except InvalidProposalError as exc:
             # El motivo, sin texto del modelo ni del perfil.
             logger.warning("Propuesta %s inválida: %s", proposal.id, exc)

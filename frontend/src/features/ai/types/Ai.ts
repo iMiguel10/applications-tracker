@@ -35,7 +35,7 @@ export type RequirementImportance = "required" | "preferred";
 
 /** Un elemento del perfil que demuestra un requisito. `entry` es una experiencia,
  * formación, proyecto o certificación. */
-export interface RequirementEvidence {
+export interface ProfileReference {
   kind: "entry" | "bullet" | "skill" | "language";
   id: string;
 }
@@ -46,7 +46,7 @@ export interface Requirement {
   name: string;
   importance: RequirementImportance;
   keywords: string[];
-  evidence: RequirementEvidence[];
+  evidence: ProfileReference[];
   /** Sin evidencia: por qué no aparece en el perfil. */
   note: string;
 }
@@ -62,6 +62,20 @@ export interface CvProposal {
   requirements?: Requirement[] | null;
 }
 
+/** Un párrafo de la carta con los elementos del perfil en que se apoya (ia.md §5). */
+export interface LetterParagraph {
+  text: string;
+  sources: ProfileReference[];
+}
+
+/** La carta validada (RF-114). Nombre, contacto, fecha, empresa y puesto no salen
+ * de la IA: los pone la plantilla. */
+export interface CoverLetterProposal {
+  greeting: string;
+  paragraphs: LetterParagraph[];
+  closing: string;
+}
+
 export interface AiProposal {
   id: string;
   application_id: string;
@@ -72,7 +86,8 @@ export interface AiProposal {
   provider: AiProvider;
   model: string;
   error_code: ProposalErrorCode | null;
-  proposal: CvProposal | null;
+  /** `CvProposal` si `kind` es `cv`; `CoverLetterProposal` si es `cover_letter`. */
+  proposal: CvProposal | CoverLetterProposal | null;
   created_at: string;
   updated_at: string;
 }
@@ -83,6 +98,13 @@ export interface ReviewedCvProposal {
   summary: string;
   experiences: ProposedExperience[];
   skill_ids: string[];
+}
+
+/** La carta tal como queda tras revisarla: lo que se envía al generar el PDF. */
+export interface ReviewedCoverLetter {
+  greeting: string;
+  paragraphs: string[];
+  closing: string;
 }
 
 export interface AiConsent {

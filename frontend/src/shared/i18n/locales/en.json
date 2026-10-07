@@ -919,8 +919,11 @@
   "ai": {
     "tailor": {
       "title": "Tailor with AI",
-      "description": "Suggests which experience and achievements to highlight for this job, reworded, and tells you what the job asks for that isn't in your profile. You review everything before the PDF is created.",
-      "request": "Tailor my CV to this job",
+      "description": "Suggests how to tailor your CV to this job, or writes a cover letter, using what is in your profile. You review everything before creating the PDF.",
+      "request": {
+        "cv": "Tailor my CV to this job",
+        "cover_letter": "Write a cover letter for this job"
+      },
       "language": "CV language",
       "languages": {
         "es": "Spanish",
@@ -930,9 +933,16 @@
       "freeUses_other": "You have {{count}} free proposals left (with {{provider}}).",
       "noDescription": "To tailor your CV, first add the job description.",
       "shortDescription": "The job description is too short to tailor the CV: it needs at least {{min}} characters.",
-      "noUses": "You have already used your free CV proposal.",
+      "noUses": {
+        "cv": "You have used your free CV proposal.",
+        "cover_letter": "You have used your free cover letter."
+      },
       "history": "Proposals for this application",
-      "review": "Review"
+      "review": "Review",
+      "kinds": {
+        "cv": "CV",
+        "cover_letter": "Cover letter"
+      }
     },
     "status": {
       "running": "Preparing the proposal…",
@@ -1022,6 +1032,32 @@
         "missing": "It is not in your profile. If you have it, add it to your profile."
       },
       "keywords": "It counts if it says: {{keywords}}"
+    },
+    "letter": {
+      "reviewTitle": "Review the cover letter",
+      "warning": "Review the letter before creating it: the AI writes from your profile, but it may exaggerate or claim something that is not in it. What you leave here is what the PDF will say.",
+      "title": "Letter",
+      "hint": "Your name, contact details, the date, the company and the position are added by the template.",
+      "greeting": "Greeting",
+      "closing": "Closing",
+      "paragraph": "Paragraph {{index}}",
+      "moveUp": "Move paragraph {{index}} up",
+      "moveDown": "Move paragraph {{index}} down",
+      "remove": "Remove paragraph {{index}}",
+      "sources": "Based on your profile",
+      "noSources": "Not based on your profile. That is normal in the opening or the closing; if it claims something about you, check that it is true.",
+      "noParagraphs": "The letter needs at least one paragraph.",
+      "words_one": "{{count}} word",
+      "words_other": "{{count}} words",
+      "generateHint": "Choose the design: the letter uses the same ones as the CV. It doesn't use the AI again.",
+      "submit": "Create letter",
+      "defaultName": "Cover letter",
+      "problems": {
+        "greeting": "Write the greeting.",
+        "closing": "Write the closing.",
+        "paragraphs": "The letter needs at least one paragraph.",
+        "emptyParagraph": "There is an empty paragraph."
+      }
     }
   }
 }

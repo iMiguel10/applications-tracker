@@ -6,8 +6,16 @@ import type {
   AiProvider,
   AiTask,
   ProposalLanguage,
+  ReviewedCoverLetter,
   ReviewedCvProposal,
 } from "../types/Ai";
+
+/** Lo que se envía al generar el PDF: el CV revisado o la carta revisada, según el
+ * tipo de la propuesta. */
+export type AiDocumentInput = { design: string; name: string | null } & (
+  | { proposal: ReviewedCvProposal }
+  | { letter: ReviewedCoverLetter }
+);
 
 const proposals = (applicationId: string) => `/applications/${applicationId}/ai-proposals`;
 
@@ -27,12 +35,8 @@ export const aiService = {
   requestProposal: (applicationId: string, kind: AiTask, language: ProposalLanguage) =>
     apiClient.post<AiProposal>(proposals(applicationId), { kind, language }),
 
-  /** El PDF con la propuesta revisada (RF-113), como un CV generado más. */
-  createDocument: (
-    applicationId: string,
-    proposalId: string,
-    input: { design: string; name: string | null; proposal: ReviewedCvProposal },
-  ) =>
+  /** El PDF con la propuesta revisada (RF-113), como un documento generado más. */
+  createDocument: (applicationId: string, proposalId: string, input: AiDocumentInput) =>
     apiClient.post<LibraryDocument>(
       `${proposals(applicationId)}/${proposalId}/document`,
       input,

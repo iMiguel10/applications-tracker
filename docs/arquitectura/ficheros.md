@@ -107,6 +107,7 @@ Así, los ficheros subidos entre ambos pasos quedan como huérfanos en la copia,
 templates/cv/<diseño>/
 ├── manifest.json     nombre visible, idiomas, apto para ATS (sí/no), tamaño de página
 ├── template.html     Jinja2
+├── letter.html       la carta de presentación con este diseño (F15): la cabecera del CV y el cuerpo de la carta
 ├── style.css
 └── fonts/            tipografías incluidas (@font-face con ficheros locales)
 ```
@@ -138,7 +139,7 @@ Las tipografías viajan con cada diseño. El PDF sale idéntico en desarrollo, e
 - **Fuentes.** Las fuentes son WOFF de Fontsource 5.3.0 (OFL 1.1, con su licencia en cada carpeta `fonts/`), en dos juegos de caracteres: latino y latino extendido. WOFF2 necesitaría la dependencia `brotli`, que no está.
 - **Etiquetas fijas.** Están en `templates/cv/labels/{es,en}.json`, con los meses incluidos: la imagen no trae configuraciones regionales.
 - **Código.** El catálogo (manifiestos y etiquetas) lo lee `infra/pdf/designs.py`. Lo que entra en la foto fija y cómo se presenta (`CvSnapshot`, `build_snapshot`, `template_context`) es puro y vive en `domain/cv.py`. `CvRenderService` lo junta.
-- **Revisar un diseño a ojo.** `app/scripts/render_cv_samples.py` maqueta un perfil de ejemplo con todos los diseños.
+- **Revisar un diseño a ojo.** `app/scripts/render_cv_samples.py` maqueta un perfil de ejemplo y una carta de ejemplo con todos los diseños.
 - **Tiempos con un CV real de una página.** Están entre 0,5 y 1 s por diseño, lejos del objetivo de 10 s de RNF-12.
 
 > **Trampa — un elemento posicionado desordena el texto del PDF.** WeasyPrint pinta los elementos con `position` en otra capa, después del resto. El texto se ve en su sitio, pero al extraerlo (lo que hace un ATS) sale al final: con un `li { position: relative }` para dibujar un punto de color, todos los logros salían detrás de "Idiomas". En los diseños aptos para ATS, los adornos van flotantes o en línea, nunca posicionados. Lo vigila D10.

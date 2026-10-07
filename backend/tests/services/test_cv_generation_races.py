@@ -88,7 +88,12 @@ class GatedRenderer:
         self.release = asyncio.Event()
         self._real = WeasyPrintRenderer()
 
-    async def render(self, template_dir: Path, context: Mapping[str, Any]) -> bytes:
+    async def render(
+        self,
+        template_dir: Path,
+        context: Mapping[str, Any],
+        template: str = "template.html",
+    ) -> bytes:
         self.entered.set()
         await self.release.wait()
         return await self._real.render(template_dir, context)

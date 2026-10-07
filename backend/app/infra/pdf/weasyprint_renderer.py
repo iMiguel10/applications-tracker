@@ -45,12 +45,19 @@ class TemplateOnlyFetcher(URLFetcher):
 class WeasyPrintRenderer:
     """`PdfRenderer` con Jinja2 + WeasyPrint (A24)."""
 
-    async def render(self, template_dir: Path, context: Mapping[str, Any]) -> bytes:
+    async def render(
+        self,
+        template_dir: Path,
+        context: Mapping[str, Any],
+        template: str = TEMPLATE_FILE,
+    ) -> bytes:
         # Maquetar es cálculo puro (1-3 s): en un hilo, para que el worker siga
         # atendiendo los demás trabajos mientras tanto.
-        return await asyncio.to_thread(self._render, template_dir, context)
+        return await asyncio.to_thread(self._render, template_dir, context, template)
 
-    def _render(self, template_dir: Path, context: Mapping[str, Any]) -> bytes:
+    def _render(
+        self, template_dir: Path, context: Mapping[str, Any], template: str
+    ) -> bytes:
         environment = Environment(
             loader=FileSystemLoader(template_dir),
             # Todo el contenido lo escribe el usuario o la IA.
@@ -58,7 +65,7 @@ class WeasyPrintRenderer:
             # Una variable mal escrita en la plantilla falla, en vez de salir vacía.
             undefined=StrictUndefined,
         )
-        html = environment.get_template(TEMPLATE_FILE).render(context)
+        html = environment.get_template(template).render(context)
         document = HTML(
             string=html,
             # Barra final: las rutas relativas (style.css, fonts/…) se resuelven

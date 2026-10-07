@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
 from app.core.exceptions import ConflictError, LimitReachedError, NotFoundError
+from app.domain.cover_letter import CoverLetterSnapshot
 from app.domain.cv import (
     CvDesign,
     CvSelection,
@@ -117,7 +118,7 @@ class CvGenerationService:
     async def create_pending(
         self,
         user_id: uuid.UUID,
-        snapshot: CvSnapshot,
+        snapshot: CvSnapshot | CoverLetterSnapshot,
         *,
         design: CvDesign,
         language: str,
@@ -126,8 +127,9 @@ class CvGenerationService:
         job_queue: JobQueue,
         ai_proposal_id: uuid.UUID | None = None,
     ) -> Document:
-        """Crea el CV `pending` con su foto fija y encola su maquetación: lo comparten
-        el generado desde el perfil y el adaptado con IA (F15)."""
+        """Crea el documento `pending` con su foto fija y encola su maquetación: lo
+        comparten el CV generado desde el perfil, el adaptado con IA y la carta de
+        presentación (F15), que es un `cover_letter` por el tipo de su foto."""
         # Cuotas con la fila del usuario bloqueada (A30), como en una subida. El
         # tamaño del PDF no se sabe hasta maquetarlo: aquí solo se exige que quede
         # algo de almacenamiento, y el `worker` comprueba el tamaño real.
@@ -138,7 +140,11 @@ class CvGenerationService:
         document = await self.documents.add(
             Document(
                 user_id=user_id,
-                kind=DocumentKind.CV.value,
+                kind=(
+                    DocumentKind.COVER_LETTER
+                    if isinstance(snapshot, CoverLetterSnapshot)
+                    else DocumentKind.CV
+                ).value,
                 origin=origin.value,
                 status=DocumentStatus.PENDING.value,
                 name=sanitize_name(name),
@@ -221,10 +227,20 @@ class CvGenerationService:
         assert document.template is not None and document.language is not None
 
         try:
-            snapshot = CvSnapshot.model_validate(document.content)
-            pdf: bytes | None = await CvRenderService(
-                self.renderer, self.catalog
-            ).render(snapshot, document.template, document.language)
+            render = CvRenderService(self.renderer, self.catalog)
+            pdf: bytes | None
+            if document.kind == DocumentKind.COVER_LETTER:
+                pdf = await render.render_letter(
+                    CoverLetterSnapshot.model_validate(document.content),
+                    document.template,
+                    document.language,
+                )
+            else:
+                pdf = await render.render(
+                    CvSnapshot.model_validate(document.content),
+                    document.template,
+                    document.language,
+                )
         except Exception:
             # Maquetar es determinista: reintentar daría lo mismo. El usuario lo ve
             # fallido y puede reintentarlo él (por si cambió un diseño).

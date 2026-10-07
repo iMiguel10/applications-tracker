@@ -54,6 +54,7 @@ function renderCard({
   granted = true,
   provider = "groq" as AiConsents["platform_provider"],
   remaining = 1,
+  letterRemaining = 1,
   proposals = [] as AiProposal[],
 } = {}) {
   vi.mocked(aiService.consents).mockResolvedValue(consents(granted, provider));
@@ -62,6 +63,14 @@ function renderCard({
     warning_ratio: 0.8,
     limits: [
       { key: "ai_cv_proposals", used: 1 - remaining, limit: 1, remaining, renews: false, unit: "count" },
+      {
+        key: "ai_cover_letter_proposals",
+        used: 1 - letterRemaining,
+        limit: 1,
+        remaining: letterRemaining,
+        renews: false,
+        unit: "count",
+      },
     ],
   });
   const application = { id: "app-1", job_description: description } as ApplicationDetail;
@@ -95,18 +104,45 @@ describe("AiTailorCard", () => {
   it("explica que falta la oferta, o que es demasiado corta, sin dejar pedirla", async () => {
     renderCard({ description: "" });
     expect(await screen.findByText(/añade antes la descripción de la oferta/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request.cv") })).not.toBeInTheDocument();
     cleanup();
 
     renderCard({ description: "Backend" });
     expect(await screen.findByText(/necesita al menos 200 caracteres/)).toBeInTheDocument();
   });
 
-  it("sin usos gratuitos lo dice en lugar de ofrecer el botón", async () => {
+  it("sin usos gratuitos de CV lo dice, y la carta sigue disponible con los suyos", async () => {
     renderCard({ remaining: 0 });
 
-    expect(await screen.findByText(i18n.t("ai.tailor.noUses"))).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request") })).not.toBeInTheDocument();
+    expect(await screen.findByText(i18n.t("ai.tailor.noUses.cv"))).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request.cv") })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: i18n.t("ai.tailor.request.cover_letter") }),
+    ).toBeInTheDocument();
+  });
+
+  it("la carta pide el consentimiento la primera vez y después la propuesta de carta", async () => {
+    const user = userEvent.setup();
+    vi.mocked(aiService.grantConsent).mockResolvedValue(consents(true));
+    vi.mocked(aiService.requestProposal).mockResolvedValue(
+      proposal({ kind: "cover_letter", status: "queued" }),
+    );
+    renderCard({ granted: false });
+
+    await user.click(
+      await screen.findByRole("button", { name: i18n.t("ai.tailor.request.cover_letter") }),
+    );
+    await user.click(await screen.findByRole("button", { name: i18n.t("ai.consent.accept") }));
+
+    await vi.waitFor(() =>
+      expect(aiService.requestProposal).toHaveBeenCalledWith("app-1", "cover_letter", "es"),
+    );
+  });
+
+  it("dice de qué tipo es cada propuesta", async () => {
+    renderCard({ proposals: [proposal({ id: "p-letter", kind: "cover_letter" })] });
+
+    expect(await screen.findByText(/^Carta · /)).toBeInTheDocument();
   });
 
   it("la primera vez pide el consentimiento y después la propuesta", async () => {
@@ -115,7 +151,7 @@ describe("AiTailorCard", () => {
     vi.mocked(aiService.requestProposal).mockResolvedValue(proposal({ status: "queued" }));
     renderCard({ granted: false });
 
-    await user.click(await screen.findByRole("button", { name: i18n.t("ai.tailor.request") }));
+    await user.click(await screen.findByRole("button", { name: i18n.t("ai.tailor.request.cv") }));
     expect(aiService.requestProposal).not.toHaveBeenCalled();
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent("Groq");
@@ -133,7 +169,7 @@ describe("AiTailorCard", () => {
     renderCard();
 
     await user.click(await screen.findByRole("button", { name: i18n.t("ai.tailor.languages.en") }));
-    await user.click(screen.getByRole("button", { name: i18n.t("ai.tailor.request") }));
+    await user.click(screen.getByRole("button", { name: i18n.t("ai.tailor.request.cv") }));
 
     await vi.waitFor(() =>
       expect(aiService.requestProposal).toHaveBeenCalledWith("app-1", "cv", "en"),

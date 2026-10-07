@@ -26,5 +26,8 @@
     "c2": "C2",
     "native": "Nativo"
   },
-  "other_skills": "Otras"
+  "other_skills": "Otras",
+  "letter": {
+    "subject": "Candidatura: {position}"
+  }
 }

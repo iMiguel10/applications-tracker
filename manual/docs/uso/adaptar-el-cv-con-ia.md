@@ -7,6 +7,8 @@ La IA propone cómo adaptar tu CV a una oferta concreta: qué experiencias y log
 
 La IA solo trabaja con lo que hay en tu [perfil](perfil.md): **no puede añadir** experiencias, empresas, puestos, fechas ni habilidades que no tengas. Si la oferta pide algo que no está en tu perfil, te lo enseña como carencia, no lo inventa.
 
+Para la carta de presentación, ver [Escribir una carta con IA](escribir-una-carta-con-ia.md).
+
 ## Antes de empezar
 
 - La solicitud tiene que tener la **descripción de la oferta** (ver [Registrar una solicitud](registrar-una-solicitud.md)), de al menos 200 caracteres. Pega el texto del anuncio: la aplicación no lo descarga de la dirección.

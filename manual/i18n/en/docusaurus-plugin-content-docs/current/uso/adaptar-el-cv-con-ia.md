@@ -7,6 +7,8 @@ The AI suggests how to tailor your CV to a specific job offer: which experience 
 
 The AI only works with what is in your [profile](perfil.md): it **cannot add** experience, companies, job titles, dates or skills you don't have. If the offer asks for something that isn't in your profile, it shows it as a gap instead of making it up.
 
+For the cover letter, see [Write a cover letter with AI](escribir-una-carta-con-ia.md).
+
 ## Before you start
 
 - The application needs the **job description** (see [Record an application](registrar-una-solicitud.md)), at least 200 characters long. Paste the text of the job ad: the application doesn't download it from the link.

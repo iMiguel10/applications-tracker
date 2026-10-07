@@ -6,22 +6,25 @@ import { toast } from "sonner";
 
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { errorMessageKey, errorMessageParams } from "@/shared/lib/errors";
-import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
 import { DetailSkeleton } from "@/shared/components/common/Skeletons";
 import { ErrorState } from "@/shared/components/common/ErrorState";
 import { ApplicationLoadError } from "@/features/applications/components/ApplicationLoadError";
 import { useApplication } from "@/features/applications/hooks/queries/useApplication";
 import type { ApplicationDetail } from "@/features/applications/types/Application";
+import { GenerateDocumentCard } from "@/features/ai/components/GenerateDocumentCard";
+import { LetterReview } from "@/features/ai/components/LetterReview";
 import { OfferMatchCard } from "@/features/ai/components/OfferMatchCard";
 import { ProposalReview } from "@/features/ai/components/ProposalReview";
-import { useCreateTailoredCv } from "@/features/ai/hooks/mutations/useCreateTailoredCv";
+import { useCreateAiDocument } from "@/features/ai/hooks/mutations/useCreateAiDocument";
 import { useAiProposal } from "@/features/ai/hooks/queries/useAiProposal";
 import { isInFlight } from "@/features/ai/hooks/queries/useAiProposals";
+import {
+  letterFromProposal,
+  letterProblem,
+  toReviewedLetter,
+  type LetterState,
+} from "@/features/ai/lib/letter";
 import { offerMatch, type CvSource } from "@/features/ai/lib/match";
 import {
   reviewFromProposal,
@@ -29,9 +32,9 @@ import {
   toReviewedProposal,
   type ReviewState,
 } from "@/features/ai/lib/review";
-import type { AiProposal, CvProposal } from "@/features/ai/types/Ai";
+import type { AiDocumentInput } from "@/features/ai/services/ai.service";
+import type { AiProposal, CoverLetterProposal, CvProposal } from "@/features/ai/types/Ai";
 import { useCvDesigns } from "@/features/documents/hooks/queries/useCvDesigns";
-import { designName, uiCvLanguage } from "@/features/documents/lib/designName";
 import type { CvDesign } from "@/features/documents/types/Document";
 import { useProfile } from "@/features/profile/hooks/queries/useProfile";
 import { useProfileEntries } from "@/features/profile/hooks/queries/useProfileEntries";
@@ -39,15 +42,12 @@ import {
   useProfileLanguages,
   useProfileSkills,
 } from "@/features/profile/hooks/queries/useProfileSkills";
-import type { Profile } from "@/features/profile/types/Profile";
-import type { ProfileEntry } from "@/features/profile/types/ProfileEntry";
-import type { ProfileLanguage, ProfileSkill } from "@/features/profile/types/ProfileSkill";
 
-/** Revisar una propuesta de CV adaptado y generar el PDF (RF-113, RF-118). */
+/** Revisar una propuesta de IA y generar el PDF (RF-113, RF-118): el CV adaptado
+ * o la carta de presentación, según el tipo de la propuesta. */
 export function AiProposalReviewPage() {
   const { t } = useTranslation();
   const { applicationId = "", proposalId = "" } = useParams();
-  useDocumentTitle(t("ai.review.title"));
   const application = useApplication(applicationId);
   const proposal = useAiProposal(applicationId, proposalId);
   const profile = useProfile();
@@ -55,6 +55,9 @@ export function AiProposalReviewPage() {
   const skills = useProfileSkills();
   const languages = useProfileLanguages();
   const designs = useCvDesigns();
+  const letter = proposal.data?.kind === "cover_letter";
+  const title = t(letter ? "ai.letter.reviewTitle" : "ai.review.title");
+  useDocumentTitle(title);
 
   const queries = [proposal, profile, entries, skills, languages, designs];
   if (application.isLoading || queries.some((query) => query.isLoading)) {
@@ -79,6 +82,17 @@ export function AiProposalReviewPage() {
   }
 
   const data = proposal.data;
+  const source: CvSource | null =
+    entries.data && skills.data && languages.data
+      ? {
+          profile: profile.data ?? null,
+          entries: entries.data,
+          skills: skills.data,
+          languages: languages.data,
+        }
+      : null;
+  const ready = data?.status === "succeeded" && data.proposal && source && designs.data;
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-2">
@@ -89,7 +103,7 @@ export function AiProposalReviewPage() {
           <ArrowLeft className="size-4" aria-hidden />
           {application.data.position_title} · {application.data.company.name}
         </Link>
-        <h1 className="text-2xl font-semibold">{t("ai.review.title")}</h1>
+        <h1 className="text-2xl font-semibold">{title}</h1>
         {data && (
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="gap-1">
@@ -111,98 +125,85 @@ export function AiProposalReviewPage() {
           {t(`ai.errors.${data.error_code ?? "ai_interrupted"}`)}
         </p>
       )}
-      {data?.status === "succeeded" &&
-        data.proposal &&
-        entries.data &&
-        skills.data &&
-        languages.data &&
-        designs.data && (
-        // Se monta con la propuesta ya cargada: el estado inicial sale de ella, sin
-        // un efecto que la reinicie mientras se edita.
-        <ReviewEditor
-          key={data.id}
-          application={application.data}
-          proposal={data}
-          content={data.proposal}
-          entries={entries.data}
-          skills={skills.data}
-          languages={languages.data}
-          profile={profile.data ?? null}
-          designs={designs.data}
-        />
+      {ready && (
+        <>
+          <p
+            role="note"
+            className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-300"
+          >
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <span>{t(letter ? "ai.letter.warning" : "ai.review.warning")}</span>
+          </p>
+          {/* Se monta con la propuesta ya cargada: el estado inicial sale de ella,
+              sin un efecto que la reinicie mientras se edita. */}
+          {letter ? (
+            <LetterEditor
+              key={data.id}
+              application={application.data}
+              proposal={data}
+              content={data.proposal as CoverLetterProposal}
+              source={source}
+              designs={designs.data}
+            />
+          ) : (
+            <CvEditor
+              key={data.id}
+              application={application.data}
+              proposal={data}
+              content={data.proposal as CvProposal}
+              source={source}
+              designs={designs.data}
+            />
+          )}
+        </>
       )}
     </div>
   );
 }
 
-interface ReviewEditorProps {
+interface EditorProps<T> {
   application: ApplicationDetail;
   proposal: AiProposal;
-  content: CvProposal;
-  entries: ProfileEntry[];
-  skills: ProfileSkill[];
-  languages: ProfileLanguage[];
-  profile: Profile | null;
+  content: T;
+  source: CvSource;
   designs: CvDesign[];
 }
 
-function ReviewEditor({
-  application,
-  proposal,
-  content,
-  entries,
-  skills,
-  languages,
-  profile,
-  designs,
-}: ReviewEditorProps) {
-  const { t, i18n } = useTranslation();
+/** Generar el PDF y volver a la biblioteca, que se refresca sola mientras está
+ * pendiente. */
+function useGenerate(application: ApplicationDetail, proposal: AiProposal) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const create = useCreateTailoredCv(application.id, proposal.id);
+  const create = useCreateAiDocument(application.id, proposal.id);
+  const generate = (input: AiDocumentInput) =>
+    create.mutate(input, {
+      onSuccess: () => {
+        toast.success(t("documents.generate.started"));
+        navigate("/documents");
+      },
+      onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
+    });
+  return { generate, pending: create.isPending };
+}
+
+const usableDesigns = (designs: CvDesign[], proposal: AiProposal) =>
+  designs.filter((design) => design.languages.includes(proposal.language));
+
+function CvEditor({ application, proposal, content, source, designs }: EditorProps<CvProposal>) {
+  const { t } = useTranslation();
+  const { generate, pending } = useGenerate(application, proposal);
   const [state, setState] = useState<ReviewState>(() =>
-    reviewFromProposal(content, entries, skills),
-  );
-  const usable = designs.filter((design) => design.languages.includes(proposal.language));
-  const [design, setDesign] = useState(
-    (usable.find((item) => item.ats_friendly) ?? usable[0])?.key ?? "",
-  );
-  const [name, setName] = useState(
-    `CV ${application.position_title} – ${application.company.name}`,
+    reviewFromProposal(content, source.entries, source.skills),
   );
   const problem = reviewProblem(state);
-  const source: CvSource = useMemo(
-    () => ({ profile, entries, skills, languages }),
-    [profile, entries, skills, languages],
-  );
   // Se recalcula con cada cambio de la revisión: el "después" es este CV.
   const match = useMemo(
     () => offerMatch(content.requirements, state, source),
     [content.requirements, state, source],
   );
-  const chosen = usable.find((item) => item.key === design);
-  const uiLanguage = uiCvLanguage(i18n.language);
-
-  const generate = () =>
-    create.mutate(
-      { design, name: name.trim() || null, proposal: toReviewedProposal(state) },
-      {
-        onSuccess: () => {
-          toast.success(t("documents.generate.started"));
-          navigate("/documents");
-        },
-        onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
-      },
-    );
 
   return (
     <>
-      <p
-        role="note"
-        className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-300"
-      >
-        <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span>{t("ai.review.warning")}</span>
-      </p>
       {problem === "outdated" && (
         <p role="alert" className="text-sm text-destructive">
           {t("ai.review.outdated")}
@@ -214,73 +215,55 @@ function ReviewEditor({
       <ProposalReview
         state={state}
         onChange={setState}
-        profileSummary={profile?.summary ?? null}
+        profileSummary={source.profile?.summary ?? null}
         // Con requisitos, las carencias ya salen en el encaje con la oferta.
         gaps={match ? null : content.gaps}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("ai.review.generate")}</CardTitle>
-          <CardDescription>{t("ai.review.generateHint")}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <fieldset className="grid gap-2">
-            <legend className="mb-2 text-sm font-medium">{t("documents.generate.design")}</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {usable.map((item) => (
-                <label
-                  key={item.key}
-                  className={cn(
-                    "grid cursor-pointer gap-1 rounded-lg border p-3 text-sm transition-colors has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50",
-                    design === item.key ? "border-primary bg-primary/5" : "hover:bg-muted/50",
-                  )}
-                >
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 font-medium">
-                      <input
-                        type="radio"
-                        name="design"
-                        value={item.key}
-                        checked={design === item.key}
-                        onChange={() => setDesign(item.key)}
-                        className="accent-primary"
-                      />
-                      {designName(item, item.key, uiLanguage)}
-                    </span>
-                    <Badge variant={item.ats_friendly ? "success" : "outline"}>
-                      {t(item.ats_friendly ? "documents.generate.ats" : "documents.generate.notAts")}
-                    </Badge>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {chosen && !chosen.ats_friendly && (
-            <p className="text-sm text-amber-800 dark:text-amber-300">
-              {t("documents.generate.notAtsWarning")}
-            </p>
-          )}
-          <div className="grid gap-2 sm:max-w-md">
-            <Label htmlFor="tailored-name">{t("documents.fields.name")}</Label>
-            <Input
-              id="tailored-name"
-              value={name}
-              maxLength={200}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </div>
-          {problem && problem !== "outdated" && (
-            <p className="text-sm text-destructive">{t(`ai.review.problems.${problem}`)}</p>
-          )}
-          <div>
-            <Button onClick={generate} disabled={!!problem || !design || create.isPending}>
-              {create.isPending && <Loader2 className="animate-spin" />}
-              {t("ai.review.submit")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <GenerateDocumentCard
+        designs={usableDesigns(designs, proposal)}
+        defaultName={`CV ${application.position_title} – ${application.company.name}`}
+        showAts
+        hint={t("ai.review.generateHint")}
+        submitLabel={t("ai.review.submit")}
+        problem={
+          problem && problem !== "outdated" ? t(`ai.review.problems.${problem}`) : null
+        }
+        pending={pending}
+        onGenerate={(design, name) =>
+          generate({ design, name, proposal: toReviewedProposal(state) })
+        }
+      />
+    </>
+  );
+}
+
+function LetterEditor({
+  application,
+  proposal,
+  content,
+  source,
+  designs,
+}: EditorProps<CoverLetterProposal>) {
+  const { t } = useTranslation();
+  const { generate, pending } = useGenerate(application, proposal);
+  const [state, setState] = useState<LetterState>(() => letterFromProposal(content));
+  const problem = letterProblem(state);
+
+  return (
+    <>
+      <LetterReview state={state} onChange={setState} source={source} />
+
+      <GenerateDocumentCard
+        designs={usableDesigns(designs, proposal)}
+        defaultName={`${t("ai.letter.defaultName")} ${application.position_title} – ${application.company.name}`}
+        showAts={false}
+        hint={t("ai.letter.generateHint")}
+        submitLabel={t("ai.letter.submit")}
+        problem={problem ? t(`ai.letter.problems.${problem}`) : null}
+        pending={pending}
+        onGenerate={(design, name) => generate({ design, name, letter: toReviewedLetter(state) })}
+      />
     </>
   );
 }

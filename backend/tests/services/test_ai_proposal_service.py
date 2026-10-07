@@ -188,11 +188,6 @@ async def test_the_requirements_have_stable_codes(
     assert await code_of(uuid.uuid4()) == "not_found"
     no_platform = Settings(**(settings.model_dump() | {"ai_platform_provider": None}))
     assert await code_of(application_id, no_platform) == "ai_unavailable"
-    letter = AiProposalCreate(kind=AiTask.COVER_LETTER, language=ProposalLanguage.ES)
-    with pytest.raises(AppException, match="not available"):
-        await service(db_session).request(
-            user.id, application_id, letter, InMemoryJobQueue()
-        )
 
 
 @pytest.mark.asyncio
@@ -280,6 +275,7 @@ async def test_a_valid_answer_succeeds_with_real_ids_cost_and_usage(
     [call] = fake.calls
     assert (call.model, call.api_key) == (MODEL, PLATFORM_KEY)
     assert call.request.max_output_tokens > 0
+    assert (call.request.temperature, call.request.reasoning) == (0.4, "medium")
     assert "español" in call.request.system
 
 
@@ -557,3 +553,96 @@ async def test_simultaneous_requests_with_one_free_use_queue_only_one() -> None:
         async with AsyncSession(test_engine) as cleanup:
             await UserRepository(cleanup).delete(owner.id)
             await cleanup.commit()
+
+
+# --- La carta de presentación (RF-114) ---------------------------------------
+
+LETTER = AiProposalCreate(kind=AiTask.COVER_LETTER, language=ProposalLanguage.ES)
+
+
+def letter_output(**changes: Any) -> str:
+    values: dict[str, Any] = {
+        "insufficient_offer": False,
+        "greeting": "Estimado equipo de Acme:",
+        "paragraphs": [
+            {"text": "Me presento al puesto de backend.", "sources": []},
+            {"text": "Diseñé APIs con FastAPI.", "sources": ["e1.b1", "s1"]},
+        ],
+        "closing": "Atentamente,",
+    } | changes
+    return json.dumps(values)
+
+
+@pytest.mark.asyncio
+async def test_the_letter_has_its_own_free_use_and_prompt(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    # Gastar la del CV no gasta la de la carta (decisión 0017), y al revés.
+    application_id = await prepare(db_session, user)
+    await requested(db_session, user, application_id)
+
+    letter = await service(db_session).request(
+        user.id, application_id, LETTER, InMemoryJobQueue()
+    )
+
+    assert (letter.kind, letter.prompt_version) == ("cover_letter", "cover_letter/v1")
+    with pytest.raises(LimitReachedError) as caught:
+        await service(db_session).request(
+            user.id, application_id, LETTER, InMemoryJobQueue()
+        )
+    assert caught.value.code == "ai_free_quota_exhausted"
+
+
+@pytest.mark.asyncio
+async def test_a_valid_letter_succeeds_with_its_sources_as_real_ids(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    application_id = await prepare(db_session, user)
+    proposal = await service(db_session).request(
+        user.id, application_id, LETTER, InMemoryJobQueue()
+    )
+    fake = FakeLLMProvider()
+    fake.reply(letter_output())
+
+    proposal = await run(db_session, fake, proposal)
+
+    assert proposal.status == ProposalStatus.SUCCEEDED
+    assert proposal.proposal is not None
+    opening, job = proposal.proposal["paragraphs"]
+    assert opening["sources"] == []
+    [entry] = await ProfileEntryRepository(db_session).list(user.id)
+    assert job["sources"][0] == {"kind": "bullet", "id": str(entry.bullets[0].id)}
+    assert job["sources"][1]["kind"] == "skill"
+    [call] = fake.calls
+    assert call.request.schema_name == "cover_letter"
+    # La carta razona más que el CV: con `medium`, Groq adornaba más (ia.md §9).
+    assert call.request.reasoning == "high"
+    assert "paragraphs" in call.request.json_schema["properties"]
+    # El puesto y la empresa, delimitados; el contacto, nunca (I9).
+    assert "<solicitud>" in call.request.user
+    assert "Puesto: " in call.request.user
+    for secret in ("Ana Pérez Contacto", "ana.contacto@example.com", "600 111 222"):
+        assert secret not in call.request.user + call.request.system
+
+
+@pytest.mark.asyncio
+async def test_a_letter_citing_what_is_not_in_the_profile_is_invalid(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    application_id = await prepare(db_session, user)
+    proposal = await service(db_session).request(
+        user.id, application_id, LETTER, InMemoryJobQueue()
+    )
+    fake = FakeLLMProvider()
+    fake.reply(
+        letter_output(
+            paragraphs=[{"text": "Diez años en Google.", "sources": ["e7.b1"]}]
+        )
+    )
+
+    proposal = await run(db_session, fake, proposal)
+
+    assert proposal.status == ProposalStatus.INVALID
+    assert proposal.error_code == "ai_response_invalid"
+    assert proposal.billable is True
+    assert proposal.proposal is None

@@ -25,18 +25,25 @@ import { useRequestAiProposal } from "../hooks/mutations/useRequestAiProposal";
 import { useAiConsents } from "../hooks/queries/useAiConsents";
 import { isInFlight, useAiProposals } from "../hooks/queries/useAiProposals";
 import { providerName } from "../lib/providers";
-import type { AiProposal, ProposalLanguage } from "../types/Ai";
+import type { AiProposal, AiTask, ProposalLanguage } from "../types/Ai";
 import { AiConsentDialog } from "./AiConsentDialog";
 
 /** Igual que el backend (MIN_JOB_DESCRIPTION_LENGTH): más corta, no se pide. */
 export const MIN_JOB_DESCRIPTION_LENGTH = 200;
 // Las propuestas que se enseñan en la tarjeta: las más recientes.
 const SHOWN = 3;
+// La cuota gratuita de cada tarea (RF-150): una de CV y otra de carta.
+const QUOTA_KEYS: Record<AiTask, string> = {
+  cv: "ai_cv_proposals",
+  cover_letter: "ai_cover_letter_proposals",
+};
+const TASKS: AiTask[] = ["cv", "cover_letter"];
 
 /**
- * Adaptar el CV a la oferta con IA (RF-110): pedir la propuesta, ver cómo va y
- * entrar a revisarla. Explica antes de pedirla por qué no se puede (sin oferta,
- * oferta corta, sin usos) y pide el consentimiento la primera vez (RF-116).
+ * Adaptar el CV a la oferta (RF-110) o escribir la carta (RF-114) con IA: pedir la
+ * propuesta, ver cómo va y entrar a revisarla. Explica antes de pedirla por qué no
+ * se puede (sin oferta, oferta corta, sin usos de ese tipo) y pide el
+ * consentimiento la primera vez (RF-116).
  */
 export function AiTailorCard({ application }: { application: ApplicationDetail }) {
   const { t, i18n } = useTranslation();
@@ -46,7 +53,8 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
   const grant = useGrantAiConsent();
   const request = useRequestAiProposal(application.id);
   const [language, setLanguage] = useState<ProposalLanguage>(uiCvLanguage(i18n.language));
-  const [consentOpen, setConsentOpen] = useState(false);
+  // La tarea que se pedirá al aceptar el consentimiento; null: diálogo cerrado.
+  const [consentFor, setConsentFor] = useState<AiTask | null>(null);
 
   if (consents.isLoading) return null;
   const provider = consents.data?.platform_provider ?? null;
@@ -55,8 +63,8 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
   if (!provider) return null;
 
   const description = (application.job_description ?? "").trim();
-  const quota = usage.data?.limits.find((item) => item.key === "ai_cv_proposals");
-  const remaining = quota?.remaining ?? null;
+  const remainingFor = (task: AiTask) =>
+    usage.data?.limits.find((item) => item.key === QUOTA_KEYS[task])?.remaining ?? null;
   const consented = !!consents.data?.consents.find(
     (consent) => consent.provider === provider && consent.granted,
   );
@@ -66,24 +74,22 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
     ? "noDescription"
     : description.length < MIN_JOB_DESCRIPTION_LENGTH
       ? "shortDescription"
-      : // Mientras una está en curso ya cuenta como gastada: no se dice hasta que acaba.
-        remaining === 0 && !busy
-        ? "noUses"
-        : null;
+      : null;
 
-  const ask = () =>
+  const ask = (kind: AiTask) =>
     request.mutate(
-      { kind: "cv", language },
+      { kind, language },
       { onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))) },
     );
 
-  const start = () => (consented ? ask() : setConsentOpen(true));
+  const start = (kind: AiTask) => (consented ? ask(kind) : setConsentFor(kind));
 
   const accept = () =>
     grant.mutate(provider, {
       onSuccess: () => {
-        setConsentOpen(false);
-        ask();
+        const kind = consentFor;
+        setConsentFor(null);
+        if (kind) ask(kind);
       },
       onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
@@ -114,16 +120,8 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
             {t("ai.tailor.shortDescription", { min: MIN_JOB_DESCRIPTION_LENGTH })}
           </p>
         )}
-        {blocked === "noUses" && (
-          <p className="text-sm text-muted-foreground">{t("ai.tailor.noUses")}</p>
-        )}
-
-        {!blocked && !(remaining === 0 && busy) && (
-          <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={start} disabled={busy}>
-              {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
-              {t("ai.tailor.request")}
-            </Button>
+        {!blocked && (
+          <>
             <ViewToggle<ProposalLanguage>
               label={t("ai.tailor.language")}
               options={(["es", "en"] as const).map((value) => ({
@@ -134,12 +132,46 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
               value={language}
               onChange={setLanguage}
             />
-          </div>
-        )}
-        {remaining !== null && remaining > 0 && (
-          <p className="-mt-2 text-xs text-muted-foreground">
-            {t("ai.tailor.freeUses", { count: remaining, provider: providerName(provider) })}
-          </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {TASKS.map((task) => {
+                const remaining = remainingFor(task);
+                const busyTask =
+                  (request.isPending && request.variables?.kind === task) ||
+                  !!proposals.data?.some((item) => item.kind === task && isInFlight(item));
+                return (
+                  <div key={task} className="grid content-start gap-1.5">
+                    {/* Mientras una está en curso ya cuenta como gastada: "sin usos"
+                        no se dice hasta que acaba. */}
+                    {remaining === 0 && !busyTask ? (
+                      <p className="text-sm text-muted-foreground">
+                        {t(`ai.tailor.noUses.${task}`)}
+                      </p>
+                    ) : (
+                      <>
+                        <Button
+                          variant={task === "cv" ? "default" : "outline"}
+                          className="justify-self-start"
+                          onClick={() => start(task)}
+                          disabled={busy}
+                        >
+                          {busyTask ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                          {t(`ai.tailor.request.${task}`)}
+                        </Button>
+                        {remaining !== null && remaining > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {t("ai.tailor.freeUses", {
+                              count: remaining,
+                              provider: providerName(provider),
+                            })}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {proposals.isLoading && <ListSkeleton rows={1} />}
@@ -154,8 +186,8 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
 
       <AiConsentDialog
         provider={provider}
-        open={consentOpen}
-        onOpenChange={setConsentOpen}
+        open={consentFor !== null}
+        onOpenChange={(open) => !open && setConsentFor(null)}
         onAccept={accept}
         accepting={grant.isPending || request.isPending}
       />
@@ -184,7 +216,7 @@ function ProposalRow({ proposal }: { proposal: AiProposal }) {
           )}
         </span>
         <span className="text-xs text-muted-foreground">
-          {when} · {proposal.model}
+          {t(`ai.tailor.kinds.${proposal.kind}`)} · {when} · {proposal.model}
         </span>
       </div>
       {proposal.status === "succeeded" && (

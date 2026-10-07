@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="{{ language }}">
+<head>
+  <meta charset="utf-8">
+  <title>{{ contact.full_name or company }}</title>
+  {% if contact.full_name %}<meta name="author" content="{{ contact.full_name }}">{% endif %}
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Carta de presentación (RF-114): mismo diseño que el CV, cuerpo de texto corrido. */
+    .letter { margin-top: 2mm; font-size: 10.4pt; line-height: 1.55; }
+    .letter p { margin: 0; }
+    .letter-date { text-align: right; color: var(--muted); }
+    .letter-to { margin-top: 6mm !important; }
+    .letter-subject { font-family: "Space Grotesk", sans-serif; font-weight: 700; color: var(--navy); margin-bottom: 7mm !important; }
+    .letter-greeting { margin-bottom: 3.5mm !important; }
+    .letter-paragraph { margin-bottom: 3.5mm !important; text-align: left; orphans: 3; widows: 3; }
+    .letter-closing { margin-top: 6mm !important; }
+    .letter-signature { margin-top: 12mm !important; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <aside>
+    {% if contact.full_name %}<h1>{{ contact.full_name }}</h1>{% endif %}
+    {% if contact.headline %}<p class="headline">{{ contact.headline }}</p>{% endif %}
+    <div class="block">
+      <h2>{{ labels.contact }}</h2>
+      <ul class="contact">
+        {% if contact.email %}<li>{{ contact.email }}</li>{% endif %}
+        {% if contact.phone %}<li>{{ contact.phone }}</li>{% endif %}
+        {% if contact.location %}<li>{{ contact.location }}</li>{% endif %}
+        {% for link in links %}<li><span class="link-label">{{ link.label }}</span><a href="{{ link.url }}">{{ link.display }}</a></li>{% endfor %}
+      </ul>
+    </div>
+  </aside>
+
+  <main class="letter">
+    <p class="letter-date">{{ date }}</p>
+    <p class="letter-to">{{ company }}</p>
+    <p class="letter-subject">{{ subject }}</p>
+    <p class="letter-greeting">{{ greeting }}</p>
+    {% for paragraph in paragraphs %}<p class="letter-paragraph">{{ paragraph }}</p>
+    {% endfor %}<p class="letter-closing">{{ closing }}</p>
+    {% if contact.full_name %}<p class="letter-signature">{{ contact.full_name }}</p>{% endif %}
+  </main>
+</body>
+</html>

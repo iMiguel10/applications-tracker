@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, ClassVar, Protocol
+from typing import Any, ClassVar, Literal, Protocol
 
 from app.domain.ai import AiProvider
 
@@ -16,6 +16,12 @@ class LLMRequest:
     schema_name: str
     json_schema: Mapping[str, Any]
     max_output_tokens: int
+    # Baja: la tarea es reordenar y reformular lo que hay, no crear. Con la del
+    # proveedor (1 en Groq) el modelo adornaba más (ia.md §9). None: la del proveedor.
+    temperature: float | None = None
+    # Cuánto razona antes de responder, en los modelos que lo admiten. None: el del
+    # adaptador.
+    reasoning: Literal["low", "medium", "high"] | None = None
 
 
 class LLMFinish(StrEnum):

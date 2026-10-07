@@ -5,6 +5,7 @@ Ninguna prueba llama a un proveedor (RNF-23). Lo que más importa aquí es la
 custodia de la clave: los errores del proveedor nunca la propagan (ia.md I7).
 """
 
+import dataclasses
 import json
 import logging
 import traceback
@@ -137,6 +138,20 @@ async def test_sends_the_strict_schema_and_reads_tokens() -> None:
     }
     assert body["max_completion_tokens"] == 4_000
     assert body["include_reasoning"] is False
+    # Sin pedir otra cosa, el razonamiento del adaptador y la temperatura del proveedor.
+    assert body["reasoning_effort"] == "medium"
+    assert "temperature" not in body
+
+
+@pytest.mark.asyncio
+async def test_sends_the_temperature_and_reasoning_of_the_request() -> None:
+    transport = Transport()
+    request = dataclasses.replace(REQUEST, temperature=0.4, reasoning="high")
+
+    await provider(transport).complete(request, model=MODEL, api_key=API_KEY)
+
+    body = json.loads(transport.requests[0].content)
+    assert (body["temperature"], body["reasoning_effort"]) == (0.4, "high")
 
 
 @pytest.mark.parametrize(

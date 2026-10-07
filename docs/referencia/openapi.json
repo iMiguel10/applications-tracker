@@ -5570,8 +5570,8 @@
         "tags": [
           "AI"
         ],
-        "summary": "Pedir una propuesta de CV adaptado a la oferta",
-        "description": "Pide a la IA una propuesta de CV adaptado a la descripción de la oferta de\nla solicitud (RF-110): qué experiencias y logros destacar y en qué orden, cómo\nreformularlos, qué habilidades priorizar, un resumen y las carencias (RF-112).\nResponde enseguida con la propuesta en `queued`: consulta\n`GET /applications/{application_id}/ai-proposals/{proposal_id}` cada pocos\nsegundos hasta que termine.\n\nCon la clave de la plataforma gasta un uso gratuito, también si la respuesta\nno pasa la validación (`invalid`) o la oferta no da para adaptar (`rejected`).\n\nErrores (409 salvo indicación): `ai_consent_required` (falta el\nconsentimiento para el proveedor, `PUT /ai/consents/{provider}`),\n`job_description_missing`, `job_description_too_short` (422, con\n`min_length`), `profile_incomplete` (el perfil no tiene experiencia),\n`ai_free_quota_exhausted` (con `limit` y `used`), `ai_unavailable` (la\ninstalación no tiene IA) y 429 `rate_limited` (5 por minuto y 50 al día).",
+        "summary": "Pedir una propuesta de CV adaptado o de carta de presentación",
+        "description": "Pide a la IA una propuesta para la oferta de la solicitud. Con `kind` `cv`,\nel CV adaptado (RF-110): qué experiencias y logros destacar y en qué orden,\ncómo reformularlos, qué habilidades priorizar, un resumen y los requisitos de\nla oferta (RF-112). Con `cover_letter`, la carta de presentación (RF-114):\nsaludo, párrafos con las referencias al perfil en que se apoya cada uno y\ndespedida. Responde enseguida con la propuesta en `queued`: consulta\n`GET /applications/{application_id}/ai-proposals/{proposal_id}` cada pocos\nsegundos hasta que termine.\n\nCon la clave de la plataforma gasta un uso gratuito de ese tipo, también si la respuesta\nno pasa la validación (`invalid`) o la oferta no da para adaptar (`rejected`).\n\nErrores (409 salvo indicación): `ai_consent_required` (falta el\nconsentimiento para el proveedor, `PUT /ai/consents/{provider}`),\n`job_description_missing`, `job_description_too_short` (422, con\n`min_length`), `profile_incomplete` (el perfil no tiene experiencia),\n`ai_free_quota_exhausted` (con `limit` y `used`), `ai_unavailable` (la\ninstalación no tiene IA) y 429 `rate_limited` (5 por minuto y 50 al día).",
         "operationId": "request_ai_proposal_api_v1_applications__application_id__ai_proposals_post",
         "security": [
           {
@@ -5858,8 +5858,8 @@
         "tags": [
           "AI"
         ],
-        "summary": "Generar el CV adaptado desde una propuesta revisada",
-        "description": "Genera en PDF el CV adaptado con la propuesta tal como queda tras revisarla\n(RF-113): el resumen y los logros reescritos, qué experiencias, logros y\nhabilidades van y en qué orden. Puestos, empresas, fechas, formación y el\nresto salen del perfil actual (RF-111). Responde enseguida con el documento\n`ai_tailored` en `pending`, como al generar un CV; no vuelve a llamar a la\nIA ni gasta otro uso.\n\n409 `ai_proposal_not_ready` si la propuesta no terminó en `succeeded`, y\n`ai_proposal_outdated` si referencia algo que ya no está en el perfil (se\neditó después de pedirla): hay que pedir otra.",
+        "summary": "Generar el CV adaptado o la carta desde una propuesta revisada",
+        "description": "Genera en PDF la propuesta tal como queda tras revisarla (RF-113), con un\ndiseño de CV. Si es de `cv`, se envía `proposal`: el resumen y los logros\nreescritos, qué experiencias, logros y habilidades van y en qué orden;\npuestos, empresas, fechas, formación y el resto salen del perfil actual\n(RF-111). Si es de `cover_letter`, se envía `letter` (saludo, párrafos y\ndespedida) y el documento es una carta (`kind` `cover_letter`) con el\ncontacto del perfil, la empresa y el puesto de la solicitud y la fecha de hoy\nen la zona horaria del usuario. Responde enseguida con el documento\n`ai_tailored` en `pending`, como al generar un CV; no vuelve a llamar a la\nIA ni gasta otro uso.\n\n422 `ai_document_mismatch` si el contenido no es del tipo de la propuesta.\n409 `ai_proposal_not_ready` si la propuesta no terminó en `succeeded`, y\n`ai_proposal_outdated` si referencia algo que ya no está en el perfil (se\neditó después de pedirla): hay que pedir otra.",
         "operationId": "create_ai_proposal_document_api_v1_applications__application_id__ai_proposals__proposal_id__document_post",
         "security": [
           {
@@ -6260,11 +6260,11 @@
         "properties": {
           "kind": {
             "$ref": "#/components/schemas/AiTask",
-            "description": "`cv` (adaptar el CV, RF-110). `cover_letter` llega en un paso posterior de F15."
+            "description": "`cv` (adaptar el CV, RF-110) o `cover_letter` (la carta de presentación, RF-114). Cada una tiene su propia cuota gratuita."
           },
           "language": {
             "$ref": "#/components/schemas/ProposalLanguage",
-            "description": "Idioma en que se escriben el resumen, los logros y las carencias."
+            "description": "Idioma en que se escribe la propuesta: el resumen y los logros del CV, o la carta."
           }
         },
         "type": "object",
@@ -6294,19 +6294,37 @@
               }
             ],
             "title": "Name",
-            "description": "Nombre visible en la biblioteca. Sin él, `CV <puesto> – <empresa>`."
+            "description": "Nombre visible en la biblioteca. Sin él, `CV <puesto> – <empresa>` o `Carta <puesto> – <empresa>`."
           },
           "proposal": {
-            "$ref": "#/components/schemas/ReviewedCvProposal"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewedCvProposal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El CV revisado, si la propuesta es de `cv`."
+          },
+          "letter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewedCoverLetter"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "La carta revisada, si es de `cover_letter`."
           }
         },
         "type": "object",
         "required": [
-          "design",
-          "proposal"
+          "design"
         ],
         "title": "AiProposalDocumentCreate",
-        "description": "Generar el CV adaptado desde una propuesta revisada (RF-113, RF-114)."
+        "description": "Generar el CV adaptado o la carta desde una propuesta revisada (RF-113,\nRF-114). Lleva `proposal` si la propuesta es de CV y `letter` si es de carta."
       },
       "AiProposalRead": {
         "properties": {
@@ -6361,10 +6379,14 @@
                 "$ref": "#/components/schemas/CvProposal"
               },
               {
+                "$ref": "#/components/schemas/CoverLetterProposal"
+              },
+              {
                 "type": "null"
               }
             ],
-            "description": "Solo en `succeeded`. Cada experiencia, logro y habilidad referencia por id un elemento del perfil; los puestos, empresas y fechas no se proponen: salen del perfil (RF-111). `requirements` (desde el prompt `cv/v2`; `null` en las anteriores) son los requisitos de la oferta, con las palabras con que se buscarían en un CV y los elementos del perfil que los demuestran; el porcentaje de encaje lo calcula el cliente con ellos."
+            "title": "Proposal",
+            "description": "Solo en `succeeded`. Con `kind` `cover_letter`, la carta: saludo, párrafos con las referencias al perfil en que se apoya cada uno y despedida. Con `cv`, cada experiencia, logro y habilidad referencia por id un elemento del perfil; los puestos, empresas y fechas no se proponen: salen del perfil (RF-111). `requirements` (desde el prompt `cv/v2`; `null` en las anteriores) son los requisitos de la oferta, con las palabras con que se buscarían en un CV y los elementos del perfil que los demuestran; el porcentaje de encaje lo calcula el cliente con ellos."
           },
           "created_at": {
             "type": "string",
@@ -8002,6 +8024,33 @@
         "type": "object",
         "title": "CompanyUpdate",
         "description": "Actualización parcial: solo se modifican los campos enviados. Enviar `null`\nvacía un campo opcional."
+      },
+      "CoverLetterProposal": {
+        "properties": {
+          "greeting": {
+            "type": "string",
+            "title": "Greeting"
+          },
+          "paragraphs": {
+            "items": {
+              "$ref": "#/components/schemas/LetterParagraph"
+            },
+            "type": "array",
+            "title": "Paragraphs"
+          },
+          "closing": {
+            "type": "string",
+            "title": "Closing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "greeting",
+          "paragraphs",
+          "closing"
+        ],
+        "title": "CoverLetterProposal",
+        "description": "La carta ya validada, con las fuentes como UUID reales: lo que se guarda y\nse revisa (RF-113)."
       },
       "Currency": {
         "type": "string",
@@ -9761,6 +9810,27 @@
         ],
         "title": "LanguagesUpdate"
       },
+      "LetterParagraph": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileReference"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "sources"
+        ],
+        "title": "LetterParagraph"
+      },
       "LimitKey": {
         "type": "string",
         "enum": [
@@ -10493,6 +10563,32 @@
         "type": "object",
         "title": "ProfileRead"
       },
+      "ProfileReference": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "bullet",
+              "skill",
+              "language"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "ProfileReference",
+        "description": "Un elemento del perfil citado: la evidencia de un requisito o la fuente de un\npárrafo de la carta. `entry` es una experiencia, formación, proyecto o\ncertificación."
+      },
       "ProfileUpdate": {
         "properties": {
           "full_name": {
@@ -10871,7 +10967,7 @@
           },
           "evidence": {
             "items": {
-              "$ref": "#/components/schemas/RequirementEvidence"
+              "$ref": "#/components/schemas/ProfileReference"
             },
             "type": "array",
             "title": "Evidence"
@@ -10891,32 +10987,6 @@
         ],
         "title": "Requirement",
         "description": "Un requisito de la oferta. El porcentaje de encaje no lo da la IA: lo\ncalcula la interfaz buscando `keywords` en el texto del CV (ia.md §4)."
-      },
-      "RequirementEvidence": {
-        "properties": {
-          "kind": {
-            "type": "string",
-            "enum": [
-              "entry",
-              "bullet",
-              "skill",
-              "language"
-            ],
-            "title": "Kind"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "kind",
-          "id"
-        ],
-        "title": "RequirementEvidence",
-        "description": "Un elemento del perfil que demuestra un requisito. `entry` es una\nexperiencia, formación, proyecto o certificación."
       },
       "RequirementImportance": {
         "type": "string",
@@ -10979,6 +11049,41 @@
           "text"
         ],
         "title": "ReviewedBullet"
+      },
+      "ReviewedCoverLetter": {
+        "properties": {
+          "greeting": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Greeting"
+          },
+          "paragraphs": {
+            "items": {
+              "type": "string",
+              "maxLength": 1500,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 1,
+            "title": "Paragraphs"
+          },
+          "closing": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Closing"
+          }
+        },
+        "type": "object",
+        "required": [
+          "greeting",
+          "paragraphs",
+          "closing"
+        ],
+        "title": "ReviewedCoverLetter",
+        "description": "La carta tal como queda tras revisarla (RF-113): todo su texto es editable\ny se pueden quitar o reordenar párrafos. Las fuentes no se envían: solo sirven\npara revisar."
       },
       "ReviewedCvProposal": {
         "properties": {

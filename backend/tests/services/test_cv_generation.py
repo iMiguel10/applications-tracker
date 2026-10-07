@@ -13,6 +13,7 @@ from pypdf import PdfReader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppException
+from app.domain.cover_letter import CoverLetterSnapshot
 from app.domain.cv import CvSnapshot, SnapshotContact
 from app.domain.limits import LimitKey
 from app.infra.pdf.weasyprint_renderer import WeasyPrintRenderer
@@ -67,7 +68,12 @@ def _worker(session: AsyncSession, storage: LocalFileStorage) -> CvGenerationSer
 
 
 class BrokenRenderer:
-    async def render(self, template_dir: Path, context: Mapping[str, Any]) -> bytes:
+    async def render(
+        self,
+        template_dir: Path,
+        context: Mapping[str, Any],
+        template: str = "template.html",
+    ) -> bytes:
         raise RuntimeError("plantilla rota")
 
 
@@ -286,3 +292,41 @@ async def test_the_sweep_reads_every_page(
     assert sorted(str(job.kwargs["document_id"]) for job in queue.jobs) == sorted(
         str(document.id) for document in stuck
     )
+
+
+@pytest.mark.asyncio
+async def test_a_pending_cover_letter_is_rendered_with_its_design(
+    db_session: AsyncSession, user: CurrentUser, storage: LocalFileStorage, root: Path
+):
+    # F15: la carta se maqueta con la plantilla de carta del diseño del CV.
+    letter = CoverLetterSnapshot(
+        contact=SnapshotContact(full_name="Ana Pérez"),
+        company="Acme",
+        position="Backend",
+        date="7 de octubre de 2026",
+        greeting="Estimado equipo de Acme:",
+        paragraphs=["Optimicé consultas en PostgreSQL."],
+        closing="Atentamente,",
+    )
+    for design in ("classic", "compact", "modern", "graphic"):
+        document = await _pending(
+            db_session,
+            user.id,
+            kind="cover_letter",
+            origin="ai_tailored",
+            template=design,
+            content=letter.model_dump(mode="json"),
+        )
+
+        await _worker(db_session, storage).render_pending(user.id, document.id)
+
+        await db_session.refresh(document)
+        assert document.status == "ready", design
+        assert document.storage_key is not None
+        text = (
+            PdfReader(io.BytesIO((root / document.storage_key).read_bytes()))
+            .pages[0]
+            .extract_text()
+        )
+        for expected in ("Ana Pérez", "Candidatura: Backend", "Estimado equipo"):
+            assert expected in text, design

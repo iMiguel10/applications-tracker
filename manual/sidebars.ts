@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
     "uso/perfil",
     "uso/generar-un-cv",
     "uso/adaptar-el-cv-con-ia",
+    "uso/escribir-una-carta-con-ia",
     "uso/exportar",
     "uso/preferencias",
     "uso/borrar-la-cuenta",

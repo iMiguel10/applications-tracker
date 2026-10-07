@@ -1,6 +1,6 @@
 # IA: CV y carta adaptados
 
-> Estado: **en construcción** (F15, pasos 1 a 3 de 6 y el encaje con la oferta: la interfaz, el adaptador de Groq y la propuesta de CV de punta a punta) · Fecha: 2026-10-07 · Cambios durante la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md), [0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
+> Estado: **en construcción** (F15, pasos 1 a 4 de 6: la interfaz, el adaptador de Groq, el CV adaptado con el encaje con la oferta y la carta de presentación) · Fecha: 2026-10-08 · Cambios durante la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md), [0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
 >
 > Los nombres de las APIs de cada proveedor (salida estructurada, recuento de tokens, errores) se fijan al construir su adaptador, contra la versión del SDK de ese momento. Lo que no cambia son las reglas de este documento.
 
@@ -41,6 +41,8 @@ En Groq, una respuesta que el modelo generó sin cumplir el esquema estricto lle
 En el frontend, `features/ai/`: la tarjeta **Adaptar con IA** del detalle de la solicitud (`AiTailorCard`: explica por qué no se puede pedir —sin oferta, oferta corta, sin usos—, pide el consentimiento la primera vez con `AiConsentDialog` y consulta la propuesta cada 2 s mientras está en cola o en curso) y la página `/applications/{id}/ai/{proposalId}` (`AiProposalReviewPage` y `ProposalReview`): cada logro reformulado junto a su original, con la marca **Reescrito** (RF-118), todo editable, y se puede quitar y reordenar pero no añadir. `lib/review.ts` cruza la propuesta con el perfil actual y detecta si quedó desfasada antes de enviarla.
 
 **Construido en F15 (paso 3b), encaje con la oferta ([0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md)):** el prompt `cv/v2` pide además los requisitos de la oferta (`CvProposalOutput.requirements`, antes que el resto para que el modelo los tenga delante al reformular), con su peso, las palabras con que se buscarían y su evidencia en el perfil; las carencias pasan a ser los requisitos sin evidencia. El esquema que se pide y se valida es el de la versión de la propuesta (`CV_OUTPUT_MODELS`): una pedida con `cv/v1` se ejecuta como antes. En el frontend, `lib/match.ts` calcula el porcentaje antes y después y el estado de cada requisito, y `OfferMatchCard` lo enseña encima de la revisión (§4).
+
+**Construido en F15 (paso 4), la carta de presentación (RF-114):** `kind: "cover_letter"` en el mismo endpoint, con su propia cuota (`ai_cover_letter_proposals`, 1 uso) y su prompt (`cover_letter/v1`). La entrada es la del CV más el puesto y la empresa, delimitados como la oferta (`describe_application`, `<solicitud>`). El esquema (`CoverLetterOutput`): rechazo si la oferta no da, saludo, párrafos con sus **fuentes** (ids cortos de cualquier elemento del perfil, validados como una referencia más: `validate_letter_output`) y despedida (§5). Al generar, `POST .../document` recibe `letter` en lugar de `proposal` (422 `ai_document_mismatch` si no cuadra con el tipo) y guarda un `CoverLetterSnapshot` (`domain/cover_letter.py`): el texto revisado más el contacto del perfil, la empresa y el puesto de la solicitud y la fecha de hoy en la zona del usuario, ya escrita. `CvGenerationService.create_pending` lo crea como `cover_letter` y el `worker` lo maqueta con `letter.html` de la carpeta del diseño elegido (una por diseño de CV, decisión 0017; `PdfRenderer.render` recibe qué plantilla). En el frontend, la tarjeta **Adaptar con IA** tiene un segundo botón con su contador, y la página de revisión cambia según el tipo: `LetterReview` enseña cada párrafo editable con los textos del perfil en que se apoya y marca los que no se apoyan en nada; `GenerateDocumentCard` es común al CV y a la carta.
 
 ## 3. La entrada: qué se envía y qué no
 
@@ -108,7 +110,7 @@ requisitos: lista                    antes que el resto del esquema
 |---|---|---|
 | Reformulación de un logro | Exagerar ("colaboré en" → "lideré") | Solo la revisión lado a lado |
 | Resumen | Afirmar algo que no está en el perfil | Revisión, y el resumen se marca como texto generado |
-| **Carta de presentación** | Es texto libre casi en su totalidad | Su esquema pide, junto a cada párrafo, los ids del perfil en que se apoya, que se validan igual, y la interfaz muestra esas fuentes junto a cada párrafo. Un párrafo sin fuentes se marca. |
+| **Carta de presentación** | Es texto libre casi en su totalidad | Su esquema pide, junto a cada párrafo, los ids del perfil en que se apoya, que se validan igual, y la interfaz muestra esas fuentes junto a cada párrafo. Un párrafo sin fuentes se marca. Las fuentes dicen **de qué** habla el párrafo, no que cada frase sea cierta: con Groq, la carta añadía consecuencias ("garantizando despliegues fiables"), valoraciones ("tecnologías que domino") y hasta "mi experiencia con Kubernetes es limitada" sin que el perfil lo dijera. El prompt lo prohíbe con esos ejemplos y la temperatura es baja, pero la revisión sigue siendo la defensa. |
 | Carencias | Falsas carencias si el perfil está incompleto | Se presentan como "no aparece en tu perfil", no como "no lo tienes" |
 | Evidencia de un requisito | La IA da por demostrado algo parecido ("trabajo en equipo" por liderazgo) | Nunca suma al porcentaje: se enseña la evidencia junto al requisito para que juzgue la persona |
 | Reformulación de un logro | Perder cifras o resultados del original (pasó con `cv/v1`) | `cv/v2` pide conservarlos; la revisión lado a lado los deja ver |
@@ -164,6 +166,9 @@ flowchart TD
 
 ## 9. Prompts y evaluación
 
+- **Temperatura 0,4** (`TEMPERATURE`, `LLMRequest.temperature`): la tarea es reordenar y reformular, no crear. Con la del proveedor (1 en Groq) la carta adornaba más.
+- **Razonamiento por tarea** (`REASONING`, `LLMRequest.reasoning`): `medium` para el CV y `high` para la carta, que es casi toda texto libre y con `medium` adornaba más. Se elige por tarea y no en el adaptador para poder medirlo en la evaluación del paso 6 y compararlo con otros modelos (claves propias, paso 5).
+- **Trampa — ids dentro del texto.** El perfil se envía con los ids entre corchetes y el modelo a veces los copia así en las referencias ("[e1.b2]"), o los escribe además dentro del texto ("con Python ([e1.b1])"). Lo primero es formato: `normalize_id` lo acepta, porque rechazarlo gastaría el uso. Lo segundo saldría en el PDF: `clean_text` quita los ids del texto del CV y de la carta. Pasaron los dos con Groq; una carta salió `invalid` por una fuente que no se reconoció, y desde entonces el log dice si el id rechazado tenía forma de id o era otro texto, sin copiarlo.
 - **Trampa — el `worker` cachea los prompts.** `load_prompt` lee cada fichero una vez por proceso, y el `worker` de desarrollo solo se reinicia al cambiar un `.py`: tras editar un `.md` de `prompts/`, `docker compose restart worker` o seguirá con el texto anterior (pasó al ajustar `cv/v2`).
 - Un prompt es un fichero versionado. Cambiarlo es **añadir** `v2.md` y apuntar la tarea a la nueva versión, nunca editar `v1.md`: las propuestas guardadas deben seguir explicándose con el prompt que las produjo (A33, RF-115).
 - **Pruebas automáticas** (en CI): nunca llaman a un proveedor. `FakeLLMProvider` devuelve respuestas grabadas: una válida, una con un `bullet_id` inventado, otra con un id de otro usuario, otra con el esquema roto, una con `oferta_insuficiente` y un error de proveedor con una clave dentro del mensaje.
@@ -187,6 +192,8 @@ flowchart TD
 | I12 | Con el tope global alcanzado, la cuota gratuita se pausa y las claves propias siguen funcionando | RF-155 |
 | I13 | Un requisito con una evidencia que no existe en el perfil → `invalid`; la formación o un idioma (`c1`, `l1`) valen como evidencia pero no como experiencia ni habilidad | La evidencia no abre una puerta para inventar |
 | I14 | Una propuesta en cola con `cv/v1` se ejecuta con el esquema de `cv/v1` | Versionado de prompts (A33) |
+| I15 | Una carta que cita como fuente algo que no está en el perfil → `invalid`; las fuentes vuelven como UUID; la carta lleva el puesto y la empresa y nunca el contacto | La carta no abre otra puerta para inventar |
+| I16 | Gastar la propuesta de CV no gasta la de carta, y al revés | Cuota por tipo (0017) |
 
 ## 11. Lo que no se hace todavía
 

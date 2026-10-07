@@ -2,12 +2,16 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from app.domain.ai import (
     AI_CONSENT_VERSION,
+    LETTER_LINE_MAX_LENGTH,
+    LETTER_PARAGRAPH_MAX_LENGTH,
+    MAX_LETTER_PARAGRAPHS,
     AiProvider,
     AiTask,
+    CoverLetterProposal,
     CvProposal,
     KeySource,
     ProposalErrorCode,
@@ -30,11 +34,12 @@ from app.schemas.common import OptionalShortText
 
 class AiProposalCreate(BaseModel):
     kind: AiTask = Field(
-        description="`cv` (adaptar el CV, RF-110). `cover_letter` llega en un paso "
-        "posterior de F15."
+        description="`cv` (adaptar el CV, RF-110) o `cover_letter` (la carta de "
+        "presentación, RF-114). Cada una tiene su propia cuota gratuita."
     )
     language: ProposalLanguage = Field(
-        description="Idioma en que se escriben el resumen, los logros y las carencias."
+        description="Idioma en que se escribe la propuesta: el resumen y los logros del "
+        "CV, o la carta."
     )
 
 
@@ -61,8 +66,10 @@ class AiProposalRead(BaseModel):
     error_code: ProposalErrorCode | None = Field(
         description="Solo en `invalid`, `rejected` y `failed`: por qué no salió."
     )
-    proposal: CvProposal | None = Field(
-        description="Solo en `succeeded`. Cada experiencia, logro y habilidad "
+    proposal: CvProposal | CoverLetterProposal | None = Field(
+        description="Solo en `succeeded`. Con `kind` `cover_letter`, la carta: saludo, "
+        "párrafos con las referencias al perfil en que se apoya cada uno y despedida. "
+        "Con `cv`, cada experiencia, logro y habilidad "
         "referencia por id un elemento del perfil; los puestos, empresas y fechas "
         "no se proponen: salen del perfil (RF-111). `requirements` (desde el prompt "
         "`cv/v2`; `null` en las anteriores) son los requisitos de la oferta, con las "
@@ -148,8 +155,36 @@ class ReviewedCvProposal(BaseModel):
         )
 
 
+LetterLine = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=1, max_length=LETTER_LINE_MAX_LENGTH
+    ),
+]
+
+
+class ReviewedCoverLetter(BaseModel):
+    """La carta tal como queda tras revisarla (RF-113): todo su texto es editable
+    y se pueden quitar o reordenar párrafos. Las fuentes no se envían: solo sirven
+    para revisar."""
+
+    greeting: LetterLine
+    paragraphs: list[
+        Annotated[
+            str,
+            StringConstraints(
+                strip_whitespace=True,
+                min_length=1,
+                max_length=LETTER_PARAGRAPH_MAX_LENGTH,
+            ),
+        ]
+    ] = Field(min_length=1, max_length=MAX_LETTER_PARAGRAPHS)
+    closing: LetterLine
+
+
 class AiProposalDocumentCreate(BaseModel):
-    """Generar el CV adaptado desde una propuesta revisada (RF-113, RF-114)."""
+    """Generar el CV adaptado o la carta desde una propuesta revisada (RF-113,
+    RF-114). Lleva `proposal` si la propuesta es de CV y `letter` si es de carta."""
 
     design: Annotated[
         str, StringConstraints(min_length=1, max_length=TEMPLATE_MAX_LENGTH)
@@ -157,6 +192,17 @@ class AiProposalDocumentCreate(BaseModel):
     name: OptionalShortText = Field(
         default=None,
         description="Nombre visible en la biblioteca. Sin él, `CV <puesto> – "
-        "<empresa>`.",
+        "<empresa>` o `Carta <puesto> – <empresa>`.",
     )
-    proposal: ReviewedCvProposal
+    proposal: ReviewedCvProposal | None = Field(
+        default=None, description="El CV revisado, si la propuesta es de `cv`."
+    )
+    letter: ReviewedCoverLetter | None = Field(
+        default=None, description="La carta revisada, si es de `cover_letter`."
+    )
+
+    @model_validator(mode="after")
+    def _one_content(self) -> "AiProposalDocumentCreate":
+        if (self.proposal is None) == (self.letter is None):
+            raise ValueError("send either proposal or letter")
+        return self

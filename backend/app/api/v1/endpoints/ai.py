@@ -32,7 +32,7 @@ consents = APIRouter(prefix="/ai/consents", tags=["AI"])
 @proposals.post(
     "",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Pedir una propuesta de CV adaptado a la oferta",
+    summary="Pedir una propuesta de CV adaptado o de carta de presentación",
     responses=error_responses(404, 409, 422)
     | {
         403: {
@@ -50,14 +50,16 @@ async def request_ai_proposal(
     service: AiProposalService = Depends(get_ai_proposal_service),
     job_queue: JobQueue = Depends(get_job_queue),
 ) -> AiProposalRead:
-    """Pide a la IA una propuesta de CV adaptado a la descripción de la oferta de
-    la solicitud (RF-110): qué experiencias y logros destacar y en qué orden, cómo
-    reformularlos, qué habilidades priorizar, un resumen y las carencias (RF-112).
-    Responde enseguida con la propuesta en `queued`: consulta
+    """Pide a la IA una propuesta para la oferta de la solicitud. Con `kind` `cv`,
+    el CV adaptado (RF-110): qué experiencias y logros destacar y en qué orden,
+    cómo reformularlos, qué habilidades priorizar, un resumen y los requisitos de
+    la oferta (RF-112). Con `cover_letter`, la carta de presentación (RF-114):
+    saludo, párrafos con las referencias al perfil en que se apoya cada uno y
+    despedida. Responde enseguida con la propuesta en `queued`: consulta
     `GET /applications/{application_id}/ai-proposals/{proposal_id}` cada pocos
     segundos hasta que termine.
 
-    Con la clave de la plataforma gasta un uso gratuito, también si la respuesta
+    Con la clave de la plataforma gasta un uso gratuito de ese tipo, también si la respuesta
     no pasa la validación (`invalid`) o la oferta no da para adaptar (`rejected`).
 
     Errores (409 salvo indicación): `ai_consent_required` (falta el
@@ -106,7 +108,7 @@ async def get_ai_proposal(
 @proposals.post(
     "/{proposal_id}/document",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Generar el CV adaptado desde una propuesta revisada",
+    summary="Generar el CV adaptado o la carta desde una propuesta revisada",
     responses=error_responses(404, 409, 422)
     | {
         403: {
@@ -125,13 +127,18 @@ async def create_ai_proposal_document(
     service: AiProposalService = Depends(get_ai_proposal_service),
     job_queue: JobQueue = Depends(get_job_queue),
 ) -> DocumentRead:
-    """Genera en PDF el CV adaptado con la propuesta tal como queda tras revisarla
-    (RF-113): el resumen y los logros reescritos, qué experiencias, logros y
-    habilidades van y en qué orden. Puestos, empresas, fechas, formación y el
-    resto salen del perfil actual (RF-111). Responde enseguida con el documento
+    """Genera en PDF la propuesta tal como queda tras revisarla (RF-113), con un
+    diseño de CV. Si es de `cv`, se envía `proposal`: el resumen y los logros
+    reescritos, qué experiencias, logros y habilidades van y en qué orden;
+    puestos, empresas, fechas, formación y el resto salen del perfil actual
+    (RF-111). Si es de `cover_letter`, se envía `letter` (saludo, párrafos y
+    despedida) y el documento es una carta (`kind` `cover_letter`) con el
+    contacto del perfil, la empresa y el puesto de la solicitud y la fecha de hoy
+    en la zona horaria del usuario. Responde enseguida con el documento
     `ai_tailored` en `pending`, como al generar un CV; no vuelve a llamar a la
     IA ni gasta otro uso.
 
+    422 `ai_document_mismatch` si el contenido no es del tipo de la propuesta.
     409 `ai_proposal_not_ready` si la propuesta no terminó en `succeeded`, y
     `ai_proposal_outdated` si referencia algo que ya no está en el perfil (se
     editó después de pedirla): hay que pedir otra."""
