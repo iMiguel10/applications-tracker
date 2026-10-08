@@ -490,7 +490,16 @@
     "ai_task_unavailable": "This feature is not available yet.",
     "ai_provider_not_offered": "This installation doesn't use that AI provider.",
     "ai_proposal_not_ready": "The proposal is not ready yet.",
-    "ai_proposal_outdated": "Your profile has changed since the proposal was made. Ask for a new proposal."
+    "ai_proposal_outdated": "Your profile has changed since the proposal was made. Ask for a new proposal.",
+    "ai_key_invalid": "The provider didn't accept the key. Check that you copied all of it.",
+    "ai_model_unavailable": "Your key doesn't have access to that model. Choose another.",
+    "ai_model_not_allowed": "That model isn't available in this installation. Choose another in Preferences.",
+    "ai_key_missing": "You don't have a key saved for that provider.",
+    "ai_key_unavailable": "Your active key can't be used. Save it again in Preferences or use the free uses.",
+    "ai_keys_disabled": "This installation doesn't allow your own keys.",
+    "ai_provider_quota": "Your provider account has no credit left or has reached its limit.",
+    "ai_provider_unavailable": "The AI provider couldn't be reached. Try again later.",
+    "ai_document_mismatch": "The content doesn't match the type of the proposal."
   },
   "documents": {
     "title": "Documents",
@@ -942,7 +951,11 @@
       "kinds": {
         "cv": "CV",
         "cover_letter": "Cover letter"
-      }
+      },
+      "needsKey": "This installation has no free AI uses: use your own key.",
+      "addKey": "Add my key in Preferences",
+      "withOwnKey": "With your {{provider}} key ({{model}}): no usage limit.",
+      "useOwnKey": "Use your own key."
     },
     "status": {
       "running": "Preparing the proposal…",
@@ -1058,6 +1071,31 @@
         "paragraphs": "The letter needs at least one paragraph.",
         "emptyParagraph": "There is an empty paragraph."
       }
+    },
+    "settings": {
+      "title": "Artificial intelligence",
+      "description": "What tailors your CV and writes your cover letters, and who your data is sent to for that.",
+      "using": "In use",
+      "free": "Free uses ({{provider}})",
+      "ownKey": "Your {{provider}} key",
+      "keysTitle": "Your keys",
+      "keysHint": "With your own key from a provider there is no usage limit: you pay for it in your provider account. It is checked when you save it, stored encrypted and never shown again.",
+      "noKey": "No key",
+      "saved": "Key …{{last4}} · checked on {{date}}",
+      "add": "Add key",
+      "replace": "Change key",
+      "delete": "Delete the {{provider}} key",
+      "deleted": "{{provider}} key deleted.",
+      "model": "Model",
+      "modelRetired": "This model is no longer available in this installation: choose another to keep using the key.",
+      "keyLabel": "{{provider}} API key",
+      "keyNote": "It is checked with {{provider}} without generating text, so it costs nothing.",
+      "save": "Check and save",
+      "savedToast": "{{provider}} key saved. The AI uses it from now on.",
+      "consentsTitle": "Sending permissions",
+      "consentsHint": "The providers you have allowed to receive your profile and job descriptions. If you revoke one, you will be asked again before it is used.",
+      "noConsents": "You haven't given permission to any provider.",
+      "revoke": "Revoke permission for {{provider}}"
     }
   }
 }

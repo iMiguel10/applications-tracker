@@ -15,7 +15,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.db.constraints import enum_check
+from app.db.constraints import enum_check, values_check
+from app.domain.ai import PERSONAL_PROVIDERS
 from app.domain.dashboard import STALE_AFTER_DAYS
 from app.domain.notifications import (
     DEFAULT_INTERVIEW_NOTICE_HOURS,
@@ -43,6 +44,7 @@ class User(Base):
     __tablename__ = "users"
     __table_args__ = (
         enum_check("language", Language, "language"),
+        values_check("ai_provider", PERSONAL_PROVIDERS, "ai_provider", nullable=True),
         CheckConstraint(
             f"stale_after_days BETWEEN {MIN_STALE_AFTER_DAYS} AND {MAX_STALE_AFTER_DAYS}",
             name="stale_after_days_range",
@@ -93,6 +95,11 @@ class User(Base):
     interview_notice_hours: Mapped[int] = mapped_column(
         SmallInteger, server_default=str(DEFAULT_INTERVIEW_NOTICE_HOURS)
     )
+    # F15 (RF-151): con qué clave propia se usa la IA. NULL: los usos gratuitos de
+    # la plataforma. Sin FK a ai_provider_keys: una FK compuesta con SET NULL
+    # pondría a NULL también la columna del usuario; el service la vacía al borrar
+    # la clave, en la misma transacción.
+    ai_provider: Mapped[str | None] = mapped_column(String(30))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

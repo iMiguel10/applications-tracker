@@ -1,9 +1,11 @@
 from typing import Literal, Self
 
+from cryptography.fernet import Fernet
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.domain.ai import AiProvider
+from app.infra.crypto import parse_master_keys
 
 
 class Settings(BaseSettings):
@@ -81,6 +83,13 @@ class Settings(BaseSettings):
     ai_anthropic_models: str = ""
     ai_openai_models: str = ""
     ai_groq_models: str = ""
+    # Dirección de un Ollama propio (p. ej. http://ollama:11434), para usarlo como IA
+    # de la plataforma. La fija quien despliega; nunca un usuario.
+    ai_ollama_base_url: str | None = None
+    # Claves maestras (Fernet) con que se cifran las claves de API de los usuarios,
+    # separadas por comas: se cifra con la primera y se descifra con cualquiera
+    # (rotación, ia.md §7). Sin ellas no se ofrecen claves propias.
+    ai_keys_encryption_keys: str = ""
     # Una propuesta tarda segundos; un modelo que razona, algo más. Sin tope, un
     # proveedor colgado retendría al worker indefinidamente.
     ai_request_timeout_seconds: float = Field(default=120, gt=0)
@@ -94,6 +103,7 @@ class Settings(BaseSettings):
         "ai_platform_provider",
         "ai_platform_model",
         "ai_platform_api_key",
+        "ai_ollama_base_url",
         mode="before",
     )
     @classmethod
@@ -108,14 +118,41 @@ class Settings(BaseSettings):
     def _platform_complete(self) -> Self:
         # Una plataforma configurada a medias fallaría en el primer uso gratuito,
         # dentro del worker. Mejor no arrancar.
-        if self.ai_platform_provider and not (
-            self.ai_platform_model and self.ai_platform_api_key
-        ):
+        provider = self.ai_platform_provider
+        if provider is None:
+            return self
+        if provider == AiProvider.OLLAMA:
+            # Sin clave, pero con su dirección.
+            if not (self.ai_platform_model and self.ai_ollama_base_url):
+                raise ValueError(
+                    "AI_PLATFORM_MODEL y AI_OLLAMA_BASE_URL son obligatorias "
+                    "con AI_PLATFORM_PROVIDER=ollama"
+                )
+        elif not (self.ai_platform_model and self.ai_platform_api_key):
             raise ValueError(
                 "AI_PLATFORM_MODEL y AI_PLATFORM_API_KEY son obligatorias "
                 "si se configura AI_PLATFORM_PROVIDER"
             )
         return self
+
+    @model_validator(mode="after")
+    def _encryption_keys_valid(self) -> Self:
+        # Una clave maestra mal copiada fallaría al guardar la primera clave de un
+        # usuario. Mejor no arrancar.
+        for key in parse_master_keys(self.ai_keys_encryption_keys):
+            try:
+                Fernet(key.encode())
+            except ValueError:
+                raise ValueError(
+                    "AI_KEYS_ENCRYPTION_KEYS: cada clave debe ser una clave Fernet "
+                    "(genera una con python -m app.scripts.rotate_ai_keys --new-key)"
+                ) from None
+        return self
+
+    @property
+    def ai_own_keys_enabled(self) -> bool:
+        """Si los usuarios pueden guardar su clave: hacen falta claves maestras."""
+        return bool(parse_master_keys(self.ai_keys_encryption_keys))
 
     @model_validator(mode="after")
     def _email_from_required_with_smtp(self) -> Self:
@@ -136,7 +173,7 @@ class Settings(BaseSettings):
             AiProvider.ANTHROPIC: self.ai_anthropic_models,
             AiProvider.OPENAI: self.ai_openai_models,
             AiProvider.GROQ: self.ai_groq_models,
-        }[provider]
+        }.get(provider, "")
         models: list[str] = []
         for model in (item.strip() for item in raw.split(",")):
             if model and model not in models:

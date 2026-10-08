@@ -8,12 +8,13 @@ import i18n from "@/shared/i18n/i18n";
 import { usageService } from "@/features/usage/services/usage.service";
 import type { ApplicationDetail } from "@/features/applications/types/Application";
 import { aiService } from "../services/ai.service";
-import type { AiConsents, AiProposal } from "../types/Ai";
+import type { AiConsents, AiKeys, AiProposal } from "../types/Ai";
 import { AiTailorCard } from "./AiTailorCard";
 
 vi.mock("../services/ai.service", () => ({
   aiService: {
     consents: vi.fn(),
+    keys: vi.fn(),
     grantConsent: vi.fn(),
     listProposals: vi.fn(),
     requestProposal: vi.fn(),
@@ -32,6 +33,25 @@ const consents = (granted: boolean, provider: AiConsents["platform_provider"] = 
     ? [{ provider: "groq" as const, granted: true, granted_at: "2026-10-07T10:00:00Z", revoked_at: null }]
     : [],
 });
+
+const NO_KEYS: AiKeys = { own_keys_enabled: false, providers: [], active_provider: null };
+
+const ANTHROPIC_ACTIVE: AiKeys = {
+  own_keys_enabled: true,
+  providers: [
+    {
+      provider: "anthropic",
+      models: ["claude-sonnet-5-5"],
+      key: {
+        model: "claude-sonnet-5-5",
+        last4: "abcd",
+        validated_at: "2026-10-08T10:00:00Z",
+        model_allowed: true,
+      },
+    },
+  ],
+  active_provider: "anthropic",
+};
 
 const proposal = (fields: Partial<AiProposal>): AiProposal => ({
   id: "p-1",
@@ -56,8 +76,10 @@ function renderCard({
   remaining = 1,
   letterRemaining = 1,
   proposals = [] as AiProposal[],
+  keys = NO_KEYS,
 } = {}) {
   vi.mocked(aiService.consents).mockResolvedValue(consents(granted, provider));
+  vi.mocked(aiService.keys).mockResolvedValue(keys);
   vi.mocked(aiService.listProposals).mockResolvedValue(proposals);
   vi.mocked(usageService.get).mockResolvedValue({
     warning_ratio: 0.8,
@@ -188,5 +210,31 @@ describe("AiTailorCard", () => {
     const review = await screen.findByRole("link", { name: i18n.t("ai.tailor.review") });
     expect(review).toHaveAttribute("href", "/applications/app-1/ai/p-ok");
     expect(screen.getByText(i18n.t("ai.errors.ai_response_invalid"))).toBeInTheDocument();
+  });
+
+  it("con clave propia activa la usa y no mira los usos gratuitos", async () => {
+    const user = userEvent.setup();
+    vi.mocked(aiService.grantConsent).mockResolvedValue(consents(true));
+    vi.mocked(aiService.requestProposal).mockResolvedValue(proposal({ status: "queued" }));
+    renderCard({ keys: ANTHROPIC_ACTIVE, remaining: 0, granted: false });
+
+    expect(await screen.findByText(/Con tu clave de Anthropic/)).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t("ai.tailor.noUses.cv"))).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: i18n.t("ai.tailor.request.cv") }));
+    // El consentimiento se pide para el proveedor de la clave, no el de la plataforma.
+    expect(await screen.findByRole("dialog")).toHaveTextContent("Anthropic");
+    await user.click(screen.getByRole("button", { name: i18n.t("ai.consent.accept") }));
+    await vi.waitFor(() => expect(aiService.grantConsent).toHaveBeenCalled());
+    expect(vi.mocked(aiService.grantConsent).mock.calls[0][0]).toBe("anthropic");
+  });
+
+  it("sin usos gratuitos en la instalación, lleva a añadir una clave", async () => {
+    renderCard({ provider: null, keys: { ...NO_KEYS, own_keys_enabled: true } });
+
+    expect(await screen.findByRole("link", { name: i18n.t("ai.tailor.addKey") })).toHaveAttribute(
+      "href",
+      "/preferences",
+    );
+    expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request.cv") })).not.toBeInTheDocument();
   });
 });

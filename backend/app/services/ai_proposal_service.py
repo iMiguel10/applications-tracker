@@ -69,6 +69,7 @@ from app.repositories.profile_skill_repository import ProfileSkillRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.ai import AiProposalCreate, AiProposalDocumentCreate
 from app.services.ai_consent_service import AiConsentService
+from app.services.ai_key_service import AiKeyService
 from app.services.cv_generation_service import CvGenerationService
 from app.services.cv_render_service import resolve_design
 from app.services.limit_service import LimitService
@@ -122,6 +123,7 @@ class AiProposalService:
         self.limits = LimitService(session, config)
         self.consents = AiConsentService(session, config)
         self.cv_generation = CvGenerationService(session, config=config)
+        self.own_keys = AiKeyService(session, config)
 
     # --- Pedir y consultar (API) --------------------------------------------
 
@@ -138,11 +140,22 @@ class AiProposalService:
         if application is None:
             raise NotFoundError("Application")
 
-        platform = platform_model(self.config)
-        if platform is None:
-            # Sin uso gratuito; las claves propias llegan en el paso 5 de F15.
-            raise ConflictError("AI not available", code="ai_unavailable")
-        if not await self.consents.has_consent(user_id, platform.provider):
+        # Con qué se pide (ia.md §6): la clave propia activa o, si no hay, los usos
+        # gratuitos. Una clave propia que no se puede usar es un error, nunca un
+        # paso silencioso a la de la plataforma.
+        own = await self.own_keys.active(user_id)
+        if own is not None:
+            key_source, provider, model = KeySource.USER, own.provider, own.model
+        else:
+            platform = platform_model(self.config)
+            if platform is None:
+                raise ConflictError("AI not available", code="ai_unavailable")
+            key_source, provider, model = (
+                KeySource.PLATFORM,
+                platform.provider,
+                platform.model,
+            )
+        if not await self.consents.has_consent(user_id, provider):
             raise ConflictError("AI consent required", code="ai_consent_required")
 
         description = (application.job_description or "").strip()
@@ -164,11 +177,13 @@ class AiProposalService:
                 "The profile has no experience", code="profile_incomplete"
             )
 
-        # Cuota con la fila del usuario bloqueada (A30): cuenta lo facturado más
-        # lo que está en curso, así que cinco peticiones a la vez con un uso
-        # restante no pasan juntas (ia.md I5).
-        await self.users.lock(user_id)
-        await self.limits.check(user_id, QUOTA_KEYS[data.kind])
+        if key_source == KeySource.PLATFORM:
+            # Cuota con la fila del usuario bloqueada (A30): cuenta lo facturado
+            # más lo que está en curso, así que cinco peticiones a la vez con un
+            # uso restante no pasan juntas (ia.md I5). Con clave propia no hay
+            # cuota: paga el usuario (0017).
+            await self.users.lock(user_id)
+            await self.limits.check(user_id, QUOTA_KEYS[data.kind])
 
         proposal = await self.proposals.add(
             AiProposal(
@@ -176,9 +191,9 @@ class AiProposalService:
                 application_id=application.id,
                 kind=data.kind.value,
                 status=ProposalStatus.QUEUED.value,
-                key_source=KeySource.PLATFORM.value,
-                provider=platform.provider.value,
-                model=platform.model,
+                key_source=key_source.value,
+                provider=provider.value,
+                model=model,
                 prompt_version=PROMPT_VERSIONS[data.kind],
                 language=data.language.value,
             )
@@ -328,14 +343,25 @@ class AiProposalService:
         se confirma antes de llamar y el resultado se escribe después con un UPDATE
         condicionado (`finish`)."""
         user_id = proposal.user_id
+        provider = AiProvider(proposal.provider)
+        adapter = self.providers.get(provider)
         platform = platform_model(self.config)
-        adapter = self.providers.get(AiProvider(proposal.provider))
-        if (
-            adapter is None
-            or platform is None
-            or platform.provider != AiProvider(proposal.provider)
-        ):
+        api_key: str | None
+        if proposal.key_source == KeySource.USER:
+            # La clave del usuario, descifrada justo antes de llamar y solo en esta
+            # variable (ia.md §7). Si la borró entre pedir y ejecutar, no se llama.
+            api_key = await self.own_keys.decrypt(user_id, provider)
+            if api_key is None:
+                await self.session.commit()
+                return _failed(ProposalErrorCode.PROVIDER_AUTH)
+            prices = None
+        elif platform is None or platform.provider != provider:
             # La configuración cambió entre pedirla y ejecutarla.
+            return _failed(ProposalErrorCode.PROVIDER_UNAVAILABLE)
+        else:
+            api_key = platform.api_key
+            prices = platform
+        if adapter is None:
             return _failed(ProposalErrorCode.PROVIDER_UNAVAILABLE)
 
         application = await self.applications.get(user_id, proposal.application_id)
@@ -370,7 +396,7 @@ class AiProposalService:
         )
         try:
             response = await adapter.complete(
-                request, model=proposal.model, api_key=platform.api_key
+                request, model=proposal.model, api_key=api_key
             )
         except LLMError as exc:
             # Solo el código: el mensaje del proveedor puede llevar la clave (ia.md §7).
@@ -389,7 +415,7 @@ class AiProposalService:
             }
 
         # Respondió: eso gasta el uso, pase o no la validación (ia.md §6, 0017).
-        billed = _billed(platform, response.input_tokens, response.output_tokens)
+        billed = _billed(prices, response.input_tokens, response.output_tokens)
         if response.finish == LLMFinish.REFUSED:
             return billed | _invalid(ProposalErrorCode.RESPONSE_REFUSED)
         if response.finish == LLMFinish.TRUNCATED:
@@ -528,8 +554,10 @@ def _invalid(code: ProposalErrorCode) -> dict[str, Any]:
 
 
 def _billed(
-    platform: PlatformModel, input_tokens: int, output_tokens: int
+    prices: PlatformModel | None, input_tokens: int, output_tokens: int
 ) -> dict[str, Any]:
+    """Respondió: se factura. El coste solo se estima con la plataforma, que tiene
+    precios configurados; con una clave propia lo paga el usuario y a la plataforma no le cuesta nada."""
     return {
         "billable": True,
         "input_tokens": input_tokens,
@@ -537,7 +565,9 @@ def _billed(
         "cost_micros": cost_micros(
             input_tokens,
             output_tokens,
-            platform.input_usd_per_mtok,
-            platform.output_usd_per_mtok,
-        ),
+            prices.input_usd_per_mtok,
+            prices.output_usd_per_mtok,
+        )
+        if prices
+        else 0,
     }

@@ -55,7 +55,7 @@ class GroqProvider:
     def provider(self) -> AiProvider:
         return AiProvider.GROQ
 
-    def _client(self, api_key: str) -> groq.AsyncGroq:
+    def _client(self, api_key: str | None) -> groq.AsyncGroq:
         return groq.AsyncGroq(
             api_key=api_key,
             timeout=self._timeout,
@@ -64,7 +64,7 @@ class GroqProvider:
         )
 
     async def complete(
-        self, request: LLMRequest, *, model: str, api_key: str
+        self, request: LLMRequest, *, model: str, api_key: str | None
     ) -> LLMResponse:
         client = self._client(api_key)
         try:
@@ -108,7 +108,7 @@ class GroqProvider:
             finish=_FINISH.get(choice.finish_reason or "", LLMFinish.COMPLETE),
         )
 
-    async def check_access(self, *, model: str, api_key: str) -> None:
+    async def check_access(self, *, model: str, api_key: str | None) -> None:
         # Listar los modelos valida la clave y que el modelo existe, sin generar
         # nada: no cuesta. No sirve `models.retrieve(model)`: los ids de Groq llevan
         # barra (`openai/gpt-oss-120b`), la URL queda `/models/openai/gpt-oss-120b`

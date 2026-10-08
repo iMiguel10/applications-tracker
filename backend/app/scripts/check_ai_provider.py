@@ -5,8 +5,8 @@
 Primero valida la clave y el modelo sin generar nada; después pide una respuesta
 mínima con salida estructurada estricta, la misma vía que usan las propuestas, y
 muestra los tokens que costó (unas decenas). Sirve para comprobar
-AI_PLATFORM_PROVIDER, AI_PLATFORM_MODEL y AI_PLATFORM_API_KEY al desplegar o al
-cambiar de modelo. Termina con código 0 si todo funciona y con 1 si no.
+AI_PLATFORM_PROVIDER, AI_PLATFORM_MODEL y AI_PLATFORM_API_KEY (o AI_OLLAMA_BASE_URL
+con Ollama) al desplegar o al cambiar de modelo. Termina con código 0 si todo funciona y con 1 si no.
 """
 
 import argparse

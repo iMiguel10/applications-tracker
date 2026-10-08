@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from app.core.config import Settings
 from app.domain.ai import AiProvider
+from app.infra.llm.anthropic import AnthropicProvider
 from app.infra.llm.base import (
     LLMAuthError,
     LLMError,
@@ -17,6 +18,8 @@ from app.infra.llm.base import (
     LLMUnavailableError,
 )
 from app.infra.llm.groq import GroqProvider
+from app.infra.llm.ollama import OllamaProvider
+from app.infra.llm.openai import OpenAIProvider
 from app.infra.llm.schema import strict_json_schema
 
 __all__ = [
@@ -44,7 +47,8 @@ class PlatformModel:
 
     provider: AiProvider
     model: str
-    api_key: str
+    # None con un proveedor sin clave (Ollama).
+    api_key: str | None
     input_usd_per_mtok: float
     output_usd_per_mtok: float
 
@@ -58,7 +62,7 @@ def platform_model(settings: Settings) -> PlatformModel | None:
     if settings.ai_platform_provider is None:
         return None
     # Lo garantiza el validador de Settings.
-    assert settings.ai_platform_model and settings.ai_platform_api_key
+    assert settings.ai_platform_model
     return PlatformModel(
         provider=settings.ai_platform_provider,
         model=settings.ai_platform_model,
@@ -69,8 +73,17 @@ def platform_model(settings: Settings) -> PlatformModel | None:
 
 
 def build_llm_providers(settings: Settings) -> dict[AiProvider, LLMProvider]:
-    """Un adaptador por proveedor con adaptador. Solo lo llaman quienes cablean
-    (el worker, deps.py, los scripts), nunca un service. Los de Anthropic y OpenAI
-    llegan con las claves propias (paso 5 de F15)."""
+    """Un adaptador por proveedor. Solo lo llaman quienes cablean (el worker,
+    deps.py, los scripts), nunca un service. El de Ollama, solo si quien despliega
+    da su dirección."""
     timeout = settings.ai_request_timeout_seconds
-    return {AiProvider.GROQ: GroqProvider(timeout_seconds=timeout)}
+    providers: dict[AiProvider, LLMProvider] = {
+        AiProvider.ANTHROPIC: AnthropicProvider(timeout_seconds=timeout),
+        AiProvider.OPENAI: OpenAIProvider(timeout_seconds=timeout),
+        AiProvider.GROQ: GroqProvider(timeout_seconds=timeout),
+    }
+    if settings.ai_ollama_base_url:
+        providers[AiProvider.OLLAMA] = OllamaProvider(
+            base_url=settings.ai_ollama_base_url, timeout_seconds=timeout
+        )
+    return providers

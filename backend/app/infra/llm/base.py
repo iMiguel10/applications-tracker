@@ -103,13 +103,13 @@ class LLMProvider(Protocol):
     def provider(self) -> AiProvider: ...
 
     async def complete(
-        self, request: LLMRequest, *, model: str, api_key: str
+        self, request: LLMRequest, *, model: str, api_key: str | None
     ) -> LLMResponse:
         """Pide la respuesta estructurada, sin reintentos: reintentar puede volver a
         facturar. Lanza un `LLMError` si el proveedor falla."""
         ...
 
-    async def check_access(self, *, model: str, api_key: str) -> None:
+    async def check_access(self, *, model: str, api_key: str | None) -> None:
         """Comprueba, sin coste o casi, que la clave vale y el modelo existe (RF-153).
         Lanza un `LLMError` si no."""
         ...

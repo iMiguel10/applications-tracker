@@ -2,7 +2,14 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    StringConstraints,
+    model_validator,
+)
 
 from app.domain.ai import (
     AI_CONSENT_VERSION,
@@ -206,3 +213,63 @@ class AiProposalDocumentCreate(BaseModel):
         if (self.proposal is None) == (self.letter is None):
             raise ValueError("send either proposal or letter")
         return self
+
+
+# --- Claves propias (RF-151, ia.md §7) ------------------------------------------
+
+
+class AiKeyRead(BaseModel):
+    """Una clave guardada, sin la clave: nunca vuelve al cliente (ia.md §7)."""
+
+    model: str = Field(description="El modelo elegido para esta clave.")
+    last4: str = Field(description="Los 4 últimos caracteres, para reconocerla.")
+    validated_at: datetime = Field(description="Cuándo se comprobó que funcionaba.")
+    model_allowed: bool = Field(
+        description="`false` si quien despliega retiró ese modelo de la lista: hay "
+        "que elegir otro antes de usar la clave."
+    )
+
+
+class AiProviderOption(BaseModel):
+    provider: AiProvider
+    models: list[str] = Field(
+        description="Los modelos que se pueden elegir con una clave de este "
+        "proveedor; el primero es el recomendado."
+    )
+    key: AiKeyRead | None = Field(description="La clave guardada, si hay.")
+
+
+class AiKeysRead(BaseModel):
+    own_keys_enabled: bool = Field(
+        description="Si esta instalación admite claves propias."
+    )
+    providers: list[AiProviderOption] = Field(
+        description="Los proveedores con los que se puede usar una clave propia."
+    )
+    active_provider: AiProvider | None = Field(
+        description="Con qué clave propia se usa la IA. `null`: los usos gratuitos "
+        "de la plataforma."
+    )
+
+
+class AiKeySave(BaseModel):
+    api_key: SecretStr = Field(
+        description="La clave de API del proveedor. Se comprueba con una llamada "
+        "mínima, se guarda cifrada y nunca se devuelve."
+    )
+    model: str | None = Field(
+        default=None,
+        max_length=100,
+        description="Uno de `models` del proveedor. Sin él, el recomendado.",
+    )
+
+
+class AiKeyModelUpdate(BaseModel):
+    model: Annotated[str, StringConstraints(min_length=1, max_length=100)]
+
+
+class AiActiveProviderUpdate(BaseModel):
+    provider: AiProvider | None = Field(
+        description="El proveedor de una clave guardada, o `null` para volver a los "
+        "usos gratuitos de la plataforma."
+    )

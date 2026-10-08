@@ -21,6 +21,10 @@ dependencies = [
     "limits[async-valkey]>=5.8.0",
     "pypdf>=6.19.0",
     "groq>=1.7.0",
+    "anthropic>=1.12.1",
+    "openai>=3.26.1",
+    "cryptography>=50.0.1",
+    "httpx2>=2.13.1",
 ]
 
 [dependency-groups]

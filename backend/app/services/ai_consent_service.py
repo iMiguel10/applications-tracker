@@ -10,6 +10,7 @@ from app.infra.llm import platform_model
 from app.models.ai_consent import AiConsent
 from app.repositories.ai_consent_repository import AiConsentRepository
 from app.schemas.ai import AiConsentRead, AiConsentsRead
+from app.services.ai_key_service import offered_personal_providers
 
 
 def consent_is_current(consent: AiConsent | None) -> bool:
@@ -34,9 +35,7 @@ class AiConsentService:
     def offered_providers(self) -> set[AiProvider]:
         """Los proveedores a los que esta instalación puede enviar datos: el de la
         plataforma y los que tienen modelos para claves propias (0017)."""
-        offered = {
-            provider for provider in AiProvider if self.config.ai_models(provider)
-        }
+        offered = set(offered_personal_providers(self.config))
         platform = platform_model(self.config)
         if platform is not None:
             offered.add(platform.provider)

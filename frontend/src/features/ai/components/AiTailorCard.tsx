@@ -23,6 +23,7 @@ import type { ApplicationDetail } from "@/features/applications/types/Applicatio
 import { useGrantAiConsent } from "../hooks/mutations/useGrantAiConsent";
 import { useRequestAiProposal } from "../hooks/mutations/useRequestAiProposal";
 import { useAiConsents } from "../hooks/queries/useAiConsents";
+import { useAiKeys } from "../hooks/queries/useAiKeys";
 import { isInFlight, useAiProposals } from "../hooks/queries/useAiProposals";
 import { providerName } from "../lib/providers";
 import type { AiProposal, AiTask, ProposalLanguage } from "../types/Ai";
@@ -48,6 +49,7 @@ const TASKS: AiTask[] = ["cv", "cover_letter"];
 export function AiTailorCard({ application }: { application: ApplicationDetail }) {
   const { t, i18n } = useTranslation();
   const consents = useAiConsents();
+  const keys = useAiKeys();
   const proposals = useAiProposals(application.id);
   const usage = useUsage();
   const grant = useGrantAiConsent();
@@ -56,15 +58,22 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
   // La tarea que se pedirá al aceptar el consentimiento; null: diálogo cerrado.
   const [consentFor, setConsentFor] = useState<AiTask | null>(null);
 
-  if (consents.isLoading) return null;
-  const provider = consents.data?.platform_provider ?? null;
-  // Sin IA en esta instalación, la tarjeta no se ofrece (las claves propias llegan
-  // en el paso 5 de F15).
-  if (!provider) return null;
+  if (consents.isLoading || keys.isLoading) return null;
+  // Con qué se pide (ia.md §6): la clave propia activa o los usos gratuitos.
+  const ownKeys = keys.data?.own_keys_enabled ?? false;
+  const own = keys.data?.providers.find(
+    (option) => option.provider === keys.data?.active_provider && option.key,
+  );
+  const provider = own?.provider ?? consents.data?.platform_provider ?? null;
+  // Sin IA en esta instalación, la tarjeta no se ofrece.
+  if (!provider && !ownKeys) return null;
 
   const description = (application.job_description ?? "").trim();
+  // Con clave propia no hay usos que contar: lo paga el usuario (0017).
   const remainingFor = (task: AiTask) =>
-    usage.data?.limits.find((item) => item.key === QUOTA_KEYS[task])?.remaining ?? null;
+    own
+      ? null
+      : (usage.data?.limits.find((item) => item.key === QUOTA_KEYS[task])?.remaining ?? null);
   const consented = !!consents.data?.consents.find(
     (consent) => consent.provider === provider && consent.granted,
   );
@@ -84,7 +93,8 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
 
   const start = (kind: AiTask) => (consented ? ask(kind) : setConsentFor(kind));
 
-  const accept = () =>
+  const accept = () => {
+    if (!provider) return;
     grant.mutate(provider, {
       onSuccess: () => {
         const kind = consentFor;
@@ -93,6 +103,7 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
       },
       onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
     });
+  };
 
   return (
     <Card>
@@ -120,8 +131,24 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
             {t("ai.tailor.shortDescription", { min: MIN_JOB_DESCRIPTION_LENGTH })}
           </p>
         )}
-        {!blocked && (
+        {!blocked && !provider && (
+          <p className="text-sm text-muted-foreground">
+            {t("ai.tailor.needsKey")}{" "}
+            <Link to="/preferences" className="underline underline-offset-2 hover:text-foreground">
+              {t("ai.tailor.addKey")}
+            </Link>
+          </p>
+        )}
+        {!blocked && provider && (
           <>
+            {own?.key && (
+              <p className="text-sm text-muted-foreground">
+                {t("ai.tailor.withOwnKey", {
+                  provider: providerName(own.provider),
+                  model: own.key.model,
+                })}
+              </p>
+            )}
             <ViewToggle<ProposalLanguage>
               label={t("ai.tailor.language")}
               options={(["es", "en"] as const).map((value) => ({
@@ -145,6 +172,17 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
                     {remaining === 0 && !busyTask ? (
                       <p className="text-sm text-muted-foreground">
                         {t(`ai.tailor.noUses.${task}`)}
+                        {ownKeys && (
+                          <>
+                            {" "}
+                            <Link
+                              to="/preferences"
+                              className="underline underline-offset-2 hover:text-foreground"
+                            >
+                              {t("ai.tailor.useOwnKey")}
+                            </Link>
+                          </>
+                        )}
                       </p>
                     ) : (
                       <>
@@ -184,13 +222,15 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
         )}
       </CardContent>
 
-      <AiConsentDialog
-        provider={provider}
-        open={consentFor !== null}
-        onOpenChange={(open) => !open && setConsentFor(null)}
-        onAccept={accept}
-        accepting={grant.isPending || request.isPending}
-      />
+      {provider && (
+        <AiConsentDialog
+          provider={provider}
+          open={consentFor !== null}
+          onOpenChange={(open) => !open && setConsentFor(null)}
+          onAccept={accept}
+          accepting={grant.isPending || request.isPending}
+        />
+      )}
     </Card>
   );
 }

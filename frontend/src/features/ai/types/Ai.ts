@@ -1,4 +1,5 @@
-export type AiProvider = "anthropic" | "openai" | "groq";
+/** `ollama` solo como IA de la plataforma, nunca con clave propia. */
+export type AiProvider = "anthropic" | "openai" | "groq" | "ollama";
 export type AiTask = "cv" | "cover_letter";
 export type ProposalLanguage = "es" | "en";
 export type ProposalStatus = "queued" | "running" | "succeeded" | "invalid" | "rejected" | "failed";
@@ -120,4 +121,28 @@ export interface AiConsents {
   platform_provider: AiProvider | null;
   platform_model: string | null;
   consents: AiConsent[];
+}
+
+/** Una clave propia guardada, sin la clave: nunca vuelve del servidor. */
+export interface AiKey {
+  model: string;
+  last4: string;
+  validated_at: string;
+  /** false si quien despliega retiró ese modelo: hay que elegir otro. */
+  model_allowed: boolean;
+}
+
+export interface AiProviderOption {
+  provider: AiProvider;
+  /** El primero es el recomendado. */
+  models: string[];
+  key: AiKey | null;
+}
+
+/** Claves propias (RF-151): con qué proveedores se puede usar una y cuál se usa. */
+export interface AiKeys {
+  own_keys_enabled: boolean;
+  providers: AiProviderOption[];
+  /** null: los usos gratuitos de la plataforma. */
+  active_provider: AiProvider | null;
 }

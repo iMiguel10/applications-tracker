@@ -9,6 +9,7 @@ from app.core.client_ip import client_ip, parse_trusted_proxies
 from app.core.config import settings
 from app.core.exceptions import AppException, RateLimitedError
 from app.db.session import get_db
+from app.domain.ai import AiProvider
 from app.domain.rate_limits import (
     AI_PER_USER_DAY,
     AI_PER_USER_MINUTE,
@@ -18,12 +19,14 @@ from app.domain.rate_limits import (
     UPLOAD_PER_USER,
     RateRule,
 )
+from app.infra.llm import LLMProvider, build_llm_providers
 from app.infra.queue import JobQueue
 from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
 from app.schemas.user import CurrentUser
 from app.services.account_service import AccountService
 from app.services.ai_consent_service import AiConsentService
+from app.services.ai_key_service import AiKeyService
 from app.services.ai_proposal_service import AiProposalService
 from app.services.application_service import ApplicationService
 from app.services.application_status_service import ApplicationStatusService
@@ -127,6 +130,19 @@ def get_ai_consent_service(
     db: AsyncSession = Depends(get_db),
 ) -> AiConsentService:
     return AiConsentService(db)
+
+
+def get_llm_providers() -> dict[AiProvider, LLMProvider]:
+    # Los adaptadores no abren conexiones hasta llamar: construirlos no cuesta. La
+    # API solo los usa para comprobar una clave al guardarla (RF-153).
+    return build_llm_providers(settings)
+
+
+def get_ai_key_service(
+    db: AsyncSession = Depends(get_db),
+    providers: dict[AiProvider, LLMProvider] = Depends(get_llm_providers),
+) -> AiKeyService:
+    return AiKeyService(db, providers=providers)
 
 
 def get_cv_generation_service(

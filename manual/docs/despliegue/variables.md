@@ -99,16 +99,21 @@ Rebajar un límite por debajo de lo que la cuenta ya tiene no borra nada: solo l
 
 ## Inteligencia artificial
 
-La función de IA (adaptar un CV o una carta a una oferta) está en construcción. Estas variables configuran el modelo con el que la instalación ofrece los usos gratuitos.
+La IA adapta un CV o escribe una carta para una oferta. Hay dos formas de usarla: los **usos gratuitos** de la instalación, con su proveedor y su modelo, y la **clave propia** de cada usuario.
 
 | Variable | Por defecto | Qué es |
 |---|---|---|
-| `AI_PLATFORM_PROVIDER` | vacía | Proveedor de los usos gratuitos: `groq`, `anthropic` u `openai`. Vacía: no hay uso gratuito |
+| `AI_PLATFORM_PROVIDER` | vacía | Proveedor de los usos gratuitos: `groq`, `anthropic`, `openai` u `ollama`. Vacía: no hay uso gratuito |
 | `AI_PLATFORM_MODEL` | vacía | Modelo de ese proveedor, por ejemplo `openai/gpt-oss-120b` en Groq |
-| `AI_PLATFORM_API_KEY` | vacía | Clave de API de la instalación en ese proveedor |
+| `AI_PLATFORM_API_KEY` | vacía | Clave de API de la instalación en ese proveedor. Con Ollama no hace falta |
+| `AI_OLLAMA_BASE_URL` | vacía | Dirección de tu Ollama, por ejemplo `http://ollama:11434`. Obligatoria con `AI_PLATFORM_PROVIDER=ollama` |
 | `AI_PLATFORM_INPUT_USD_PER_MTOK` | 0 | Precio del modelo por millón de tokens de entrada, en dólares. Solo sirve para estimar el coste de cada uso |
 | `AI_PLATFORM_OUTPUT_USD_PER_MTOK` | 0 | Lo mismo para los tokens de salida |
 | `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Tiempo máximo de espera de una respuesta del proveedor |
+| `AI_KEYS_ENCRYPTION_KEYS` | vacía | Claves maestras con que se cifran las claves de los usuarios, separadas por comas y la nueva primero. Vacía: los usuarios no pueden usar su propia clave |
+| `AI_ANTHROPIC_MODELS` | vacía | Modelos que un usuario puede elegir con su clave de Anthropic, separados por comas; el primero es el recomendado. Vacía: Anthropic no se ofrece |
+| `AI_OPENAI_MODELS` | vacía | Lo mismo para OpenAI |
+| `AI_GROQ_MODELS` | vacía | Lo mismo para Groq |
 
 Si defines `AI_PLATFORM_PROVIDER`, el modelo y la clave son obligatorios: sin ellos, la API no arranca. Para comprobar que funcionan, con una llamada real que cuesta unas decenas de tokens:
 
@@ -117,6 +122,34 @@ docker compose exec api python -m app.scripts.check_ai_provider
 ```
 
 La clave se guarda como cualquier otra contraseña: quien la tenga gasta a cargo de tu cuenta en el proveedor. Pon también un tope de gasto en la consola del proveedor.
+
+### Usos gratuitos con tu propio Ollama
+
+Con [Ollama](https://ollama.com) instalado en tu servidor, los usos gratuitos no te cuestan nada por uso. Descarga antes el modelo (`ollama pull gpt-oss:20b`) y configura:
+
+```bash
+AI_PLATFORM_PROVIDER=ollama
+AI_PLATFORM_MODEL=gpt-oss:20b
+AI_OLLAMA_BASE_URL=http://ollama:11434
+```
+
+Desde los contenedores, un Ollama instalado en el propio equipo es `http://host.docker.internal:11434`. Un modelo pequeño responde peor y tarda más: comprueba el resultado con `check_ai_provider`.
+
+### Claves propias de los usuarios
+
+Para que cada usuario pueda usar su clave de Anthropic, OpenAI o Groq (sin límite de usos, a su cargo), genera una clave maestra y ponla en `AI_KEYS_ENCRYPTION_KEYS`:
+
+```bash
+docker compose exec api python -m app.scripts.rotate_ai_keys --new-key
+```
+
+Y elige los modelos de cada proveedor en `AI_ANTHROPIC_MODELS`, `AI_OPENAI_MODELS` y `AI_GROQ_MODELS`. Un proveedor sin modelos no se ofrece. Si retiras de la lista un modelo que alguien usa, su clave se conserva y se le pide que elija otro.
+
+:::danger Guarda la clave maestra con la copia de seguridad
+Sin ella, las claves de los usuarios no se pueden descifrar: tendrían que volver a guardarlas. Guárdala aparte de la copia de la base de datos: con las dos, cualquiera podría leer las claves.
+:::
+
+Para cambiar la clave maestra sin que nadie pierda la suya: pon la nueva **la primera** en `AI_KEYS_ENCRYPTION_KEYS` sin quitar la antigua, recrea `api` y `worker`, ejecuta `docker compose exec api python -m app.scripts.rotate_ai_keys` y, después, quita la antigua.
 
 ## Límite de peticiones
 

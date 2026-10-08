@@ -60,5 +60,6 @@ protected.include_router(documents.router)
 protected.include_router(profile.router)
 protected.include_router(ai.proposals)
 protected.include_router(ai.consents)
+protected.include_router(ai.keys)
 
 router.include_router(protected)

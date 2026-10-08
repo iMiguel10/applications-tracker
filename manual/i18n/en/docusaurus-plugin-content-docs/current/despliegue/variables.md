@@ -99,16 +99,21 @@ Lowering a limit below what the account already has deletes nothing: it only sto
 
 ## Artificial intelligence
 
-The AI feature (tailoring a CV or cover letter to a job offer) is under construction. These variables set the model the installation uses for the free uses.
+The AI tailors a CV or writes a cover letter for a job. There are two ways to use it: the installation's **free uses**, with its provider and model, and each user's **own key**.
 
 | Variable | Default | What it is |
 |---|---|---|
-| `AI_PLATFORM_PROVIDER` | empty | Provider for the free uses: `groq`, `anthropic` or `openai`. Empty: no free use |
+| `AI_PLATFORM_PROVIDER` | empty | Provider for the free uses: `groq`, `anthropic`, `openai` or `ollama`. Empty: no free use |
 | `AI_PLATFORM_MODEL` | empty | Model of that provider, for example `openai/gpt-oss-120b` on Groq |
-| `AI_PLATFORM_API_KEY` | empty | The installation's API key for that provider |
+| `AI_PLATFORM_API_KEY` | empty | The installation's API key for that provider. Not needed with Ollama |
+| `AI_OLLAMA_BASE_URL` | empty | Address of your Ollama, for example `http://ollama:11434`. Required with `AI_PLATFORM_PROVIDER=ollama` |
 | `AI_PLATFORM_INPUT_USD_PER_MTOK` | 0 | Model price per million input tokens, in dollars. Only used to estimate the cost of each use |
 | `AI_PLATFORM_OUTPUT_USD_PER_MTOK` | 0 | The same for output tokens |
 | `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Maximum time to wait for an answer from the provider |
+| `AI_KEYS_ENCRYPTION_KEYS` | empty | Master keys that encrypt users' keys, comma-separated with the new one first. Empty: users can't use their own key |
+| `AI_ANTHROPIC_MODELS` | empty | Models a user can choose with their Anthropic key, comma-separated; the first one is the recommended one. Empty: Anthropic isn't offered |
+| `AI_OPENAI_MODELS` | empty | The same for OpenAI |
+| `AI_GROQ_MODELS` | empty | The same for Groq |
 
 If you set `AI_PLATFORM_PROVIDER`, the model and the key are required: without them, the API does not start. To check they work, with a real call that costs a few dozen tokens:
 
@@ -117,6 +122,34 @@ docker compose exec api python -m app.scripts.check_ai_provider
 ```
 
 Keep the key like any other password: whoever has it spends on your provider account. Also set a spending cap in the provider's console.
+
+### Free uses with your own Ollama
+
+With [Ollama](https://ollama.com) installed on your server, the free uses cost you nothing per use. Download the model first (`ollama pull gpt-oss:20b`) and set:
+
+```bash
+AI_PLATFORM_PROVIDER=ollama
+AI_PLATFORM_MODEL=gpt-oss:20b
+AI_OLLAMA_BASE_URL=http://ollama:11434
+```
+
+From the containers, an Ollama installed on the same machine is `http://host.docker.internal:11434`. A small model answers worse and takes longer: check the result with `check_ai_provider`.
+
+### Users' own keys
+
+To let each user use their own Anthropic, OpenAI or Groq key (no usage limit, at their own cost), generate a master key and put it in `AI_KEYS_ENCRYPTION_KEYS`:
+
+```bash
+docker compose exec api python -m app.scripts.rotate_ai_keys --new-key
+```
+
+Then choose each provider's models in `AI_ANTHROPIC_MODELS`, `AI_OPENAI_MODELS` and `AI_GROQ_MODELS`. A provider without models isn't offered. If you remove from the list a model someone uses, their key is kept and they are asked to choose another.
+
+:::danger Keep the master key with your backup
+Without it, users' keys can't be decrypted: they would have to save them again. Keep it apart from the database backup: with both, anyone could read the keys.
+:::
+
+To change the master key without anyone losing theirs: put the new one **first** in `AI_KEYS_ENCRYPTION_KEYS` without removing the old one, recreate `api` and `worker`, run `docker compose exec api python -m app.scripts.rotate_ai_keys` and then remove the old one.
 
 ## Request limits
 

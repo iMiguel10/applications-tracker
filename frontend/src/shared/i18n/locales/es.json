@@ -490,7 +490,16 @@
     "ai_task_unavailable": "Esta función todavía no está disponible.",
     "ai_provider_not_offered": "Esta instalación no usa ese proveedor de IA.",
     "ai_proposal_not_ready": "La propuesta todavía no está lista.",
-    "ai_proposal_outdated": "Tu perfil ha cambiado desde que se hizo la propuesta. Pide una propuesta nueva."
+    "ai_proposal_outdated": "Tu perfil ha cambiado desde que se hizo la propuesta. Pide una propuesta nueva.",
+    "ai_key_invalid": "El proveedor no ha aceptado la clave. Comprueba que la has copiado entera.",
+    "ai_model_unavailable": "Tu clave no tiene acceso a ese modelo. Elige otro.",
+    "ai_model_not_allowed": "Ese modelo no está disponible en esta instalación. Elige otro en Preferencias.",
+    "ai_key_missing": "No tienes guardada una clave de ese proveedor.",
+    "ai_key_unavailable": "Tu clave activa no se puede usar. Vuelve a guardarla en Preferencias o usa los usos gratuitos.",
+    "ai_keys_disabled": "Esta instalación no admite claves propias.",
+    "ai_provider_quota": "Tu cuenta del proveedor no tiene saldo o ha llegado a su límite.",
+    "ai_provider_unavailable": "No se pudo contactar con el proveedor de IA. Inténtalo más tarde.",
+    "ai_document_mismatch": "El contenido no corresponde al tipo de la propuesta."
   },
   "documents": {
     "title": "Documentos",
@@ -942,7 +951,11 @@
       "kinds": {
         "cv": "CV",
         "cover_letter": "Carta"
-      }
+      },
+      "needsKey": "Esta instalación no tiene usos gratuitos de IA: usa tu propia clave.",
+      "addKey": "Añadir mi clave en Preferencias",
+      "withOwnKey": "Con tu clave de {{provider}} ({{model}}): sin límite de usos.",
+      "useOwnKey": "Usa tu propia clave."
     },
     "status": {
       "running": "Preparando la propuesta…",
@@ -1058,6 +1071,31 @@
         "paragraphs": "La carta necesita al menos un párrafo.",
         "emptyParagraph": "Hay un párrafo vacío."
       }
+    },
+    "settings": {
+      "title": "Inteligencia artificial",
+      "description": "Con qué se adapta tu CV y se escriben tus cartas, y a quién se envían tus datos para hacerlo.",
+      "using": "Se usa",
+      "free": "Usos gratuitos ({{provider}})",
+      "ownKey": "Tu clave de {{provider}}",
+      "keysTitle": "Tus claves",
+      "keysHint": "Con tu propia clave de un proveedor no tienes límite de usos: lo pagas en tu cuenta del proveedor. Se comprueba al guardarla, se guarda cifrada y nunca se vuelve a mostrar.",
+      "noKey": "Sin clave",
+      "saved": "Clave …{{last4}} · comprobada el {{date}}",
+      "add": "Añadir clave",
+      "replace": "Cambiar clave",
+      "delete": "Borrar la clave de {{provider}}",
+      "deleted": "Clave de {{provider}} borrada.",
+      "model": "Modelo",
+      "modelRetired": "Este modelo ya no está disponible en esta instalación: elige otro para seguir usando la clave.",
+      "keyLabel": "Clave de API de {{provider}}",
+      "keyNote": "Se comprueba con {{provider}} sin generar texto, así que no tiene coste.",
+      "save": "Comprobar y guardar",
+      "savedToast": "Clave de {{provider}} guardada. A partir de ahora la IA la usa.",
+      "consentsTitle": "Permisos de envío",
+      "consentsHint": "Los proveedores a los que has permitido enviar tu perfil y las ofertas. Si retiras uno, se te volverá a pedir antes de usarlo.",
+      "noConsents": "No has dado permiso a ningún proveedor.",
+      "revoke": "Retirar el permiso a {{provider}}"
     }
   }
 }

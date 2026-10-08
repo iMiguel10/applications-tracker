@@ -33,6 +33,16 @@ class AiProvider(StrEnum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     GROQ = "groq"
+    # Solo como IA de la plataforma: un Ollama que instala quien despliega.
+    OLLAMA = "ollama"
+
+
+# Con los que un usuario puede usar su propia clave (0017). Ollama no: su dirección
+# la fija quien despliega (si la diera cada usuario, sería un SSRF), y su nube no
+# impone el esquema de la respuesta.
+PERSONAL_PROVIDERS = (AiProvider.ANTHROPIC, AiProvider.OPENAI, AiProvider.GROQ)
+# Los que funcionan sin clave: la de la plataforma puede quedar vacía.
+KEYLESS_PROVIDERS = (AiProvider.OLLAMA,)
 
 
 class AiTask(StrEnum):

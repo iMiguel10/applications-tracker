@@ -2,6 +2,7 @@ import { apiClient } from "@/shared/lib/apiClient";
 import type { LibraryDocument } from "@/features/documents/types/Document";
 import type {
   AiConsents,
+  AiKeys,
   AiProposal,
   AiProvider,
   AiTask,
@@ -25,6 +26,21 @@ export const aiService = {
   grantConsent: (provider: AiProvider) => apiClient.put<AiConsents>(`/ai/consents/${provider}`),
 
   revokeConsent: (provider: AiProvider) => apiClient.delete<void>(`/ai/consents/${provider}`),
+
+  keys: () => apiClient.get<AiKeys>("/ai/keys"),
+
+  /** Se comprueba con el proveedor antes de guardarla, cifrada; queda activa. */
+  saveKey: (provider: AiProvider, apiKey: string, model: string | null) =>
+    apiClient.put<AiKeys>(`/ai/keys/${provider}`, { api_key: apiKey, model }),
+
+  changeKeyModel: (provider: AiProvider, model: string) =>
+    apiClient.patch<AiKeys>(`/ai/keys/${provider}`, { model }),
+
+  deleteKey: (provider: AiProvider) => apiClient.delete<void>(`/ai/keys/${provider}`),
+
+  /** null: volver a los usos gratuitos de la plataforma. */
+  setActiveProvider: (provider: AiProvider | null) =>
+    apiClient.put<AiKeys>("/ai/keys/active", { provider }),
 
   listProposals: (applicationId: string) => apiClient.get<AiProposal[]>(proposals(applicationId)),
 

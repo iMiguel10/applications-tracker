@@ -1,6 +1,6 @@
 # IA: CV y carta adaptados
 
-> Estado: **en construcción** (F15, pasos 1 a 4 de 6: la interfaz, el adaptador de Groq, el CV adaptado con el encaje con la oferta y la carta de presentación) · Fecha: 2026-10-08 · Cambios durante la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md), [0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
+> Estado: **en construcción** (F15, pasos 1 a 5 de 6: la interfaz, los adaptadores de Groq, Anthropic, OpenAI y Ollama, el CV adaptado con el encaje con la oferta, la carta de presentación y las claves propias) · Fecha: 2026-10-08 · Cambios durante la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md), [0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md), [0019](../decisiones/0019-ollama-solo-como-ia-de-la-plataforma.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
 >
 > Los nombres de las APIs de cada proveedor (salida estructurada, recuento de tokens, errores) se fijan al construir su adaptador, contra la versión del SDK de ese momento. Lo que no cambia son las reglas de este documento.
 
@@ -43,6 +43,13 @@ En el frontend, `features/ai/`: la tarjeta **Adaptar con IA** del detalle de la 
 **Construido en F15 (paso 3b), encaje con la oferta ([0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md)):** el prompt `cv/v2` pide además los requisitos de la oferta (`CvProposalOutput.requirements`, antes que el resto para que el modelo los tenga delante al reformular), con su peso, las palabras con que se buscarían y su evidencia en el perfil; las carencias pasan a ser los requisitos sin evidencia. El esquema que se pide y se valida es el de la versión de la propuesta (`CV_OUTPUT_MODELS`): una pedida con `cv/v1` se ejecuta como antes. En el frontend, `lib/match.ts` calcula el porcentaje antes y después y el estado de cada requisito, y `OfferMatchCard` lo enseña encima de la revisión (§4).
 
 **Construido en F15 (paso 4), la carta de presentación (RF-114):** `kind: "cover_letter"` en el mismo endpoint, con su propia cuota (`ai_cover_letter_proposals`, 1 uso) y su prompt (`cover_letter/v1`). La entrada es la del CV más el puesto y la empresa, delimitados como la oferta (`describe_application`, `<solicitud>`). El esquema (`CoverLetterOutput`): rechazo si la oferta no da, saludo, párrafos con sus **fuentes** (ids cortos de cualquier elemento del perfil, validados como una referencia más: `validate_letter_output`) y despedida (§5). Al generar, `POST .../document` recibe `letter` en lugar de `proposal` (422 `ai_document_mismatch` si no cuadra con el tipo) y guarda un `CoverLetterSnapshot` (`domain/cover_letter.py`): el texto revisado más el contacto del perfil, la empresa y el puesto de la solicitud y la fecha de hoy en la zona del usuario, ya escrita. `CvGenerationService.create_pending` lo crea como `cover_letter` y el `worker` lo maqueta con `letter.html` de la carpeta del diseño elegido (una por diseño de CV, decisión 0017; `PdfRenderer.render` recibe qué plantilla). En el frontend, la tarjeta **Adaptar con IA** tiene un segundo botón con su contador, y la página de revisión cambia según el tipo: `LetterReview` enseña cada párrafo editable con los textos del perfil en que se apoya y marca los que no se apoyan en nada; `GenerateDocumentCard` es común al CV y a la carta.
+
+**Construido en F15 (paso 5), claves propias y más proveedores:**
+
+- **Adaptadores** `infra/llm/anthropic.py` (salida con `output_config.format` y el razonamiento con `output_config.effort`; la API de mensajes ya no admite temperatura), `infra/llm/openai.py` (`json_schema` estricto y `reasoning_effort`; los modelos GPT-5 no admiten otra temperatura) e `infra/llm/ollama.py` (API nativa, `format` con el esquema; solo como IA de la plataforma, [0019](../decisiones/0019-ollama-solo-como-ia-de-la-plataforma.md)). Las mismas reglas que el de Groq: sin reintentos, errores traducidos sin el texto del proveedor, `from None`.
+- **Claves:** `ai_provider_keys` (proveedor, modelo elegido, clave cifrada, `last4`, `validated_at`) y `users.ai_provider` (la activa; `NULL` = usos gratuitos). `infra/crypto/` cifra con `MultiFernet` y `AI_KEYS_ENCRYPTION_KEYS`; `app/scripts/rotate_ai_keys.py` rota la clave maestra. `AiKeyService` comprueba cada clave con `check_access` antes de guardarla, la deja activa y permite cambiar el modelo, volver a los usos gratuitos o borrarla. Endpoints `/ai/keys` (`GET`, `PUT /active`, `PUT`, `PATCH` y `DELETE /{provider}`).
+- **Propuestas:** con una clave propia activa se piden con ella (`key_source = user`), sin mirar la cuota y con el consentimiento de ese proveedor; el `worker` la descifra justo antes de llamar y `cost_micros` queda en 0. Si la clave falla o se borró entre pedir y ejecutar, la propuesta falla con `ai_provider_auth`: nunca se pasa a la clave de la plataforma (I4).
+- **Frontend:** la tarjeta **Inteligencia artificial** de Preferencias (con qué se usa, las claves y los permisos de envío, que se pueden retirar) y la tarjeta **Adaptar con IA**, que dice con qué clave se pide.
 
 ## 3. La entrada: qué se envía y qué no
 
@@ -147,6 +154,11 @@ flowchart TD
 
 ## 7. Claves de API de los usuarios
 
+> **Trampa — los SDK de Anthropic y OpenAI usan `httpx2`.** Sus versiones actuales llevan su propio cliente HTTP, una bifurcación de `httpx` con otro nombre de paquete. Un `httpx.AsyncClient` o un `httpx.MockTransport` no les sirve: los adaptadores y sus pruebas usan `httpx2`. El de Groq y el de Ollama siguen con `httpx`.
+
+> **Trampa — un 422 de validación repite la entrada.** El error de validación de FastAPI devuelve el campo que falló con su valor. La clave va como `SecretStr` (nunca sale en un `repr` ni en un log) y el resto de campos tienen valor por defecto, para que una petición incompleta no devuelva el cuerpo entero. La respuesta solo vuelve a quien envió la clave, y la aplicación no registra cuerpos.
+
+
 | Momento | Qué pasa |
 |---|---|
 | Guardar | Se valida con una llamada mínima al proveedor (RF-153). Si es válida, se cifra con `MultiFernet` usando la primera clave maestra de `AI_KEYS_ENCRYPTION_KEYS` y se guardan el texto cifrado y los últimos 4 caracteres |
@@ -202,4 +214,5 @@ flowchart TD
 | Asistente conversacional | Evolución documentada | Misma entrada, mismo esquema y misma validación; solo cambia cómo se llega a la propuesta |
 | Traducir el perfil | Evolución documentada | Un paso previo de IA que produzca una versión del perfil en otro idioma, que luego sigue este mismo flujo |
 | Respuestas en *streaming* | No hace falta | La propuesta no se usa hasta validarla entera |
-| Elegir modelo por usuario | Descartado (RF-151) | Cada modelo necesita su propia evaluación |
+| Elegir modelo por usuario | Construido con una lista cerrada por proveedor (`AI_*_MODELS`, 0017) | Cada modelo de la lista se evalúa antes de ofrecerlo |
+| Ollama Cloud como clave propia | Descartado por ahora ([0019](../decisiones/0019-ollama-solo-como-ia-de-la-plataforma.md)) | Un proveedor más en `PERSONAL_PROVIDERS` si su nube impone el esquema |

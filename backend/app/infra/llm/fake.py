@@ -8,7 +8,7 @@ from app.infra.llm.base import LLMError, LLMFinish, LLMRequest, LLMResponse
 class FakeCall:
     request: LLMRequest
     model: str
-    api_key: str
+    api_key: str | None
 
 
 @dataclass
@@ -19,7 +19,7 @@ class FakeLLMProvider:
 
     provider_id: AiProvider = AiProvider.GROQ
     calls: list[FakeCall] = field(default_factory=list)
-    access_checks: list[tuple[str, str]] = field(default_factory=list)
+    access_checks: list[tuple[str, str | None]] = field(default_factory=list)
     access_error: LLMError | None = None
     _queue: list[LLMResponse | LLMError] = field(default_factory=list)
 
@@ -41,7 +41,7 @@ class FakeLLMProvider:
         self._queue.append(error)
 
     async def complete(
-        self, request: LLMRequest, *, model: str, api_key: str
+        self, request: LLMRequest, *, model: str, api_key: str | None
     ) -> LLMResponse:
         self.calls.append(FakeCall(request, model, api_key))
         if not self._queue:
@@ -51,7 +51,7 @@ class FakeLLMProvider:
             raise result
         return result
 
-    async def check_access(self, *, model: str, api_key: str) -> None:
+    async def check_access(self, *, model: str, api_key: str | None) -> None:
         self.access_checks.append((model, api_key))
         if self.access_error is not None:
             raise self.access_error

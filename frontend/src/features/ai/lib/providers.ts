@@ -5,6 +5,7 @@ const PROVIDER_NAMES: Record<AiProvider, string> = {
   anthropic: "Anthropic",
   openai: "OpenAI",
   groq: "Groq",
+  ollama: "Ollama",
 };
 
 export const providerName = (provider: AiProvider) => PROVIDER_NAMES[provider];

@@ -6155,10 +6155,429 @@
           }
         }
       }
+    },
+    "/api/v1/ai/keys": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Ver las claves de IA propias",
+        "description": "Con qué proveedores y modelos se puede usar una clave propia en esta\ninstalación, qué claves ha guardado el usuario (solo sus 4 últimos\ncaracteres: la clave nunca se devuelve) y con cuál se usa la IA.",
+        "operationId": "get_ai_keys_api_v1_ai_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKeysRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/keys/active": {
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Elegir con qué se usa la IA",
+        "description": "Una clave propia guardada (`provider`) o, con `null`, los usos gratuitos de\nla plataforma. 409 `ai_key_missing` si no hay clave de ese proveedor.",
+        "operationId": "set_active_ai_provider_api_v1_ai_keys_active_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiActiveProviderUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKeysRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai/keys/{provider}": {
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Guardar una clave de IA propia",
+        "description": "Comprueba la clave con una llamada mínima al proveedor, sin generar texto\n(RF-153), la guarda cifrada y la deja como la que se usa. Sustituye la que\nhubiera de ese proveedor. Con clave propia no hay límite de usos: lo paga la\ncuenta del usuario en el proveedor.\n\nErrores (422): `ai_provider_not_offered`, `ai_model_not_allowed` (el modelo\nno está en `models`), `ai_key_invalid` (el proveedor la rechaza),\n`ai_model_unavailable` (la clave no tiene ese modelo) y `ai_provider_quota`\n(la cuenta del proveedor no tiene saldo); 409 `ai_keys_disabled` si la\ninstalación no admite claves propias.",
+        "operationId": "save_ai_key_api_v1_ai_keys__provider__put",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AiProvider"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiKeySave"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKeysRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "`ai_provider_unavailable`: no se pudo comprobar la clave con el proveedor. Inténtalo más tarde.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Cambiar el modelo de una clave de IA propia",
+        "description": "Otro modelo de la lista para la misma clave, comprobando con el proveedor\nque la clave lo tiene. Mismos errores que al guardarla.",
+        "operationId": "change_ai_key_model_api_v1_ai_keys__provider__patch",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AiProvider"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiKeyModelUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKeysRead"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Borrar una clave de IA propia",
+        "description": "Borra la clave. Si era la que se usaba, se vuelve a los usos gratuitos. Las\npropuestas ya hechas con ella se quedan.",
+        "operationId": "delete_ai_key_api_v1_ai_keys__provider__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AiProvider"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o pertenece a otro usuario (no se distingue).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AiActiveProviderUpdate": {
+        "properties": {
+          "provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiProvider"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El proveedor de una clave guardada, o `null` para volver a los usos gratuitos de la plataforma."
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider"
+        ],
+        "title": "AiActiveProviderUpdate"
+      },
       "AiConsentRead": {
         "properties": {
           "provider": {
@@ -6255,6 +6674,119 @@
           "consents"
         ],
         "title": "AiConsentsRead"
+      },
+      "AiKeyModelUpdate": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "title": "AiKeyModelUpdate"
+      },
+      "AiKeyRead": {
+        "properties": {
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "El modelo elegido para esta clave."
+          },
+          "last4": {
+            "type": "string",
+            "title": "Last4",
+            "description": "Los 4 últimos caracteres, para reconocerla."
+          },
+          "validated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Validated At",
+            "description": "Cuándo se comprobó que funcionaba."
+          },
+          "model_allowed": {
+            "type": "boolean",
+            "title": "Model Allowed",
+            "description": "`false` si quien despliega retiró ese modelo de la lista: hay que elegir otro antes de usar la clave."
+          }
+        },
+        "type": "object",
+        "required": [
+          "model",
+          "last4",
+          "validated_at",
+          "model_allowed"
+        ],
+        "title": "AiKeyRead",
+        "description": "Una clave guardada, sin la clave: nunca vuelve al cliente (ia.md §7)."
+      },
+      "AiKeySave": {
+        "properties": {
+          "api_key": {
+            "type": "string",
+            "format": "password",
+            "title": "Api Key",
+            "description": "La clave de API del proveedor. Se comprueba con una llamada mínima, se guarda cifrada y nunca se devuelve.",
+            "writeOnly": true
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Uno de `models` del proveedor. Sin él, el recomendado."
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_key"
+        ],
+        "title": "AiKeySave"
+      },
+      "AiKeysRead": {
+        "properties": {
+          "own_keys_enabled": {
+            "type": "boolean",
+            "title": "Own Keys Enabled",
+            "description": "Si esta instalación admite claves propias."
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/AiProviderOption"
+            },
+            "type": "array",
+            "title": "Providers",
+            "description": "Los proveedores con los que se puede usar una clave propia."
+          },
+          "active_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiProvider"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Con qué clave propia se usa la IA. `null`: los usos gratuitos de la plataforma."
+          }
+        },
+        "type": "object",
+        "required": [
+          "own_keys_enabled",
+          "providers",
+          "active_provider"
+        ],
+        "title": "AiKeysRead"
       },
       "AiProposalCreate": {
         "properties": {
@@ -6422,10 +6954,44 @@
         "enum": [
           "anthropic",
           "openai",
-          "groq"
+          "groq",
+          "ollama"
         ],
         "title": "AiProvider",
         "description": "Proveedores con adaptador en `infra/llm/` (A31). Quien despliega decide cuáles\nse ofrecen y con qué modelos (decisión 0017); uno nuevo es un adaptador más."
+      },
+      "AiProviderOption": {
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AiProvider"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Models",
+            "description": "Los modelos que se pueden elegir con una clave de este proveedor; el primero es el recomendado."
+          },
+          "key": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiKeyRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "La clave guardada, si hay."
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "models",
+          "key"
+        ],
+        "title": "AiProviderOption"
       },
       "AiTask": {
         "type": "string",

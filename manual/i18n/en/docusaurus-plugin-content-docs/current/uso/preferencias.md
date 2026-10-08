@@ -39,6 +39,10 @@ Notifications only go to a **verified** email: until it is, the card reminds you
 
 The **Account usage** card shows, for each limit, how much you have used, the maximum and how much is left: for example, "42 of 5,000 · 4,958 left". The bar turns amber past 80 % and red at the limit. Storage is shown in MB ("12.4 MB of 100 MB · 87.6 MB left"). Limits don't renew: you free up room by deleting applications, companies, reminders or documents. Archiving an application or a document, or completing a reminder, doesn't free up room.
 
+## Set up the AI
+
+The **Artificial intelligence** card shows what the AI works with (the free uses or your own key from a provider), stores your keys and lets you revoke the permissions to send data to each provider. See [Use your own AI key](usar-tu-propia-clave-de-ia.md).
+
 ## Check whether your email is verified
 
 The **Email** card shows your account address and whether it is **Verified** or **Not verified**. While it is not, **Resend link** sends you another email to [confirm it](primeros-pasos.md#confirm-your-email). If the installation does not send email, the card says so instead of showing the button.
