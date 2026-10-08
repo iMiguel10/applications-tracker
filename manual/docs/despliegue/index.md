@@ -21,6 +21,7 @@ Aquí está lo que es igual en cualquier instalación: qué servicios hay, cómo
 | `supertokens-db` | PostgreSQL propio de SuperTokens: cuentas y contraseñas | **Sí** |
 | `valkey` | Cola de tareas pendientes | Solo tareas en espera, no datos |
 | volumen `files_data` | Ficheros de la aplicación (PDFs) | **Sí** |
+| `ollama` (opcional) | IA local para los usos gratuitos, si no usas un proveedor en la nube. Ver [variables](variables.md#usos-gratuitos-con-tu-propio-ollama) | Solo los modelos descargados, que se pueden volver a descargar |
 
 Las tres piezas marcadas **Sí** son las que hay que [copiar](copias-de-seguridad.md). La base de datos de SuperTokens es tan importante como la de la aplicación: sin ella, nadie puede iniciar sesión.
 

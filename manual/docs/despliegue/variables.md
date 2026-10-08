@@ -109,13 +109,16 @@ La IA adapta un CV o escribe una carta para una oferta. Hay dos formas de usarla
 | `AI_OLLAMA_BASE_URL` | vacía | Dirección de tu Ollama, por ejemplo `http://ollama:11434`. Obligatoria con `AI_PLATFORM_PROVIDER=ollama` |
 | `AI_PLATFORM_INPUT_USD_PER_MTOK` | 0 | Precio del modelo por millón de tokens de entrada, en dólares. Solo sirve para estimar el coste de cada uso |
 | `AI_PLATFORM_OUTPUT_USD_PER_MTOK` | 0 | Lo mismo para los tokens de salida |
-| `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Tiempo máximo de espera de una respuesta del proveedor |
+| `AI_OLLAMA_CONTEXT_TOKENS` | 16384 | Tokens de contexto que se piden a Ollama, entrada y salida juntas. Más contexto, más memoria |
+| `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Tiempo máximo de espera de una respuesta del proveedor. Con un modelo local, súbelo (300) |
+| `LIMIT_AI_CV_PROPOSALS` | 1 | Usos gratuitos para adaptar el CV, por cuenta. No se renuevan. `unlimited`: sin tope |
+| `LIMIT_AI_COVER_LETTER_PROPOSALS` | 1 | Lo mismo para las cartas de presentación |
 | `AI_KEYS_ENCRYPTION_KEYS` | vacía | Claves maestras con que se cifran las claves de los usuarios, separadas por comas y la nueva primero. Vacía: los usuarios no pueden usar su propia clave |
 | `AI_ANTHROPIC_MODELS` | vacía | Modelos que un usuario puede elegir con su clave de Anthropic, separados por comas; el primero es el recomendado. Vacía: Anthropic no se ofrece |
 | `AI_OPENAI_MODELS` | vacía | Lo mismo para OpenAI |
 | `AI_GROQ_MODELS` | vacía | Lo mismo para Groq |
 
-Si defines `AI_PLATFORM_PROVIDER`, el modelo y la clave son obligatorios: sin ellos, la API no arranca. Para comprobar que funcionan, con una llamada real que cuesta unas decenas de tokens:
+Si defines `AI_PLATFORM_PROVIDER`, el modelo y la clave (con Ollama, su dirección) son obligatorios: sin ellos, la API no arranca. Para comprobar que funcionan, con una llamada real que cuesta unas decenas de tokens:
 
 ```bash
 docker compose exec api python -m app.scripts.check_ai_provider
@@ -123,17 +126,28 @@ docker compose exec api python -m app.scripts.check_ai_provider
 
 La clave se guarda como cualquier otra contraseña: quien la tenga gasta a cargo de tu cuenta en el proveedor. Pon también un tope de gasto en la consola del proveedor.
 
+:::warning Usos gratuitos sin tope
+`unlimited` quita el tope a todas las cuentas. Con tu propio Ollama no cuesta nada por uso; con un proveedor de pago, **el gasto queda sin límite**. A una cuenta concreta le puedes seguir dando un número con `set_user_limit` (por ejemplo, `ai_cv_proposals 5`), pero no dejarla sin tope.
+:::
+
 ### Usos gratuitos con tu propio Ollama
 
-Con [Ollama](https://ollama.com) instalado en tu servidor, los usos gratuitos no te cuestan nada por uso. Descarga antes el modelo (`ollama pull gpt-oss:20b`) y configura:
+Con [Ollama](https://ollama.com) en tu servidor, los usos gratuitos no te cuestan nada por uso. Es lo que trae la plantilla `.env.example`, con un contenedor `ollama` y el modelo `qwen3:8b`. Descarga antes el modelo, una sola vez:
+
+```bash
+docker compose exec ollama ollama pull qwen3:8b
+```
+
+Y configura:
 
 ```bash
 AI_PLATFORM_PROVIDER=ollama
-AI_PLATFORM_MODEL=gpt-oss:20b
+AI_PLATFORM_MODEL=qwen3:8b
 AI_OLLAMA_BASE_URL=http://ollama:11434
+AI_REQUEST_TIMEOUT_SECONDS=300
 ```
 
-Desde los contenedores, un Ollama instalado en el propio equipo es `http://host.docker.internal:11434`. Un modelo pequeño responde peor y tarda más: comprueba el resultado con `check_ai_provider`.
+Desde los contenedores, un Ollama instalado en el propio equipo es `http://host.docker.internal:11434`. Un modelo pequeño responde peor y tarda más: comprueba el resultado con `check_ai_provider`. Con una GPU NVIDIA, Ollama va mucho más rápido: en el entorno de desarrollo, arráncalo con `docker compose -f compose.yml -f compose.gpu.yml up -d ollama`.
 
 ### Claves propias de los usuarios
 

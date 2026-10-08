@@ -15,7 +15,7 @@ Al detallar las claves propias (F15, paso 5), el usuario propuso añadir **Ollam
 - **Ollama es un proveedor solo para la IA de la plataforma.** Quien despliega lo configura con `AI_PLATFORM_PROVIDER=ollama`, `AI_PLATFORM_MODEL` (un modelo ya descargado) y `AI_OLLAMA_BASE_URL`. No necesita `AI_PLATFORM_API_KEY`.
 - **No es un proveedor de claves propias.** Las claves personales siguen siendo de Anthropic, OpenAI y Groq (0017).
 - **La dirección de Ollama la fija siempre quien despliega**, nunca un usuario.
-- **Pendiente, a petición del usuario:** al terminar el paso 5, Ollama pasa a ser la IA de plataforma **por defecto** en lugar de Groq.
+- **A petición del usuario:** al terminar el paso 5, Ollama pasa a ser la IA de plataforma **por defecto** en lugar de Groq. Hecho en [0020](0020-ollama-por-defecto-y-usos-gratuitos-sin-tope.md).
 
 ## Alternativas descartadas
 

@@ -240,6 +240,25 @@ async def test_a_queued_proposal_already_counts_against_the_free_use(
     assert caught.value.extra == {"limit": 1, "used": 1}
 
 
+@pytest.mark.asyncio
+async def test_with_unlimited_free_uses_the_quota_never_runs_out(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    # LIMIT_AI_CV_PROPOSALS=unlimited (0020): las propuestas siguen contando como
+    # uso de la plataforma, pero ninguna se rechaza por cuota.
+    unlimited = Settings(**(CONFIG.model_dump() | {"limit_ai_cv_proposals": None}))
+    application_id = await prepare(db_session, user)
+
+    for _ in range(3):
+        await service(db_session, config=unlimited).request(
+            user.id, application_id, CV, InMemoryJobQueue()
+        )
+
+    usage = await LimitService(db_session, unlimited).usage(user.id)
+    cv = next(item for item in usage if item.key == LimitKey.AI_CV_PROPOSALS)
+    assert (cv.used, cv.limit, cv.remaining) == (3, None, None)
+
+
 # --- Ejecutarla ---------------------------------------------------------------
 
 

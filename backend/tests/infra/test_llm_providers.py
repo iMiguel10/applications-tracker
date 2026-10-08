@@ -329,7 +329,10 @@ async def test_openai_checks_access_by_reading_the_model() -> None:
 def ollama(transport: Any) -> OllamaProvider:
     client = httpx.AsyncClient(transport=httpx.MockTransport(transport))
     return OllamaProvider(
-        base_url="http://ollama:11434/", timeout_seconds=5, http_client=client
+        base_url="http://ollama:11434/",
+        timeout_seconds=5,
+        context_tokens=8_192,
+        http_client=client,
     )
 
 
@@ -360,7 +363,12 @@ async def test_ollama_sends_the_schema_as_format() -> None:
     body = json.loads(sent.content)
     assert body["format"] == strict_json_schema(Proposal)
     assert body["stream"] is False
-    assert body["options"] == {"num_predict": 4_000, "temperature": 0.4}
+    # El contexto, siempre explícito: el de Ollama recortaría la entrada.
+    assert body["options"] == {
+        "num_ctx": 8_192,
+        "num_predict": 4_000,
+        "temperature": 0.4,
+    }
 
 
 @pytest.mark.asyncio

@@ -21,6 +21,7 @@ This covers what is the same in every installation: which services there are, ho
 | `supertokens-db` | SuperTokens' own PostgreSQL: accounts and passwords | **Yes** |
 | `valkey` | Queue of pending tasks | Only waiting tasks, no data |
 | `files_data` volume | Application files (PDFs) | **Yes** |
+| `ollama` (optional) | Local AI for the free uses, if you don't use a cloud provider. See [variables](variables.md#free-uses-with-your-own-ollama) | Only the downloaded models, which can be downloaded again |
 
 The three pieces marked **Yes** are the ones to [back up](copias-de-seguridad.md). The SuperTokens database matters as much as the application's: without it, nobody can sign in.
 

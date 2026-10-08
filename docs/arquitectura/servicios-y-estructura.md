@@ -319,6 +319,7 @@ Las tres reglas contra el envejecimiento:
 | `mailpit` **[construido]** | `axllent/mailpit:v1.31` | 8025 (interfaz web) | Captura todos los emails en desarrollo; SMTP interno en el 1025 | F9 |
 | `manual` **[construido]** | `./manual/Dockerfile.dev` (node 24) | 3001 | Documentación de producción (Docusaurus) con recarga en vivo (`--poll`, como el frontend). Sirve **un solo idioma**: el inglés se arranca con `--locale en` (ver `manual/README.md`) | F10 |
 | `valkey-test` **[construido]** | como `valkey`, en `tmpfs` | — | Rate limit y cola en la suite de pytest | F9 |
+| `ollama` **[construido]** | `ollama/ollama:0.34.3` | — | IA local de la plataforma en desarrollo, modelos en el volumen `ollama_data`; con GPU NVIDIA, `compose.gpu.yml` ([0020](../decisiones/0020-ollama-por-defecto-y-usos-gratuitos-sin-tope.md)) | F15 |
 
 Volumen nuevo: **`files_data`** **[construido]**, montado en `/data/files` en `api` **y** `worker` (A21). Es el almacén de los PDFs. La imagen crea `/data/files` con dueño `appuser` antes de montarlo ([ficheros §3](ficheros.md#3-escribir-y-leer-en-disco)).
 

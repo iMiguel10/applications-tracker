@@ -15,7 +15,7 @@ The requirements are the same as for tailoring the CV:
 - your profile has at least one **experience**;
 - you have [confirmed your email](primeros-pasos.md#confirm-your-email), unless the installation doesn't send emails.
 
-The letter has its **own free use**, separate from the CV: using one doesn't use the other. It doesn't renew either, and it is spent as soon as the AI answers, even if the letter doesn't work out.
+The letter has its **own free uses**, separate from the CV's: using one doesn't use the other. They don't renew either, and each one is spent as soon as the AI answers, even if the letter doesn't work out.
 
 ## Ask for the letter
 

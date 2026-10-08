@@ -21,7 +21,8 @@ from app.repositories.user_limit_override_repository import (
 class LimitUsage:
     key: LimitKey
     used: int
-    # None: sin límite (excepción de la cuenta, solo donde se permite).
+    # None: sin límite (excepción de la cuenta donde se permite, o la IA de la
+    # instalación configurada así).
     limit: int | None
     remaining: int | None
     renews: bool
@@ -55,8 +56,10 @@ class LimitService:
         self.documents = DocumentRepository(session)
         self.ai_proposals = AiProposalRepository(session)
 
-    def global_limit(self, key: LimitKey) -> int:
-        value: int = getattr(self.config, f"limit_{key.value}")
+    def global_limit(self, key: LimitKey) -> int | None:
+        """El de la instalación. None: sin límite, solo en los usos gratuitos de IA
+        (`LIMIT_AI_*=unlimited`, 0020); el resto siempre tienen un número."""
+        value: int | None = getattr(self.config, f"limit_{key.value}")
         return value
 
     async def limit_for(self, user_id: uuid.UUID, key: LimitKey) -> int | None:

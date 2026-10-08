@@ -5,7 +5,7 @@ sidebar_label: Tu propia clave de IA
 
 Para [adaptar el CV](adaptar-el-cv-con-ia.md) y [escribir cartas](escribir-una-carta-con-ia.md), la IA puede funcionar de dos formas:
 
-- **Usos gratuitos**: los que ofrece la instalación. Son pocos y no se renuevan.
+- **Usos gratuitos**: los que ofrece la instalación. Suelen ser pocos y no se renuevan.
 - **Tu propia clave** de un proveedor de IA (Anthropic, OpenAI o Groq, según lo que permita la instalación): **sin límite de usos**. Cada uso lo pagas en tu cuenta de ese proveedor, normalmente unos céntimos.
 
 Todo se configura en **Preferencias**, en la tarjeta **Inteligencia artificial**. Si no aparece, la instalación no tiene IA.

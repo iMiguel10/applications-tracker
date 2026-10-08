@@ -35,10 +35,12 @@ class OllamaProvider:
         *,
         base_url: str,
         timeout_seconds: float,
+        context_tokens: int = 16_384,
         http_client: httpx.AsyncClient | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout_seconds
+        self._context_tokens = context_tokens
         # Solo para las pruebas (un transporte simulado).
         self._http_client = http_client
 
@@ -59,7 +61,13 @@ class OllamaProvider:
     async def complete(
         self, request: LLMRequest, *, model: str, api_key: str | None
     ) -> LLMResponse:
-        options: dict[str, Any] = {"num_predict": request.max_output_tokens}
+        # num_ctx: la ventana por defecto de Ollama es pequeña (unos miles de
+        # tokens) y, si no cabe, recorta la entrada sin avisar: la propuesta
+        # saldría de medio perfil o de media oferta.
+        options: dict[str, Any] = {
+            "num_ctx": self._context_tokens,
+            "num_predict": request.max_output_tokens,
+        }
         if request.temperature is not None:
             options["temperature"] = request.temperature
         body = await self._call(

@@ -84,6 +84,8 @@ def build_llm_providers(settings: Settings) -> dict[AiProvider, LLMProvider]:
     }
     if settings.ai_ollama_base_url:
         providers[AiProvider.OLLAMA] = OllamaProvider(
-            base_url=settings.ai_ollama_base_url, timeout_seconds=timeout
+            base_url=settings.ai_ollama_base_url,
+            timeout_seconds=timeout,
+            context_tokens=settings.ai_ollama_context_tokens,
         )
     return providers

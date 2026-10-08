@@ -58,8 +58,10 @@ class Settings(BaseSettings):
     # todas y lo publica GET /meta para que la interfaz avise antes de subir.
     document_max_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
     # Usos gratuitos de IA por cuenta y tarea, con la plataforma (0017). Sin renovar.
-    limit_ai_cv_proposals: int = Field(default=1, ge=0)
-    limit_ai_cover_letter_proposals: int = Field(default=1, ge=0)
+    # "unlimited" (None) los deja sin tope para todas las cuentas: lo decide quien
+    # despliega, pensado para un Ollama propio, que no cuesta por uso (0020).
+    limit_ai_cv_proposals: int | None = Field(default=1, ge=0)
+    limit_ai_cover_letter_proposals: int | None = Field(default=1, ge=0)
 
     # Rate limiting (RNF-04, límites y abuso §2). Desactivable solo para las
     # pruebas, que si no fallarían de forma intermitente por 429.
@@ -86,6 +88,9 @@ class Settings(BaseSettings):
     # Dirección de un Ollama propio (p. ej. http://ollama:11434), para usarlo como IA
     # de la plataforma. La fija quien despliega; nunca un usuario.
     ai_ollama_base_url: str | None = None
+    # Tokens de contexto que se piden a Ollama en cada llamada (entrada y salida
+    # juntas). Más contexto, más memoria de la GPU.
+    ai_ollama_context_tokens: int = Field(default=16_384, ge=4_096)
     # Claves maestras (Fernet) con que se cifran las claves de API de los usuarios,
     # separadas por comas: se cifra con la primera y se descifra con cualquiera
     # (rotación, ia.md §7). Sin ellas no se ofrecen claves propias.
@@ -98,6 +103,15 @@ class Settings(BaseSettings):
         env_file=".env",
         extra="ignore",
     )
+
+    @field_validator(
+        "limit_ai_cv_proposals", "limit_ai_cover_letter_proposals", mode="before"
+    )
+    @classmethod
+    def _unlimited_is_none(cls, value: object) -> object:
+        if isinstance(value, str) and value.strip().lower() == "unlimited":
+            return None
+        return value
 
     @field_validator(
         "ai_platform_provider",

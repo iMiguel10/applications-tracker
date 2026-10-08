@@ -15,7 +15,7 @@ Para la carta de presentación, ver [Escribir una carta con IA](escribir-una-car
 - Tu perfil tiene que tener al menos una **experiencia**. Cuantos más logros escribas en cada una, más tiene la IA para elegir.
 - Tienes que haber [confirmado tu email](primeros-pasos.md#confirmar-tu-email), salvo que la instalación no envíe emails.
 
-Cada cuenta tiene **un uso gratuito** para el CV. No se renueva. Se gasta en cuanto la IA responde, también si la propuesta no sale bien.
+Cada cuenta tiene **usos gratuitos** para el CV: normalmente uno, según la instalación, que puede no ponerles tope. No se renuevan. Un uso se gasta en cuanto la IA responde, también si la propuesta no sale bien. La tarjeta **Adaptar con IA** te dice cuántos te quedan; si no dice nada, no tienen tope.
 
 ## Pedir la propuesta
 

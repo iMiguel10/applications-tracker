@@ -180,6 +180,27 @@ async def test_unlimited_never_blocks_and_only_for_that_account_and_limit(
 
 
 @pytest.mark.asyncio
+async def test_unlimited_free_ai_uses_still_admit_a_cap_for_one_account(
+    db_session: AsyncSession,
+    user: CurrentUser,
+    other_user: CurrentUser,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # LIMIT_AI_*=unlimited (0020) quita el tope a todas las cuentas, pero una
+    # excepción con número sigue mandando sobre la suya.
+    monkeypatch.setattr(settings, "limit_ai_cv_proposals", None)
+    service = LimitService(db_session)
+
+    await service.check(other_user.id, LimitKey.AI_CV_PROPOSALS, amount=1_000)
+    await service.set_override(user.id, LimitKey.AI_CV_PROPOSALS, 0)
+
+    with pytest.raises(LimitReachedError):
+        await service.check(user.id, LimitKey.AI_CV_PROPOSALS)
+    other = _by_key(await service.usage(other_user.id), LimitKey.AI_CV_PROPOSALS)
+    assert (other.limit, other.remaining, other.overridden) == (None, None, False)
+
+
+@pytest.mark.asyncio
 async def test_limits_protecting_a_cost_cannot_be_unlimited(
     db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
 ):

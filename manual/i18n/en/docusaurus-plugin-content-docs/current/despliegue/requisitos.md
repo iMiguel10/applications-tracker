@@ -19,6 +19,8 @@ You don't need Python, Node or PostgreSQL installed on the server: everything ru
 
 The two PostgreSQL databases, SuperTokens, the API, the worker and Valkey fit in 2 GB with little headroom. The worker is the one that may need the most memory at peaks, when generating PDFs.
 
+With the AI on your own Ollama, add what the model needs: `qwen3:8b` needs about 6 GB of memory plus the context, ideally on a GPU. Without a GPU it works, but each proposal may take several minutes.
+
 ## Network
 
 Only the web application and the API need to be exposed. **Never publish** the ports of the databases, SuperTokens or Valkey: only the other containers use them, over Docker's internal network.

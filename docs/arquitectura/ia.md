@@ -1,6 +1,6 @@
 # IA: CV y carta adaptados
 
-> Estado: **en construcción** (F15, pasos 1 a 5 de 6: la interfaz, los adaptadores de Groq, Anthropic, OpenAI y Ollama, el CV adaptado con el encaje con la oferta, la carta de presentación y las claves propias) · Fecha: 2026-10-08 · Cambios durante la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md), [0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md), [0019](../decisiones/0019-ollama-solo-como-ia-de-la-plataforma.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
+> Estado: **en construcción** (F15, pasos 1 a 5 de 6: la interfaz, los adaptadores de Groq, Anthropic, OpenAI y Ollama, el CV adaptado con el encaje con la oferta, la carta de presentación y las claves propias) · Fecha: 2026-10-08 · Cambios durante la fase: [0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md), [0018](../decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md), [0019](../decisiones/0019-ollama-solo-como-ia-de-la-plataforma.md), [0020](../decisiones/0020-ollama-por-defecto-y-usos-gratuitos-sin-tope.md) · Depende de la [especificación](../producto/especificacion.md) (RF-110…119, RF-150…156, §8) y de la [arquitectura de la v2](v2.md) (A31–A34)
 >
 > Los nombres de las APIs de cada proveedor (salida estructurada, recuento de tokens, errores) se fijan al construir su adaptador, contra la versión del SDK de ese momento. Lo que no cambia son las reglas de este documento.
 
@@ -141,6 +141,11 @@ flowchart TD
 
 - Un uso de la cuota gratuita (RF-150) se **reserva** al encolar y se **consume** si el proveedor llegó a responder (`billable = true`), pase o no la validación.
 - Un fallo **antes** de llamar (proveedor caído al conectar, error de configuración) libera la reserva.
+- Con `LIMIT_AI_CV_PROPOSALS` o `LIMIT_AI_COVER_LETTER_PROPOSALS` a `unlimited` ([0020](../decisiones/0020-ollama-por-defecto-y-usos-gratuitos-sin-tope.md)), el valor global es `None` y `LimitService.check` no rechaza nada; las propuestas se siguen contando y registrando igual, y una excepción con número sigue limitando a su cuenta.
+
+**Construido tras el paso 5 ([0020](../decisiones/0020-ollama-por-defecto-y-usos-gratuitos-sin-tope.md)):** Ollama es la IA de la plataforma de `.env.example`, con el servicio `ollama` del compose de desarrollo (`compose.gpu.yml` para usar una GPU NVIDIA) y `qwen3:8b`. `OllamaProvider` envía siempre `num_ctx` (`AI_OLLAMA_CONTEXT_TOKENS`, 16 384 por defecto). Con `qwen3:8b` en una GPU de 8 GB (un 20 % del modelo queda en la CPU con ese contexto), una propuesta de CV real tardó 151 s y una carta 63 s, las dos válidas y sin inventar nada; con 8 192 de contexto cabría entera en la GPU.
+
+> **Trampa — la ventana de contexto de Ollama recorta sin avisar.** Si no se pide `num_ctx`, Ollama usa una ventana de unos pocos miles de tokens, y una entrada más larga se trunca sin error. La respuesta sigue siendo un JSON válido, pero sale de medio perfil o de media oferta, y la validación no lo detecta porque los ids que cita existen. Con Groq, una propuesta real rondó los 3 400 tokens de entrada y los 2 700 de salida, razonamiento incluido.
 
 > **Trampa — contar solo lo facturado deja pasar ráfagas.** Si la cuota contara solo las propuestas ya `billable`, un usuario con 1 uso restante podría lanzar 5 peticiones a la vez: las 5 ven "queda 1" al encolar, porque ninguna ha respondido aún, y las 5 acaban facturadas. Por eso, con la fila del usuario bloqueada (A30), la cuenta incluye lo `billable` **más lo que está en curso** (`queued`, `running`) con la clave de la plataforma.
 

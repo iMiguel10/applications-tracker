@@ -1,0 +1,14 @@
+# Ollama con una GPU NVIDIA (opcional, solo desarrollo). Necesita el NVIDIA
+# Container Toolkit (en Windows, Docker Desktop con WSL 2 y el driver de NVIDIA):
+#   docker compose -f compose.yml -f compose.gpu.yml up -d ollama
+# Sin este fichero, Ollama funciona igual con la CPU, más despacio. No va en
+# compose.yml porque, en un equipo sin GPU, el entorno entero no arrancaría.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

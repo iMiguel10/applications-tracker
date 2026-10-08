@@ -5,7 +5,7 @@ sidebar_label: Your own AI key
 
 To [tailor your CV](adaptar-el-cv-con-ia.md) and [write cover letters](escribir-una-carta-con-ia.md), the AI can work in two ways:
 
-- **Free uses**: the ones the installation offers. There are few and they don't renew.
+- **Free uses**: the ones the installation offers. There are usually few and they don't renew.
 - **Your own key** from an AI provider (Anthropic, OpenAI or Groq, depending on what the installation allows): **no usage limit**. You pay for each use in your account with that provider, usually a few cents.
 
 Everything is set up in **Preferences**, in the **Artificial intelligence** card. If it doesn't appear, the installation has no AI.

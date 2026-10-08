@@ -109,13 +109,16 @@ The AI tailors a CV or writes a cover letter for a job. There are two ways to us
 | `AI_OLLAMA_BASE_URL` | empty | Address of your Ollama, for example `http://ollama:11434`. Required with `AI_PLATFORM_PROVIDER=ollama` |
 | `AI_PLATFORM_INPUT_USD_PER_MTOK` | 0 | Model price per million input tokens, in dollars. Only used to estimate the cost of each use |
 | `AI_PLATFORM_OUTPUT_USD_PER_MTOK` | 0 | The same for output tokens |
-| `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Maximum time to wait for an answer from the provider |
+| `AI_OLLAMA_CONTEXT_TOKENS` | 16384 | Context tokens requested from Ollama, input and output together. More context, more memory |
+| `AI_REQUEST_TIMEOUT_SECONDS` | 120 | Maximum time to wait for an answer from the provider. With a local model, raise it (300) |
+| `LIMIT_AI_CV_PROPOSALS` | 1 | Free uses to tailor the CV, per account. They don't renew. `unlimited`: no cap |
+| `LIMIT_AI_COVER_LETTER_PROPOSALS` | 1 | The same for cover letters |
 | `AI_KEYS_ENCRYPTION_KEYS` | empty | Master keys that encrypt users' keys, comma-separated with the new one first. Empty: users can't use their own key |
 | `AI_ANTHROPIC_MODELS` | empty | Models a user can choose with their Anthropic key, comma-separated; the first one is the recommended one. Empty: Anthropic isn't offered |
 | `AI_OPENAI_MODELS` | empty | The same for OpenAI |
 | `AI_GROQ_MODELS` | empty | The same for Groq |
 
-If you set `AI_PLATFORM_PROVIDER`, the model and the key are required: without them, the API does not start. To check they work, with a real call that costs a few dozen tokens:
+If you set `AI_PLATFORM_PROVIDER`, the model and the key (with Ollama, its address) are required: without them, the API does not start. To check they work, with a real call that costs a few dozen tokens:
 
 ```bash
 docker compose exec api python -m app.scripts.check_ai_provider
@@ -123,17 +126,28 @@ docker compose exec api python -m app.scripts.check_ai_provider
 
 Keep the key like any other password: whoever has it spends on your provider account. Also set a spending cap in the provider's console.
 
+:::warning Free uses with no cap
+`unlimited` removes the cap for every account. With your own Ollama it costs nothing per use; with a paid provider, **spending has no limit**. You can still give one account a number with `set_user_limit` (for example, `ai_cv_proposals 5`), but not leave it without a cap.
+:::
+
 ### Free uses with your own Ollama
 
-With [Ollama](https://ollama.com) installed on your server, the free uses cost you nothing per use. Download the model first (`ollama pull gpt-oss:20b`) and set:
+With [Ollama](https://ollama.com) on your server, the free uses cost you nothing per use. It is what the `.env.example` template comes with, with an `ollama` container and the `qwen3:8b` model. Download the model first, just once:
+
+```bash
+docker compose exec ollama ollama pull qwen3:8b
+```
+
+And set:
 
 ```bash
 AI_PLATFORM_PROVIDER=ollama
-AI_PLATFORM_MODEL=gpt-oss:20b
+AI_PLATFORM_MODEL=qwen3:8b
 AI_OLLAMA_BASE_URL=http://ollama:11434
+AI_REQUEST_TIMEOUT_SECONDS=300
 ```
 
-From the containers, an Ollama installed on the same machine is `http://host.docker.internal:11434`. A small model answers worse and takes longer: check the result with `check_ai_provider`.
+From the containers, an Ollama installed on the same machine is `http://host.docker.internal:11434`. A small model answers worse and takes longer: check the result with `check_ai_provider`. With an NVIDIA GPU, Ollama is much faster: in the development environment, start it with `docker compose -f compose.yml -f compose.gpu.yml up -d ollama`.
 
 ### Users' own keys
 

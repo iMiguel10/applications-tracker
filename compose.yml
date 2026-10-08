@@ -111,6 +111,21 @@ services:
       valkey:
         condition: service_healthy
 
+  # IA local de la plataforma por defecto (decisiones 0019 y 0020): sin clave ni
+  # coste por uso. Sin puertos publicados: solo la llaman api y worker, en
+  # http://ollama:11434. Los modelos se descargan una vez y quedan en ollama_data:
+  #   docker compose exec ollama ollama pull qwen3:8b
+  # Usa la CPU; con una GPU NVIDIA, añade compose.gpu.yml (ver ese fichero).
+  ollama:
+    image: ollama/ollama:0.34.3
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Solo desarrollo: captura todo el correo (SMTP interno en mailpit:1025) y no
   # envía nada fuera. Interfaz web en http://localhost:8025. En producción no hay
   # servicio de correo: el SMTP lo configura quien despliega (RNF-34).
@@ -161,6 +176,7 @@ services:
 volumes:
   api_venv:
   files_data:
+  ollama_data:
   postgres_data:
   supertokens_data:
   valkey_data:
