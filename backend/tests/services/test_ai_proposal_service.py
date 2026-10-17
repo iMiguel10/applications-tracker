@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
@@ -27,8 +28,11 @@ from app.infra.llm import (
 from app.infra.llm.fake import FakeLLMProvider
 from app.infra.queue import InMemoryJobQueue
 from app.models.ai_proposal import AiProposal
+from app.models.application import Application
 from app.models.profile_skill import ProfileSkill
+from app.models.user import User
 from app.repositories.ai_consent_repository import AiConsentRepository
+from app.repositories.application_repository import ApplicationRepository
 from app.repositories.profile_entry_repository import ProfileEntryRepository
 from app.repositories.profile_repository import ProfileRepository
 from app.repositories.user_repository import UserRepository
@@ -37,7 +41,11 @@ from app.schemas.user import CurrentUser
 from app.services.ai_proposal_service import RUN_AI_PROPOSAL, AiProposalService
 from app.services.limit_service import LimitService
 from tests.conftest import create_test_user, test_engine
-from tests.factories import make_application, make_profile_entry
+from tests.factories import (
+    make_ai_proposal,
+    make_application,
+    make_profile_entry,
+)
 
 PLATFORM_KEY = "gsk_platform_SECRET_0123456789"
 MODEL = "openai/gpt-oss-120b"
@@ -665,3 +673,52 @@ async def test_a_letter_citing_what_is_not_in_the_profile_is_invalid(
     assert proposal.error_code == "ai_response_invalid"
     assert proposal.billable is True
     assert proposal.proposal is None
+
+
+# --- Borrar la solicitud o la cuenta (QA de F15) ------------------------------
+
+
+@pytest.mark.asyncio
+async def test_deleting_the_application_keeps_its_proposals_and_the_used_free_use(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    # Las propuestas son el registro de consumo: solo pierden la solicitud. Que el
+    # documento generado conserve su propuesta lo prueba tests/api/test_ai.py.
+    application = await make_application(db_session, user.id)
+    proposal = await make_ai_proposal(
+        db_session,
+        application,
+        status="invalid",
+        error_code="ai_response_invalid",
+        billable=True,
+    )
+
+    loaded = await db_session.get(Application, application.id)
+    assert loaded is not None
+    await ApplicationRepository(db_session).delete(loaded)
+    await db_session.flush()
+    await db_session.refresh(proposal)
+
+    assert proposal.application_id is None
+    assert proposal.user_id == user.id
+    usage = await LimitService(db_session, CONFIG).usage_for(
+        user.id, LimitKey.AI_CV_PROPOSALS
+    )
+    assert usage == 1
+
+
+@pytest.mark.asyncio
+async def test_deleting_the_account_still_deletes_its_proposals(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    proposal = await make_ai_proposal(
+        db_session, await make_application(db_session, user.id)
+    )
+
+    await db_session.execute(delete(User).where(User.id == user.id))
+    await db_session.flush()
+
+    remaining = await db_session.scalar(
+        select(func.count()).select_from(AiProposal).where(AiProposal.id == proposal.id)
+    )
+    assert remaining == 0

@@ -468,7 +468,9 @@ async def test_deleting_the_application_keeps_the_tailored_cv(
 
     assert deleted.status_code == 204
     assert document.status_code == 200
-    assert document.json()["ai_proposal_id"] is None
+    # La propuesta sobrevive a su solicitud (registro de consumo, QA de F15), así
+    # que el documento sigue diciendo con qué modelo y prompt se hizo (RF-115).
+    assert document.json()["ai_proposal_id"] == str(proposal_id)
     assert queue.jobs
 
 

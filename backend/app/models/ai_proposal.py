@@ -46,11 +46,15 @@ class AiProposal(Base):
 
     __tablename__ = "ai_proposals"
     __table_args__ = (
-        # La solicitud es del MISMO usuario. Borrarla borra sus propuestas.
+        # La solicitud es del MISMO usuario. Borrarla NO borra sus propuestas: son
+        # el registro de consumo, y la cuota gratuita se cuenta sobre ellas. Con
+        # CASCADE, borrar la solicitud devolvía el uso (encontrado en el QA de
+        # F15). Solo se vacía `application_id` (Postgres 15+: la lista de columnas
+        # deja `user_id` intacto); borrar la cuenta sí las borra (FK de `user_id`).
         ForeignKeyConstraint(
             ["application_id", "user_id"],
             ["applications.id", "applications.user_id"],
-            ondelete="CASCADE",
+            ondelete="SET NULL (application_id)",
         ),
         enum_check("kind", AiTask, "kind"),
         enum_check("status", ProposalStatus, "status"),
@@ -99,7 +103,8 @@ class AiProposal(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE")
     )
-    application_id: Mapped[uuid.UUID] = mapped_column()
+    # Nula si la solicitud se borró: la propuesta sigue contando como uso.
+    application_id: Mapped[uuid.UUID | None] = mapped_column()
     kind: Mapped[str] = mapped_column(String(20))
     status: Mapped[str] = mapped_column(String(20))
     key_source: Mapped[str] = mapped_column(String(10))

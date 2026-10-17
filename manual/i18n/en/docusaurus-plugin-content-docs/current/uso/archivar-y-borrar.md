@@ -16,6 +16,8 @@ Archiving is almost always the recommended option.
 
 Open the application, click **Delete** and confirm. It is deleted **permanently**, together with its history, interviews and reminders, and no longer counts in the metrics.
 
+The CVs and cover letters you created for it with AI stay in [Documents](documentos.md). And the free AI uses you spent on it **are not given back**.
+
 ## Delete a company
 
 In **Companies**, click **Delete** on its row. A company with applications (archived ones included) **cannot be deleted**: delete those applications first, or move them to another company.

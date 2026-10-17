@@ -16,6 +16,8 @@ Archivar es la opción recomendada casi siempre.
 
 Abre la solicitud, pulsa **Borrar** y confirma. Se borra **definitivamente**, con su historial, sus entrevistas y sus recordatorios, y deja de contar en las métricas.
 
+Los CVs y las cartas que generaste para ella con IA se quedan en [Documentos](documentos.md). Y los usos gratuitos de IA que gastaste en ella **no se recuperan**.
+
 ## Borrar una empresa
 
 En **Empresas**, pulsa **Borrar** en su fila. Una empresa con solicitudes (también archivadas) **no se puede borrar**: borra antes esas solicitudes o cámbialas de empresa.

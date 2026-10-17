@@ -306,7 +306,10 @@ async def test_every_foreign_key_to_users_or_applications_cascades_on_delete(
 
     assert len(rows) >= 5  # companies, applications, reminders x2, historial...
     not_cascading = {name: rule for name, _, rule in rows if rule != "c"}
-    assert not_cascading == {}
+    # La única excepción, y no estorba al borrado de cuenta: una propuesta de IA
+    # solo pierde su solicitud (SET NULL), porque es el registro de consumo de la
+    # cuota gratuita; su FK a users sí es en cascada.
+    assert not_cascading == {"fk_ai_proposals_application_id_applications": "n"}
 
 
 @pytest.mark.asyncio

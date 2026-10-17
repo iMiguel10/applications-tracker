@@ -349,11 +349,15 @@ class AiProposalService:
         if adapter is None:
             return _failed(ProposalErrorCode.PROVIDER_UNAVAILABLE)
 
-        application = await self.applications.get(user_id, proposal.application_id)
+        application = (
+            await self.applications.get(user_id, proposal.application_id)
+            if proposal.application_id is not None
+            else None
+        )
         profile = await self._profile(user_id)
         await self.session.commit()
         if application is None:
-            # La solicitud se borró: `finish` no encontrará la fila.
+            # La solicitud se borró: la propuesta queda sin ella y sin facturar.
             return _failed(ProposalErrorCode.PROVIDER_UNAVAILABLE)
         if not profile.experiences:
             return _failed(ProposalErrorCode.PROFILE_INCOMPLETE)
