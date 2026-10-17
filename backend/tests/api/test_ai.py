@@ -16,6 +16,7 @@ from app.api.v1.deps import (
     get_ai_consent_service,
     get_ai_proposal_service,
     get_job_queue,
+    get_limit_service,
 )
 from app.core.config import Settings, settings
 from app.db.session import get_db
@@ -28,6 +29,7 @@ from app.models.document import Document
 from app.schemas.user import CurrentUser
 from app.services.ai_consent_service import AiConsentService
 from app.services.ai_proposal_service import AiProposalService
+from app.services.limit_service import LimitService
 from tests.auth_helpers import PASSWORD, form
 from tests.factories import make_ai_proposal, make_application, make_profile_entry
 
@@ -69,7 +71,12 @@ def platform(db_session: AsyncSession) -> Iterator[None]:
     app.dependency_overrides[get_ai_consent_service] = lambda: AiConsentService(
         db_session, CONFIG
     )
+    # Con plataforma, GET /me/usage ofrece los usos gratuitos.
+    app.dependency_overrides[get_limit_service] = lambda: LimitService(
+        db_session, CONFIG
+    )
     yield
+    app.dependency_overrides.pop(get_limit_service, None)
     app.dependency_overrides.pop(get_ai_proposal_service, None)
     app.dependency_overrides.pop(get_ai_consent_service, None)
 

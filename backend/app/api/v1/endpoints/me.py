@@ -84,8 +84,15 @@ async def read_usage(
     | `applications` | Solicitudes, archivadas incluidas | `applications_limit_reached` |
     | `companies` | Empresas | `companies_limit_reached` |
     | `reminders` | Recordatorios en cualquier estado | `reminders_limit_reached` |
+    | `documents` | Documentos, archivados incluidos | `documents_limit_reached` |
+    | `storage_bytes` | Bytes de los documentos (`unit: "bytes"`) | `storage_limit_reached` |
+    | `ai_cv_proposals` | Usos gratuitos de IA para el CV | `ai_free_quota_exhausted` |
+    | `ai_cover_letter_proposals` | Usos gratuitos de IA para la carta | `ai_free_quota_exhausted` |
+
+    Los usos gratuitos de IA solo aparecen si la instalación los ofrece (tiene IA
+    de la plataforma). `limit` y `remaining` a `null`: sin límite.
     """
-    usage = await limits.usage(current_user.id)
+    usage = await limits.usage(current_user.id, offered_only=True)
     return UsageRead(
         limits=[LimitUsageRead.model_validate(item) for item in usage],
         warning_ratio=WARNING_RATIO,

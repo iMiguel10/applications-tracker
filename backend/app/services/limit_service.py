@@ -7,6 +7,7 @@ from app.core.config import Settings, settings
 from app.core.exceptions import LimitReachedError
 from app.domain.ai import AiTask
 from app.domain.limits import LIMIT_RULES, LimitKey, LimitUnit, remaining
+from app.infra.llm import platform_model
 from app.repositories.ai_proposal_repository import AiProposalRepository
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.company_repository import CompanyRepository
@@ -15,6 +16,8 @@ from app.repositories.reminder_repository import ReminderRepository
 from app.repositories.user_limit_override_repository import (
     UserLimitOverrideRepository,
 )
+
+AI_FREE_USE_KEYS = (LimitKey.AI_CV_PROPOSALS, LimitKey.AI_COVER_LETTER_PROPOSALS)
 
 
 @dataclass(frozen=True)
@@ -95,11 +98,21 @@ class LimitService:
         if used + amount > limit:
             raise LimitReachedError(LIMIT_RULES[key].error_code, limit=limit, used=used)
 
-    async def usage(self, user_id: uuid.UUID) -> list[LimitUsage]:
-        """Todos los límites de la cuenta, para GET /me/usage (RF-141)."""
+    def offered_keys(self) -> list[LimitKey]:
+        """Los límites que la instalación ofrece. Sin IA de la plataforma no hay
+        usos gratuitos: mostrar "0 de 1" haría creer que existen."""
+        if platform_model(self.config) is not None:
+            return list(LimitKey)
+        return [key for key in LimitKey if key not in AI_FREE_USE_KEYS]
+
+    async def usage(
+        self, user_id: uuid.UUID, *, offered_only: bool = False
+    ) -> list[LimitUsage]:
+        """Los límites de la cuenta. Para GET /me/usage (RF-141), solo los que la
+        instalación ofrece; el script de administración los ve todos."""
         overrides = await self.overrides.get_all(user_id)
         result = []
-        for key in LimitKey:
+        for key in self.offered_keys() if offered_only else LimitKey:
             used = await self.usage_for(user_id, key)
             limit = overrides[key] if key in overrides else self.global_limit(key)
             result.append(

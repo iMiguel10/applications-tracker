@@ -28,8 +28,6 @@ async def test_usage_lists_every_limit_with_used_limit_and_remaining(
         "reminders",
         "documents",
         "storage_bytes",
-        "ai_cv_proposals",
-        "ai_cover_letter_proposals",
     }
     assert by_key["companies"] == {
         "key": "companies",
@@ -41,6 +39,25 @@ async def test_usage_lists_every_limit_with_used_limit_and_remaining(
     }
     assert by_key["storage_bytes"]["unit"] == "bytes"
     assert by_key["applications"]["limit"] == settings.limit_applications
+
+
+@pytest.mark.asyncio
+async def test_the_free_ai_uses_appear_only_with_a_platform_ai(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+):
+    # Sin IA de la plataforma (el entorno de pruebas) no hay usos gratuitos, y
+    # "0 de 1" haría creer que existen. Con ella, aparecen los dos.
+    def keys(body: dict) -> set[str]:
+        return {item["key"] for item in body["limits"]}
+
+    without = (await client.get("/api/v1/me/usage")).json()
+    monkeypatch.setattr(settings, "ai_platform_provider", "ollama")
+    monkeypatch.setattr(settings, "ai_platform_model", "qwen3:8b")
+    with_platform = (await client.get("/api/v1/me/usage")).json()
+
+    ai = {"ai_cv_proposals", "ai_cover_letter_proposals"}
+    assert not keys(without) & ai
+    assert ai <= keys(with_platform)
 
 
 @pytest.mark.asyncio

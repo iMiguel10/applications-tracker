@@ -39,6 +39,8 @@ Los avisos solo llegan a un email **verificado**: mientras no lo esté, la tarje
 
 La tarjeta **Uso de la cuenta** muestra, para cada límite, cuánto llevas, el máximo y cuánto te queda: por ejemplo, "42 de 5000 · quedan 4958". La barra se vuelve ámbar al pasar del 80 % y roja al llegar al tope. El almacenamiento se muestra en MB ("12,4 MB de 100 MB · quedan 87,6 MB"). Los límites no se renuevan: se libera espacio al borrar solicitudes, empresas, recordatorios o documentos. Archivar una solicitud o un documento, o completar un recordatorio, no libera espacio.
 
+Los usos gratuitos de IA solo aparecen si la instalación los ofrece. Si no los ofrece, la IA funciona solo con [tu propia clave](usar-tu-propia-clave-de-ia.md).
+
 ## Configurar la IA
 
 La tarjeta **Inteligencia artificial** dice con qué funciona la IA (los usos gratuitos o tu propia clave de un proveedor), guarda tus claves y te deja retirar los permisos para enviar datos a cada proveedor. Ver [Usar tu propia clave de IA](usar-tu-propia-clave-de-ia.md).

@@ -272,3 +272,21 @@ async def test_storage_is_never_unlimited_but_can_go_beyond_2_gb(
     await service.set_override(user.id, LimitKey.STORAGE_BYTES, 5 * 1024**3)
 
     assert await service.limit_for(user.id, LimitKey.STORAGE_BYTES) == 5 * 1024**3
+
+
+@pytest.mark.asyncio
+async def test_without_a_platform_ai_the_free_uses_are_not_offered(
+    db_session: AsyncSession, user: CurrentUser, monkeypatch: pytest.MonkeyPatch
+):
+    # GET /me/usage solo enseña lo que la instalación ofrece; el script de
+    # administración (sin offered_only) los sigue viendo todos.
+    monkeypatch.setattr(settings, "ai_platform_provider", None)
+    service = LimitService(db_session)
+
+    offered = {item.key for item in await service.usage(user.id, offered_only=True)}
+    everything = {item.key for item in await service.usage(user.id)}
+
+    assert LimitKey.AI_CV_PROPOSALS not in offered
+    assert LimitKey.AI_COVER_LETTER_PROPOSALS not in offered
+    assert LimitKey.APPLICATIONS in offered
+    assert everything == set(LimitKey)
