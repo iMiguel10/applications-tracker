@@ -1,11 +1,13 @@
 import type { Preferences } from "@/features/auth/types/Auth";
 
-/** Los avisos por email de F12 (RF-80…84), con su interruptor en las preferencias. */
+/** Los avisos por email de F12 (RF-80…84) y el de la IA (RF-157), con su
+ * interruptor en las preferencias. */
 export const NOTIFICATION_TOGGLES = [
   "notify_reminder_due",
   "notify_interview",
   "notify_weekly_digest",
   "notify_stale",
+  "notify_ai_proposal",
 ] as const;
 export type NotificationToggle = (typeof NOTIFICATION_TOGGLES)[number];
 
@@ -32,6 +34,7 @@ export const TOGGLE_FOR_KIND = {
   interview_upcoming: "notify_interview",
   weekly_digest: "notify_weekly_digest",
   stale_application: "notify_stale",
+  ai_proposal_finished: "notify_ai_proposal",
 } as const satisfies Record<string, NotificationToggle>;
 export type NotificationKind = keyof typeof TOGGLE_FOR_KIND;
 

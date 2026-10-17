@@ -86,6 +86,9 @@ class User(Base):
     notify_interview: Mapped[bool] = mapped_column(Boolean, server_default=true())
     notify_weekly_digest: Mapped[bool] = mapped_column(Boolean, server_default=false())
     notify_stale: Mapped[bool] = mapped_column(Boolean, server_default=false())
+    # RF-157 (F15): al terminar una propuesta de IA. Apagado: casi siempre se espera
+    # en la página, y la aplicación ya avisa dentro (decisión 0021).
+    notify_ai_proposal: Mapped[bool] = mapped_column(Boolean, server_default=false())
     # RF-80: cuántas horas antes de que venza un recordatorio llega su aviso (0 = al
     # vencer).
     reminder_notice_hours: Mapped[int] = mapped_column(

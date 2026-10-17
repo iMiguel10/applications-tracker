@@ -183,6 +183,14 @@ La `dedupe_key` define qué es "el mismo motivo":
 - `WeeklyDigestComposer`: lo mismo que el dashboard a la hora del reclamo. Cuántas solicitudes hay en cada estado de espera, las entrevistas de los próximos 7 días, los recordatorios pendientes hasta dentro de 7 días (los vencidos, marcados) y las solicitudes sin actividad, 10 por lista como mucho y el resto en la aplicación. **Sale también sin nada pendiente**, con un "todo al día": quien lo activó espera recibirlo cada lunes.
 - Verificado en vivo lanzando el barrido a mano con "ahora" en un lunes. Pruebas en `tests/domain/test_digest_schedule.py` y `tests/services/test_weekly_digest_notifications.py`.
 
+**Construido en F15 (paso 6: propuesta de IA terminada, RF-157 y RF-88, [0021](../decisiones/0021-aviso-al-terminar-una-propuesta-de-ia.md)).**
+
+- `AiProposalFinishedSweep` (`services/notifications/ai_proposal_finished.py`), cada minuto: `AiProposalRepository.list_finished_for_notification` da las propuestas terminadas (bien o no) en la última hora (`AI_PROPOSAL_WINDOW`), de cuentas con `notify_ai_proposal` y sin una entrega que lo impida; la clave es `ai_proposal:<id>`, una por propuesta para siempre.
+- **La ventana mira `ai_proposals.finished_at`**, que fechan `finish` (con `clock_timestamp()`) y el barrido de propuestas colgadas. Las anteriores a este aviso no la tienen: activarlo nunca envía emails de propuestas viejas. Índice parcial `ix_ai_proposals_finished_at`.
+- `AiProposalFinishedComposer`: lista para revisar (enlace a la revisión) o por qué no salió (los motivos de `ai.errors` de la interfaz, en `templates/email/ai_proposal_finished/_reasons.txt`, y enlace a la solicitud). **Nunca el contenido de la propuesta.** None si el usuario apagó el aviso o borró la solicitud entre el reclamo y el envío.
+- Apagado por defecto (`users.notify_ai_proposal`), y el interruptor de Preferencias solo aparece si la instalación tiene IA.
+- Verificado en vivo con Mailpit y una propuesta real de Ollama. Pruebas en `tests/services/test_ai_proposal_notifications.py`.
+
 ## 5. Emails
 
 ### Plantillas e idioma

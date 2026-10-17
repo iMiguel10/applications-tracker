@@ -84,6 +84,12 @@ class AiProposal(Base):
             "updated_at",
             postgresql_where=text("status IN ('queued', 'running')"),
         ),
+        # El barrido del aviso por email de las terminadas (RF-157).
+        Index(
+            "ix_ai_proposals_finished_at",
+            "finished_at",
+            postgresql_where=text("finished_at IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -112,6 +118,9 @@ class AiProposal(Base):
     error_code: Mapped[str | None] = mapped_column(String(50))
     # Cuándo la tomó el worker: el barrido da por colgadas las que llevan demasiado.
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Cuándo terminó, con el resultado que sea: el aviso por email (RF-157) solo
+    # mira las de la última hora. Nulo en las anteriores a F15 paso 6.
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -193,6 +193,7 @@ Usuario
 - **RF-85** `[F12]` Los emails solo se envían a direcciones verificadas (RF-06). Cada uno lleva un enlace para desactivar **ese tipo** con un clic y sin iniciar sesión.
 - **RF-86** `[F12]` Idioma del email: el de la cuenta (preferencia de F8), o español si sigue al navegador.
 - **RF-87** `[F12]` **Nunca dos veces por el mismo motivo**: aunque el envío se reintente o el proceso se reinicie, un mismo recordatorio vencido produce como mucho un email. Perder un email es aceptable (mejor esfuerzo); duplicarlo, no.
+- **RF-88** `[F15]` **Propuesta de IA terminada**: el aviso por email de RF-157, desactivado por defecto (RF-84). Solo las propuestas terminadas en la última hora.
 
 ### Biblioteca de documentos (RF-90…) · v2
 
@@ -232,7 +233,7 @@ Usuario
 - **RF-154** `[F15]` El consentimiento (RF-116) nombra el proveedor al que se envían los datos: el de la plataforma o el que eligió el usuario con su clave. Cambiar de proveedor pide consentimiento de nuevo.
 - ~~**RF-155**~~ `[descartado]` **Tope de gasto global** de la plataforma: solo cuenta el uso con la clave de la plataforma. Al alcanzarlo, la cuota gratuita queda en pausa para todos con un mensaje claro; las claves propias siguen funcionando. Descartado al empezar F15: la plataforma se limita solo por uso ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)).
 - **RF-156** `[F15]` Cuando se agota la cuota gratuita, la interfaz explica cómo seguir: añadir una clave propia, con los proveedores disponibles y un enlace a cómo obtener la clave de cada uno (manual de uso). **Construido:** el mensaje cambia según haya ya una clave guardada (elegirla), la instalación admita claves propias (los proveedores que ofrece y que se paga aparte) o no las admita; enlaza a la tarjeta de IA de Preferencias, y esta lleva a la página de claves de la consola de cada proveedor (el frontend no conoce la dirección del manual).
-- **RF-157** `[F15]` **Aviso al terminar una propuesta** (CV o carta), sea cual sea el resultado: dentro de la aplicación, en la página en que esté el usuario, con un enlace a revisarla o, si falló, el motivo y un enlace a la solicitud; no en la propia página de revisión, que ya lo muestra. Y por email, como un tipo de aviso más de RF-80…87, **desactivado por defecto**. Decisión del usuario al construir el paso 6 de F15.
+- **RF-157** `[F15]` **Aviso al terminar una propuesta** (CV o carta), sea cual sea el resultado: dentro de la aplicación, en la página en que esté el usuario, con un enlace a revisarla o, si falló, el motivo y un enlace a la solicitud; no en la propia página de revisión, que ya lo muestra. Y por email, como un tipo de aviso más de RF-80…87, **desactivado por defecto** y sin el contenido de la propuesta. Decisión del usuario al construir el paso 6 de F15 ([0021](../decisiones/0021-aviso-al-terminar-una-propuesta-de-ia.md)).
 
 ### Tablero Kanban (RF-120…) · v2
 

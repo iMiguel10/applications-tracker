@@ -511,6 +511,7 @@ class AiProposalService:
                 )
                 proposal.status = ProposalStatus.FAILED.value
                 proposal.error_code = ProposalErrorCode.INTERRUPTED.value
+                proposal.finished_at = now
             await self.session.commit()
             if len(hung) < SWEEP_BATCH:
                 return
@@ -535,6 +536,7 @@ class AiProposalService:
                     )
                     proposal.status = ProposalStatus.FAILED.value
                     proposal.error_code = ProposalErrorCode.INTERRUPTED.value
+                    proposal.finished_at = now
                 else:
                     requeue.append(proposal)
             await self.session.commit()

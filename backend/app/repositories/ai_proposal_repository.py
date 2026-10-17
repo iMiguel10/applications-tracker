@@ -1,13 +1,44 @@
 import uuid
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, or_, select, tuple_, update
+from sqlalchemy import String, and_, cast, func, literal, or_, select, tuple_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.ai import IN_FLIGHT_STATUSES, AiTask, KeySource, ProposalStatus
+from app.domain.notifications import (
+    AI_PROPOSAL_KEY_PREFIX,
+    DeliveryChannel,
+    DeliveryStatus,
+    NotificationKind,
+)
 from app.models.ai_proposal import AiProposal
+from app.models.application import Application
+from app.models.company import Company
+from app.models.notification_delivery import NotificationDelivery
+from app.models.user import User
+
+
+@dataclass(frozen=True)
+class FinishedProposal:
+    """Un candidato del barrido del aviso de propuesta terminada (RF-157). Lleva el
+    id de SuperTokens para preguntar si el email está verificado sin otra consulta."""
+
+    proposal_id: uuid.UUID
+    user_id: uuid.UUID
+    finished_at: datetime
+    supertokens_user_id: str
+
+
+@dataclass(frozen=True)
+class ProposalNotice:
+    """Lo que dice el email de una propuesta terminada: nunca su contenido."""
+
+    proposal: AiProposal
+    position_title: str
+    company_name: str
 
 
 class AiProposalRepository:
@@ -110,7 +141,7 @@ class AiProposalRepository:
                 AiProposal.user_id == user_id,
                 AiProposal.status == ProposalStatus.RUNNING.value,
             )
-            .values(**values)
+            .values(**values, finished_at=func.clock_timestamp())
         )
         return bool(getattr(result, "rowcount", 0))
 
@@ -141,3 +172,95 @@ class AiProposalRepository:
             .with_for_update(skip_locked=True)
         )
         return result.all()
+
+    # --- Aviso por email al terminar (RF-157) -----------------------------------
+
+    async def list_finished_for_notification(
+        self,
+        *,
+        finished_after: datetime,
+        now: datetime,
+        after: tuple[datetime, uuid.UUID] | None,
+        limit: int,
+    ) -> Sequence[FinishedProposal]:
+        """Candidatos del barrido de RF-157: propuestas terminadas (con el resultado
+        que sea) en `(finished_after, now]`, de cuentas con el aviso activado, y sin
+        una entrega que impida avisar (reclamada, enviada, desconocida, o fallida sin
+        reintento que ya toque). Paginado por `(finished_at, id)` con `after`.
+
+        Recorre las de todos los usuarios a propósito: es un barrido del sistema, y
+        cada fila lleva su `user_id` para todo lo que venga después."""
+        delivery = NotificationDelivery
+        blocking_delivery = (
+            select(delivery.id)
+            .where(
+                delivery.user_id == AiProposal.user_id,
+                delivery.kind == NotificationKind.AI_PROPOSAL_FINISHED,
+                delivery.channel == DeliveryChannel.EMAIL,
+                delivery.dedupe_key
+                == literal(AI_PROPOSAL_KEY_PREFIX) + cast(AiProposal.id, String),
+                or_(
+                    delivery.status != DeliveryStatus.FAILED,
+                    delivery.next_attempt_at.is_(None),
+                    delivery.next_attempt_at > now,
+                ),
+            )
+            .exists()
+        )
+        query = (
+            select(
+                AiProposal.id,
+                AiProposal.user_id,
+                AiProposal.finished_at,
+                User.supertokens_user_id,
+            )
+            .join(User, User.id == AiProposal.user_id)
+            .where(
+                AiProposal.status.not_in(
+                    [status.value for status in IN_FLIGHT_STATUSES]
+                ),
+                AiProposal.finished_at > finished_after,
+                AiProposal.finished_at <= now,
+                User.notify_ai_proposal.is_(True),
+                ~blocking_delivery,
+            )
+        )
+        if after is not None:
+            after_finished_at, after_id = after
+            query = query.where(
+                or_(
+                    AiProposal.finished_at > after_finished_at,
+                    and_(
+                        AiProposal.finished_at == after_finished_at,
+                        AiProposal.id > after_id,
+                    ),
+                )
+            )
+        rows = await self.session.execute(
+            query.order_by(AiProposal.finished_at, AiProposal.id).limit(limit)
+        )
+        return [FinishedProposal(*row) for row in rows.all()]
+
+    async def get_for_notification(
+        self, user_id: uuid.UUID, proposal_id: uuid.UUID
+    ) -> ProposalNotice | None:
+        """La propuesta con el puesto y la empresa de su solicitud, para el email.
+        None si ya no existe (o su solicitud se borró)."""
+        row = (
+            await self.session.execute(
+                select(AiProposal, Application.position_title, Company.name)
+                .join(
+                    Application,
+                    and_(
+                        Application.id == AiProposal.application_id,
+                        Application.user_id == AiProposal.user_id,
+                    ),
+                )
+                .join(Company, Company.id == Application.company_id)
+                .where(AiProposal.id == proposal_id, AiProposal.user_id == user_id)
+            )
+        ).first()
+        if row is None:
+            return None
+        proposal, position_title, company_name = row
+        return ProposalNotice(proposal, position_title, company_name)

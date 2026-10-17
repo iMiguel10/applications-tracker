@@ -24,7 +24,7 @@ Each account has **free uses** for the CV: usually one, depending on the install
 3. Click **Tailor my CV to this job**.
 4. The first time, the application explains which data is sent to the AI provider and asks for your permission. Click **Accept and continue**.
 
-The proposal goes from **Preparing the proposal…** to **Proposal ready to review**. Depending on the installation it takes a few seconds or a few minutes, and meanwhile you can keep using the application: when it finishes, a notice tells you on whatever page you are, with the **Review** button. If it didn't work out, the notice says why and **Open the application** takes you there. The notice only reaches the tab where you asked for it.
+The proposal goes from **Preparing the proposal…** to **Proposal ready to review**. Depending on the installation it takes a few seconds or a few minutes, and meanwhile you can keep using the application: when it finishes, a notice tells you on whatever page you are, with the **Review** button. If it didn't work out, the notice says why and **Open the application** takes you there. The notice only reaches the tab where you asked for it; to find out even if you leave, turn on the **Finished AI proposal** email notification in [Preferences](preferencias.md).
 
 :::info What is sent to the AI provider
 Your experience and achievements, your education, projects and certifications, your skills and languages, your headline, your summary and the job description. **Never** your name, email, phone, location or links: they are added when the PDF is created.

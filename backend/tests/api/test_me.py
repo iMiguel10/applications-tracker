@@ -97,7 +97,8 @@ async def _count_owned(session: AsyncSession, user_id: object) -> dict[str, int]
 
 
 # RF-84: activados los avisos de lo que el usuario creó (recordatorio, entrevista);
-# apagados el resumen y la inactividad. RF-80: al vencer; RF-81: 24 h antes.
+# apagados el resumen, la inactividad y la propuesta de IA terminada (RF-157,
+# 0021). RF-80: al vencer; RF-81: 24 h antes.
 DEFAULT_PREFERENCES = {
     "language": None,
     "stale_after_days": 14,
@@ -106,6 +107,7 @@ DEFAULT_PREFERENCES = {
     "notify_interview": True,
     "notify_weekly_digest": False,
     "notify_stale": False,
+    "notify_ai_proposal": False,
     "reminder_notice_hours": 0,
     "interview_notice_hours": 24,
 }
@@ -220,6 +222,7 @@ async def test_notification_preferences_are_updated(
     changes = {
         "notify_reminder_due": False,
         "notify_weekly_digest": True,
+        "notify_ai_proposal": True,
         "interview_notice_hours": 2,
     }
 

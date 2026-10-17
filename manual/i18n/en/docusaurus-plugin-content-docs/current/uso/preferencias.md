@@ -30,6 +30,7 @@ In the **Email notifications** card you turn each notification on or off separat
 | Upcoming interview | Before each scheduled interview, as far ahead as you choose in **Notify** (from 1 hour to 7 days; 1 day by default) | On |
 | Weekly summary | On Mondays at 8:00 in your time zone, with your interviews and reminders for the next 7 days and your stalled applications. It arrives even if there is nothing pending | Off |
 | Applications without activity | When an application goes past the days without activity in your preferences. If there are several, they all go in a single email | Off |
+| Finished AI proposal | When a tailored CV or cover letter you asked the AI for is finished, in case you left while it was being prepared. It says whether it worked or why not and links to it, but never includes its content. It only appears if the installation has AI | Off |
 
 You never get two emails for the same reason. Every email has a link at the bottom to **unsubscribe** from that notification without signing in: it opens a page that asks whether you want to stop receiving it, and it only applies when you click **Unsubscribe**. Your email program may also show its own unsubscribe button, which does the same. To receive it again, turn it back on here.
 

@@ -16,6 +16,7 @@ class NotificationKind(StrEnum):
     INTERVIEW_UPCOMING = "interview_upcoming"
     WEEKLY_DIGEST = "weekly_digest"
     STALE_APPLICATION = "stale_application"
+    AI_PROPOSAL_FINISHED = "ai_proposal_finished"
 
 
 class DeliveryChannel(StrEnum):
@@ -144,6 +145,26 @@ def stale_from_key(dedupe_key: str) -> tuple[uuid.UUID, int] | None:
     )
     try:
         return uuid.UUID(application_id), int(seconds)
+    except ValueError:
+        return None
+
+
+# RF-157: aviso de propuesta de IA terminada, una vez por propuesta. Solo las
+# terminadas en la última hora: activar el aviso no envía las de días atrás, y
+# las anteriores a F15 paso 6 no tienen `finished_at` y nunca se avisan.
+AI_PROPOSAL_WINDOW = timedelta(hours=1)
+AI_PROPOSAL_KEY_PREFIX = "ai_proposal:"
+
+
+def ai_proposal_key(proposal_id: uuid.UUID) -> str:
+    return f"{AI_PROPOSAL_KEY_PREFIX}{proposal_id}"
+
+
+def ai_proposal_id_from_key(dedupe_key: str) -> uuid.UUID | None:
+    if not dedupe_key.startswith(AI_PROPOSAL_KEY_PREFIX):
+        return None
+    try:
+        return uuid.UUID(dedupe_key.removeprefix(AI_PROPOSAL_KEY_PREFIX))
     except ValueError:
         return None
 

@@ -24,7 +24,7 @@ Cada cuenta tiene **usos gratuitos** para el CV: normalmente uno, según la inst
 3. Pulsa **Adaptar mi CV a esta oferta**.
 4. La primera vez, la aplicación te explica qué datos se envían al proveedor de IA y te pide permiso. Pulsa **Aceptar y continuar**.
 
-La propuesta pasa de **Preparando la propuesta…** a **Propuesta lista para revisar**. Según la instalación tarda unos segundos o unos minutos, y mientras tanto puedes seguir usando la aplicación: cuando termine, un aviso te lo dice en la página en que estés, con el botón **Revisar**. Si no ha salido bien, el aviso dice por qué y **Ver la solicitud** te lleva a ella. El aviso solo llega a la pestaña en que la pediste.
+La propuesta pasa de **Preparando la propuesta…** a **Propuesta lista para revisar**. Según la instalación tarda unos segundos o unos minutos, y mientras tanto puedes seguir usando la aplicación: cuando termine, un aviso te lo dice en la página en que estés, con el botón **Revisar**. Si no ha salido bien, el aviso dice por qué y **Ver la solicitud** te lleva a ella. El aviso solo llega a la pestaña en que la pediste; si quieres enterarte aunque te vayas, activa el aviso por email **Propuesta de IA terminada** en [Preferencias](preferencias.md).
 
 :::info Qué se envía al proveedor de IA
 Se envían tu experiencia con sus logros, tu formación, proyectos y certificaciones, tus habilidades e idiomas, tu titular, tu resumen y la descripción de la oferta. **Nunca** tu nombre, email, teléfono, ubicación ni enlaces: se añaden al generar el PDF.

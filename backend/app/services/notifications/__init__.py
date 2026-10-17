@@ -4,6 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.notifications import NotificationKind
 from app.services.notification_delivery_service import NotificationComposer
+from app.services.notifications.ai_proposal_finished import (
+    AiProposalFinishedComposer,
+    AiProposalFinishedSweep,
+)
 from app.services.notifications.interview_upcoming import (
     InterviewUpcomingComposer,
     InterviewUpcomingSweep,
@@ -22,6 +26,8 @@ from app.services.notifications.weekly_digest import (
 )
 
 __all__ = [
+    "AiProposalFinishedComposer",
+    "AiProposalFinishedSweep",
     "InterviewUpcomingComposer",
     "InterviewUpcomingSweep",
     "ReminderDueComposer",
@@ -44,4 +50,5 @@ def composers_for(
         NotificationKind.INTERVIEW_UPCOMING: InterviewUpcomingComposer(session),
         NotificationKind.STALE_APPLICATION: StaleApplicationsComposer(session),
         NotificationKind.WEEKLY_DIGEST: WeeklyDigestComposer(session),
+        NotificationKind.AI_PROPOSAL_FINISHED: AiProposalFinishedComposer(session),
     }

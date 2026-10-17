@@ -1,0 +1,16 @@
+{% extends "_layout.html" %}
+{% from "ai_proposal_finished/_reasons.txt" import reason %}
+{% block content %}
+<p style="margin:0 0 16px;">Hi,</p>
+{% if succeeded %}
+<p style="margin:0 0 24px;">{% if kind == "cv" %}The proposal to tailor your CV for <strong>{{ position }}</strong> at <strong>{{ company }}</strong> is ready.{% else %}The cover letter for <strong>{{ position }}</strong> at <strong>{{ company }}</strong> is ready.{% endif %} Review it before creating the PDF.</p>
+<p style="margin:0 0 24px;"><a href="{{ link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">Review the proposal</a></p>
+{% else %}
+<p style="margin:0 0 16px;">{% if kind == "cv" %}Your CV for <strong>{{ position }}</strong> at <strong>{{ company }}</strong> couldn't be tailored.{% else %}Your cover letter for <strong>{{ position }}</strong> at <strong>{{ company }}</strong> couldn't be written.{% endif %}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-left:4px solid #4f46e5;background:#f4f4f5;">
+<tr><td style="padding:12px 16px;font-size:14px;color:#52525b;">{{ reason(error_code, "en") }}</td></tr>
+</table>
+<p style="margin:0 0 24px;"><a href="{{ link }}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:bold;">Open the application</a></p>
+{% endif %}
+<p style="margin:0;font-size:13px;color:#52525b;">You are getting this email because the finished AI proposal notification is on. <a href="{{ unsubscribe_link }}" style="color:#4f46e5;">Unsubscribe from these notifications</a> · <a href="{{ preferences_link }}" style="color:#4f46e5;">Preferences</a></p>
+{% endblock %}

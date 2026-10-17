@@ -8,6 +8,7 @@ import { authKeys } from "@/features/auth/auth.keys";
 import type { Preferences } from "@/features/auth/types/Auth";
 import { authService } from "@/features/auth/services/auth.service";
 import { metaService } from "@/features/meta/services/meta.service";
+import { aiService } from "@/features/ai/services/ai.service";
 import { notificationSettingsService } from "../services/notificationSettings.service";
 import { NotificationSettingsCard } from "./NotificationSettingsCard";
 
@@ -16,6 +17,9 @@ vi.mock("@/features/meta/services/meta.service", () => ({
 }));
 vi.mock("@/features/auth/services/auth.service", () => ({
   authService: { isEmailVerified: vi.fn() },
+}));
+vi.mock("@/features/ai/services/ai.service", () => ({
+  aiService: { consents: vi.fn(), keys: vi.fn() },
 }));
 vi.mock("../services/notificationSettings.service", () => ({
   notificationSettingsService: { update: vi.fn() },
@@ -29,6 +33,7 @@ const PREFERENCES: Preferences = {
   notify_interview: true,
   notify_weekly_digest: false,
   notify_stale: false,
+  notify_ai_proposal: false,
   reminder_notice_hours: 0,
   interview_notice_hours: 24,
 };
@@ -37,7 +42,19 @@ function renderCard({
   emailEnabled = true,
   verified = true,
   preferences = PREFERENCES,
-}: { emailEnabled?: boolean; verified?: boolean; preferences?: Preferences } = {}) {
+  ai = true,
+}: { emailEnabled?: boolean; verified?: boolean; preferences?: Preferences; ai?: boolean } = {}) {
+  vi.mocked(aiService.consents).mockResolvedValue({
+    text_version: 1,
+    platform_provider: ai ? "ollama" : null,
+    platform_model: ai ? "qwen3:8b" : null,
+    consents: [],
+  });
+  vi.mocked(aiService.keys).mockResolvedValue({
+    own_keys_enabled: false,
+    providers: [],
+    active_provider: null,
+  });
   vi.mocked(metaService.get).mockResolvedValue({ email_enabled: emailEnabled, max_document_bytes: 5 * 1024 * 1024 });
   vi.mocked(authService.isEmailVerified).mockResolvedValue(verified);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -102,6 +119,17 @@ describe("NotificationSettingsCard", () => {
 
     renderCard({ preferences: { ...PREFERENCES, notify_interview: false } });
     expect(notices()).toHaveLength(1);
+  });
+
+  it("offers the finished AI proposal notification, off by default, only with AI", async () => {
+    renderCard();
+    expect(await screen.findByRole("switch", { name: /propuesta de ia/i })).not.toBeChecked();
+    cleanup();
+
+    renderCard({ ai: false });
+    await vi.waitFor(() => expect(aiService.consents).toHaveBeenCalled());
+    expect(toggle("notify_stale")).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: /propuesta de ia/i })).not.toBeInTheDocument();
   });
 
   it("explains and locks the switches when the installation sends no email", async () => {

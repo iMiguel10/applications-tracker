@@ -81,6 +81,9 @@ class PreferencesRead(BaseModel):
     notify_stale: bool = Field(
         description="RF-83: aviso cuando una solicitud se queda sin actividad."
     )
+    notify_ai_proposal: bool = Field(
+        description="RF-157: email cuando termina una propuesta de IA (CV o carta)."
+    )
     reminder_notice_hours: ReminderNoticeHours = Field(
         description="RF-80: horas de antelación del aviso de recordatorio; 0 avisa "
         "al vencer."
@@ -99,6 +102,7 @@ _NOT_NULLABLE = frozenset(
         "notify_interview",
         "notify_weekly_digest",
         "notify_stale",
+        "notify_ai_proposal",
         "reminder_notice_hours",
         "interview_notice_hours",
     }
@@ -120,6 +124,7 @@ class PreferencesUpdate(BaseModel):
     notify_interview: bool | None = None
     notify_weekly_digest: bool | None = None
     notify_stale: bool | None = None
+    notify_ai_proposal: bool | None = None
     reminder_notice_hours: ReminderNoticeHours | None = None
     interview_notice_hours: InterviewNoticeHours | None = None
 

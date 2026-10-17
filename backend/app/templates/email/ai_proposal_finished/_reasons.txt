@@ -1,0 +1,26 @@
+{#- Motivos de una propuesta que no salió, los mismos que la interfaz (ai.errors). -#}
+{% macro reason(code, language) -%}
+{% if language == "en" -%}
+{{ {
+  "ai_provider_auth": "The AI provider rejected the key.",
+  "ai_provider_quota": "The AI provider has reached its usage limit. Try again later.",
+  "ai_provider_unavailable": "The AI provider could not be reached.",
+  "ai_provider_rejected": "The AI provider rejected the request.",
+  "ai_response_invalid": "The proposal did not pass the check: it referred to something that isn't in your profile or didn't have the expected shape.",
+  "ai_response_refused": "The AI provider refused to answer.",
+  "ai_offer_insufficient": "The description doesn't look like a job offer or isn't enough to tailor the CV.",
+  "profile_incomplete": "Your profile has no experience.",
+}.get(code, "The proposal was interrupted before it finished.") }}
+{%- else -%}
+{{ {
+  "ai_provider_auth": "El proveedor de IA rechazó la clave.",
+  "ai_provider_quota": "El proveedor de IA ha alcanzado su límite de uso. Prueba más tarde.",
+  "ai_provider_unavailable": "No se pudo contactar con el proveedor de IA.",
+  "ai_provider_rejected": "El proveedor de IA rechazó la petición.",
+  "ai_response_invalid": "La propuesta no superó la comprobación: hacía referencia a algo que no está en tu perfil o no tenía la forma esperada.",
+  "ai_response_refused": "El proveedor de IA se negó a responder.",
+  "ai_offer_insufficient": "La descripción no parece una oferta de empleo o no da para adaptar el CV.",
+  "profile_incomplete": "Tu perfil no tiene ninguna experiencia.",
+}.get(code, "La propuesta se interrumpió antes de terminar.") }}
+{%- endif %}
+{%- endmacro %}

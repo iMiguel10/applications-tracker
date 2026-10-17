@@ -30,6 +30,7 @@ En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado.
 | Entrevista próxima | Antes de cada entrevista programada, con la antelación que elijas en **Avisar** (de 1 hora a 7 días; 1 día por defecto) | Activado |
 | Resumen semanal | Los lunes a las 8:00 de tu zona horaria, con tus entrevistas y recordatorios de los próximos 7 días y las solicitudes paradas. Llega aunque no tengas nada pendiente | Desactivado |
 | Solicitudes sin actividad | Cuando una solicitud pasa los días sin actividad de tus preferencias. Si hay varias, van todas en un solo email | Desactivado |
+| Propuesta de IA terminada | Cuando termina un CV adaptado o una carta que pediste a la IA, por si te fuiste mientras se preparaba. Dice si salió bien o por qué no, y enlaza a ella, pero nunca lleva su contenido. Solo aparece si la instalación tiene IA | Desactivado |
 
 Nunca recibes dos emails por el mismo motivo. Cada email trae al pie un enlace para **darte de baja** de ese aviso sin iniciar sesión: abre una página que te pregunta si quieres dejar de recibirlo, y solo se aplica al pulsar **Darme de baja**. Tu programa de correo también puede mostrar su propio botón de baja, que hace lo mismo. Para volver a recibirlo, actívalo aquí.
 

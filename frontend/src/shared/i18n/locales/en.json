@@ -695,6 +695,10 @@
       "label": "Applications without activity",
       "description": "When an application goes past the days without activity you set in Preferences."
     },
+    "notify_ai_proposal": {
+      "label": "Finished AI proposal",
+      "description": "When a tailored CV or cover letter you asked the AI for is finished, in case you left while it was being prepared. The application already tells you if you are still in it."
+    },
     "noticeLabel": "Notify",
     "atDue": "When it is due",
     "noticeHours_one": "{{count}} hour before",

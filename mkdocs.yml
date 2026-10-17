@@ -79,3 +79,4 @@ nav:
       - "0018 — Encaje con la oferta calculado por la aplicación": decisiones/0018-encaje-con-la-oferta-calculado-por-la-aplicacion.md
       - "0019 — Ollama, solo como IA de la plataforma": decisiones/0019-ollama-solo-como-ia-de-la-plataforma.md
       - "0020 — Ollama por defecto y usos gratuitos sin tope": decisiones/0020-ollama-por-defecto-y-usos-gratuitos-sin-tope.md
+      - "0021 — Aviso al terminar una propuesta de IA": decisiones/0021-aviso-al-terminar-una-propuesta-de-ia.md

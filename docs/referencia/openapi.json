@@ -10538,7 +10538,8 @@
           "reminder_due",
           "interview_upcoming",
           "weekly_digest",
-          "stale_application"
+          "stale_application",
+          "ai_proposal_finished"
         ],
         "title": "NotificationKind"
       },
@@ -10850,6 +10851,11 @@
             "title": "Notify Stale",
             "description": "RF-83: aviso cuando una solicitud se queda sin actividad."
           },
+          "notify_ai_proposal": {
+            "type": "boolean",
+            "title": "Notify Ai Proposal",
+            "description": "RF-157: email cuando termina una propuesta de IA (CV o carta)."
+          },
           "reminder_notice_hours": {
             "type": "integer",
             "maximum": 168.0,
@@ -10874,6 +10880,7 @@
           "notify_interview",
           "notify_weekly_digest",
           "notify_stale",
+          "notify_ai_proposal",
           "reminder_notice_hours",
           "interview_notice_hours"
         ],
@@ -10963,6 +10970,17 @@
               }
             ],
             "title": "Notify Stale"
+          },
+          "notify_ai_proposal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Ai Proposal"
           },
           "reminder_notice_hours": {
             "anyOf": [

@@ -13,6 +13,8 @@ import { Switch } from "@/shared/components/ui/switch";
 import type { Preferences } from "@/features/auth/types/Auth";
 import { useEmailVerified } from "@/features/auth/hooks/queries/useEmailVerified";
 import { useMeta } from "@/features/meta/hooks/queries/useMeta";
+import { useAiConsents } from "@/features/ai/hooks/queries/useAiConsents";
+import { useAiKeys } from "@/features/ai/hooks/queries/useAiKeys";
 import { useUpdateNotificationSettings } from "../hooks/mutations/useUpdateNotificationSettings";
 import {
   NOTICE_FIELDS,
@@ -30,6 +32,13 @@ export function NotificationSettingsCard({ preferences }: { preferences: Prefere
   const { data: verified } = useEmailVerified();
   const update = useUpdateNotificationSettings();
   const unavailable = meta?.email_enabled === false;
+  // El aviso de propuesta de IA terminada, solo si la instalación tiene IA.
+  const { data: aiConsents } = useAiConsents();
+  const { data: aiKeys } = useAiKeys();
+  const aiAvailable = !!aiConsents?.platform_provider || !!aiKeys?.own_keys_enabled;
+  const toggles = NOTIFICATION_TOGGLES.filter(
+    (toggle) => toggle !== "notify_ai_proposal" || aiAvailable,
+  );
 
   const save = (changes: Partial<NotificationSettings>) =>
     update.mutate(changes, {
@@ -49,7 +58,7 @@ export function NotificationSettingsCard({ preferences }: { preferences: Prefere
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5">
-        {NOTIFICATION_TOGGLES.map((toggle) => {
+        {toggles.map((toggle) => {
           const noticeField =
             toggle in NOTICE_FIELDS ? NOTICE_FIELDS[toggle as keyof typeof NOTICE_FIELDS] : null;
           return (

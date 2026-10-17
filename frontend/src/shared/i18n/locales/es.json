@@ -695,6 +695,10 @@
       "label": "Solicitudes sin actividad",
       "description": "Cuando una solicitud pasa los días sin actividad que marcaste en Preferencias."
     },
+    "notify_ai_proposal": {
+      "label": "Propuesta de IA terminada",
+      "description": "Cuando termina un CV adaptado o una carta que pediste a la IA, por si te fuiste mientras se preparaba. La aplicación ya te avisa si sigues en ella."
+    },
     "noticeLabel": "Avisar",
     "atDue": "Al vencer",
     "noticeHours_one": "{{count}} hora antes",

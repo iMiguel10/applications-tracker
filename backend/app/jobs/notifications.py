@@ -9,6 +9,7 @@ from saq import CronJob
 from app.jobs.context import WorkerContext
 from app.services.notification_delivery_service import NotificationDeliveryService
 from app.services.notifications import (
+    AiProposalFinishedSweep,
     InterviewUpcomingSweep,
     ReminderDueSweep,
     StaleApplicationSweep,
@@ -57,6 +58,11 @@ async def sweep_weekly_digests(ctx: WorkerContext) -> None:
         await WeeklyDigestSweep(session, ctx["job_queue"]).run(_now())
 
 
+async def sweep_finished_ai_proposals(ctx: WorkerContext) -> None:
+    async with ctx["session_factory"]() as session:
+        await AiProposalFinishedSweep(session, ctx["job_queue"]).run(_now())
+
+
 async def expire_abandoned_notification_claims(ctx: WorkerContext) -> None:
     async with ctx["session_factory"]() as session:
         await NotificationDeliveryService(session).expire_abandoned_claims(_now())
@@ -75,6 +81,14 @@ def notification_cron_jobs(email_enabled: bool) -> list[CronJob[WorkerContext]]:
     return [
         CronJob(
             sweep_due_reminders,
+            cron="* * * * *",
+            timeout=SWEEP_TIMEOUT_SECONDS,
+            retries=1,
+        ),
+        CronJob(
+            sweep_finished_ai_proposals,
+            # Cada minuto: el aviso dentro de la aplicación llega antes, y el email
+            # es para quien se fue (RF-157).
             cron="* * * * *",
             timeout=SWEEP_TIMEOUT_SECONDS,
             retries=1,

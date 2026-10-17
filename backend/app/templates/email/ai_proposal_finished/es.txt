@@ -1,0 +1,15 @@
+{% from "ai_proposal_finished/_reasons.txt" import reason -%}
+{% if succeeded %}{% if kind == "cv" %}{% set subject = "Tu CV adaptado para " ~ position ~ " en " ~ company ~ " está listo" %}{% else %}{% set subject = "Tu carta para " ~ position ~ " en " ~ company ~ " está lista" %}{% endif %}{% else %}{% if kind == "cv" %}{% set subject = "No se pudo adaptar tu CV para " ~ position ~ " en " ~ company %}{% else %}{% set subject = "No se pudo escribir tu carta para " ~ position ~ " en " ~ company %}{% endif %}{% endif -%}
+Hola:
+
+{% if succeeded %}{% if kind == "cv" %}La propuesta para adaptar tu CV a {{ position }} en {{ company }} está lista. Revísala antes de generar el PDF:{% else %}La carta de presentación para {{ position }} en {{ company }} está lista. Revísala antes de generar el PDF:{% endif %}{% else %}{% if kind == "cv" %}No se pudo adaptar tu CV para {{ position }} en {{ company }}.{% else %}No se pudo escribir tu carta para {{ position }} en {{ company }}.{% endif %}
+
+{{ reason(error_code, "es") }}
+
+Puedes volver a pedirla desde la solicitud:{% endif %}
+
+{{ link }}
+
+Recibes este email porque tienes activado el aviso de propuestas de IA terminadas.
+Para no recibir más estos avisos: {{ unsubscribe_link }}
+Para cambiar tus otros avisos, ve a Preferencias: {{ preferences_link }}

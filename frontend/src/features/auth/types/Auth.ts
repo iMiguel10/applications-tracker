@@ -17,6 +17,7 @@ export interface Preferences {
   notify_interview: boolean;
   notify_weekly_digest: boolean;
   notify_stale: boolean;
+  notify_ai_proposal: boolean;
   /** RF-80: horas de antelación del aviso de recordatorio; 0 = al vencer. */
   reminder_notice_hours: number;
   /** RF-81: horas de antelación del aviso de entrevista. */

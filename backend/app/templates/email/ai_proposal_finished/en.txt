@@ -1,0 +1,15 @@
+{% from "ai_proposal_finished/_reasons.txt" import reason -%}
+{% if succeeded %}{% if kind == "cv" %}{% set subject = "Your tailored CV for " ~ position ~ " at " ~ company ~ " is ready" %}{% else %}{% set subject = "Your cover letter for " ~ position ~ " at " ~ company ~ " is ready" %}{% endif %}{% else %}{% if kind == "cv" %}{% set subject = "Your CV for " ~ position ~ " at " ~ company ~ " couldn't be tailored" %}{% else %}{% set subject = "Your cover letter for " ~ position ~ " at " ~ company ~ " couldn't be written" %}{% endif %}{% endif -%}
+Hi,
+
+{% if succeeded %}{% if kind == "cv" %}The proposal to tailor your CV for {{ position }} at {{ company }} is ready. Review it before creating the PDF:{% else %}The cover letter for {{ position }} at {{ company }} is ready. Review it before creating the PDF:{% endif %}{% else %}{% if kind == "cv" %}Your CV for {{ position }} at {{ company }} couldn't be tailored.{% else %}Your cover letter for {{ position }} at {{ company }} couldn't be written.{% endif %}
+
+{{ reason(error_code, "en") }}
+
+You can ask for it again from the application:{% endif %}
+
+{{ link }}
+
+You are getting this email because the finished AI proposal notification is on.
+To stop these notifications: {{ unsubscribe_link }}
+To change your other notifications, go to Preferences: {{ preferences_link }}

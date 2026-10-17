@@ -19,6 +19,7 @@ PREFERENCE_FOR_KIND: dict[NotificationKind, str] = {
     NotificationKind.INTERVIEW_UPCOMING: "notify_interview",
     NotificationKind.WEEKLY_DIGEST: "notify_weekly_digest",
     NotificationKind.STALE_APPLICATION: "notify_stale",
+    NotificationKind.AI_PROPOSAL_FINISHED: "notify_ai_proposal",
 }
 
 # La clave se deriva del secreto de la instalación con un propósito propio: si
