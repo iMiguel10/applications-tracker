@@ -24,7 +24,7 @@ The letter has its **own free uses**, separate from the CV's: using one doesn't 
 3. Click **Write a cover letter for this job**.
 4. If it is the first time you use the AI, accept sending the data with **Accept and continue**. It is the same permission as for the CV.
 
-When the proposal is ready, click **Review**.
+When the proposal is ready, click **Review**. As with the CV, you can keep using the application while it is written: when it finishes, a notice tells you on whatever page you are.
 
 ## Review the letter
 

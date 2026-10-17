@@ -926,6 +926,18 @@
     }
   },
   "ai": {
+    "notify": {
+      "ready": {
+        "cv": "Tu CV adaptado para {{position}} en {{company}} está listo.",
+        "cover_letter": "Tu carta para {{position}} en {{company}} está lista."
+      },
+      "failed": {
+        "cv": "No se pudo adaptar tu CV para {{position}} en {{company}}.",
+        "cover_letter": "No se pudo escribir tu carta para {{position}} en {{company}}."
+      },
+      "review": "Revisar",
+      "openApplication": "Ver la solicitud"
+    },
     "tailor": {
       "title": "Adaptar con IA",
       "description": "Propone cómo adaptar tu CV a esta oferta, o escribe una carta de presentación, con lo que hay en tu perfil. Lo revisas todo antes de generar el PDF.",

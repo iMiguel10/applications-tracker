@@ -24,7 +24,7 @@ La carta tiene sus **propios usos gratuitos**, aparte de los del CV: gastar uno 
 3. Pulsa **Escribir una carta para esta oferta**.
 4. Si es la primera vez que usas la IA, acepta el envío de datos con **Aceptar y continuar**. Es el mismo permiso que para el CV.
 
-Cuando la propuesta esté lista, pulsa **Revisar**.
+Cuando la propuesta esté lista, pulsa **Revisar**. Como con el CV, puedes seguir usando la aplicación mientras se escribe: al terminar, un aviso te lo dice en la página en que estés.
 
 ## Revisar la carta
 

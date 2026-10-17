@@ -14,6 +14,7 @@ import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
 import { useDetectTimezone } from "@/features/auth/hooks/mutations/useDetectTimezone";
 import { useSignOut } from "@/features/auth/hooks/mutations/useSignOut";
+import { AiProposalWatcher } from "@/features/ai/components/AiProposalWatcher";
 
 const I18NEXT_LNG_STORAGE_KEY = "i18nextLng";
 
@@ -48,6 +49,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
+      <AiProposalWatcher />
       <a
         href="#main-content"
         className="sr-only rounded-md bg-card px-3 py-2 text-sm font-medium shadow-md ring-3 ring-ring/50 focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50"

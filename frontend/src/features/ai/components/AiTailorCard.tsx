@@ -17,6 +17,7 @@ import {
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { ViewToggle } from "@/shared/components/common/ViewToggle";
 import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
+import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { uiCvLanguage } from "@/features/documents/lib/designName";
 import { useUsage } from "@/features/usage/hooks/queries/useUsage";
 import type { ApplicationDetail } from "@/features/applications/types/Application";
@@ -26,6 +27,7 @@ import { useAiConsents } from "../hooks/queries/useAiConsents";
 import { useAiKeys } from "../hooks/queries/useAiKeys";
 import { isInFlight, useAiProposals } from "../hooks/queries/useAiProposals";
 import { AI_SETTINGS_PATH, providerList, providerName } from "../lib/providers";
+import { watchProposal } from "../lib/watchedProposals";
 import type { AiKeys, AiProposal, AiTask, ProposalLanguage } from "../types/Ai";
 import { AiConsentDialog } from "./AiConsentDialog";
 
@@ -53,6 +55,7 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
   const proposals = useAiProposals(application.id);
   const usage = useUsage();
   const grant = useGrantAiConsent();
+  const { data: me } = useMe();
   const request = useRequestAiProposal(application.id);
   const [language, setLanguage] = useState<ProposalLanguage>(uiCvLanguage(i18n.language));
   // La tarea que se pedirá al aceptar el consentimiento; null: diálogo cerrado.
@@ -88,7 +91,20 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
   const ask = (kind: AiTask) =>
     request.mutate(
       { kind, language },
-      { onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))) },
+      {
+        // El vigilante de AppLayout avisará al terminar, esté donde esté.
+        onSuccess: (proposal) =>
+          me &&
+          watchProposal({
+            proposalId: proposal.id,
+            applicationId: application.id,
+            userId: me.id,
+            kind,
+            position: application.position_title,
+            company: application.company.name,
+          }),
+        onError: (error) => toast.error(t(errorMessageKey(error), errorMessageParams(error))),
+      },
     );
 
   const start = (kind: AiTask) => (consented ? ask(kind) : setConsentFor(kind));

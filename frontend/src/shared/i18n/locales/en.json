@@ -926,6 +926,18 @@
     }
   },
   "ai": {
+    "notify": {
+      "ready": {
+        "cv": "Your tailored CV for {{position}} at {{company}} is ready.",
+        "cover_letter": "Your cover letter for {{position}} at {{company}} is ready."
+      },
+      "failed": {
+        "cv": "Your CV for {{position}} at {{company}} couldn't be tailored.",
+        "cover_letter": "Your cover letter for {{position}} at {{company}} couldn't be written."
+      },
+      "review": "Review",
+      "openApplication": "Open the application"
+    },
     "tailor": {
       "title": "Tailor with AI",
       "description": "Suggests how to tailor your CV to this job, or writes a cover letter, using what is in your profile. You review everything before creating the PDF.",
