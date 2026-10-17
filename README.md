@@ -21,7 +21,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 ---
 
 > [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11), recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12), guardar tus CVs y cartas en PDF y asociarlos a cada solicitud junto con la descripción de la oferta (F13), y ver tus entrevistas y recordatorios en un calendario, con eventos sueltos a Google Calendar o `.ics` (F17). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
+> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11), recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12), guardar tus CVs y cartas en PDF y asociarlos a cada solicitud junto con la descripción de la oferta (F13), adaptar el CV y escribir la carta de presentación de cada oferta con IA sin inventar experiencia, con usos gratuitos (por defecto con un Ollama local) o tu propia clave de Anthropic, OpenAI o Groq (F15), y ver tus entrevistas y recordatorios en un calendario, con eventos sueltos a Google Calendar o `.ics` (F17). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
 
 ## Contenido
 
@@ -56,7 +56,7 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ## Hoja de ruta (v2)
 
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). De momento están construidas F9 a F14, F16 y F17: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email, la biblioteca de documentos, el perfil con CVs generados y el tablero Kanban y el calendario (con eventos sueltos a Google Calendar o `.ics`). F15 (IA) queda para el final.
+Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). Están construidas F9 a F17: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email, la biblioteca de documentos, el perfil con CVs generados, la IA (a falta de su revisión final), el tablero Kanban y el calendario (con eventos sueltos a Google Calendar o `.ics`).
 
 | Fase | Contenido |
 |---|---|
@@ -66,7 +66,7 @@ Especificada en la [especificación](docs/producto/especificacion.md) y diseñad
 | ✔ F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad, nunca dos veces por el mismo motivo y con baja de un clic |
 | ✔ F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
 | ✔ F14 | Perfil profesional y generación de CVs con varios diseños |
-| F15 | IA que adapta el CV y la carta a una oferta **sin inventar experiencia**, con cuota gratuita y clave propia del usuario |
+| F15 | IA que adapta el CV y la carta a una oferta **sin inventar experiencia**, con usos gratuitos y clave propia del usuario. Construida; falta su revisión final |
 | ✔ F16 | Tablero Kanban, con arrastrar y soltar accesible por teclado |
 | ✔ F17 | Calendario de entrevistas y recordatorios, con eventos sueltos a Google Calendar o `.ics` (la suscripción se descartó, [0016](docs/decisiones/0016-sin-suscripcion-ics.md)) |
 

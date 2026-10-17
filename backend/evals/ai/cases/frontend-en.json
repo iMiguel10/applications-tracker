@@ -1,0 +1,45 @@
+{
+  "description": "Junior frontend with a partial fit, in English. Some requirements are missing.",
+  "language": "en",
+  "expect": "proposal",
+  "position_title": "Frontend Engineer",
+  "company": "Larkspur Health",
+  "job_description": "Larkspur Health is hiring a Frontend Engineer to build the patient portal. You will work with React and TypeScript, write accessible interfaces (WCAG AA), and test them with Vitest and Playwright. Experience with design systems and GraphQL is required. Nice to have: Next.js, healthcare domain knowledge, and mentoring experience. Fully remote within Europe, full-time.",
+  "irrelevant": [],
+  "profile": {
+    "headline": "Frontend developer",
+    "summary": "Frontend developer focused on React and accessible interfaces.",
+    "entries": [
+      {
+        "kind": "experience",
+        "title": "Frontend Developer",
+        "organization": "Pixelmint",
+        "start_date": "2023-02-01",
+        "is_current": true,
+        "bullets": [
+          "Built 12 React components for the shared design system",
+          "Raised the Lighthouse accessibility score from 72 to 98",
+          "Wrote unit tests with Vitest for the checkout flow"
+        ]
+      },
+      {
+        "kind": "project",
+        "title": "Recipe planner",
+        "organization": null,
+        "start_date": "2022-06-01",
+        "end_date": "2022-09-01",
+        "description": "Side project with TypeScript and a small Node backend.",
+        "bullets": ["Shipped it to 300 monthly users"]
+      }
+    ],
+    "skills": [
+      { "name": "React", "level": "advanced" },
+      { "name": "TypeScript", "level": "intermediate" },
+      { "name": "CSS", "level": "advanced" }
+    ],
+    "languages": [
+      { "language": "English", "level": "c1" },
+      { "language": "Spanish", "level": "c2" }
+    ]
+  }
+}

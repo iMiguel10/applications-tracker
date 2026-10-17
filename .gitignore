@@ -33,3 +33,6 @@ pnpm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Informes de la evaluación manual de la IA (con textos generados)
+backend/evals/ai/results/

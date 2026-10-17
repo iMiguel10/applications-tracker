@@ -165,6 +165,22 @@ Without it, users' keys can't be decrypted: they would have to save them again. 
 
 To change the master key without anyone losing theirs: put the new one **first** in `AI_KEYS_ENCRYPTION_KEYS` without removing the old one, recreate `api` and `worker`, run `docker compose exec api python -m app.scripts.rotate_ai_keys` and then remove the old one.
 
+### Evaluate a model before offering it
+
+Not every model answers equally well: some invent more, embellish more or break the answer format, and then the user spends a use and gets nothing. Before you put a model in `AI_PLATFORM_MODEL` or in an `AI_*_MODELS` list, try it with the evaluation that comes with the application. It runs a few sample profiles and job offers (made up) through each model, with the same prompt and the same check as the application:
+
+```bash
+docker compose exec api python -m evals.ai.run --target ollama:qwen3:8b --runs 2
+```
+
+With a paid provider, pass its key only for that run and confirm with `--yes`, because each call costs money:
+
+```bash
+docker compose exec -e EVAL_ANTHROPIC_API_KEY=your-key api python -m evals.ai.run --target anthropic:claude-sonnet-5-5 --yes
+```
+
+When it finishes it shows a table with how many proposals worked for each model and task, and leaves a report with all the texts in `backend/evals/ai/results/` for you to read: the automatic check guarantees the model doesn't invent experience, not that it writes well.
+
 ## Request limits
 
 | Variable | Default | What it is |

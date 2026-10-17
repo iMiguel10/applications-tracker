@@ -21,7 +21,7 @@ Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada c
 - [Arquitectura](arquitectura/index.md): las decisiones con sus alternativas descartadas, el modelo de datos, los flujos y las invariantes.
 - [Servicios y estructura](arquitectura/servicios-y-estructura.md): qué corre en Docker, cómo se organiza el código y qué puede hacer cada capa.
 - [Autenticación](arquitectura/autenticacion.md): la integración con SuperTokens y sus trampas.
-- [Arquitectura de la v2](arquitectura/v2.md): el diseño de la siguiente versión, con un documento por tema (segundo plano y emails, ficheros, IA, límites y abuso). Construidas hasta F14, F16 y F17; falta F15 (IA).
+- [Arquitectura de la v2](arquitectura/v2.md): el diseño de la siguiente versión, con un documento por tema (segundo plano y emails, ficheros, IA, límites y abuso). Construidas de F9 a F17 (F15, la IA, a falta de su revisión final); F7 espera servidor.
 - [Decisiones](decisiones/index.md): la bitácora de cambios de rumbo durante el desarrollo.
 
 ## Las tres ideas que sostienen el diseño

@@ -1,0 +1,25 @@
+{
+  "description": "El texto no es una oferta de empleo: lo correcto es rechazarlo (RF-119), no inventar una adaptación.",
+  "language": "es",
+  "expect": "rejected",
+  "position_title": "Backend Developer",
+  "company": "Nubaria Logística",
+  "job_description": "Receta de tortilla de patatas para cuatro personas: pela y corta en láminas finas un kilo de patatas y una cebolla. Fríelas a fuego medio en abundante aceite de oliva hasta que estén tiernas. Bate seis huevos con sal, mezcla con las patatas escurridas y cuaja la tortilla en una sartén por los dos lados.",
+  "irrelevant": [],
+  "profile": {
+    "headline": "Desarrolladora backend",
+    "summary": "Desarrolladora backend con cinco años de experiencia en Python.",
+    "entries": [
+      {
+        "kind": "experience",
+        "title": "Backend Developer",
+        "organization": "Tramalia",
+        "start_date": "2022-01-01",
+        "is_current": true,
+        "bullets": ["Diseñé servicios web con FastAPI para 40 clientes"]
+      }
+    ],
+    "skills": [{ "name": "Python", "level": "expert" }],
+    "languages": []
+  }
+}

@@ -8,3 +8,4 @@ __pycache__
 htmlcov
 .idea
 .vscode
+evals/ai/results

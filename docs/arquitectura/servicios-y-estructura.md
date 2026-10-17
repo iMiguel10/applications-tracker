@@ -403,22 +403,22 @@ backend/app/
 │   ├── context.py              [construido] WorkerContext: el contexto de SAQ con las dependencias que crea worker.py
 │   ├── files.py                [construido en F13] barrido diario de ficheros huérfanos
 │   ├── documents.py            generar PDF (F14)
-│   ├── ai.py                   propuesta de CV o carta (F15)
+│   ├── ai.py                   [construido en F15] propuesta de CV o carta y su barrido
 │   ├── notifications.py        barridos de avisos y envío (F12)
 │   └── maintenance.py          reencolar pendientes atascados, reclamos sin resultado
 ├── infra/                      [nuevo] adaptadores a sistemas externos, cada uno detrás de una interfaz
 │   ├── queue/                  [construido] JobQueue · SaqJobQueue · InMemoryJobQueue (pruebas) · QueueUnavailableError
 │   ├── storage/                [construido] FileStorage · LocalFileStorage (`iter_files` y `delete_temporaries`, F13)
 │   ├── email/                  [construido] EmailSender · SmtpEmailSender · DisabledEmailSender · RecordingEmailSender (pruebas)
-│   ├── llm/                    LLMProvider · adapters/<proveedor>.py · FakeLLMProvider (pruebas)
-│   │   └── prompts/            prompts versionados (A33): cv_tailoring/v1.md, cover_letter/v1.md
+│   ├── llm/                    [construido en F15] LLMProvider · <proveedor>.py (groq, anthropic, openai, ollama)
+│   │                           · FakeLLMProvider (pruebas) · strict_json_schema
+│   │   └── prompts/            prompts versionados (A33): cv/v1.md, cv/v2.md, cover_letter/v1.md
 │   ├── pdf/                    [construido] PdfRenderer · WeasyPrintRenderer (weasyprint_renderer.py, que solo importa
 │   │                           el worker: la API no carga WeasyPrint) · TemplateOnlyFetcher contra SSRF
-│   ├── crypto.py               Fernet/MultiFernet para las claves de IA de los usuarios (A34)
+│   ├── crypto/                 [construido en F15] KeyCipher (MultiFernet) para las claves de IA de los usuarios (A34)
 │   └── rate_limit/             [construido] RateLimiter · LimitsRateLimiter (`limits` sobre Valkey) · DisabledRateLimiter
 ├── templates/                  [nuevo]
-│   ├── cv/<diseño>/            template.html, style.css, manifest.json y fuentes (A25)
-│   ├── cover_letter/<diseño>/
+│   ├── cv/<diseño>/            template.html, letter.html (la carta, F15), style.css, manifest.json y fuentes (A25)
 │   └── email/<tipo>/           <idioma>.html y <idioma>.txt (A36)
 ├── domain/                     + notifications.py (tipos y claves de deduplicación), limits.py (LimitKey),
 │                                 profile.py (enumerados del perfil), ai.py (esquema de la propuesta)
@@ -427,12 +427,16 @@ backend/app/
 ├── services/                   + document_service, profile_service, cv_generation_service,
 │                                 ai_proposal_service, ai_key_service, notification_service,
 │                                 limit_service, calendar_service
-│   └── notifications/          reminder_due.py…: barrido y compositor de cada aviso (sin EmailChannel, 0012)
+│   ├── ai_call.py              [construido en F15] prepare_call e interpret_response: lo que comparten el worker y la evaluación
+│   └── notifications/          reminder_due.py…, ai_proposal_finished.py (F15): barrido y compositor de cada aviso (sin EmailChannel, 0012)
 ├── api/v1/
 │   ├── router.py               + router `public` con la lista blanca (calendario, baja de avisos)
 │   ├── deps.py                 + fábricas de infra, require_verified_email, rate_limit(...)
 │   └── endpoints/              + documents, profile, ai, usage, calendar, notifications
-└── scripts/                    + set_user_limit.py (RF-143)
+└── scripts/                    + set_user_limit.py (RF-143), check_ai_provider.py y rotate_ai_keys.py (F15)
+
+backend/evals/ai/               [construido en F15] evaluación manual de la IA (RNF-23), fuera de la CI: cases/*.json
+                                (perfiles y ofertas inventados), checks.py y run.py; informes en results/ (fuera de git)
 ```
 
 #### Reglas de capas (ampliación)

@@ -1,0 +1,40 @@
+{
+  "description": "Cambio de sector con encaje débil: muchas carencias que deben salir como tales, sin inventar experiencia.",
+  "language": "es",
+  "expect": "proposal",
+  "position_title": "Analista de datos",
+  "company": "Orbe Seguros",
+  "job_description": "Orbe Seguros busca Analista de datos para su área de siniestros. Requisitos: SQL avanzado, Python (pandas), experiencia con Power BI o Tableau, estadística aplicada y al menos 2 años en un puesto de análisis de datos. Se valorará experiencia en seguros y conocimientos de machine learning. Contrato indefinido, modalidad híbrida en Madrid.",
+  "irrelevant": [],
+  "profile": {
+    "headline": "Profesora de matemáticas",
+    "summary": "Profesora de secundaria que se está formando en análisis de datos.",
+    "entries": [
+      {
+        "kind": "experience",
+        "title": "Profesora de matemáticas",
+        "organization": "IES Valle Alto",
+        "start_date": "2016-09-01",
+        "is_current": true,
+        "bullets": [
+          "Diseñé hojas de cálculo para seguir las notas de 180 alumnos por curso",
+          "Coordiné el departamento de matemáticas durante 3 cursos"
+        ]
+      },
+      {
+        "kind": "certification",
+        "title": "Curso de SQL para análisis de datos",
+        "organization": "Escuela Abierta de Datos",
+        "start_date": "2025-01-01",
+        "end_date": "2025-04-01",
+        "bullets": []
+      }
+    ],
+    "skills": [
+      { "name": "Excel", "level": "advanced" },
+      { "name": "SQL", "level": "basic" },
+      { "name": "Estadística", "level": "advanced" }
+    ],
+    "languages": [{ "language": "Inglés", "level": "b1" }]
+  }
+}

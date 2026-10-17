@@ -165,6 +165,22 @@ Sin ella, las claves de los usuarios no se pueden descifrar: tendrían que volve
 
 Para cambiar la clave maestra sin que nadie pierda la suya: pon la nueva **la primera** en `AI_KEYS_ENCRYPTION_KEYS` sin quitar la antigua, recrea `api` y `worker`, ejecuta `docker compose exec api python -m app.scripts.rotate_ai_keys` y, después, quita la antigua.
 
+### Evaluar un modelo antes de ofrecerlo
+
+No todos los modelos responden igual de bien: alguno inventa más, adorna más o rompe el formato de la respuesta, y entonces el usuario gasta un uso sin obtener nada. Antes de poner un modelo en `AI_PLATFORM_MODEL` o en una lista `AI_*_MODELS`, pruébalo con la evaluación que trae la aplicación. Pasa unos perfiles y ofertas de ejemplo (inventados) por cada modelo, con el mismo prompt y la misma comprobación que la aplicación:
+
+```bash
+docker compose exec api python -m evals.ai.run --target ollama:qwen3:8b --runs 2
+```
+
+Con un proveedor de pago, pasa su clave solo para esa ejecución y confirma con `--yes`, porque cada llamada cuesta:
+
+```bash
+docker compose exec -e EVAL_ANTHROPIC_API_KEY=tu-clave api python -m evals.ai.run --target anthropic:claude-sonnet-5-5 --yes
+```
+
+Al terminar muestra una tabla con cuántas propuestas salieron bien en cada modelo y tarea, y deja un informe con todos los textos en `backend/evals/ai/results/` para que los leas: la comprobación automática garantiza que el modelo no se inventa experiencia, pero no que escriba bien.
+
 ## Límite de peticiones
 
 | Variable | Por defecto | Qué es |

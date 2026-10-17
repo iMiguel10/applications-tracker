@@ -1,0 +1,54 @@
+{
+  "description": "Backend con buen encaje, en español. Logros con cifras que no deben cambiar y uno que no viene al caso.",
+  "language": "es",
+  "expect": "proposal",
+  "position_title": "Backend Developer",
+  "company": "Nubaria Logística",
+  "job_description": "Buscamos una persona Backend Developer para el equipo de plataforma de Nubaria Logística. Requisitos: al menos 3 años con Python y FastAPI; bases de datos PostgreSQL; diseño de APIs REST; pruebas automatizadas; CI/CD; Docker. Inglés B2 imprescindible. Se valorará: Kubernetes, AWS y experiencia con colas de mensajes (RabbitMQ o similar). Ofrecemos teletrabajo, horario flexible y formación continua.",
+  "irrelevant": ["Navidad"],
+  "profile": {
+    "headline": "Desarrolladora backend",
+    "summary": "Desarrolladora backend con cinco años de experiencia en Python y bases de datos relacionales.",
+    "entries": [
+      {
+        "kind": "experience",
+        "title": "Backend Developer",
+        "organization": "Tramalia",
+        "start_date": "2022-01-01",
+        "is_current": true,
+        "bullets": [
+          "Diseñé servicios web con FastAPI para 40 clientes",
+          "Optimicé consultas en PostgreSQL y reduje el tiempo de respuesta un 40 %",
+          "Monté la integración continua con GitHub Actions y redujimos los despliegues de 6 a 2 horas",
+          "Organicé las cenas de Navidad del equipo"
+        ]
+      },
+      {
+        "kind": "experience",
+        "title": "Desarrolladora junior",
+        "organization": "Bitácora Software",
+        "start_date": "2020-03-01",
+        "end_date": "2021-12-01",
+        "bullets": [
+          "Escribí pruebas automatizadas con pytest",
+          "Mantuve scripts de despliegue en Bash"
+        ]
+      },
+      {
+        "kind": "education",
+        "title": "Grado en Ingeniería Informática",
+        "organization": "Universidad de Sevilla",
+        "start_date": "2015-09-01",
+        "end_date": "2019-06-01",
+        "bullets": []
+      }
+    ],
+    "skills": [
+      { "name": "Python", "level": "expert" },
+      { "name": "PostgreSQL", "level": "advanced" },
+      { "name": "Docker", "level": "intermediate" },
+      { "name": "Photoshop", "level": "basic" }
+    ],
+    "languages": [{ "language": "Inglés", "level": "b2" }]
+  }
+}

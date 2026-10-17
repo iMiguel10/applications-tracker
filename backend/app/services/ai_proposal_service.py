@@ -4,41 +4,29 @@ from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings
 from app.core.exceptions import AppException, ConflictError, NotFoundError
 from app.domain.ai import (
-    MAX_OUTPUT_TOKENS,
     MIN_JOB_DESCRIPTION_LENGTH,
-    OUTPUT_MODELS,
     PROMPT_VERSIONS,
     QUEUED_GIVE_UP_AFTER,
     QUEUED_REQUEUE_AFTER,
-    REASONING,
     RUNNING_GRACE,
     SWEEP_BATCH,
-    TEMPERATURE,
     AiEntry,
     AiLanguage,
     AiProfile,
     AiProvider,
     AiSkill,
     AiTask,
-    CoverLetterOutput,
-    InvalidProposalError,
     KeySource,
     OutdatedProposalError,
     ProposalErrorCode,
     ProposalStatus,
     apply_cv_proposal,
-    build_cv_input,
     cost_micros,
-    describe_application,
-    validate_cv_output,
-    validate_letter_output,
-    wrap_job_description,
 )
 from app.domain.cover_letter import CoverLetterSnapshot
 from app.domain.cv import CvSelection, CvSnapshot
@@ -49,15 +37,11 @@ from app.domain.profile import EntryKind
 from app.domain.user import Language
 from app.infra.llm import (
     LLMError,
-    LLMFinish,
     LLMInvalidOutputError,
     LLMProvider,
-    LLMRequest,
     PlatformModel,
     platform_model,
-    strict_json_schema,
 )
-from app.infra.llm.prompts import load_prompt
 from app.infra.queue import JobQueue, QueueUnavailableError
 from app.models.ai_proposal import AiProposal
 from app.models.document import Document
@@ -68,6 +52,7 @@ from app.repositories.profile_repository import ProfileRepository
 from app.repositories.profile_skill_repository import ProfileSkillRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.ai import AiProposalCreate, AiProposalDocumentCreate
+from app.services.ai_call import interpret_response, prepare_call
 from app.services.ai_consent_service import AiConsentService
 from app.services.ai_key_service import AiKeyService
 from app.services.cv_generation_service import CvGenerationService
@@ -373,30 +358,18 @@ class AiProposalService:
         if not profile.experiences:
             return _failed(ProposalErrorCode.PROFILE_INCOMPLETE)
 
-        profile_text, ids = build_cv_input(profile)
-        letter = proposal.kind == AiTask.COVER_LETTER
-        # El esquema de la versión con que se pidió (A33): una propuesta en cola
-        # al cambiar de versión se ejecuta con el prompt y el esquema de la suya.
-        output_model = OUTPUT_MODELS[proposal.prompt_version]
-        offer = wrap_job_description(application.job_description or "")
-        if letter:
-            # La carta va a un puesto y una empresa concretos.
-            target = describe_application(
-                application.position_title, application.company.name
-            )
-            offer = f"{target}\n\n{offer}"
-        request = LLMRequest(
-            system=load_prompt(proposal.prompt_version, language=proposal.language),
-            user=f"{profile_text}\n\n{offer}",
-            schema_name="cover_letter" if letter else "cv_proposal",
-            json_schema=strict_json_schema(output_model),
-            max_output_tokens=MAX_OUTPUT_TOKENS,
-            temperature=TEMPERATURE,
-            reasoning=REASONING[AiTask(proposal.kind)],
+        call = prepare_call(
+            profile,
+            kind=AiTask(proposal.kind),
+            prompt_version=proposal.prompt_version,
+            language=proposal.language,
+            job_description=application.job_description or "",
+            position_title=application.position_title,
+            company_name=application.company.name,
         )
         try:
             response = await adapter.complete(
-                request, model=proposal.model, api_key=api_key
+                call.request, model=proposal.model, api_key=api_key
             )
         except LLMError as exc:
             # Solo el código: el mensaje del proveedor puede llevar la clave (ia.md §7).
@@ -416,34 +389,20 @@ class AiProposalService:
 
         # Respondió: eso gasta el uso, pase o no la validación (ia.md §6, 0017).
         billed = _billed(prices, response.input_tokens, response.output_tokens)
-        if response.finish == LLMFinish.REFUSED:
-            return billed | _invalid(ProposalErrorCode.RESPONSE_REFUSED)
-        if response.finish == LLMFinish.TRUNCATED:
-            logger.warning("Propuesta %s cortada por longitud", proposal.id)
-            return billed | _invalid(ProposalErrorCode.RESPONSE_INVALID)
-        try:
-            output = output_model.model_validate_json(response.text)
-        except ValidationError:
-            logger.warning("Propuesta %s no cumple el esquema", proposal.id)
-            return billed | _invalid(ProposalErrorCode.RESPONSE_INVALID)
-        if output.insufficient_offer:
-            return billed | {
-                "status": ProposalStatus.REJECTED.value,
-                "error_code": ProposalErrorCode.OFFER_INSUFFICIENT.value,
-            }
-        try:
-            validated = (
-                validate_letter_output(output, ids)
-                if isinstance(output, CoverLetterOutput)
-                else validate_cv_output(output, ids)
-            )
-        except InvalidProposalError as exc:
+        result = interpret_response(response, call)
+        if result.reason:
             # El motivo, sin texto del modelo ni del perfil.
-            logger.warning("Propuesta %s inválida: %s", proposal.id, exc)
-            return billed | _invalid(ProposalErrorCode.RESPONSE_INVALID)
+            logger.warning("Propuesta %s inválida: %s", proposal.id, result.reason)
+        if result.status != ProposalStatus.SUCCEEDED:
+            assert result.error_code is not None
+            return billed | {
+                "status": result.status.value,
+                "error_code": result.error_code.value,
+            }
+        assert result.proposal is not None
         return billed | {
             "status": ProposalStatus.SUCCEEDED.value,
-            "proposal": validated.model_dump(mode="json"),
+            "proposal": result.proposal.model_dump(mode="json"),
         }
 
     async def _profile(self, user_id: uuid.UUID) -> AiProfile:

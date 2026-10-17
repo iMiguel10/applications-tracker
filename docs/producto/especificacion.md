@@ -389,7 +389,7 @@ Requisitos derivados:
 - **RNF-20** Tests de API, services y repositories en el backend, incluidos los adversos (propiedad de los datos y transiciones inválidas). CI obligatorio en verde.
 - **RNF-21** Tipado estricto: mypy en el backend y TypeScript `strict` en el frontend, sin errores.
 - **RNF-22** Toda cadena visible está en i18n, en es y en en. En la v2 incluye los emails y las etiquetas fijas de las plantillas de CV.
-- **RNF-23** `[F15]` Las pruebas automáticas de la IA **no llaman al proveedor**: usan un cliente simulado con respuestas grabadas, incluidas respuestas malformadas o que inventan experiencia, para probar que la validación las rechaza. Aparte, un pequeño conjunto de casos de evaluación, ejecutado a mano, mide que las propuestas reales no inventan.
+- **RNF-23** `[F15]` Las pruebas automáticas de la IA **no llaman al proveedor**: usan un cliente simulado con respuestas grabadas, incluidas respuestas malformadas o que inventan experiencia, para probar que la validación las rechaza. Aparte, un pequeño conjunto de casos de evaluación, ejecutado a mano, mide que las propuestas reales no inventan. **Construido:** `backend/evals/ai/` (ia.md §9).
 
 **Operación**
 
@@ -462,7 +462,7 @@ Cada fase se define por el riesgo que quita de en medio. Van en orden de depende
 | **F12 — Notificaciones por email** · ✔ construida el 2026-09-30 | Los cuatro tipos (RF-80…87), preferencias y desactivación con un clic. | Trabajo programado e idempotencia: "nunca dos veces" es la parte difícil. |
 | **F13 — Biblioteca de documentos** · ✔ construida el 2026-09-30 | Subida de PDFs, biblioteca, asociación a solicitudes, descripción de la oferta (RF-27, RF-28, RF-90…94). | Manejo seguro de ficheros subidos por usuarios (RNF-05) y consistencia entre base de datos y almacén (RNF-41). |
 | **F14 — Perfil y CVs generados** | Perfil profesional, plantillas y generación de PDF (RF-100…106). | Modelo de datos del perfil y generación de PDF con varias plantillas. |
-| **F15 — IA: CV y carta adaptados** | Ajuste de CV, carencias, revisión, carta de presentación y consentimiento (RF-110…119); cuota gratuita, claves propias y proveedores (RF-150…156). Al empezar se fijan con precios reales la cuota y el tope global (R7). | Integración con un modelo de lenguaje sin que invente, con coste acotado y probable sin llamar al proveedor. |
+| **F15 — IA: CV y carta adaptados** | Ajuste de CV, carencias, revisión, carta de presentación y consentimiento (RF-110…119); cuota gratuita, claves propias y proveedores (RF-150…156). Al empezar se fijan con precios reales la cuota y el tope global (R7). | Integración con un modelo de lenguaje sin que invente, con coste acotado y probable sin llamar al proveedor. **Construida** (2026-10-17), a falta del `qa-verifier`: decisiones 0017–0021. |
 | **F16 — Tablero Kanban** | RF-120…123. | Poco riesgo: reutiliza `allowed_transitions` y el cambio de estado existente. Enseña arrastrar y soltar accesible. |
 | **F17 — Calendario** | Vista de calendario y eventos sueltos a otros calendarios (RF-130, RF-131, RF-133); la suscripción ICS (RF-132, RF-134) se descartó ([0016](../decisiones/0016-sin-suscripcion-ics.md)). | Zonas horarias. |
 
