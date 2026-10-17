@@ -195,6 +195,10 @@
       "passwordRequired": "Indica la contraseña",
       "passwordsDoNotMatch": "Las contraseñas no coinciden"
     },
+    "signupClosed": {
+      "title": "El registro está cerrado",
+      "description": "En esta instalación las cuentas las crea quien la administra. Pídele una: te llegará un email para elegir tu contraseña."
+    },
     "errors": {
       "wrongCredentials": "Email o contraseña incorrectos",
       "emailRejected": "Este email no es válido o ya está registrado",

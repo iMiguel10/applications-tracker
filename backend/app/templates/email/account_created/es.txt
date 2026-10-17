@@ -1,0 +1,10 @@
+{% set subject = "Tu cuenta de Applications Tracker está creada" -%}
+Hola:
+
+Te han creado una cuenta en Applications Tracker con este email. Para empezar a usarla, elige tu contraseña en este enlace:
+
+{{ link }}
+
+El enlace caduca en {{ expires_in_minutes }} minutos y solo sirve una vez. Si caduca, pide otro en la pantalla de inicio de sesión con "¿Olvidaste tu contraseña?".
+
+Si no esperabas esta cuenta, ignora este email: nadie puede entrar en ella sin elegir antes la contraseña.

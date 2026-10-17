@@ -44,6 +44,9 @@ export function RegisterForm() {
             for (const field of result.fields) {
               setError(field, { message: FIELD_ERROR_KEYS[field] });
             }
+          } else if (result.status === "signup_disabled") {
+            // Se cerró con la página ya abierta.
+            toast.error(t("auth.signupClosed.description"));
           } else {
             toast.error(t("auth.errors.generic"));
           }

@@ -9,7 +9,8 @@ interface AuthLayoutProps {
   title: string;
   subtitle: string;
   children: ReactNode;
-  footer: ReactNode;
+  /** Opcional: sin él (registro cerrado en el login) no hay separador vacío. */
+  footer?: ReactNode;
 }
 
 /** Escala la ilustración del panel al hueco que deja el lema, para que en pantallas
@@ -104,7 +105,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
           <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
           <p className="mt-2 text-muted-foreground">{subtitle}</p>
           <div className="mt-8">{children}</div>
-          <div className="mt-8 border-t pt-6">{footer}</div>
+          {footer && <div className="mt-8 border-t pt-6">{footer}</div>}
         </div>
       </main>
     </div>

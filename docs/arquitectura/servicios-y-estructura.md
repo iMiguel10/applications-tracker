@@ -433,7 +433,8 @@ backend/app/
 │   ├── router.py               + router `public` con la lista blanca (calendario, baja de avisos)
 │   ├── deps.py                 + fábricas de infra, require_verified_email, rate_limit(...)
 │   └── endpoints/              + documents, profile, ai, usage, calendar, notifications
-└── scripts/                    + set_user_limit.py (RF-143), check_ai_provider.py y rotate_ai_keys.py (F15)
+└── scripts/                    + set_user_limit.py (RF-143), check_ai_provider.py y rotate_ai_keys.py (F15),
+                                  create_user.py (crear cuentas con el registro cerrado, 0022)
 
 backend/evals/ai/               [construido en F15] evaluación manual de la IA (RNF-23), fuera de la CI: cases/*.json
                                 (perfiles y ofertas inventados), checks.py y run.py; informes en results/ (fuera de git)

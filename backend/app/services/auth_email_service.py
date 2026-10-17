@@ -59,6 +59,27 @@ class AuthEmailService:
             context={"expires_in_minutes": PASSWORD_RESET_LINK_MINUTES},
         )
 
+    async def send_account_created(
+        self, *, supertokens_user_id: str, language_hint: str | None
+    ) -> bool:
+        """La bienvenida de una cuenta creada por quien administra (decisión 0022),
+        con el mismo enlace que la recuperación: es lo que le permite elegir su
+        contraseña. True si el servidor SMTP lo aceptó; si no, el script imprime el
+        enlace para pasárselo a mano."""
+
+        async def link_for(email: str) -> str | None:
+            return await self.identities.create_password_reset_link(
+                supertokens_user_id, email, "public"
+            )
+
+        return await self._send_link_email(
+            "account_created",
+            supertokens_user_id=supertokens_user_id,
+            language_hint=language_hint,
+            link_for=link_for,
+            context={"expires_in_minutes": PASSWORD_RESET_LINK_MINUTES},
+        )
+
     async def send_verification(
         self, *, supertokens_user_id: str, tenant_id: str, language_hint: str | None
     ) -> None:
@@ -85,23 +106,23 @@ class AuthEmailService:
         language_hint: str | None,
         link_for: Callable[[str], Awaitable[str | None]],
         context: Mapping[str, Any],
-    ) -> None:
+    ) -> bool:
         if not self.email_sender.enabled:
             # Sin SMTP no se genera ni el token: nadie lo recibiría (RNF-34).
             logger.warning("Email %s pedido sin SMTP configurado", kind)
-            return
+            return False
         email = await self.identities.get_email(supertokens_user_id)
         if email is None:
             logger.info("Email %s para un usuario que ya no existe; se ignora", kind)
-            return
+            return False
         link = await link_for(email)
         if link is None:
             logger.info("Email %s sin enlace que enviar; se ignora", kind)
-            return
+            return False
 
         language = await self._language_for(supertokens_user_id, language_hint)
         rendered = self.templates.render(kind, language, {"link": link, **context})
-        await self._send(
+        return await self._send(
             OutgoingEmail(
                 to=email,
                 subject=rendered.subject,
@@ -126,7 +147,7 @@ class AuthEmailService:
 
     async def _send(
         self, email: OutgoingEmail, *, kind: str, supertokens_user_id: str
-    ) -> None:
+    ) -> bool:
         # Un solo intento (segundo plano §2): el usuario puede volver a pedirlo, y
         # un reintento tras un fallo "no se sabe" podría duplicar el email. Los
         # registros llevan el id, no la dirección.
@@ -135,6 +156,7 @@ class AuthEmailService:
         except EmailDisabledError:
             logger.warning("Email %s no enviado: sin SMTP configurado", kind)
         except EmailDeliveryUnknownError:
+            # No se sabe si salió: para quien llama, como si no (puede reenviarlo).
             logger.warning(
                 "Email %s a %s: no se sabe si salió", kind, supertokens_user_id
             )
@@ -144,3 +166,5 @@ class AuthEmailService:
             )
         else:
             logger.info("Email %s enviado a %s", kind, supertokens_user_id)
+            return True
+        return False

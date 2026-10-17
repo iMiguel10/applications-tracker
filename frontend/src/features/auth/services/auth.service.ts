@@ -10,6 +10,7 @@ type SdkResponse =
   | { status: "OK" }
   | { status: "WRONG_CREDENTIALS_ERROR" }
   | { status: "FIELD_ERROR"; formFields: { id: string; error: string }[] }
+  | { status: "GENERAL_ERROR"; message: string }
   | { status: string };
 
 function toAuthResult(response: SdkResponse): AuthResult {
@@ -25,8 +26,13 @@ function toAuthResult(response: SdkResponse): AuthResult {
           .map((field) => field.id)
           .filter((id): id is AuthField => id === "email" || id === "password"),
       };
+    case "GENERAL_ERROR":
+      // El backend cierra el registro con este mensaje (SIGNUP_ENABLED=false).
+      return (response as { message?: string }).message === "signup_disabled"
+        ? { status: "signup_disabled" }
+        : { status: "error" };
     default:
-      // SIGN_IN_NOT_ALLOWED, SIGN_UP_NOT_ALLOWED, GENERAL_ERROR…
+      // SIGN_IN_NOT_ALLOWED, SIGN_UP_NOT_ALLOWED…
       return { status: "error" };
   }
 }

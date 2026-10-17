@@ -34,6 +34,8 @@ export type AuthResult =
   | { status: "ok" }
   | { status: "wrong_credentials" }
   | { status: "field_errors"; fields: AuthField[] }
+  /** El registro está cerrado en esta instalación (decisión 0022). */
+  | { status: "signup_disabled" }
   | { status: "error" };
 
 /** Resultado de guardar la contraseña nueva con el enlace del email. */

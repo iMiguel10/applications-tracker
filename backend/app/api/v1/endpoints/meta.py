@@ -19,5 +19,6 @@ async def meta() -> MetaRead:
     """
     return MetaRead(
         email_enabled=settings.email_enabled,
+        signup_enabled=settings.signup_enabled,
         max_document_bytes=settings.document_max_bytes,
     )

@@ -11,6 +11,10 @@ sidebar_label: Getting started
 
 The password must be **at least 8 characters long and include letters and numbers**. If the email is already registered, the application tells you: use **Sign in** instead.
 
+### If sign-up is closed
+
+Some installations don't let you create an account: the sign-in screen doesn't show **Create account** and the sign-up page says **Sign-up is closed**. Then accounts are created by whoever runs the installation. Ask them for one: you'll get an email, "Your Applications Tracker account is ready", with a link to choose your password (or they'll give it to you directly). Your email will already be confirmed.
+
 ## Confirm your email
 
 When you create the account you receive an email to confirm that the address is yours. Click **Confirm my email** in that email: **Verify your email** opens and, if all goes well, it says **Email verified**. From there, **Go to the application**.

@@ -55,7 +55,11 @@ function renderCard({
     providers: [],
     active_provider: null,
   });
-  vi.mocked(metaService.get).mockResolvedValue({ email_enabled: emailEnabled, max_document_bytes: 5 * 1024 * 1024 });
+  vi.mocked(metaService.get).mockResolvedValue({
+    email_enabled: emailEnabled,
+    signup_enabled: true,
+    max_document_bytes: 5 * 1024 * 1024,
+  });
   vi.mocked(authService.isEmailVerified).mockResolvedValue(verified);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(authKeys.preferences(), preferences);

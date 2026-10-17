@@ -21,5 +21,18 @@ async def test_meta_reports_whether_email_is_enabled(
     # ella que lo público siga siendo solo configuración, nada de usuarios.
     assert response.json() == {
         "email_enabled": expected,
+        "signup_enabled": True,
         "max_document_bytes": settings.document_max_bytes,
     }
+
+
+@pytest.mark.asyncio
+async def test_meta_reports_whether_signup_is_open(
+    anonymous_client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+):
+    # Decisión 0022: el frontend oculta el registro si está cerrado.
+    monkeypatch.setattr(settings, "signup_enabled", False)
+
+    response = await anonymous_client.get("/api/v1/meta")
+
+    assert response.json()["signup_enabled"] is False

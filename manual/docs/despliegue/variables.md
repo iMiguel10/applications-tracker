@@ -44,6 +44,23 @@ docker compose up -d --force-recreate
 
 `API_DOMAIN` y `WEBSITE_DOMAIN` deciden a qué sitio pertenecen las cookies de sesión. Tienen que coincidir **exactamente** con las direcciones que escribe el usuario en el navegador: `localhost` y `127.0.0.1` son sitios distintos para el navegador, y si no coinciden el inicio de sesión parece no funcionar, sin ningún error.
 
+## Registro
+
+| Variable | Por defecto | Qué es |
+|---|---|---|
+| `SIGNUP_ENABLED` | `true` | Con `false`, nadie puede crearse una cuenta: el login no lo ofrece y la página de registro explica que está cerrado. Las cuentas que ya existen funcionan igual |
+
+Con el registro cerrado, las cuentas las creas tú:
+
+```bash
+docker compose exec api python -m app.scripts.create_user ana@example.com
+docker compose exec api python -m app.scripts.create_user ana@example.com --language en   # cuenta y email en inglés
+```
+
+La cuenta se crea con el email ya verificado y con una contraseña aleatoria que nadie conoce. La persona elige la suya con un enlace: si la instalación envía emails, le llega uno («Tu cuenta de Applications Tracker está creada»); si no, o si el envío falla, el script lo imprime para que se lo pases tú. El enlace caduca en 60 minutos. Si caduca, puede pedir otro con **¿Olvidaste tu contraseña?**, siempre que la instalación envíe emails; sin ellos, borra la cuenta y créala de nuevo.
+
+El script también sirve con el registro abierto, y no hace nada si ya existe una cuenta con ese email.
+
 ## Aplicación web
 
 | Variable | Obligatoria | Qué es |

@@ -328,6 +328,13 @@ Las recetas se inicializan igual, pero la entrega no envía nada (la implementac
 
 **Sin correo no se exige la verificación** ([0013](../decisiones/0013-sin-correo-no-se-exige-verificar-el-email.md), decidido al empezar F13): nadie podría verificar su email, y `require_verified_email` bloquearía para siempre subir documentos y usar la IA en esa instalación. Con `email_enabled` falso la dependencia deja pasar; con correo, exige la verificación como siempre, también a las cuentas creadas antes de configurarlo. Si alguien llama a la API de recuperación directamente, recibe la misma respuesta de siempre y ningún email: es inevitable y no filtra nada.
 
+### Registro cerrado ([0022](../decisiones/0022-registro-cerrado-por-configuracion.md))
+
+- `SIGNUP_ENABLED=false`: el override de `sign_up_post` (`core/auth_emails.py`) responde `GeneralErrorResponse("signup_disabled")` antes de llamar al original, así que no se crea la identidad ni se encola la verificación. Lee `settings.signup_enabled` en cada petición.
+- **Trampa — cerrar la operación, no la ruta.** SuperTokens atiende el registro en `/auth/signup`, `/auth/signup/` y `/auth/public/signup`: un middleware que mirase la ruta exacta se saltaría cambiando la URL, como pasó con el rate limit en F11. El override es la operación, venga por donde venga (`tests/api/test_signup_closed.py` prueba las tres).
+- `GET /meta` publica `signup_enabled`; el frontend oculta el enlace al registro y `/register` explica que está cerrado. Si se cierra con la página abierta, el formulario recibe el `GENERAL_ERROR` y lo dice.
+- **Cuentas creadas por la administración:** `scripts/create_user.py` → `AccountProvisioningService`. `IdentityRepository.create_account` llama a la **receta** (`emailpassword.asyncio.sign_up`), no a la ruta, así que funciona con el registro cerrado y no encola el email de verificación; `mark_email_verified` crea y consume un token de verificación. La contraseña es aleatoria (`secrets.token_urlsafe(32)`) y nadie la ve: la persona elige la suya con el enlace de recuperación, que le llega con el email `account_created` (`AuthEmailService.send_account_created`, que dice si el SMTP lo aceptó) o que el script imprime si no hay correo o el envío falla.
+
 ### Pruebas adversas nuevas
 
 | # | Prueba | Qué demuestra |

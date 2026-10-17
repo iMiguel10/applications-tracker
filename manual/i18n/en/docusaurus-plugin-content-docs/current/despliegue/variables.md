@@ -44,6 +44,23 @@ docker compose up -d --force-recreate
 
 `API_DOMAIN` and `WEBSITE_DOMAIN` decide which site the session cookies belong to. They must match **exactly** the addresses users type in the browser: `localhost` and `127.0.0.1` are different sites for a browser, and if they don't match, signing in seems not to work, without any error.
 
+## Sign-up
+
+| Variable | Default | What it is |
+|---|---|---|
+| `SIGNUP_ENABLED` | `true` | With `false`, nobody can create an account: the sign-in screen doesn't offer it and the sign-up page says it is closed. Existing accounts work as before |
+
+With sign-up closed, you create the accounts:
+
+```bash
+docker compose exec api python -m app.scripts.create_user ana@example.com
+docker compose exec api python -m app.scripts.create_user ana@example.com --language en   # account and email in English
+```
+
+The account is created with the email already verified and a random password nobody knows. The person chooses theirs with a link: if the installation sends email, they get one ("Your Applications Tracker account is ready"); if not, or if sending fails, the script prints it for you to pass on. The link expires in 60 minutes. If it expires, they can ask for another one with **Forgot your password?**, as long as the installation sends email; without email, delete the account and create it again.
+
+The script also works with sign-up open, and does nothing if an account with that email already exists.
+
 ## Web application
 
 | Variable | Required | What it is |

@@ -195,6 +195,10 @@
       "passwordRequired": "Enter the password",
       "passwordsDoNotMatch": "Passwords do not match"
     },
+    "signupClosed": {
+      "title": "Sign-up is closed",
+      "description": "In this installation, accounts are created by whoever runs it. Ask them for one: you'll get an email to choose your password."
+    },
     "errors": {
       "wrongCredentials": "Incorrect email or password",
       "emailRejected": "This email is not valid or is already registered",

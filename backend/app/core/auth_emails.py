@@ -23,7 +23,9 @@ from supertokens_python.recipe.emailverification.types import (
 from supertokens_python.recipe.session import SessionContainer
 from supertokens_python.recipe.session.asyncio import revoke_all_sessions_for_user
 from supertokens_python.supertokens import get_request_from_user_context
+from supertokens_python.types.response import GeneralErrorResponse
 
+from app.core.config import settings
 from app.domain.user import language_from_accept_language
 from app.infra.queue import JobQueue, QueueUnavailableError
 from app.jobs.auth_emails import SEND_PASSWORD_RESET_EMAIL, SEND_VERIFICATION_EMAIL
@@ -120,8 +122,13 @@ class QueuedVerificationEmail(EmailDeliveryInterface[VerificationEmailTemplateVa
 def emailpassword_api_overrides(
     job_queue: JobQueueProvider | None,
 ) -> Callable[[APIInterface], APIInterface]:
-    """Dos cambios en las rutas de email y contraseña del SDK:
+    """Tres cambios en las rutas de email y contraseña del SDK:
 
+    - **Registro cerrado** (`SIGNUP_ENABLED=false`, decisión 0022): responde
+      `GENERAL_ERROR` con `signup_disabled` sin crear nada. Va aquí, y no en un
+      middleware por la ruta, porque SuperTokens atiende la misma operación en
+      varias URL (`/auth/signup`, `/auth/public/signup`, `/auth/signup/`, F11): el override es
+      la operación, se llame como se llame.
     - **Registro:** encola el email de verificación (RF-05). Lo hace el backend y no
       el frontend, para que cualquier cliente de la API lo reciba igual.
     - **Recuperación:** al completarla se cierran TODAS las sesiones del usuario:
@@ -142,6 +149,9 @@ def emailpassword_api_overrides(
             api_options: APIOptions,
             user_context: dict[str, Any],
         ) -> Any:
+            # Se lee en cada petición: no hace falta reiniciar para las pruebas.
+            if not settings.signup_enabled:
+                return GeneralErrorResponse("signup_disabled")
             result = await original_sign_up_post(
                 form_fields,
                 tenant_id,

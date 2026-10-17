@@ -1,0 +1,10 @@
+{% set subject = "Your Applications Tracker account is ready" -%}
+Hi,
+
+An Applications Tracker account has been created for you with this email. To start using it, choose your password at this link:
+
+{{ link }}
+
+The link expires in {{ expires_in_minutes }} minutes and works only once. If it expires, ask for another one on the sign-in screen with "Forgot your password?".
+
+If you weren't expecting this account, ignore this email: nobody can sign in to it without choosing the password first.

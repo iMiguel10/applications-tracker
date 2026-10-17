@@ -11,6 +11,10 @@ sidebar_label: Primeros pasos
 
 La contraseña debe tener **al menos 8 caracteres e incluir letras y números**. Si el email ya está registrado, la aplicación te lo dice: usa **Iniciar sesión** en su lugar.
 
+### Si el registro está cerrado
+
+Algunas instalaciones no dejan crearse una cuenta: la pantalla de inicio de sesión no muestra **Crear cuenta** y la de registro dice **El registro está cerrado**. Entonces las cuentas las crea quien administra la instalación. Pídele una: te llegará un email, «Tu cuenta de Applications Tracker está creada», con un enlace para elegir tu contraseña (o te lo pasará directamente). Tu email ya estará confirmado.
+
 ## Confirmar tu email
 
 Al crear la cuenta recibes un email para confirmar que la dirección es tuya. Pulsa **Confirmar mi email** en ese email: se abre **Verifica tu email** y, si todo va bien, dice **Email verificado**. Desde ahí, **Ir a la aplicación**.

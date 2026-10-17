@@ -3,13 +3,20 @@ from supertokens_python.asyncio import (
     get_user,
     list_users_by_account_info,
 )
-from supertokens_python.recipe.emailpassword.asyncio import create_reset_password_link
+from supertokens_python.recipe.emailpassword.asyncio import (
+    create_reset_password_link,
+    sign_up,
+)
+from supertokens_python.recipe.emailpassword.interfaces import SignUpOkResult
 from supertokens_python.recipe.emailverification.asyncio import (
     create_email_verification_link,
+    create_email_verification_token,
     is_email_verified,
+    verify_email_using_token,
 )
 from supertokens_python.recipe.emailverification.interfaces import (
     CreateEmailVerificationLinkOkResult,
+    CreateEmailVerificationTokenOkResult,
 )
 from supertokens_python.types import RecipeUserId
 from supertokens_python.types.base import AccountInfoInput
@@ -37,6 +44,23 @@ class IdentityRepository:
             "public", AccountInfoInput(email=email)
         )
         return users[0].id if users else None
+
+    async def create_account(self, email: str, password: str) -> str | None:
+        """Crea una identidad de email y contraseña, también con el registro cerrado
+        (`SIGNUP_ENABLED=false`): llama a la receta, no a la ruta `/auth/signup`,
+        así que ni pasa por su override ni encola el email de verificación. Para
+        `scripts/create_user.py` (decisión 0022). None si el email ya existe."""
+        result = await sign_up("public", email, password)
+        return result.user.id if isinstance(result, SignUpOkResult) else None
+
+    async def mark_email_verified(self, supertokens_user_id: str, email: str) -> None:
+        """Da el email por verificado sin enviar nada: lo da por bueno quien
+        administra al crear la cuenta."""
+        token = await create_email_verification_token(
+            "public", RecipeUserId(supertokens_user_id), email
+        )
+        if isinstance(token, CreateEmailVerificationTokenOkResult):
+            await verify_email_using_token("public", token.token)
 
     async def create_password_reset_link(
         self, supertokens_user_id: str, email: str, tenant_id: str

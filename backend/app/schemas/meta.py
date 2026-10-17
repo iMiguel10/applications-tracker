@@ -8,6 +8,12 @@ class MetaRead(BaseModel):
         "la verificación de email no están disponibles.",
         examples=[True],
     )
+    signup_enabled: bool = Field(
+        description="`false` si el registro está cerrado: `POST /auth/signup` "
+        "responde `GENERAL_ERROR` con el mensaje `signup_disabled` y las cuentas "
+        "las crea quien administra la instalación.",
+        examples=[True],
+    )
     max_document_bytes: int = Field(
         description="Tamaño máximo en bytes de un PDF subido a la biblioteca. Un "
         "cliente puede avisar antes de subir uno más grande, que la API rechaza con "

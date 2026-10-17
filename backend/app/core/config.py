@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # api y worker. Obligatoria.
     files_root: str
 
+    # Registro abierto (por defecto) o cerrado (decisión 0022). Cerrado, nadie puede
+    # crearse una cuenta: las crea quien administra con scripts/create_user.py, y
+    # las que ya existen siguen funcionando igual.
+    signup_enabled: bool = True
+
     # Correo (RNF-34). Opcional a propósito: sin SMTP_HOST la aplicación arranca
     # igual y lo que depende del email aparece como no disponible. El servidor lo
     # configura quien despliega; la aplicación no depende de ningún proveedor.

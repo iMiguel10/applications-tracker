@@ -121,7 +121,7 @@ Usuario
 
 ### Cuenta (RF-01…)
 
-- **RF-01** Registro con email y contraseña.
+- **RF-01** Registro con email y contraseña. Quien despliega puede **cerrarlo** (`SIGNUP_ENABLED=false`): entonces las cuentas las crea con un script de administración, con el email ya verificado, y cada persona elige su contraseña con un enlace ([0022](../decisiones/0022-registro-cerrado-por-configuracion.md)).
 - **RF-02** Inicio y cierre de sesión. La sesión se mantiene al recargar.
 - **RF-03** `[F11]` Recuperación de contraseña por email. Fuera del MVP; entra en la v2. El enlace es de un solo uso y caduca. La respuesta al pedirlo es **la misma exista o no la cuenta**, para no revelar qué emails están registrados. Con sesión iniciada, las preferencias ofrecen el mismo enlace, enviado a la dirección de la cuenta, para **cambiar la contraseña** (añadido al construir F11 a petición del usuario). Cambiarla exige así acceso al correo, no solo una sesión abierta, y no hay una segunda vía que mantener.
 - **RF-04** Cada usuario solo accede a sus propios datos. Un recurso ajeno responde igual que uno inexistente (404).

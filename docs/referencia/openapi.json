@@ -10516,6 +10516,14 @@
               true
             ]
           },
+          "signup_enabled": {
+            "type": "boolean",
+            "title": "Signup Enabled",
+            "description": "`false` si el registro está cerrado: `POST /auth/signup` responde `GENERAL_ERROR` con el mensaje `signup_disabled` y las cuentas las crea quien administra la instalación.",
+            "examples": [
+              true
+            ]
+          },
           "max_document_bytes": {
             "type": "integer",
             "title": "Max Document Bytes",
@@ -10528,6 +10536,7 @@
         "type": "object",
         "required": [
           "email_enabled",
+          "signup_enabled",
           "max_document_bytes"
         ],
         "title": "MetaRead"
