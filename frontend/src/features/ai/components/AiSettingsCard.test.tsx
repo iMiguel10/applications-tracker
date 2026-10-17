@@ -78,6 +78,21 @@ describe("AiSettingsCard", () => {
     expect(screen.queryByText(i18n.t("ai.settings.title"))).not.toBeInTheDocument();
   });
 
+  it("dice dónde conseguir la clave de cada proveedor que aún no tiene una", async () => {
+    renderCard();
+
+    const link = await screen.findByRole("link", {
+      name: i18n.t("ai.settings.getKeyLabel", { provider: "Anthropic" }),
+    });
+    expect(link).toHaveAttribute("href", "https://platform.claude.com/settings/keys");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    // OpenAI ya tiene clave: no hace falta decirle dónde conseguirla.
+    expect(
+      screen.queryByRole("link", { name: i18n.t("ai.settings.getKeyLabel", { provider: "OpenAI" }) }),
+    ).not.toBeInTheDocument();
+  });
+
   it("enseña las claves guardadas solo por sus 4 últimos caracteres", async () => {
     renderCard();
 

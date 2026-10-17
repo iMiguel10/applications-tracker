@@ -231,7 +231,7 @@ Usuario
 - **RF-153** `[F15]` Al guardar una clave se comprueba con una llamada mínima al proveedor antes de aceptarla. Se puede sustituir o borrar en cualquier momento; después de guardarla nunca se vuelve a mostrar entera (solo el proveedor y sus últimos 4 caracteres).
 - **RF-154** `[F15]` El consentimiento (RF-116) nombra el proveedor al que se envían los datos: el de la plataforma o el que eligió el usuario con su clave. Cambiar de proveedor pide consentimiento de nuevo.
 - ~~**RF-155**~~ `[descartado]` **Tope de gasto global** de la plataforma: solo cuenta el uso con la clave de la plataforma. Al alcanzarlo, la cuota gratuita queda en pausa para todos con un mensaje claro; las claves propias siguen funcionando. Descartado al empezar F15: la plataforma se limita solo por uso ([0017](../decisiones/0017-ia-con-groq-cuota-por-tipo-y-modelo-a-elegir.md)).
-- **RF-156** `[F15]` Cuando se agota la cuota gratuita, la interfaz explica cómo seguir: añadir una clave propia, con los proveedores disponibles y un enlace a cómo obtener la clave de cada uno (manual de uso).
+- **RF-156** `[F15]` Cuando se agota la cuota gratuita, la interfaz explica cómo seguir: añadir una clave propia, con los proveedores disponibles y un enlace a cómo obtener la clave de cada uno (manual de uso). **Construido:** el mensaje cambia según haya ya una clave guardada (elegirla), la instalación admita claves propias (los proveedores que ofrece y que se paga aparte) o no las admita; enlaza a la tarjeta de IA de Preferencias, y esta lleva a la página de claves de la consola de cada proveedor (el frontend no conoce la dirección del manual).
 
 ### Tablero Kanban (RF-120…) · v2
 

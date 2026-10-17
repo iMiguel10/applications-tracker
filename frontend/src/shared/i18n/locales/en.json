@@ -482,7 +482,7 @@
     "design_language_unavailable": "That design is not available in that language.",
     "document_not_failed": "Only a CV that failed can be retried.",
     "ai_consent_required": "Before using the AI you have to accept sending data to the provider.",
-    "ai_free_quota_exhausted": "You have already used your {{limit, number}} free proposals.",
+    "ai_free_quota_exhausted": "You have no free proposals left. To keep going, use your own AI key in Preferences.",
     "ai_unavailable": "AI is not available in this installation.",
     "job_description_missing": "Add the job description to tailor the CV.",
     "job_description_too_short": "The job description is too short: it needs at least {{min_length, number}} characters.",
@@ -955,7 +955,10 @@
       "needsKey": "This installation has no free AI uses: use your own key.",
       "addKey": "Add my key in Preferences",
       "withOwnKey": "With your {{provider}} key ({{model}}): no usage limit.",
-      "useOwnKey": "Use your own key."
+      "continueWithSavedKey": "To keep going, use your {{providers}} key, which you already saved:",
+      "useSavedKey": "choose it in Preferences",
+      "continueWithNewKey": "To keep going, add your {{providers}} key: you pay for each use in your provider account, usually a few cents.",
+      "noOwnKeys": "This installation doesn't allow your own keys."
     },
     "status": {
       "running": "Preparing the proposal…",
@@ -1081,6 +1084,8 @@
       "keysTitle": "Your keys",
       "keysHint": "With your own key from a provider there is no usage limit: you pay for it in your provider account. It is checked when you save it, stored encrypted and never shown again.",
       "noKey": "No key",
+      "getKey": "How to get one",
+      "getKeyLabel": "How to get a {{provider}} key (opens in a new tab)",
       "saved": "Key …{{last4}} · checked on {{date}}",
       "add": "Add key",
       "replace": "Change key",

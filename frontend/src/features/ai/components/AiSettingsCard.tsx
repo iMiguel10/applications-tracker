@@ -1,5 +1,5 @@
-import { useId, useState } from "react";
-import { KeyRound, Loader2, Trash2 } from "lucide-react";
+import { useEffect, useId, useState } from "react";
+import { ExternalLink, KeyRound, Loader2, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ import { useSaveAiKey } from "../hooks/mutations/useSaveAiKey";
 import { useSetActiveAiProvider } from "../hooks/mutations/useSetActiveAiProvider";
 import { useAiConsents } from "../hooks/queries/useAiConsents";
 import { useAiKeys } from "../hooks/queries/useAiKeys";
-import { providerName } from "../lib/providers";
+import { AI_SETTINGS_ID, keyPageUrl, providerName } from "../lib/providers";
 import type { AiProvider, AiProviderOption } from "../types/Ai";
 
 // El valor del selector para los usos gratuitos (un proveedor nunca se llama así).
@@ -51,6 +51,14 @@ export function AiSettingsCard() {
 
   const platform = consents.data?.platform_provider ?? null;
   const ownKeys = keys.data?.own_keys_enabled ?? false;
+  const loaded = !!keys.data && !!consents.data;
+  // Los enlaces de "cómo seguir" (RF-156) traen aquí: la tarjeta se pinta cuando
+  // llegan los datos, así que el navegador no puede bajar solo hasta ella.
+  useEffect(() => {
+    if (loaded && window.location.hash === `#${AI_SETTINGS_ID}`) {
+      document.getElementById(AI_SETTINGS_ID)?.scrollIntoView({ block: "start" });
+    }
+  }, [loaded]);
   // Sin IA en la instalación no hay nada que configurar.
   if (!keys.data || !consents.data || (!platform && !ownKeys)) return null;
 
@@ -70,7 +78,7 @@ export function AiSettingsCard() {
     toast.error(t(errorMessageKey(error), errorMessageParams(error)));
 
   return (
-    <Card>
+    <Card id={AI_SETTINGS_ID} className="scroll-mt-20">
       <CardHeader>
         <CardTitle>{t("ai.settings.title")}</CardTitle>
         <CardDescription>{t("ai.settings.description")}</CardDescription>
@@ -184,6 +192,18 @@ function ProviderKeyRow({
                 })
               : t("ai.settings.noKey")}
           </span>
+          {!key && keyPageUrl(option.provider) && (
+            <a
+              href={keyPageUrl(option.provider) ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 justify-self-start text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              aria-label={t("ai.settings.getKeyLabel", { provider: name })}
+            >
+              {t("ai.settings.getKey")}
+              <ExternalLink className="size-3.5" aria-hidden />
+            </a>
+          )}
         </div>
         <div className="flex gap-2">
           {!editing && (

@@ -25,8 +25,8 @@ import { useRequestAiProposal } from "../hooks/mutations/useRequestAiProposal";
 import { useAiConsents } from "../hooks/queries/useAiConsents";
 import { useAiKeys } from "../hooks/queries/useAiKeys";
 import { isInFlight, useAiProposals } from "../hooks/queries/useAiProposals";
-import { providerName } from "../lib/providers";
-import type { AiProposal, AiTask, ProposalLanguage } from "../types/Ai";
+import { AI_SETTINGS_PATH, providerList, providerName } from "../lib/providers";
+import type { AiKeys, AiProposal, AiTask, ProposalLanguage } from "../types/Ai";
 import { AiConsentDialog } from "./AiConsentDialog";
 
 /** Igual que el backend (MIN_JOB_DESCRIPTION_LENGTH): más corta, no se pide. */
@@ -134,7 +134,7 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
         {!blocked && !provider && (
           <p className="text-sm text-muted-foreground">
             {t("ai.tailor.needsKey")}{" "}
-            <Link to="/preferences" className="underline underline-offset-2 hover:text-foreground">
+            <Link to={AI_SETTINGS_PATH} className="underline underline-offset-2 hover:text-foreground">
               {t("ai.tailor.addKey")}
             </Link>
           </p>
@@ -170,20 +170,7 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
                     {/* Mientras una está en curso ya cuenta como gastada: "sin usos"
                         no se dice hasta que acaba. */}
                     {remaining === 0 && !busyTask ? (
-                      <p className="text-sm text-muted-foreground">
-                        {t(`ai.tailor.noUses.${task}`)}
-                        {ownKeys && (
-                          <>
-                            {" "}
-                            <Link
-                              to="/preferences"
-                              className="underline underline-offset-2 hover:text-foreground"
-                            >
-                              {t("ai.tailor.useOwnKey")}
-                            </Link>
-                          </>
-                        )}
-                      </p>
+                      <NoFreeUses task={task} keys={keys.data} />
                     ) : (
                       <>
                         <Button
@@ -232,6 +219,46 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
         />
       )}
     </Card>
+  );
+}
+
+/**
+ * Sin usos gratuitos para esta tarea: cómo seguir (RF-156). Con una clave ya
+ * guardada, elegirla; si no, añadir una de los proveedores que ofrece la
+ * instalación, que se paga en la cuenta del proveedor.
+ */
+function NoFreeUses({ task, keys }: { task: AiTask; keys: AiKeys | undefined }) {
+  const { t, i18n } = useTranslation();
+  // Solo los proveedores que la instalación ofrece hoy (con modelos en su lista).
+  const offered = keys?.own_keys_enabled
+    ? keys.providers.filter((option) => option.models.length > 0)
+    : [];
+  const saved = offered.filter((option) => option.key).map((option) => option.provider);
+  const next =
+    saved.length > 0
+      ? { text: "ai.tailor.continueWithSavedKey", link: "ai.tailor.useSavedKey", providers: saved }
+      : offered.length > 0
+        ? {
+            text: "ai.tailor.continueWithNewKey",
+            link: "ai.tailor.addKey",
+            providers: offered.map((option) => option.provider),
+          }
+        : null;
+
+  return (
+    <p className="text-sm text-muted-foreground">
+      {t(`ai.tailor.noUses.${task}`)}{" "}
+      {next ? (
+        <>
+          {t(next.text, { providers: providerList(next.providers, i18n.language) })}{" "}
+          <Link to={AI_SETTINGS_PATH} className="underline underline-offset-2 hover:text-foreground">
+            {t(next.link)}
+          </Link>
+        </>
+      ) : (
+        t("ai.tailor.noOwnKeys")
+      )}
+    </p>
   );
 }
 

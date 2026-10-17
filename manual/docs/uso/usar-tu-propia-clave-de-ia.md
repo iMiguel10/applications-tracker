@@ -12,7 +12,14 @@ Todo se configura en **Preferencias**, en la tarjeta **Inteligencia artificial**
 
 ## Añadir una clave
 
-1. Consigue una clave de API en la web del proveedor. Suele estar en la sección de claves o "API keys" de tu cuenta, y hace falta tener saldo o un método de pago.
+1. Consigue una clave de API en la web del proveedor. Hace falta tener saldo o un método de pago. En Preferencias, el enlace **Cómo conseguirla** de cada proveedor te lleva a su página de claves:
+
+    | Proveedor | Dónde se crea la clave |
+    |---|---|
+    | Anthropic | [platform.claude.com/settings/keys](https://platform.claude.com/settings/keys) |
+    | OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+    | Groq | [console.groq.com/keys](https://console.groq.com/keys) |
+
 2. En **Tus claves**, junto al proveedor, pulsa **Añadir clave**.
 3. Pega la clave en **Clave de API de** *proveedor*, elige el **Modelo** (el primero es el recomendado) y pulsa **Comprobar y guardar**.
 

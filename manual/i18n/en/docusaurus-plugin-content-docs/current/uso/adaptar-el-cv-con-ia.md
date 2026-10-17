@@ -15,7 +15,7 @@ For the cover letter, see [Write a cover letter with AI](escribir-una-carta-con-
 - Your profile needs at least one **experience**. The more achievements you write for each one, the more the AI has to choose from.
 - You need to have [confirmed your email](primeros-pasos.md#confirm-your-email), unless the installation doesn't send emails.
 
-Each account has **free uses** for the CV: usually one, depending on the installation, which may not cap them. They don't renew. A use is spent as soon as the AI answers, even if the proposal doesn't work out. The **Tailor with AI** card tells you how many you have left; if it says nothing, they have no cap.
+Each account has **free uses** for the CV: usually one, depending on the installation, which may not cap them. They don't renew. A use is spent as soon as the AI answers, even if the proposal doesn't work out. The **Tailor with AI** card tells you how many you have left; if it says nothing, they have no cap. When they run out, the card tells you how to keep going with [your own key](usar-tu-propia-clave-de-ia.md).
 
 ## Ask for a proposal
 

@@ -15,7 +15,7 @@ Los requisitos son los mismos que para adaptar el CV:
 - tu perfil tiene al menos una **experiencia**;
 - has [confirmado tu email](primeros-pasos.md#confirmar-tu-email), salvo que la instalación no envíe emails.
 
-La carta tiene sus **propios usos gratuitos**, aparte de los del CV: gastar uno no gasta el otro. Tampoco se renuevan, y cada uno se gasta en cuanto la IA responde, aunque la carta no salga bien.
+La carta tiene sus **propios usos gratuitos**, aparte de los del CV: gastar uno no gasta el otro. Tampoco se renuevan, y cada uno se gasta en cuanto la IA responde, aunque la carta no salga bien. Cuando se acaban, la tarjeta te dice cómo seguir con [tu propia clave](usar-tu-propia-clave-de-ia.md).
 
 ## Pedir la carta
 

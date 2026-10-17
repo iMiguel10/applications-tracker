@@ -133,10 +133,66 @@ describe("AiTailorCard", () => {
     expect(await screen.findByText(/necesita al menos 200 caracteres/)).toBeInTheDocument();
   });
 
+  describe("sin usos gratuitos, dice cómo seguir (RF-156)", () => {
+    const OFFERED: AiKeys = {
+      own_keys_enabled: true,
+      providers: [
+        { provider: "anthropic", models: ["claude-sonnet-5-5"], key: null },
+        { provider: "openai", models: ["gpt-5.5"], key: null },
+        { provider: "groq", models: ["openai/gpt-oss-120b"], key: null },
+      ],
+      active_provider: null,
+    };
+    const settingsLink = (name: string) => {
+      const link = screen.getByRole("link", { name });
+      expect(link).toHaveAttribute("href", "/preferences#ai-settings");
+    };
+
+    it("sin clave: los proveedores que ofrece la instalación y que se paga aparte", async () => {
+      renderCard({ remaining: 0, keys: OFFERED });
+
+      const text = await screen.findByText(/Para seguir, añade tu clave de/);
+      expect(text).toHaveTextContent("Anthropic, OpenAI o Groq");
+      expect(text).toHaveTextContent("unos céntimos");
+      settingsLink(i18n.t("ai.tailor.addKey"));
+    });
+
+    it("con una clave guardada pero sin usar: elegirla", async () => {
+      const withGroq: AiKeys = {
+        ...OFFERED,
+        providers: OFFERED.providers.map((option) =>
+          option.provider === "groq"
+            ? {
+                ...option,
+                key: {
+                  model: "openai/gpt-oss-120b",
+                  last4: "abcd",
+                  validated_at: "2026-10-08T10:00:00Z",
+                  model_allowed: true,
+                },
+              }
+            : option,
+        ),
+      };
+      renderCard({ remaining: 0, keys: withGroq });
+
+      const text = await screen.findByText(/que ya tienes guardada/);
+      expect(text).toHaveTextContent("tu clave de Groq");
+      settingsLink(i18n.t("ai.tailor.useSavedKey"));
+    });
+
+    it("sin claves propias en la instalación: lo dice, sin enlace", async () => {
+      renderCard({ remaining: 0 });
+
+      expect(await screen.findByText(/no admite claves propias/)).toBeInTheDocument();
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    });
+  });
+
   it("sin usos gratuitos de CV lo dice, y la carta sigue disponible con los suyos", async () => {
     renderCard({ remaining: 0 });
 
-    expect(await screen.findByText(i18n.t("ai.tailor.noUses.cv"))).toBeInTheDocument();
+    expect(await screen.findByText(new RegExp(i18n.t("ai.tailor.noUses.cv")))).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request.cv") })).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: i18n.t("ai.tailor.request.cover_letter") }),
@@ -219,7 +275,7 @@ describe("AiTailorCard", () => {
     renderCard({ keys: ANTHROPIC_ACTIVE, remaining: 0, granted: false });
 
     expect(await screen.findByText(/Con tu clave de Anthropic/)).toBeInTheDocument();
-    expect(screen.queryByText(i18n.t("ai.tailor.noUses.cv"))).not.toBeInTheDocument();
+    expect(screen.queryByText(new RegExp(i18n.t("ai.tailor.noUses.cv")))).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: i18n.t("ai.tailor.request.cv") }));
     // El consentimiento se pide para el proveedor de la clave, no el de la plataforma.
     expect(await screen.findByRole("dialog")).toHaveTextContent("Anthropic");
@@ -233,7 +289,7 @@ describe("AiTailorCard", () => {
 
     expect(await screen.findByRole("link", { name: i18n.t("ai.tailor.addKey") })).toHaveAttribute(
       "href",
-      "/preferences",
+      "/preferences#ai-settings",
     );
     expect(screen.queryByRole("button", { name: i18n.t("ai.tailor.request.cv") })).not.toBeInTheDocument();
   });

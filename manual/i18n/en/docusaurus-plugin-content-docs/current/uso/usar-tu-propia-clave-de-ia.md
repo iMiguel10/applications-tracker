@@ -12,7 +12,14 @@ Everything is set up in **Preferences**, in the **Artificial intelligence** card
 
 ## Add a key
 
-1. Get an API key on the provider's website. It is usually in the keys or "API keys" section of your account, and you need credit or a payment method.
+1. Get an API key on the provider's website. You need credit or a payment method. In Preferences, each provider's **How to get one** link takes you to its keys page:
+
+    | Provider | Where the key is created |
+    |---|---|
+    | Anthropic | [platform.claude.com/settings/keys](https://platform.claude.com/settings/keys) |
+    | OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+    | Groq | [console.groq.com/keys](https://console.groq.com/keys) |
+
 2. In **Your keys**, next to the provider, click **Add key**.
 3. Paste the key in *provider* **API key**, choose the **Model** (the first one is the recommended one) and click **Check and save**.
 

@@ -482,7 +482,7 @@
     "design_language_unavailable": "Ese diseño no está disponible en ese idioma.",
     "document_not_failed": "Solo se puede reintentar un CV que falló.",
     "ai_consent_required": "Antes de usar la IA tienes que aceptar el envío de datos al proveedor.",
-    "ai_free_quota_exhausted": "Ya has usado tus {{limit, number}} propuestas gratuitas.",
+    "ai_free_quota_exhausted": "Ya no te quedan propuestas gratuitas. Para seguir, usa tu propia clave de IA en Preferencias.",
     "ai_unavailable": "La IA no está disponible en esta instalación.",
     "job_description_missing": "Añade la descripción de la oferta para adaptar el CV.",
     "job_description_too_short": "La descripción de la oferta es demasiado corta: necesita al menos {{min_length, number}} caracteres.",
@@ -955,7 +955,10 @@
       "needsKey": "Esta instalación no tiene usos gratuitos de IA: usa tu propia clave.",
       "addKey": "Añadir mi clave en Preferencias",
       "withOwnKey": "Con tu clave de {{provider}} ({{model}}): sin límite de usos.",
-      "useOwnKey": "Usa tu propia clave."
+      "continueWithSavedKey": "Para seguir, usa tu clave de {{providers}}, que ya tienes guardada:",
+      "useSavedKey": "elegirla en Preferencias",
+      "continueWithNewKey": "Para seguir, añade tu clave de {{providers}}: cada uso lo pagas tú en tu cuenta del proveedor, normalmente unos céntimos.",
+      "noOwnKeys": "Esta instalación no admite claves propias."
     },
     "status": {
       "running": "Preparando la propuesta…",
@@ -1081,6 +1084,8 @@
       "keysTitle": "Tus claves",
       "keysHint": "Con tu propia clave de un proveedor no tienes límite de usos: lo pagas en tu cuenta del proveedor. Se comprueba al guardarla, se guarda cifrada y nunca se vuelve a mostrar.",
       "noKey": "Sin clave",
+      "getKey": "Cómo conseguirla",
+      "getKeyLabel": "Cómo conseguir una clave de {{provider}} (se abre en otra pestaña)",
       "saved": "Clave …{{last4}} · comprobada el {{date}}",
       "add": "Añadir clave",
       "replace": "Cambiar clave",
