@@ -499,7 +499,7 @@ manual/
 
 - La referencia de la API la genera `docusaurus-plugin-openapi-docs` a partir del **mismo** `openapi.json` que ya versiona el backend. Se regenera en cada `start` y `build` y no se versiona la salida: una sola fuente del contrato. Antes de generarla, `prepare-openapi.mjs` deriva una copia con un servidor `{apiUrl}` editable (por defecto `http://localhost:8000`): sin él, los ejemplos apuntaban al origen del manual. El panel para enviar peticiones está oculto (CORS y sesiones mezcladas); para probar, Swagger en la API. Los ejemplos de código empiezan por curl.
 - La referencia generada sale en el idioma de los docstrings del backend (español) también en la versión inglesa del sitio. Traducirla exigiría dos contratos OpenAPI: no se hace, y la guía de integración en inglés lo explica.
-- En producción (F7), el manual se construye como estático y lo sirve el mismo Nginx que el frontend (por ejemplo, en `/manual`).
+- En producción (F7), el manual se construye como estático y lo sirve el mismo Nginx que el frontend, en `/manual/` (imagen `web`, [§9](#9-produccion-f7-en-construccion)).
 
 ### 8.6 Variables de entorno nuevas
 
@@ -554,6 +554,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
 | `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
+| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`) y la `web`, y pasa `nginx -t`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
 
 ### 8.9 Decisiones cerradas de la v2
 
@@ -572,3 +573,41 @@ Confirmadas con el usuario durante el diseño (2026-09-24), a continuación de l
 | 20 | Límites con consumo y restante visibles | También donde se gasta, con aviso al 80 % |
 | 21 | Ficheros en disco local | Volumen compartido por `api` y `worker`; S3 como implementación futura de `FileStorage` |
 | 22 | Valkey para la cola y el rate limit | SAQ sobre Valkey; la cola podría pasar a Postgres cambiando la URL |
+
+## 9. Producción (F7) [en construcción]
+
+Se despliega en **Coolify**, con un solo dominio y un Nginx propio delante de la API ([0023](../decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)). Lo que ya existe:
+
+```
+backend/Dockerfile          tres etapas: base, prod (compose.prod.yml) y dev (la última: compose.yml y compose.test.yml)
+deploy/web/
+├── Dockerfile              imagen `web`: compila el frontend y el manual y los sirve con Nginx (contexto: la raíz)
+└── nginx.conf              estáticos, reparto a la API, rate limiting, IP real, caché y cabeceras de seguridad
+.dockerignore               el contexto de la imagen `web` (las demás usan su carpeta y su propio .dockerignore)
+```
+
+**Imagen del backend (`--target prod`):**
+- Instala con `uv sync --frozen --no-dev` y copia solo `app/`, `migrations/`, `alembic.ini` y `entrypoint.sh`, sin `tests/` ni `evals/`.
+- `api` aplica las migraciones y arranca uvicorn con dos procesos y `--no-proxy-headers`: la IP real la decide `core/client_ip.py` con `TRUSTED_PROXIES`, y uvicorn no debe reescribirla antes.
+- El `worker` usa la misma imagen con `saq --quiet app.worker.settings`, sin `watchfiles`.
+
+**Imagen `web`:**
+- Recibe `APP_URL`, el origen público sin barra final, como argumento de build. Es la URL de la API del frontend (`VITE_API_URL`) y la base del manual (`MANUAL_BASE_URL=/manual/`, con `MANUAL_API_URL` para los ejemplos de la referencia de la API).
+- Vite la incrusta al compilar: cambiar de dominio exige reconstruir la imagen.
+- `nginx.conf` reparte así:
+  - `/api/`, `/auth/`, `/docs` y `/openapi.json` van a `api:8000`. El nombre se resuelve con el DNS de Docker en cada petición (`resolver 127.0.0.11` y `proxy_pass` con variable): con un `proxy_pass` fijo, Nginx seguiría llamando a la IP antigua de la API tras un despliegue (502), y no arrancaría si la API aún no existe.
+  - `/manual/` sirve el manual: cada página es su `index.html`, y una carpeta sin página da el 404 del manual, no un 403.
+  - `/assets/` da 404 si falta un fichero, en lugar del `index.html` del SPA.
+  - El resto, `index.html`, para React Router.
+  - `/healthz`, para el healthcheck.
+- Cabeceras y caché:
+  - Los ficheros con hash llevan caché de un año (`immutable`); el resto, `no-cache`.
+  - CSP estricta en la aplicación (`script-src 'self'`) y algo más laxa en el manual, porque Docusaurus aplica el tema con un script en línea.
+  - Nada sobre lo que responde la API, que sale con sus propias cabeceras.
+- `client_max_body_size 25m` solo frena cuerpos absurdos: el máximo real de una subida lo corta la API (`DOCUMENT_MAX_BYTES`).
+
+> **Trampa — una fuente con `@import` en el CSS de Tailwind.** `@tailwindcss/postcss` inlinea los `@import` sin reescribir las `url()` relativas que llevan dentro: con `@import "@fontsource-variable/geist"` en `global.css`, el build de producción pedía `/assets/files/geist-….woff2`, que no existe, y la interfaz salía con la fuente del sistema sin ningún error visible. La fuente se importa desde `main.tsx`, donde Vite sí resuelve sus ficheros. Cualquier paquete de CSS con ficheros propios (fuentes, imágenes) va igual.
+
+> **Trampa — scripts en línea y la CSP.** La CSP de la aplicación no admite scripts en línea. El que aplica el tema guardado antes del primer pintado vive en `frontend/public/theme-init.js` y se carga síncrono, sin `type="module"` ni `defer`. Un script en línea nuevo en `index.html` lo bloquearía el navegador en producción y en desarrollo funcionaría.
+
+La CI construye las dos imágenes y pasa `nginx -t` (job `prod-images`). Faltan el `compose.prod.yml`, las variables de producción, las copias de seguridad, el despliegue y el despliegue automático.

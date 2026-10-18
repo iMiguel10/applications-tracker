@@ -18,7 +18,8 @@ spec.servers = [
     description: "API de tu instalación (API_DOMAIN)",
     variables: {
       apiUrl: {
-        default: "http://localhost:8000",
+        // En producción, el origen de la instalación (deploy/web/Dockerfile).
+        default: process.env.MANUAL_API_URL ?? "http://localhost:8000",
         description: "URL pública de la API, sin barra final",
       },
     },

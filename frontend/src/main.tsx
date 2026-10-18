@@ -12,6 +12,10 @@ import { ThemeProvider } from "@/app/providers/ThemeProvider";
 import App from "./App.tsx";
 
 import "./shared/i18n/i18n";
+// La fuente desde JS y no con @import en global.css: el plugin de PostCSS de
+// Tailwind la inlinea sin reescribir sus url(./files/…) y en el build de
+// producción los .woff2 daban 404 (la interfaz salía con la fuente del sistema).
+import "@fontsource-variable/geist";
 import "./styles/global.css";
 
 createRoot(document.getElementById("root")!).render(

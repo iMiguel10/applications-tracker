@@ -191,9 +191,9 @@ Las rutas `/auth/*` aparecen en el OpenAPI (`/docs`) gracias a `app/api/auth_doc
 | Entorno | Frontend | API | ¿Mismo sitio? | Cookies |
 |---|---|---|---|---|
 | Desarrollo | `http://localhost:5173` | `http://localhost:8000` | Sí (el puerto no cuenta para "sitio") | `SameSite=Lax`, sin `Secure` |
-| Producción (F7) | `https://app.<dominio>` | `https://api.<dominio>` | Sí (mismo dominio registrable) | `SameSite=Lax`, `Secure` |
+| Producción (F7) | `https://<dominio>` | `https://<dominio>` (`/api/` y `/auth/` por el mismo Nginx) | Sí: el mismo origen ([0023](../decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)) | `SameSite=Lax`, `Secure` |
 
-Con los dos en el mismo sitio, las cookies viajan en las peticiones `fetch` sin necesidad de `SameSite=None`, y SuperTokens puede usar la protección anti-CSRF por defecto, que se basa en `SameSite`. **Condición de despliegue:** el frontend y la API deben compartir dominio registrable. Si algún día no lo comparten, hace falta `SameSite=None; Secure` y anti-CSRF por cabecera, y eso merece una entrada en la bitácora.
+El diseño inicial preveía dos subdominios (`app.` y `api.`); al construir F7 se eligió un solo dominio (0023), sin CORS entre orígenes. Con los dos en el mismo sitio, las cookies viajan en las peticiones `fetch` sin necesidad de `SameSite=None`, y SuperTokens puede usar la protección anti-CSRF por defecto, que se basa en `SameSite`. **Condición de despliegue:** el frontend y la API deben compartir dominio registrable. Si algún día no lo comparten, hace falta `SameSite=None; Secure` y anti-CSRF por cabecera, y eso merece una entrada en la bitácora.
 
 > **Trampa — `localhost` frente a `127.0.0.1`.** Para el navegador son sitios **distintos**. Si se abre el frontend en `http://127.0.0.1:5173` mientras `VITE_API_URL` apunta a `http://localhost:8000`:
 >

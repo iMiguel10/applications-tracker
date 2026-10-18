@@ -95,3 +95,16 @@ jobs:
       # Después del build: sidebars.ts importa la referencia que genera.
       - run: npm run typecheck
         working-directory: manual
+
+  # Las imágenes de producción (F7, deploy/): que construyen y que la configuración
+  # de Nginx es válida. No despliega nada; el despliegue lo hace Coolify.
+  prod-images:
+    name: Producción · imágenes y Nginx
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target prod -t applications-tracker-api:prod backend
+      - run: docker build -f deploy/web/Dockerfile --build-arg APP_URL=https://ci.example.com -t applications-tracker-web:prod .
+      # nginx -t resuelve el upstream al cargar si no fuera una variable; con la
+      # variable de nginx.conf basta con la imagen sola.
+      - run: docker run --rm applications-tracker-web:prod nginx -t

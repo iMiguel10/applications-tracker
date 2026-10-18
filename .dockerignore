@@ -1,0 +1,15 @@
+# Contexto de la imagen `web` (deploy/web/Dockerfile), que se construye desde la
+# raíz. Las demás imágenes usan su carpeta como contexto y su propio .dockerignore.
+.git
+.github
+.claude
+.env
+.env.*
+backend
+**/node_modules
+frontend/dist
+manual/build
+manual/.docusaurus
+manual/.openapi
+manual/docs/api/referencia
+site
