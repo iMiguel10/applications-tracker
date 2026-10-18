@@ -1,0 +1,57 @@
+#!/bin/sh
+# Restaura una copia de /backups (F7): las dos BD y los ficheros, sustituyendo lo que
+# haya. Procedimiento completo en el manual (Despliegue › Copias de seguridad):
+#
+#   1. Parar api, worker y supertokens: nada debe escribir mientras se restaura.
+#   2. docker compose -f compose.prod.yml run --rm backup restore <copia> --yes
+#   3. Arrancar de nuevo el stack: api aplica las migraciones que falten.
+#
+# <copia> es el nombre de su carpeta (2026-10-19_030000). Una copia traída de fuera
+# (el NAS, el S3) se deja antes en la carpeta de copias del servidor.
+set -eu
+
+log() { echo "$(date '+%Y-%m-%d %H:%M:%S') | restore | $*"; }
+die() { log "ERROR: $*"; exit 1; }
+
+name="${1:-}"
+confirm="${2:-}"
+[ -n "$name" ] || die "uso: restore <copia> --yes   (copias: $(ls -1 /backups | tr '\n' ' '))"
+dir="/backups/$name"
+[ -d "$dir" ] || die "no existe la copia $name en /backups"
+[ "$confirm" = "--yes" ] || die "esto SUSTITUYE las BD y los ficheros actuales por la copia $name; repite con --yes"
+
+log "comprobando la integridad de la copia $name"
+(cd "$dir" && sha256sum -c SHA256SUMS) || die "la copia está dañada: no se toca nada"
+
+# Nadie más conectado: con api, worker o el core en marcha, sus escrituras se
+# mezclarían con la copia.
+others() {
+    PGPASSWORD="$2" psql -h "$1" -U "$3" -d "$4" -tAc \
+        "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid()"
+}
+[ "$(others "$APP_DB_HOST" "$APP_DB_PASSWORD" "$APP_DB_USER" "$APP_DB_NAME")" = "0" ] \
+    || die "hay conexiones a la BD de la aplicación: para api y worker antes de restaurar"
+[ "$(others "$AUTH_DB_HOST" "$AUTH_DB_PASSWORD" "$AUTH_DB_USER" "$AUTH_DB_NAME")" = "0" ] \
+    || die "hay conexiones a la BD de SuperTokens: para supertokens antes de restaurar"
+
+# Se vacía el esquema entero en lugar de `pg_restore --clean`: con --clean, las tablas
+# que la copia no conoce (una migración posterior) seguirían ahí, y alembic, al
+# arrancar, intentaría crearlas de nuevo.
+restore_db() {
+    host=$1 password=$2 user=$3 db=$4 dump=$5
+    log "restaurando $db"
+    PGPASSWORD="$password" psql -h "$host" -U "$user" -d "$db" -v ON_ERROR_STOP=1 -q \
+        -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+    PGPASSWORD="$password" pg_restore -h "$host" -U "$user" -d "$db" \
+        --no-owner --single-transaction --exit-on-error "$dir/$dump"
+}
+restore_db "$APP_DB_HOST" "$APP_DB_PASSWORD" "$APP_DB_USER" "$APP_DB_NAME" app.dump
+restore_db "$AUTH_DB_HOST" "$AUTH_DB_PASSWORD" "$AUTH_DB_USER" "$AUTH_DB_NAME" supertokens.dump
+
+log "restaurando los ficheros"
+find /data/files -mindepth 1 -delete
+tar -xzf "$dir/files.tar.gz" -C /data/files
+# Del usuario de la API (uid 1000, backend/Dockerfile), que es quien escribe ahí.
+chown -R 1000:1000 /data/files
+
+log "copia $name restaurada: arranca de nuevo el stack"

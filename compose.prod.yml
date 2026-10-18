@@ -175,6 +175,44 @@ services:
       timeout: 3s
       retries: 5
 
+  # Copias de seguridad (deploy/backup): cada noche, las dos BD y los ficheros a una
+  # carpeta del servidor y, con BACKUP_RCLONE_REMOTE, también fuera. Valkey no se
+  # copia: es derivado o transitorio (invariante 14). Restaurar:
+  #   docker compose -f compose.prod.yml run --rm backup restore <copia> --yes
+  # (con api, worker y supertokens parados; ver el manual).
+  backup:
+    build:
+      context: .
+      dockerfile: deploy/backup/Dockerfile
+    environment:
+      TZ: ${TZ:-Europe/Madrid}
+      BACKUP_SCHEDULE: ${BACKUP_SCHEDULE:-0 3 * * *}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
+      BACKUP_MAX_AGE_HOURS: ${BACKUP_MAX_AGE_HOURS:-26}
+      # Envío fuera del servidor, apagado si está vacía (cadena de conexión de rclone).
+      BACKUP_RCLONE_REMOTE: ${BACKUP_RCLONE_REMOTE:-}
+      APP_DB_HOST: db
+      APP_DB_NAME: ${POSTGRES_DB:-applications_tracker}
+      APP_DB_USER: ${POSTGRES_USER:-applications_tracker}
+      APP_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AUTH_DB_HOST: supertokens-db
+      AUTH_DB_NAME: supertokens
+      AUTH_DB_USER: supertokens
+      AUTH_DB_PASSWORD: ${SUPERTOKENS_DB_PASSWORD}
+    volumes:
+      # Una carpeta del servidor, no un volumen: así se ven y se pueden llevar a un
+      # NAS o un disco externo sin pasar por Docker.
+      - ${BACKUP_HOST_DIR:-/var/backups/applications-tracker}:/backups
+      # Escritura solo para restaurar; la copia solo lee.
+      - files_data:/data/files
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      supertokens-db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   supertokens_data:

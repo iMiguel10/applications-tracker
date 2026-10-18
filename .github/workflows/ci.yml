@@ -108,6 +108,9 @@ jobs:
       # nginx -t resuelve el upstream al cargar si no fuera una variable; con la
       # variable de nginx.conf basta con la imagen sola.
       - run: docker run --rm applications-tracker-web:prod nginx -t
+      - run: docker build -f deploy/backup/Dockerfile -t applications-tracker-backup:prod .
+      # Los scripts de copia y restauración, sin errores de sintaxis de sh.
+      - run: docker run --rm --entrypoint sh applications-tracker-backup:prod -c "sh -n /usr/local/bin/backup && sh -n /usr/local/bin/restore && sh -n /usr/local/bin/backup-healthcheck && sh -n /usr/local/bin/backup-entrypoint"
       # compose.prod.yml bien formado con todas sus obligatorias (valores de mentira).
       - run: docker compose -f compose.prod.yml config --quiet
         env:

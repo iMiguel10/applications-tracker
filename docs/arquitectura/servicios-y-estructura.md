@@ -554,7 +554,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
 | `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
-| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`) y la `web`, pasa `nginx -t` y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
+| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`), la `web` y la `backup`, pasa `nginx -t` y `sh -n` a los scripts de copia, y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
 
 ### 8.9 Decisiones cerradas de la v2
 
@@ -587,6 +587,7 @@ deploy/web/
 compose.prod.yml            producción: los servicios, sus volúmenes y las variables (obligatorias con ${VAR:?})
 compose.prod.local.yml      solo local: publica `web` en 127.0.0.1:8088 para probar la producción sin Coolify
 .env.prod.example           plantilla de las variables de producción, cada una explicada
+deploy/backup/              imagen `backup`: copia cada noche las dos BD y los ficheros, y los restaura (backup, restore)
 ```
 
 **Imagen del backend (`--target prod`):**
@@ -614,7 +615,7 @@ compose.prod.local.yml      solo local: publica `web` en 127.0.0.1:8088 para pro
 > **Trampa — scripts en línea y la CSP.** La CSP de la aplicación no admite scripts en línea. El que aplica el tema guardado antes del primer pintado vive en `frontend/public/theme-init.js` y se carga síncrono, sin `type="module"` ni `defer`. Un script en línea nuevo en `index.html` lo bloquearía el navegador en producción y en desarrollo funcionaría.
 
 **`compose.prod.yml`:**
-- Servicios: `web`, `api`, `worker`, `db`, `supertokens-db`, `supertokens` y `valkey`, todos con `restart: unless-stopped`. Sin Mailpit, sin Ollama y sin los sitios de documentación: el manual va dentro de `web`.
+- Servicios: `web`, `api`, `worker`, `db`, `supertokens-db`, `supertokens`, `valkey` y `backup` (abajo), todos con `restart: unless-stopped`. Sin Mailpit, sin Ollama y sin los sitios de documentación: el manual va dentro de `web`.
 - **Ningún servicio publica puertos.** En Coolify el dominio se asigna a `web` (puerto 80); Coolify le pone las labels de Traefik y conecta su proxy a la red del stack.
 - `web` espera a que `api` esté *healthy*, y `api`, a sus dependencias. El healthcheck de `api` consulta `/api/v1/health`, con 60 s de margen para las migraciones. El `worker` espera a `api`, que es quien migra.
 - Volúmenes con nombre para las dos BD, Valkey y los ficheros. `api` y `worker` comparten `files_data`.
@@ -633,4 +634,32 @@ compose.prod.local.yml      solo local: publica `web` en 127.0.0.1:8088 para pro
 
 > **Trampa — `TRUSTED_PROXIES` con las redes privadas solo vale si la API no publica su puerto.** Se fía de 10/8, 172.16/12, 192.168/16 y fc00::/7 porque a la API solo llegan contenedores. Si se publicara su puerto en el host, cualquiera de la red local podría inventarse su IP con `X-Forwarded-For` y saltarse el rate limit por IP (límites y abuso §2).
 
-La CI construye las dos imágenes, pasa `nginx -t` y valida `compose.prod.yml` con `docker compose config` (job `prod-images`). Faltan las copias de seguridad, el despliegue y el despliegue automático.
+### Copias de seguridad (servicio `backup`)
+
+`deploy/backup/` es una imagen sobre `postgres:17-alpine`, que trae `pg_dump` y `pg_restore` de la misma versión que las BD, con `rclone` y cuatro scripts: `backup`, `restore`, el healthcheck y el arranque.
+
+**Qué hace cada noche.** A la hora de `BACKUP_SCHEDULE` (cron, en la zona de `TZ`) deja en `/backups/<fecha>_<hora>/` tres ficheros: `app.dump`, `supertokens.dump` (formato *custom* de `pg_dump`) y `files.tar.gz`, más sus `SHA256SUMS`. `/backups` es una carpeta del servidor (`BACKUP_HOST_DIR`), no un volumen, para que se pueda llevar a un NAS o a un disco sin pasar por Docker.
+
+- **Valkey no se copia:** es derivado o transitorio (invariante 14).
+- **Los secretos no van en la copia.** Sin `AI_KEYS_ENCRYPTION_KEYS`, las claves de IA guardadas son ilegibles, y sin `APP_SECRET`, los enlaces de baja ya enviados dejan de valer. Se guardan aparte, por ejemplo en un gestor de contraseñas.
+
+**Retención.** Las `BACKUP_KEEP_DAILY` más recientes (7) y la última de cada una de las `BACKUP_KEEP_WEEKLY` semanas ISO anteriores (4). Una semana que ya tiene copias diarias no gasta un hueco semanal.
+
+**Fuera del servidor (opcional).** Con `BACKUP_RCLONE_REMOTE`, una cadena de conexión de rclone (S3, SFTP, SMB…), cada copia nueva se envía con `rclone copy`, nunca con `sync`. Si alguien borra las copias del servidor, las de fuera siguen ahí; su retención la ponen las reglas del propio almacén. Vacía, no se envía nada.
+
+**Restaurar.** `restore <copia> --yes`, con `docker compose run`, y con `api`, `worker` y `supertokens` parados:
+- comprueba los `SHA256SUMS` y se niega si hay conexiones a cualquiera de las dos BD;
+- vacía cada esquema y restaura;
+- sustituye los ficheros, con dueño el uid 1000 de la API.
+
+Al arrancar de nuevo, `api` aplica las migraciones posteriores a la copia.
+
+**Si una copia falla, se ve.** El contenedor sale *unhealthy* si la última copia falló o si la última correcta tiene más de `BACKUP_MAX_AGE_HOURS` (26). Se cuenta desde la última copia o desde el arranque, lo más reciente: un despliegue nuevo no sale enfermo por una copia antigua.
+
+> **Trampa — el orden de la copia: aplicación, SuperTokens y ficheros.** Los ficheros van después de la BD porque el fichero se escribe antes que su fila (invariante 15): todo documento de la copia tiene su fichero, y como mucho sobra alguno, que el barrido de huérfanos limpia. SuperTokens va después de la aplicación porque una cuenta creada entre los dos volcados solo carece de su fila en `users`, que la API crea en el siguiente inicio de sesión (`get_or_create`). Al revés quedarían filas de `users` sin cuenta en SuperTokens.
+
+> **Trampa — restaurar vaciando el esquema, no con `pg_restore --clean`.** `--clean` borra solo lo que la copia conoce. Restaurando una copia anterior a una migración, las tablas nuevas seguirían ahí con `alembic_version` de la copia, y `api`, al arrancar, intentaría crearlas otra vez y no arrancaría. `restore` hace `DROP SCHEMA public CASCADE` antes.
+
+> **Trampa — dos copias en el mismo minuto.** Con el nombre hasta los minutos, una copia manual justo después de la programada se metía **dentro** de la carpeta de la anterior (`mv` a un directorio que ya existe), y así llegaba también al almacén remoto. El nombre lleva segundos, y una copia que ya existe hace fallar la nueva.
+
+La CI construye las tres imágenes, pasa `nginx -t` y `sh -n` a los scripts de copia y valida `compose.prod.yml` con `docker compose config` (job `prod-images`). Faltan el despliegue y el despliegue automático.
