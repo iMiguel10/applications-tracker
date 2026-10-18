@@ -107,6 +107,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
+        # Una variable vacía vale lo mismo que no ponerla: compose.prod.yml pasa
+        # todas las opcionales como ${VAR:-} y, sin esto, un SMTP_PORT vacío
+        # impediría arrancar. Una obligatoria vacía sigue sin arrancar (falta).
+        env_ignore_empty=True,
     )
 
     @field_validator(

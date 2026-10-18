@@ -1,0 +1,182 @@
+# Producción (F7, decisión 0023). Pensado para Coolify, que construye las imágenes
+# en el servidor, pone el HTTPS con su proxy (Traefik) y le pasa el tráfico del
+# dominio a `web`. Funciona igual en cualquier servidor con Docker y un proxy delante.
+#
+# NINGÚN servicio publica puertos en el host: el proxy llega a `web` por la red de
+# Docker, y `web` a `api`. TRUSTED_PROXIES se fía de las redes privadas porque a la
+# API solo se llega desde contenedores (limites-y-abuso §2): si algún día se
+# publicara su puerto, habría que cambiarlo.
+#
+# Las variables, en el panel de Coolify o en un .env junto a este fichero; plantilla
+# y explicación en .env.prod.example. Las obligatorias usan ${VAR:?}: si falta una,
+# el despliegue falla con su nombre en lugar de arrancar a medias. Las opcionales
+# (correo, IA de la plataforma, límites) llegan vacías y valen lo de por defecto.
+
+x-backend-env: &backend-env
+  ENV: production
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-applications_tracker}:${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-applications_tracker}
+  # Un solo dominio (0023): la API y la web comparten origen, sin CORS.
+  API_DOMAIN: ${APP_URL:?Falta APP_URL (https://tu-dominio, sin barra final)}
+  WEBSITE_DOMAIN: ${APP_URL}
+  CORS_ORIGINS: ""
+  SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
+  SUPERTOKENS_API_KEY: ${SUPERTOKENS_API_KEY:?Falta SUPERTOKENS_API_KEY}
+  APP_SECRET: ${APP_SECRET:?Falta APP_SECRET}
+  VALKEY_URL: redis://valkey:6379/0
+  FILES_ROOT: /data/files
+  TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7
+  SIGNUP_ENABLED: ${SIGNUP_ENABLED:-false}
+  # Correo (RNF-34): sin SMTP_HOST no se envía nada.
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-}
+  SMTP_SECURITY: ${SMTP_SECURITY:-}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  EMAIL_FROM: ${EMAIL_FROM:-}
+  # Límites por cuenta (RF-140).
+  LIMIT_APPLICATIONS: ${LIMIT_APPLICATIONS:-}
+  LIMIT_COMPANIES: ${LIMIT_COMPANIES:-}
+  LIMIT_REMINDERS: ${LIMIT_REMINDERS:-}
+  LIMIT_DOCUMENTS: ${LIMIT_DOCUMENTS:-}
+  LIMIT_STORAGE_BYTES: ${LIMIT_STORAGE_BYTES:-}
+  DOCUMENT_MAX_BYTES: ${DOCUMENT_MAX_BYTES:-}
+  # IA de la plataforma (usos gratuitos): sin AI_PLATFORM_PROVIDER, no hay. Ollama es
+  # un servicio externo más, identificado por su URL (AI_OLLAMA_BASE_URL).
+  AI_PLATFORM_PROVIDER: ${AI_PLATFORM_PROVIDER:-}
+  AI_PLATFORM_MODEL: ${AI_PLATFORM_MODEL:-}
+  AI_PLATFORM_API_KEY: ${AI_PLATFORM_API_KEY:-}
+  AI_PLATFORM_INPUT_USD_PER_MTOK: ${AI_PLATFORM_INPUT_USD_PER_MTOK:-}
+  AI_PLATFORM_OUTPUT_USD_PER_MTOK: ${AI_PLATFORM_OUTPUT_USD_PER_MTOK:-}
+  AI_OLLAMA_BASE_URL: ${AI_OLLAMA_BASE_URL:-}
+  AI_OLLAMA_CONTEXT_TOKENS: ${AI_OLLAMA_CONTEXT_TOKENS:-}
+  AI_REQUEST_TIMEOUT_SECONDS: ${AI_REQUEST_TIMEOUT_SECONDS:-}
+  LIMIT_AI_CV_PROPOSALS: ${LIMIT_AI_CV_PROPOSALS:-}
+  LIMIT_AI_COVER_LETTER_PROPOSALS: ${LIMIT_AI_COVER_LETTER_PROPOSALS:-}
+  # Claves propias de los usuarios: sin claves maestras no se ofrecen.
+  AI_KEYS_ENCRYPTION_KEYS: ${AI_KEYS_ENCRYPTION_KEYS:-}
+  AI_ANTHROPIC_MODELS: ${AI_ANTHROPIC_MODELS:-claude-sonnet-5-5,claude-haiku-5-5}
+  AI_OPENAI_MODELS: ${AI_OPENAI_MODELS:-gpt-5.5,gpt-5.4-mini}
+  AI_GROQ_MODELS: ${AI_GROQ_MODELS:-openai/gpt-oss-120b,openai/gpt-oss-20b}
+
+services:
+  # Frontend y manual compilados, y el reparto de /api y /auth (deploy/web). En
+  # Coolify, el dominio se asigna a este servicio, en el puerto 80.
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web/Dockerfile
+      args:
+        APP_URL: ${APP_URL}
+    expose:
+      - "80"
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./backend
+      target: prod
+    # El comando de la imagen aplica las migraciones y arranca uvicorn.
+    environment: *backend-env
+    volumes:
+      - files_data:/data/files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Las migraciones corren antes de que uvicorn escuche.
+      start_period: 60s
+    depends_on:
+      db:
+        condition: service_healthy
+      supertokens:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  # Misma imagen que api, otro comando. Sin migraciones: las aplica solo api.
+  worker:
+    build:
+      context: ./backend
+      target: prod
+    command: ["saq", "--quiet", "app.worker.settings"]
+    environment: *backend-env
+    volumes:
+      - files_data:/data/files
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-applications_tracker}
+      POSTGRES_USER: ${POSTGRES_USER:-applications_tracker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # BD exclusiva del core de SuperTokens (A11).
+  supertokens-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: supertokens
+      POSTGRES_USER: supertokens
+      POSTGRES_PASSWORD: ${SUPERTOKENS_DB_PASSWORD:?Falta SUPERTOKENS_DB_PASSWORD}
+    volumes:
+      - supertokens_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Core de autenticación, fijado a la versión que implementa la CDI del SDK.
+  supertokens:
+    image: supertokens/supertokens-postgresql:12.2.0
+    environment:
+      POSTGRESQL_CONNECTION_URI: postgresql://supertokens:${SUPERTOKENS_DB_PASSWORD}@supertokens-db:5432/supertokens
+      API_KEYS: ${SUPERTOKENS_API_KEY}
+      # Access token de 5 minutos (0002).
+      ACCESS_TOKEN_VALIDITY: 300
+    restart: unless-stopped
+    depends_on:
+      supertokens-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e \"GET /hello HTTP/1.1\r\nhost: 127.0.0.1\r\nConnection: close\r\n\r\n\" >&3 && cat <&3 | grep Hello'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Cola de trabajos y contadores del rate limit. appendonly: un reinicio no pierde
+  # los trabajos encolados.
+  valkey:
+    image: valkey/valkey:9.1-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
+    volumes:
+      - valkey_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  supertokens_data:
+  valkey_data:
+  files_data:

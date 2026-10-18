@@ -554,7 +554,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
 | `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
-| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`) y la `web`, y pasa `nginx -t`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
+| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`) y la `web`, pasa `nginx -t` y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
 
 ### 8.9 Decisiones cerradas de la v2
 
@@ -584,6 +584,9 @@ deploy/web/
 ├── Dockerfile              imagen `web`: compila el frontend y el manual y los sirve con Nginx (contexto: la raíz)
 └── nginx.conf              estáticos, reparto a la API, rate limiting, IP real, caché y cabeceras de seguridad
 .dockerignore               el contexto de la imagen `web` (las demás usan su carpeta y su propio .dockerignore)
+compose.prod.yml            producción: los servicios, sus volúmenes y las variables (obligatorias con ${VAR:?})
+compose.prod.local.yml      solo local: publica `web` en 127.0.0.1:8088 para probar la producción sin Coolify
+.env.prod.example           plantilla de las variables de producción, cada una explicada
 ```
 
 **Imagen del backend (`--target prod`):**
@@ -610,4 +613,24 @@ deploy/web/
 
 > **Trampa — scripts en línea y la CSP.** La CSP de la aplicación no admite scripts en línea. El que aplica el tema guardado antes del primer pintado vive en `frontend/public/theme-init.js` y se carga síncrono, sin `type="module"` ni `defer`. Un script en línea nuevo en `index.html` lo bloquearía el navegador en producción y en desarrollo funcionaría.
 
-La CI construye las dos imágenes y pasa `nginx -t` (job `prod-images`). Faltan el `compose.prod.yml`, las variables de producción, las copias de seguridad, el despliegue y el despliegue automático.
+**`compose.prod.yml`:**
+- Servicios: `web`, `api`, `worker`, `db`, `supertokens-db`, `supertokens` y `valkey`, todos con `restart: unless-stopped`. Sin Mailpit, sin Ollama y sin los sitios de documentación: el manual va dentro de `web`.
+- **Ningún servicio publica puertos.** En Coolify el dominio se asigna a `web` (puerto 80); Coolify le pone las labels de Traefik y conecta su proxy a la red del stack.
+- `web` espera a que `api` esté *healthy*, y `api`, a sus dependencias. El healthcheck de `api` consulta `/api/v1/health`, con 60 s de margen para las migraciones. El `worker` espera a `api`, que es quien migra.
+- Volúmenes con nombre para las dos BD, Valkey y los ficheros. `api` y `worker` comparten `files_data`.
+
+**Variables:**
+- Las obligatorias usan `${VAR:?mensaje}`: si falta una, el despliegue falla con su nombre en lugar de arrancar a medias. Son `APP_URL`, las contraseñas de las dos BD, la clave del core y `APP_SECRET`.
+- `API_DOMAIN` y `WEBSITE_DOMAIN` salen de `APP_URL`; `CORS_ORIGINS` queda vacía.
+- `SIGNUP_ENABLED` vale `false` por defecto (0022).
+- Las opcionales (correo, IA de la plataforma, límites, claves propias) se pasan todas como `${VAR:-}`. Coolify solo entrega a un contenedor las variables que el compose menciona: así, activar el correo o la IA más adelante es rellenar variables y volver a desplegar.
+- Ollama, si se usa, es un servicio externo identificado por su URL (`AI_OLLAMA_BASE_URL`), como cualquier otro proveedor.
+- La plantilla, con cada variable explicada, es `.env.prod.example`.
+
+`compose.prod.local.yml` es solo para probar la producción en tu máquina, sin Coolify. Publica `web` en `127.0.0.1:8088`, y se usa con `-p at-prod` para no mezclarse con el proyecto de desarrollo; las instrucciones van en el propio fichero.
+
+> **Trampa — una variable vacía no es una variable que falta.** Por defecto, pydantic-settings lee `SMTP_PORT=""` como un valor y falla al convertirlo en número: con las opcionales pasadas como `${VAR:-}`, la API no arrancaría sin correo. `Settings` usa `env_ignore_empty=True`, así que una variable vacía vale su valor por defecto. Una obligatoria vacía sigue sin arrancar, porque cuenta como que falta (`tests/core/test_config.py`).
+
+> **Trampa — `TRUSTED_PROXIES` con las redes privadas solo vale si la API no publica su puerto.** Se fía de 10/8, 172.16/12, 192.168/16 y fc00::/7 porque a la API solo llegan contenedores. Si se publicara su puerto en el host, cualquiera de la red local podría inventarse su IP con `X-Forwarded-For` y saltarse el rate limit por IP (límites y abuso §2).
+
+La CI construye las dos imágenes, pasa `nginx -t` y valida `compose.prod.yml` con `docker compose config` (job `prod-images`). Faltan las copias de seguridad, el despliegue y el despliegue automático.

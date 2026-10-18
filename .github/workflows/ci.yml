@@ -108,3 +108,11 @@ jobs:
       # nginx -t resuelve el upstream al cargar si no fuera una variable; con la
       # variable de nginx.conf basta con la imagen sola.
       - run: docker run --rm applications-tracker-web:prod nginx -t
+      # compose.prod.yml bien formado con todas sus obligatorias (valores de mentira).
+      - run: docker compose -f compose.prod.yml config --quiet
+        env:
+          APP_URL: https://ci.example.com
+          POSTGRES_PASSWORD: ci
+          SUPERTOKENS_DB_PASSWORD: ci
+          SUPERTOKENS_API_KEY: ci-supertokens-api-key
+          APP_SECRET: ci-app-secret-0123456789abcdef0123456789

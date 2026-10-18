@@ -41,3 +41,40 @@ def test_the_other_limits_are_never_unlimited_from_the_environment(field: str) -
     # solo admite "sin límite" como excepción de una cuenta.
     with pytest.raises(ValidationError):
         make_settings(**{field: "unlimited"})
+
+
+def test_an_empty_optional_variable_is_its_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # compose.prod.yml pasa las opcionales como ${VAR:-}: el correo y la IA de la
+    # plataforma, sin configurar, llegan vacías y deben valer lo de por defecto.
+    for name in (
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "SMTP_SECURITY",
+        "EMAIL_FROM",
+        "AI_PLATFORM_PROVIDER",
+        "AI_OLLAMA_BASE_URL",
+        "LIMIT_AI_CV_PROPOSALS",
+        "AI_REQUEST_TIMEOUT_SECONDS",
+        "SIGNUP_ENABLED",
+    ):
+        monkeypatch.setenv(name, "")
+
+    config = Settings(_env_file=None)  # type: ignore[call-arg]
+
+    assert config.smtp_port == 587
+    assert config.smtp_security == "starttls"
+    assert not config.email_enabled
+    assert config.ai_platform_provider is None
+    assert config.limit_ai_cv_proposals == 1
+    assert config.signup_enabled is True
+
+
+def test_an_empty_required_variable_still_does_not_start(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("APP_SECRET", "")
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)  # type: ignore[call-arg]

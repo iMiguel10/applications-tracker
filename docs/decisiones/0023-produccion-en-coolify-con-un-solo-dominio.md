@@ -41,7 +41,7 @@ Decisiones del usuario, tomadas al empezar F7:
 - **La URL se incrusta al compilar.** Vite mete la URL de la API en el JavaScript, así que la imagen `web` va ligada a su dominio (`APP_URL` como argumento de build). Cambiar de dominio exige reconstruirla. Es aceptable con un solo despliegue.
 - **Dos proxies encadenados para la IP real** (Coolify → Nginx → API):
   - Nginx se fía de las redes privadas (`set_real_ip_from`), porque solo es alcanzable desde redes de Docker, y toma la IP del cliente de `X-Forwarded-For` de derecha a izquierda;
-  - la API solo necesita fiarse de Nginx, con `TRUSTED_PROXIES` igual a la subred del stack.
+  - la API se fía de las redes privadas (`TRUSTED_PROXIES` en `compose.prod.yml`): a ella solo llegan contenedores, porque no publica puertos. Se descartó fijar la subred del stack con `ipam`, lo previsto en F11: Coolify crea su propia red por recurso, y una subred fija puede chocar con las que ya tenga.
 
   Si delante de Coolify se pone un túnel (Cloudflare Tunnel), hay que volver a comprobarlo: el proxy de Coolify podría descartar el `X-Forwarded-For` que trae el túnel.
 - **La CSP del frontend solo admite scripts del propio origen.** El script que aplica el tema antes de pintar salió de `index.html` a `public/theme-init.js`.

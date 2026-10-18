@@ -83,7 +83,7 @@ Anotado en F11, a petición del usuario, y construido en F7 ([0023](../decisione
 
 1. **Nginx** se fía de las redes privadas (`set_real_ip_from` 10/8, 172.16/12, 192.168/16 y fc00::/7). Puede hacerlo porque no publica puertos y solo lo alcanzan contenedores. Con `real_ip_recursive on` toma la IP del cliente de `X-Forwarded-For`, de derecha a izquierda. Es la IP que cuenta `limit_req`: sin esto, todos los usuarios serían una sola IP también en Nginx.
 2. **Nginx añade esa IP** al final de `X-Forwarded-For` (`$proxy_add_x_forwarded_for`) en **todas** las rutas que van a la API.
-3. **La API** solo necesita fiarse de Nginx: `TRUSTED_PROXIES` con la subred fija de la red interna del stack (`ipam` en `compose.prod.yml`, para que no cambie entre despliegues). **Sin ella, todos los usuarios comparten la IP del proxy** (ver la trampa de arriba).
+3. **La API** se fía de las redes privadas: `TRUSTED_PROXIES` vale `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7` en `compose.prod.yml`. El diseño de F11 preveía fijar la subred del stack con `ipam` y fiarse solo de ella. Al construirlo se descartó: Coolify crea su propia red por recurso, y una subred fija puede chocar con las que ya tenga ([0023](../decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)). Es equivalente mientras se cumpla una condición: **la API nunca publica su puerto**, así que solo le llegan conexiones desde contenedores. Si algún día se publicara, cualquiera de la red local podría inventarse su IP con `X-Forwarded-For`. **Con `TRUSTED_PROXIES` vacía, todos los usuarios compartirían la IP del proxy** (ver la trampa de arriba).
 
 **Pendiente para F7:**
 
