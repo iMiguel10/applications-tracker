@@ -2,8 +2,8 @@
 
 Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada candidatura, su historial de estados, sus entrevistas y el próximo paso. Es un proyecto de portfolio que además se usa de verdad.
 
-!!! warning "Estado"
-    En desarrollo. Terminadas F0 (esqueleto vertical), F1 (autenticación), F2 (empresas y solicitudes), F3 (ciclo de vida: historial de estados, transiciones y deshacer), F4 (entrevistas y recordatorios), F5 (dashboard, exportación CSV y listado global de recordatorios), F6 (integración continua) y F8 (revisión final); sigue pendiente F7, ahora la puesta en producción real, en construcción sobre Coolify ([0023](decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)). La **v2** (F9–F17: CVs, IA, emails, calendario…) está especificada y diseñada; de ella están construidas F9, la infraestructura (correo, cola de trabajos con su worker, almacén de ficheros y generación de PDF), F10, el manual de producción en Docusaurus (`manual/`, en español y en inglés), F11 (recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting) F12 (avisos por email: recordatorio vencido, entrevista próxima, solicitudes sin actividad y resumen semanal, con baja de un clic), F13 (biblioteca de CVs y cartas en PDF, descripción de la oferta y documentos enviados en cada solicitud), F14 (perfil y CVs generados), F15 (IA: CV y carta adaptados a cada oferta sin inventar experiencia, usos gratuitos con un Ollama local por defecto, claves propias de Anthropic, OpenAI o Groq, avisos al terminar y evaluación manual), F16 (tablero Kanban) y F17 (calendario de entrevistas y recordatorios, con eventos sueltos a Google Calendar o `.ics`; la suscripción ICS se descartó, [0016](decisiones/0016-sin-suscripcion-ics.md)). F6 se construyó antes que F5 por decisión explícita ([0006](decisiones/0006-ci-antes-que-f5.md)), no porque F5 ya no hiciera falta, y F8 se construyó antes que F7 por otra decisión explícita ([0009](decisiones/0009-f8-antes-que-f7.md)).
+!!! success "Estado"
+    Todas las fases del plan están construidas: el MVP (F0–F6 y F8), la v2 (F9–F17: infraestructura de segundo plano, manual de producción, cuenta y protección, avisos por email, documentos, perfil y CVs generados, IA, tablero Kanban y calendario) y la puesta en producción (F7, cerrada el 2026-10-19 sobre un Coolify propio con un solo dominio, copias de seguridad programadas y despliegue continuo desde la CI; [0023](decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)). El orden de construcción no siguió la numeración: F6 antes que F5 ([0006](decisiones/0006-ci-antes-que-f5.md)), F8 antes que F7 ([0009](decisiones/0009-f8-antes-que-f7.md)) y F16 y F17 antes que F15 ([0014](decisiones/0014-f16-y-f17-antes-que-f15.md)). La suscripción ICS de F17 se descartó ([0016](decisiones/0016-sin-suscripcion-ics.md)).
 
 ## En una página
 
@@ -21,7 +21,7 @@ Aplicación para registrar y seguir las solicitudes a puestos de trabajo: cada c
 - [Arquitectura](arquitectura/index.md): las decisiones con sus alternativas descartadas, el modelo de datos, los flujos y las invariantes.
 - [Servicios y estructura](arquitectura/servicios-y-estructura.md): qué corre en Docker, cómo se organiza el código y qué puede hacer cada capa.
 - [Autenticación](arquitectura/autenticacion.md): la integración con SuperTokens y sus trampas.
-- [Arquitectura de la v2](arquitectura/v2.md): el diseño de la siguiente versión, con un documento por tema (segundo plano y emails, ficheros, IA, límites y abuso). Construidas de F9 a F17; F7, en construcción.
+- [Arquitectura de la v2](arquitectura/v2.md): el diseño de la siguiente versión, con un documento por tema (segundo plano y emails, ficheros, IA, límites y abuso). Construidas de F9 a F17; F7 (producción en Coolify), cerrada.
 - [Decisiones](decisiones/index.md): la bitácora de cambios de rumbo durante el desarrollo.
 
 ## Las tres ideas que sostienen el diseño

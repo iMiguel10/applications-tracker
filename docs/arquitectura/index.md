@@ -300,8 +300,8 @@ Las pantallas con dificultad real:
   - Imagen del frontend con Nginx y `ARG VITE_API_URL`.
   - API sin `--reload` y con migraciones en el entrypoint.
   - Core de SuperTokens sin puertos publicados.
-  - Rate limiting también en Nginx, con `TRUSTED_PROXIES` apuntando a una subred fija: reparto entre proxy y aplicación, bloque de Nginx de referencia y lista de comprobación en [límites y abuso §2](limites-y-abuso.md#en-produccion-el-proxy-y-la-aplicacion-para-f7) (anotado en F11).
-- El despliegue real es `[C]`.
+  - Rate limiting también en Nginx, con `TRUSTED_PROXIES` apuntando a las redes privadas (no a una subred fija, [0023](../decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)): reparto entre proxy y aplicación, bloque de Nginx de referencia y lista de comprobación en [límites y abuso §2](limites-y-abuso.md#en-produccion-el-proxy-y-la-aplicacion-f7) (anotado en F11).
+- Construido y verificado en F7 ([§9 de servicios y estructura](servicios-y-estructura.md#9-produccion-f7)).
 
 ## 11. Pruebas
 
@@ -326,7 +326,7 @@ Cada prueba corre dentro de una transacción que se revierte al terminar: no que
 | **F3** | `application_status_changes`, `ApplicationStatusService`, `allowed_transitions`, deshacer y diálogo de estado en el frontend. |
 | **F4** | `interviews` y `reminders`, `NotificationChannel`/`InAppChannel` (retirados en F12, [0012](../decisiones/0012-el-canal-de-aviso-va-en-la-entrega.md)) y avisos de vencidos. |
 | **F5** | Endpoint `GET /dashboard` y exportación CSV. |
-| **F6–F7** | CI y preparación para despliegue. |
+| **F6–F7** | CI y puesta en producción (F7, [0023](../decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)). |
 
 ## 13. Invariantes
 

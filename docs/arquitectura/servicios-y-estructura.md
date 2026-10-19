@@ -488,8 +488,8 @@ manual/
 ├── scripts/                    prepare-openapi.mjs (copia derivada del contrato) y check-i18n.mjs
 ├── docs/                       español, idioma por defecto
 │   ├── uso/                    manual de uso por tareas (RNF-33)
-│   ├── despliegue/             visión general, requisitos, variables, correo y copias de seguridad; la receta de
-│   │                           producción (compose, proxy, HTTPS) llega con F7
+│   ├── despliegue/             visión general, requisitos, Coolify y sin Coolify, variables, cuentas, correo, IA,
+│   │                           copias de seguridad, despliegue continuo y actualizar (F7)
 │   └── api/
 │       ├── guia.md             integración: Bearer, errores, paginación, fechas, límites y CORS (rate limit: F11)
 │       └── referencia/         GENERADA desde ../docs/referencia/openapi.json (no se versiona)
@@ -499,7 +499,7 @@ manual/
 
 - La referencia de la API la genera `docusaurus-plugin-openapi-docs` a partir del **mismo** `openapi.json` que ya versiona el backend. Se regenera en cada `start` y `build` y no se versiona la salida: una sola fuente del contrato. Antes de generarla, `prepare-openapi.mjs` deriva una copia con un servidor `{apiUrl}` editable (por defecto `http://localhost:8000`): sin él, los ejemplos apuntaban al origen del manual. El panel para enviar peticiones está oculto (CORS y sesiones mezcladas); para probar, Swagger en la API. Los ejemplos de código empiezan por curl.
 - La referencia generada sale en el idioma de los docstrings del backend (español) también en la versión inglesa del sitio. Traducirla exigiría dos contratos OpenAPI: no se hace, y la guía de integración en inglés lo explica.
-- En producción (F7), el manual se construye como estático y lo sirve el mismo Nginx que el frontend, en `/manual/` (imagen `web`, [§9](#9-produccion-f7-en-construccion)).
+- En producción (F7), el manual se construye como estático y lo sirve el mismo Nginx que el frontend, en `/manual/` (imagen `web`, [§9](#9-produccion-f7)).
 
 ### 8.6 Variables de entorno nuevas
 
@@ -554,7 +554,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
 | `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
-| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`), la `web` y la `backup`, pasa `nginx -t` y `sh -n` a los scripts de copia, y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
+| `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`), la `web` y la `backup`, pasa `nginx -t` y `sh -n` a los scripts de copia, y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7)) |
 | `deploy` **[F7]** | Solo en un push a `main`, tras los demás jobs y con la variable `PRODUCTION_URL`: despliega en Coolify por su API y comprueba el commit y el health (`deploy/coolify-deploy.sh`, §9) |
 
 ### 8.9 Decisiones cerradas de la v2
@@ -575,7 +575,9 @@ Confirmadas con el usuario durante el diseño (2026-09-24), a continuación de l
 | 21 | Ficheros en disco local | Volumen compartido por `api` y `worker`; S3 como implementación futura de `FileStorage` |
 | 22 | Valkey para la cola y el rate limit | SAQ sobre Valkey; la cola podría pasar a Postgres cambiando la URL |
 
-## 9. Producción (F7) [en construcción]
+## 9. Producción (F7)
+
+> Estado: **construido y verificado en un Coolify real el 2026-10-19** (HTTPS de Let's Encrypt con un dominio DuckDNS, registro cerrado y cuentas con `create_user`, rate limit por IP real comprobado con dos IPs, copia nocturna y manual, CV generado por el `worker` y despliegue continuo desde la CI). Cómo desplegarlo y operarlo, para quien lo hace, está en el manual de producción (`manual/docs/despliegue/`, es + en); aquí, el porqué.
 
 Se despliega en **Coolify**, con un solo dominio y un Nginx propio delante de la API ([0023](../decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md)). Lo que ya existe:
 
@@ -660,7 +662,7 @@ Al arrancar de nuevo, `api` aplica las migraciones posteriores a la copia.
 
 > **Trampa — el orden de la copia: aplicación, SuperTokens y ficheros.** Los ficheros van después de la BD porque el fichero se escribe antes que su fila (invariante 15): todo documento de la copia tiene su fichero, y como mucho sobra alguno, que el barrido de huérfanos limpia. SuperTokens va después de la aplicación porque una cuenta creada entre los dos volcados solo carece de su fila en `users`, que la API crea en el siguiente inicio de sesión (`get_or_create`). Al revés quedarían filas de `users` sin cuenta en SuperTokens.
 
-> **Trampa — restaurar vaciando el esquema, no con `pg_restore --clean`.** `--clean` borra solo lo que la copia conoce. Restaurando una copia anterior a una migración, las tablas nuevas seguirían ahí con `alembic_version` de la copia, y `api`, al arrancar, intentaría crearlas otra vez y no arrancaría. `restore` hace `DROP SCHEMA public CASCADE` antes.
+> **Trampa — restaurar vaciando el esquema, no con `pg_restore --clean`.** `--clean` borra solo lo que la copia conoce. Restaurando una copia anterior a una migración, las tablas nuevas seguirían ahí con `alembic_version` de la copia, y `api`, al arrancar, intentaría crearlas otra vez y no arrancaría. `restore` hace `DROP SCHEMA public CASCADE` antes. Vaciar y restaurar van en **una sola transacción** por base de datos (cierre de F7): antes iban en dos, y si `pg_restore` fallaba a mitad la BD quedaba vacía. El volcado se convierte antes a SQL en un fichero, no por una tubería: con una tubería, un `pg_restore` cortado a mitad le daría a `psql` un SQL incompleto que confirmaría igual.
 
 > **Trampa — dos copias en el mismo minuto.** Con el nombre hasta los minutos, una copia manual justo después de la programada se metía **dentro** de la carpeta de la anterior (`mv` a un directorio que ya existe), y así llegaba también al almacén remoto. El nombre lleva segundos, y una copia que ya existe hace fallar la nueva.
 
@@ -680,6 +682,15 @@ Configuración en GitHub:
 
 El *Auto Deploy* de Coolify va desactivado: si no, desplegaría también en cada push sin esperar a la CI.
 
-> **Trampa — un error de la API que se repite en silencio.** La primera versión del script reintentaba cualquier fallo al consultar el estado: con un token sin el permiso `read`, cada consulta daba 403 y el job esperó callado mientras Coolify ya había terminado. Un `4xx` termina ahora el job al momento, con su motivo.
+> **Trampa — un error de la API que se repite en silencio.** La primera versión del script reintentaba cualquier fallo al consultar el estado: con un token sin el permiso `read`, cada consulta daba 403 y el job esperó callado mientras Coolify ya había terminado. Un `4xx` termina ahora el job al momento, con su motivo. Tras el QA de F7 tampoco se da nada por bueno sin poder comprobarlo: un `git ls-remote` fallido hace fallar el job (antes terminaba en verde sin desplegar), un 200 que no es JSON (la página de acceso de un proxy delante del panel) es un error con su mensaje, y si Coolify no dice qué commit desplegó, el job lo avisa con un *warning* de GitHub. El health se comprueba con `jq`, no buscando el texto.
 
 > **Trampa — Coolify despliega la rama, no un commit.** La API no recibe el commit: despliega lo último de `main` en el momento de construir. Con dos pushes seguidos, la CI del primero podría desplegar el segundo sin haberlo probado. El script lo comprueba antes (`git ls-remote`) y después (el `commit` del despliegue).
+
+### Lo aprendido al verificarlo en Coolify
+
+Detalles de operación que el diseño no preveía y que el manual explica al que despliega:
+
+- **El dominio va solo en `web`.** Coolify le pone las labels de Traefik al servicio que lleva dominio: con uno en `api` o en `supertokens`, el proxy los publicaría.
+- **La terminal de Coolify puede no funcionar.** Los comandos de mantenimiento (`create_user`, `set_user_limit`, copia a mano, `restore`) se lanzan entonces por SSH con `docker exec <contenedor> …`; los contenedores se llaman `<servicio>-<uuid>-<fecha>` y su nombre cambia en cada despliegue.
+- **El reloj del servidor puede estar en UTC.** El `backup` programa con `TZ`, pero los registros del servidor y las marcas de Docker salen en UTC: la copia de las 3:00 de Madrid aparece como 01:00 en verano y 02:00 en invierno.
+- **Sin correo, una cuenta no puede cambiar su contraseña desde la aplicación** ([issue 2](https://github.com/iMiguel10/applications-tracker/issues/2)) y la tarjeta de avisos se ve desactivada ([issue 1](https://github.com/iMiguel10/applications-tracker/issues/1)). Es comportamiento conocido, no un fallo del despliegue.
