@@ -555,6 +555,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
 | `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`), la `web` y la `backup`, pasa `nginx -t` y `sh -n` a los scripts de copia, y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7-en-construccion)) |
+| `deploy` **[F7]** | Solo en un push a `main`, tras los demás jobs y con la variable `PRODUCTION_URL`: despliega en Coolify por su API y comprueba el commit y el health (`deploy/coolify-deploy.sh`, §9) |
 
 ### 8.9 Decisiones cerradas de la v2
 
@@ -588,6 +589,7 @@ compose.prod.yml            producción: los servicios, sus volúmenes y las var
 compose.prod.local.yml      solo local: publica `web` en 127.0.0.1:8088 para probar la producción sin Coolify
 .env.prod.example           plantilla de las variables de producción, cada una explicada
 deploy/backup/              imagen `backup`: copia cada noche las dos BD y los ficheros, y los restaura (backup, restore)
+deploy/coolify-deploy.sh    despliegue continuo: lo ejecuta el job `deploy` de la CI contra la API de Coolify
 ```
 
 **Imagen del backend (`--target prod`):**
@@ -662,4 +664,20 @@ Al arrancar de nuevo, `api` aplica las migraciones posteriores a la copia.
 
 > **Trampa — dos copias en el mismo minuto.** Con el nombre hasta los minutos, una copia manual justo después de la programada se metía **dentro** de la carpeta de la anterior (`mv` a un directorio que ya existe), y así llegaba también al almacén remoto. El nombre lleva segundos, y una copia que ya existe hace fallar la nueva.
 
-La CI construye las tres imágenes, pasa `nginx -t` y `sh -n` a los scripts de copia y valida `compose.prod.yml` con `docker compose config` (job `prod-images`). Faltan el despliegue y el despliegue automático.
+La CI construye las tres imágenes, pasa `nginx -t` y `sh -n` a los scripts de copia y de despliegue, y valida `compose.prod.yml` con `docker compose config` (job `prod-images`).
+
+### Despliegue continuo (job `deploy`)
+
+Un push a `main` que pasa los demás jobs se despliega solo (0023). El job `deploy` de `ci.yml` corre en un runner normal de GitHub y ejecuta `deploy/coolify-deploy.sh` contra la API de Coolify:
+
+1. Si `main` ya no apunta a su commit, termina sin desplegar: Coolify despliega siempre lo último de la rama, y así subiría un commit que esa CI no ha probado. Lo despliega la CI del commit nuevo.
+2. Pide el despliegue (`GET /api/v1/deploy?uuid=…`) y consulta su estado cada 10 s (`/api/v1/deployments/{uuid}`) hasta `finished`, con un máximo de 30 minutos. `failed` o `cancelled` hacen fallar el job.
+3. Comprueba que el `commit` del despliegue es el suyo y que `/api/v1/health` responde `ok`.
+
+Configuración en GitHub:
+- Los secretos `COOLIFY_URL`, `COOLIFY_TOKEN` y `COOLIFY_APP_UUID`. El token es de Coolify, solo con permiso de despliegue y distinto del de cualquier otro uso.
+- La variable `PRODUCTION_URL`, que hace de interruptor: sin ella (en un fork u otra instalación), el job no se ejecuta.
+
+El *Auto Deploy* de Coolify va desactivado: si no, desplegaría también en cada push sin esperar a la CI.
+
+> **Trampa — Coolify despliega la rama, no un commit.** La API no recibe el commit: despliega lo último de `main` en el momento de construir. Con dos pushes seguidos, la CI del primero podría desplegar el segundo sin haberlo probado. El script lo comprueba antes (`git ls-remote`) y después (el `commit` del despliegue).

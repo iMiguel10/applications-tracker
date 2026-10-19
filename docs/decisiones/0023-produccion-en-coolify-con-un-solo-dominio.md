@@ -35,6 +35,8 @@ Decisiones del usuario, tomadas al empezar F7:
   Con un Nginx en el repositorio, el mismo `compose.prod.yml` funciona en un VPS sin Coolify y se puede probar en local.
 - **Dos subdominios (`app.` y `api.`):** exige CORS entre orígenes y dos rutas en Coolify. No aporta nada mientras la API no tenga otros clientes con dominio propio. Si los tiene algún día, la API sigue accesible en `/api/` del mismo dominio.
 - **Construir las imágenes en GitHub Actions y publicarlas en GHCR:** solo compensaría si el servidor fuera justo para construir. Coolify construye en el servidor, y la CI se limita a comprobar que las imágenes de producción construyen.
+- **El *Auto Deploy* de Coolify** (su GitHub App despliega en cada push): despliega aunque la CI falle. El despliegue lo pide la CI, después de pasar.
+- **Un runner self-hosted en el servidor**, previsto mientras se creía que el panel estaba solo en la red local. Con el panel público no hace falta: no hay nada que instalar ni que mantener en el servidor.
 
 ## Consecuencias
 
@@ -45,5 +47,5 @@ Decisiones del usuario, tomadas al empezar F7:
 
   Si delante de Coolify se pone un túnel (Cloudflare Tunnel), hay que volver a comprobarlo: el proxy de Coolify podría descartar el `X-Forwarded-For` que trae el túnel.
 - **La CSP del frontend solo admite scripts del propio origen.** El script que aplica el tema antes de pintar salió de `index.html` a `public/theme-init.js`.
-- **El panel de Coolify queda en la red local.** Un despliegue automático desde GitHub necesitará un runner self-hosted en el servidor (paso 5 de F7) en vez de una llamada directa desde Actions.
+- **Despliegue continuo desde la CI** (añadido el 2026-10-19). El panel de Coolify resultó ser público (con 2FA), así que el job `deploy` de `ci.yml` llama directamente a la API de Coolify, sin runner en el servidor. Solo se ejecuta en un push a `main` que haya pasado los demás jobs y si existe la variable `PRODUCTION_URL`. Coolify despliega siempre lo último de la rama, no un commit concreto: `deploy/coolify-deploy.sh` no despliega si `main` ya avanzó (lo hará la CI del commit nuevo), espera a que el despliegue termine, comprueba que Coolify desplegó ese commit y que `/api/v1/health` responde. El *Auto Deploy* de Coolify queda desactivado.
 - Las cookies `SameSite=Lax` del diseño siguen valiendo: un solo origen es el caso más sencillo de "mismo sitio".

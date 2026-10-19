@@ -111,6 +111,7 @@ jobs:
       - run: docker build -f deploy/backup/Dockerfile -t applications-tracker-backup:prod .
       # Los scripts de copia y restauración, sin errores de sintaxis de sh.
       - run: docker run --rm --entrypoint sh applications-tracker-backup:prod -c "sh -n /usr/local/bin/backup && sh -n /usr/local/bin/restore && sh -n /usr/local/bin/backup-healthcheck && sh -n /usr/local/bin/backup-entrypoint"
+      - run: sh -n deploy/coolify-deploy.sh
       # compose.prod.yml bien formado con todas sus obligatorias (valores de mentira).
       - run: docker compose -f compose.prod.yml config --quiet
         env:
@@ -119,3 +120,25 @@ jobs:
           SUPERTOKENS_DB_PASSWORD: ci
           SUPERTOKENS_API_KEY: ci-supertokens-api-key
           APP_SECRET: ci-app-secret-0123456789abcdef0123456789
+
+  # Despliegue continuo (F7, 0023): solo un push a main que haya pasado todo lo
+  # anterior. Coolify construye en el servidor; este job lo pide por la API, espera y
+  # comprueba la aplicación (deploy/coolify-deploy.sh). Sin la variable
+  # PRODUCTION_URL (un fork, otra instalación) no se despliega nada.
+  deploy:
+    name: Producción · despliegue
+    needs: [backend-lint, backend-tests, frontend, docs, manual, prod-images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.PRODUCTION_URL != ''
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh deploy/coolify-deploy.sh
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          EXPECTED_SHA: ${{ github.sha }}
