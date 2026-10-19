@@ -3,35 +3,48 @@ title: Desplegar Applications Tracker
 sidebar_label: Visión general
 ---
 
-Applications Tracker se ejecuta con **Docker Compose**: todos sus servicios son contenedores, y la configuración va en variables de entorno.
+Applications Tracker se despliega con **Docker Compose**: todos sus servicios son contenedores y la configuración va en variables de entorno. El repositorio trae el fichero de producción, `compose.prod.yml`, y hay dos formas probadas de usarlo:
 
-:::caution Estado de esta sección
-Aquí está lo que es igual en cualquier instalación: qué servicios hay, cómo se configuran, cómo se conecta el correo y cómo se hacen copias de seguridad. La receta de producción (el fichero de Compose de producción, el proxy con HTTPS y la publicación en un dominio) se añadirá cuando esté lista. Hasta entonces, el repositorio solo trae la configuración de desarrollo.
-:::
+- [**Con Coolify**](coolify.md): lo construye en tu servidor, pone el HTTPS y puede desplegar cada versión nueva desde la CI. Es la receta de referencia.
+- [**Sin Coolify**](sin-coolify.md): `docker compose` y cualquier proxy con HTTPS delante.
 
-## Qué hay dentro
+## Qué se despliega
+
+Un solo dominio sirve la aplicación web, el manual y la API. El servicio `web` (un Nginx) es lo único que recibe tráfico: el proxy de HTTPS le pasa todo el dominio y él reparte.
 
 | Servicio | Qué hace | ¿Guarda datos? |
 |---|---|---|
+| `web` | Sirve la aplicación web y este manual (en `/manual/`), y reparte `/api/` y `/auth/` a la API. Limita las peticiones por IP y pone las cabeceras de seguridad | No |
 | `api` | La API (FastAPI). Al arrancar, **aplica sola las migraciones** de la base de datos | No |
-| `worker` | Ejecuta en segundo plano las tareas lentas, como enviar emails o generar PDFs. Envía los emails (confirmación, recuperación de contraseña y avisos) y programa los avisos, y cada día borra los ficheros que ya no usa ningún documento; debe estar en marcha | No |
-| `frontend` | La aplicación web | No |
+| `worker` | Ejecuta en segundo plano las tareas lentas: enviar emails, generar PDFs, llamar a la IA y programar los avisos. Debe estar en marcha | No |
 | `db` | PostgreSQL con los datos de la aplicación | **Sí** |
 | `supertokens` | Servicio de autenticación (cuentas y sesiones) | No |
 | `supertokens-db` | PostgreSQL propio de SuperTokens: cuentas y contraseñas | **Sí** |
-| `valkey` | Cola de tareas pendientes | Solo tareas en espera, no datos |
+| `valkey` | Cola de tareas pendientes y contadores del límite de peticiones | Solo tareas en espera, no datos |
+| `backup` | Copia cada noche las dos bases de datos y los ficheros. Ver [Copias de seguridad](copias-de-seguridad.md) | Las copias (en una carpeta del servidor) |
 | volumen `files_data` | Ficheros de la aplicación (PDFs) | **Sí** |
-| `ollama` (opcional) | IA local para los usos gratuitos, si no usas un proveedor en la nube. Ver [variables](variables.md#usos-gratuitos-con-tu-propio-ollama) | Solo los modelos descargados, que se pueden volver a descargar |
+
+Ningún servicio publica puertos en el servidor: solo el proxy de HTTPS llega a `web`, y `web` a la API por la red interna de Docker. Las bases de datos, SuperTokens y Valkey no son alcanzables desde fuera aunque falle el cortafuegos.
 
 Las tres piezas marcadas **Sí** son las que hay que [copiar](copias-de-seguridad.md). La base de datos de SuperTokens es tan importante como la de la aplicación: sin ella, nadie puede iniciar sesión.
+
+## Qué es opcional
+
+Con solo las [variables obligatorias](variables.md) la instalación arranca y se puede usar entera, excepto lo que necesita un servicio externo:
+
+| Función | Sin configurarla | Cómo activarla |
+|---|---|---|
+| **Correo** | No se envía ningún email: ni avisos, ni recuperar la contraseña, ni confirmar el email (y entonces no se exige confirmarlo) | [Correo](correo.md) |
+| **IA de la plataforma** (usos gratuitos) | Nadie tiene usos gratuitos; la IA solo funciona con la clave propia de cada usuario | [IA de la plataforma](ia-de-la-plataforma.md) |
+| **Claves de IA propias** de los usuarios | No se ofrecen | `AI_KEYS_ENCRYPTION_KEYS` en las [variables](variables.md) |
+| **Registro abierto** | Está cerrado: las cuentas las creas tú | [Cuentas](cuentas.md) |
 
 ## Pasos
 
 1. Comprueba los [requisitos](requisitos.md).
-2. Prepara las [variables de entorno](variables.md).
-3. Si quieres que la aplicación envíe emails, configura el [correo](correo.md).
-4. Programa las [copias de seguridad](copias-de-seguridad.md).
+2. Despliega [con Coolify](coolify.md) o [sin Coolify](sin-coolify.md), con las [variables](variables.md) preparadas.
+3. Crea la [primera cuenta](cuentas.md).
+4. Comprueba que las [copias de seguridad](copias-de-seguridad.md) se hacen y guarda aparte los secretos.
+5. Opcional: configura el [correo](correo.md), la [IA de la plataforma](ia-de-la-plataforma.md) y el [despliegue continuo](despliegue-continuo.md).
 
-## Actualizar a una versión nueva
-
-Al arrancar una versión nueva, el servicio `api` aplica las migraciones pendientes antes de aceptar peticiones, así que no hay que ejecutar nada a mano. **Haz una copia de seguridad antes de actualizar**: una migración no se deshace sola.
+Para [actualizar a una versión nueva](actualizar.md) no hay que ejecutar nada a mano.

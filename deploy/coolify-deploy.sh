@@ -43,14 +43,22 @@ api() {
     esac
 }
 
-head_sha=$(git ls-remote origin refs/heads/main | cut -f1)
+
+# Sin poder leer main no se sabe si este commit sigue siendo el último: no se da por
+# bueno (antes, un ls-remote fallido terminaba en verde sin desplegar nada).
+refs=$(git ls-remote origin refs/heads/main) || { echo "No se pudo leer main en origin" >&2; exit 1; }
+head_sha=$(echo "$refs" | cut -f1)
+[ -n "$head_sha" ] || { echo "origin no tiene la rama main" >&2; exit 1; }
 if [ "$head_sha" != "$EXPECTED_SHA" ]; then
     echo "main ya está en $head_sha, no en $EXPECTED_SHA: lo desplegará la CI de ese commit."
     exit 0
 fi
 
 api POST "deploy?uuid=$COOLIFY_APP_UUID&force=false" || exit 1
-deployment=$(jq -r '.deployments[0].deployment_uuid // empty' "$BODY")
+# Un 200 que no es JSON (la página de acceso de un proxy delante del panel) no es
+# una respuesta de Coolify.
+deployment=$(jq -r '.deployments[0].deployment_uuid // empty' "$BODY" 2>/dev/null) \
+    || { echo "Coolify respondió algo que no es JSON al pedir el despliegue" >&2; exit 1; }
 [ -n "$deployment" ] || { echo "Coolify no devolvió ningún despliegue" >&2; exit 1; }
 echo "Despliegue $deployment en cola"
 
@@ -64,6 +72,10 @@ while [ "$i" -lt 180 ]; do
     sleep 10
     rc=0
     api GET "deployments/$deployment" || rc=$?
+    if [ "$rc" -eq 0 ] && ! status=$(jq -r '.status' "$BODY" 2>/dev/null); then
+        echo "Coolify respondió algo que no es JSON al consultar el despliegue" >&2
+        rc=1
+    fi
     if [ "$rc" -eq 2 ]; then
         exit 1
     elif [ "$rc" -ne 0 ]; then
@@ -72,7 +84,6 @@ while [ "$i" -lt 180 ]; do
         continue
     fi
     failures=0
-    status=$(jq -r '.status' "$BODY")
     case "$status" in
         finished) break ;;
         failed|cancelled*)
@@ -83,15 +94,21 @@ done
 [ "$status" = "finished" ] || { echo "El despliegue no terminó en 30 minutos" >&2; exit 1; }
 
 deployed=$(jq -r '.commit // empty' "$BODY")
-if [ -n "$deployed" ] && [ "$deployed" != "$EXPECTED_SHA" ]; then
+if [ -z "$deployed" ]; then
+    # El despliegue terminó; solo no se puede confirmar qué versión es. Aviso visible
+    # en GitHub en lugar de fallar o de callarlo.
+    echo "::warning::Coolify no indica qué commit desplegó: no se ha podido comprobar que sea $EXPECTED_SHA"
+elif [ "$deployed" != "$EXPECTED_SHA" ]; then
     echo "Coolify desplegó $deployed y no $EXPECTED_SHA (main avanzó a la vez)" >&2
     exit 1
+else
+    echo "Desplegado $EXPECTED_SHA"
 fi
-echo "Desplegado $EXPECTED_SHA"
 
 # La API recién arrancada puede tardar unos segundos (migraciones).
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
-    if curl -fsS --max-time 10 "$PRODUCTION_URL/api/v1/health" | grep -q '"status":"ok"'; then
+    if curl -fsS --max-time 10 "$PRODUCTION_URL/api/v1/health" 2>/dev/null \
+        | jq -e '.status == "ok"' > /dev/null 2>&1; then
         echo "$PRODUCTION_URL responde"
         exit 0
     fi

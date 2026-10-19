@@ -6,7 +6,7 @@
 
 **Todas tus candidaturas, su historia y tu próximo paso, en un solo sitio.**
 
-Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, cómo avanza (cambios de estado y entrevistas) y qué toca hacer después, para que ninguna candidatura se quede olvidada.
+Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud y cómo avanza, prepara el CV y la carta de cada oferta, y te avisa de lo que toca hacer después para que ninguna candidatura se quede olvidada.
 
 [![CI](https://github.com/iMiguel10/applications-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/iMiguel10/applications-tracker/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
@@ -20,83 +20,78 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud, c
 
 ---
 
-> [!NOTE]
-> **Estado del proyecto:** el **MVP está completo** (fases F0–F6 y F8) y se usa de verdad en una búsqueda de empleo real. La **v2** (CVs, IA, notificaciones por email, calendario…) está **especificada y diseñada**; ya están construidas su infraestructura (correo, cola de trabajos, almacén de ficheros y PDF) y su manual de producción, y ya hay funcionalidades de la v2 en uso: recuperar o cambiar la contraseña por email, verificar el email, ver el consumo de los límites (F11), recibir avisos por email de recordatorios, entrevistas, solicitudes sin actividad y un resumen semanal, con baja de un clic (F12), guardar tus CVs y cartas en PDF y asociarlos a cada solicitud junto con la descripción de la oferta (F13), adaptar el CV y escribir la carta de presentación de cada oferta con IA sin inventar experiencia, con usos gratuitos (por defecto con un Ollama local) o tu propia clave de Anthropic, OpenAI o Groq (F15), y ver tus entrevistas y recordatorios en un calendario, con eventos sueltos a Google Calendar o `.ics` (F17). La puesta en producción (F7) está en espera de servidor. Detalle en [fases del proyecto](docs/producto/especificacion.md#11-alcance-por-fases).
-
 ## Contenido
 
 - [Funcionalidades](#funcionalidades)
-- [Hoja de ruta (v2)](#hoja-de-ruta-v2)
 - [Arquitectura](#arquitectura)
 - [Stack](#stack)
 - [Puesta en marcha](#puesta-en-marcha)
-- [Configuración](#configuración)
+- [Despliegue en producción](#despliegue-en-producción)
 - [Desarrollo](#desarrollo)
 - [Calidad y pruebas](#calidad-y-pruebas)
 - [Documentación](#documentación)
 - [Estructura del repositorio](#estructura-del-repositorio)
-- [Contribuir](#contribuir)
 - [Seguridad](#seguridad)
+- [Contribuir](#contribuir)
 - [Licencia](#licencia)
 
 ## Funcionalidades
 
 | | |
 |---|---|
-| **Solicitudes y empresas** | Alta, edición, archivado y borrado. Listado con búsqueda, filtros (estado, modalidad, fuente, archivadas; y por empresa desde su ficha), orden y paginación **en la URL**, así que un filtro se puede compartir o recuperar con el botón atrás. Empresas reutilizables entre solicitudes, creables sin salir del formulario. |
-| **Ciclo de vida** | Cada solicitud recorre una máquina de estados (guardada → enviada → en revisión → entrevistas → oferta → aceptada, o descartada / retirada). Cada cambio queda en un historial con la fecha en que ocurrió de verdad, y el último se puede **deshacer**. |
-| **Entrevistas y recordatorios** | Entrevistas por solicitud (tipo, formato, resultado) y recordatorios con fecha límite, ligados o no a una solicitud. |
-| **Documentos** | Biblioteca de CVs y cartas de presentación en PDF (subir, ver en la app, descargar, renombrar, archivar), la descripción de la oferta y el CV y la carta enviados en cada solicitud. Solo se aceptan PDFs de verdad, con cuota de almacenamiento por cuenta. |
-| **Avisos por email** | Recordatorio vencido (con antelación opcional), entrevista próxima, solicitudes sin actividad y resumen semanal del lunes, cada uno activable por separado. Nunca dos veces por el mismo motivo y con baja de un clic desde el propio email. Requieren un servidor SMTP. |
+| **Solicitudes y empresas** | Alta, edición, archivado y borrado. Listado con búsqueda, filtros, orden y paginación **en la URL**, y empresas reutilizables entre solicitudes. |
+| **Ciclo de vida** | Cada solicitud recorre una máquina de estados (guardada → enviada → en revisión → entrevistas → oferta → aceptada, o descartada / retirada) con un historial fechado y la opción de **deshacer** el último cambio. |
+| **Tablero Kanban** | Las mismas solicitudes por columnas de estado: se mueven arrastrando, o desde el teclado con **Mover a…**, y solo se admiten las transiciones válidas. |
+| **Entrevistas, recordatorios y calendario** | Entrevistas por solicitud y recordatorios con fecha límite, en un calendario mensual y semanal en tu zona horaria. Cada evento se puede añadir a Google Calendar o descargar como `.ics`. |
+| **Documentos** | Biblioteca de CVs y cartas en PDF (subir, ver, descargar, renombrar, archivar) y el CV, la carta y la descripción de la oferta de cada solicitud, con cuota de almacenamiento por cuenta. |
+| **Perfil y CVs generados** | Un perfil profesional (experiencia, formación, proyectos, certificaciones, habilidades e idiomas) del que salen CVs en PDF con cuatro diseños, tres de ellos aptos para ATS. |
+| **CV y carta adaptados con IA** | La IA adapta el CV y escribe la carta de una oferta concreta **sin inventar experiencia**: cada cambio cita su origen en tu perfil y se revisa junto al original antes de generar el PDF. El encaje con la oferta, antes y después, lo calcula la aplicación, no la IA. Usos gratuitos con la IA de la instalación (por ejemplo, un Ollama propio) o tu propia clave de Anthropic, OpenAI o Groq, guardada cifrada. |
+| **Avisos por email** | Recordatorio vencido, entrevista próxima, solicitudes sin actividad, resumen semanal y propuesta de IA terminada, cada uno activable por separado, nunca dos veces por el mismo motivo y con baja de un clic. |
 | **Dashboard** | Solicitudes por estado, envíos por semana, tasa de respuesta, próximas entrevistas, recordatorios pendientes y solicitudes sin actividad. |
-| **Métricas honestas** | Cada porcentaje indica sobre cuántas solicitudes se calcula y no se muestra con menos de 5. El sistema **nunca** da por descartada una candidatura que solo lleva tiempo sin respuesta. |
-| **Datos** | Exportación completa a CSV. Borrado de la cuenta y de todos sus datos. |
-| **Preferencias** | Idioma de la interfaz, umbral de "sin actividad" y tema claro u oscuro. |
-| **Interfaz** | Español e inglés, diseño adaptable a móvil, estados de carga y vacío cuidados, y accesibilidad trabajada (contraste AA medido, navegación por teclado, errores enlazados a sus campos). |
-
-## Hoja de ruta (v2)
-
-Especificada en la [especificación](docs/producto/especificacion.md) y diseñada en la [arquitectura de la v2](docs/arquitectura/v2.md). Están construidas F9 a F17: la infraestructura, el manual de producción, la cuenta y protección, los avisos por email, la biblioteca de documentos, el perfil con CVs generados, la IA, el tablero Kanban y el calendario (con eventos sueltos a Google Calendar o `.ics`).
-
-| Fase | Contenido |
-|---|---|
-| ✔ F9 | Infraestructura nueva: cola de trabajos, generación de PDF, almacenamiento de ficheros y email |
-| ✔ F10 | Documentación de producción (Docusaurus, es + en): despliegue, manual de uso y referencia de la API |
-| ✔ F11 | Recuperación de contraseña, verificación de email, zona horaria, límites visibles y rate limiting |
-| ✔ F12 | Notificaciones por email: recordatorios, entrevistas, resumen semanal y solicitudes sin actividad, nunca dos veces por el mismo motivo y con baja de un clic |
-| ✔ F13 | Biblioteca de CVs y cartas en PDF, asociados a cada solicitud |
-| ✔ F14 | Perfil profesional y generación de CVs con varios diseños |
-| ✔ F15 | IA que adapta el CV y la carta a una oferta **sin inventar experiencia**, con usos gratuitos y clave propia del usuario |
-| ✔ F16 | Tablero Kanban, con arrastrar y soltar accesible por teclado |
-| ✔ F17 | Calendario de entrevistas y recordatorios, con eventos sueltos a Google Calendar o `.ics` (la suscripción se descartó, [0016](docs/decisiones/0016-sin-suscripcion-ics.md)) |
+| **Métricas honestas** | Cada porcentaje indica sobre cuántas solicitudes se calcula y no se muestra con menos de 5. Nunca se da por descartada una candidatura que solo lleva tiempo sin respuesta. |
+| **Cuenta** | Verificación de email, recuperación de contraseña, límites de uso visibles, exportación completa a CSV y borrado de la cuenta con todos sus datos. El registro puede cerrarse y las cuentas crearse con un script. |
+| **Interfaz** | Español e inglés, tema claro u oscuro, diseño adaptable a móvil y accesibilidad trabajada (contraste AA medido, navegación por teclado, errores enlazados a sus campos). |
 
 ## Arquitectura
 
 ```mermaid
 flowchart LR
     subgraph Navegador
-        SPA["SPA React<br/>TanStack Query"]
+        SPA["SPA React"]
     end
-    subgraph API["API FastAPI"]
-        MW["Middleware SuperTokens<br/>/auth/*"]
-        EP["endpoints"] --> SV["services"] --> RP["repositories"]
+    PX["Proxy con HTTPS<br/>(Traefik de Coolify)"]
+    subgraph Stack["compose.prod.yml"]
+        WEB["Nginx<br/>estáticos y reparto"]
+        API["API FastAPI"]
+        WK["worker<br/>(SAQ)"]
+        STC["SuperTokens core"]
+        Q[("Valkey<br/>cola y rate limit")]
+        DB[("PostgreSQL<br/>aplicación")]
+        STDB[("PostgreSQL<br/>SuperTokens")]
+        F[("Ficheros<br/>PDF")]
+        BK["backup"]
     end
-    SPA -- "cookies de sesión" --> MW
-    SPA -- "/api/v1/*" --> EP
-    MW <--> STC["SuperTokens core"]
-    STC --> STDB[("PostgreSQL<br/>SuperTokens")]
-    RP --> DB[("PostgreSQL<br/>aplicación")]
+    SPA --> PX --> WEB
+    WEB -- "/api, /auth" --> API
+    API --> DB & Q & F & STC
+    STC --> STDB
+    Q --> WK
+    WK --> DB & F
+    WK -. "IA, SMTP<br/>(opcionales)" .-> EXT["Proveedores externos"]
+    BK --> DB & STDB & F
 ```
 
 Decisiones destacadas:
 
-- **Capas verificables.** `endpoints → services → repositories`, resumidas en una regla: *si habla con la base de datos, vive en `repositories/`; si decide, vive en `services/` o `domain/`*.
-- **Máquina de estados con historial append-only.** Las transiciones solo las valida el backend; la API le dice al frontend cuáles ofrecer. El historial se ordena por una secuencia de la base de datos, no por fechas, que pueden ser pasadas o sufrir saltos de reloj.
-- **Aislamiento entre usuarios en dos capas:** filtro obligatorio por usuario en cada consulta y claves foráneas compuestas que impiden, desde la propia base de datos, enlazar datos de otro usuario. Un recurso ajeno responde 404, nunca 403.
-- **Autenticación delegada en SuperTokens:** cookies httpOnly, rotación del refresh token y protección anti-CSRF, con el core aislado en su propia base de datos.
+- **Capas verificables.** `endpoints → services → repositories`, resumidas en una regla: *si habla con la base de datos, vive en `repositories/`; si decide, vive en `services/` o `domain/`*. Lo que habla con otro sistema (disco, cola, correo, IA, PDF) vive en `infra/` detrás de una interfaz.
+- **Máquina de estados con historial append-only.** Las transiciones solo las valida el backend, y el historial se ordena por una secuencia de la base de datos, no por fechas.
+- **Aislamiento entre usuarios en dos capas:** filtro obligatorio por usuario en cada consulta y claves foráneas compuestas que impiden enlazar datos de otro usuario desde la propia base de datos. Un recurso ajeno responde 404, nunca 403.
+- **Lo lento, en segundo plano.** Los PDF, los emails y las llamadas a la IA los hace un `worker`. Se encola siempre después de confirmar la transacción, y unos barridos recuperan lo que se quede a medias.
+- **IA acotada.** A la IA solo llega lo imprescindible, sin datos de contacto. Lo que devuelve se valida contra el perfil antes de guardarse, y nada pasa al CV sin la revisión del usuario.
+- **Emails sin duplicados.** Cada aviso se reclama y se confirma en la base de datos antes de hablar con el servidor de correo, y solo se reintenta lo que con seguridad no salió.
 - **Documentación que no envejece:** la referencia de la API se genera del contrato OpenAPI y un test comprueba que está al día.
 
-Cada decisión, con la alternativa descartada y el porqué, está en la [documentación de arquitectura](docs/arquitectura/index.md).
+Cada decisión, con la alternativa descartada y el porqué, está en la [documentación de arquitectura](docs/arquitectura/index.md) y en la [bitácora de decisiones](docs/decisiones/index.md).
 
 ## Stack
 
@@ -105,20 +100,16 @@ Cada decisión, con la alternativa descartada y el porqué, está en la [documen
 | **Backend** | Python 3.12 · FastAPI · SQLAlchemy 2 (async) · Alembic · Pydantic · uv |
 | **Base de datos** | PostgreSQL 17 |
 | **Autenticación** | SuperTokens (core propio con su base de datos) |
-| **Frontend** | React 19 · TypeScript · Vite · TanStack Query · react-hook-form + zod · Tailwind CSS v4 · shadcn/ui · i18next · Recharts |
-| **Infraestructura** | Docker · Docker Compose |
+| **Segundo plano** | SAQ sobre Valkey · WeasyPrint · SMTP |
+| **IA** | Anthropic · OpenAI · Groq · Ollama, detrás de una interfaz común |
+| **Frontend** | React 19 · TypeScript · Vite · TanStack Query · react-hook-form + zod · Tailwind CSS v4 · shadcn/ui · dnd-kit · i18next · Recharts |
+| **Producción** | Docker Compose · Nginx · Coolify (Traefik y Let's Encrypt) |
 | **Calidad** | pytest · Vitest + Testing Library · ruff · mypy · ESLint · GitHub Actions |
-| **Segundo plano** | SAQ sobre Valkey · WeasyPrint · aiosmtplib |
 | **Documentación** | MkDocs Material (desarrollo) · Docusaurus (producción, es + en) · Mermaid · OpenAPI |
 
 ## Puesta en marcha
 
-### Requisitos
-
-- [Docker](https://docs.docker.com/get-docker/) con Docker Compose v2.
-- Nada más: Python, Node y PostgreSQL corren dentro de los contenedores.
-
-### Arrancar
+Requisito: [Docker](https://docs.docker.com/get-docker/) con Docker Compose v2. Python, Node y PostgreSQL corren dentro de los contenedores.
 
 ```bash
 git clone https://github.com/iMiguel10/applications-tracker.git
@@ -137,30 +128,21 @@ La primera vez se construyen las imágenes y el backend aplica las migraciones a
 | Manual de uso, despliegue y API | http://localhost:3001 |
 | Correo capturado (Mailpit) | http://localhost:8025 |
 
-Crea una cuenta desde la pantalla de registro y ya puedes empezar a registrar solicitudes.
+Crea una cuenta desde la pantalla de registro y empieza a registrar solicitudes. La IA de desarrollo es un Ollama local: el modelo se descarga una vez con `docker compose exec ollama ollama pull qwen3:8b`.
 
 > [!IMPORTANT]
 > Usa siempre `localhost`, nunca `127.0.0.1`. Para el navegador son sitios distintos: las cookies de sesión no viajarían y el inicio de sesión parecería no funcionar, sin ningún error.
 
-## Configuración
+## Despliegue en producción
 
-Toda la configuración va en variables de entorno (`.env`, a partir de [`.env.example`](.env.example)). Los valores de ejemplo solo sirven para desarrollo.
+La producción es [`compose.prod.yml`](compose.prod.yml), que no publica ningún puerto y se pone detrás de cualquier proxy con HTTPS. Está probada en [Coolify](https://coolify.io):
 
-| Variable | Para qué |
-|---|---|
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DATABASE_URL` | Base de datos de la aplicación |
-| `SUPERTOKENS_DB_NAME`, `SUPERTOKENS_DB_USER`, `SUPERTOKENS_DB_PASSWORD` | Base de datos exclusiva del core de SuperTokens |
-| `SUPERTOKENS_CONNECTION_URI`, `SUPERTOKENS_API_KEY` | Conexión de la API con el core (clave de 20 caracteres o más) |
-| `API_DOMAIN`, `WEBSITE_DOMAIN` | Dominios de la API y del frontend, para las cookies de sesión |
-| `CORS_ORIGINS` | Orígenes permitidos por la API |
-| `VITE_API_URL` | URL de la API que usa el frontend |
-| `VALKEY_URL`, `FILES_ROOT` | Cola de trabajos y almacén de ficheros |
-| `APP_SECRET` | Firma los enlaces de baja de los avisos por email (obligatoria, 32 caracteres o más) |
-| `SMTP_*`, `EMAIL_FROM` | Servidor de correo (opcional: sin él, la aplicación no envía emails). En desarrollo, Mailpit |
+- **Un solo dominio.** Un Nginx propio sirve la aplicación y el manual compilados, reparte `/api` y `/auth` a la API, y añade el rate limiting de primera capa y las cabeceras de seguridad.
+- **Configuración solo con variables.** Las variables están explicadas en [`.env.prod.example`](.env.prod.example). El correo, la IA de la plataforma y el envío de copias fuera del servidor son opcionales: se activan rellenando variables, sin tocar el código.
+- **Copias de seguridad cada noche** de las dos bases de datos y los ficheros, con retención y restauración probada.
+- **Despliegue continuo:** cada push a `main` que pasa la integración continua se despliega solo, y el job comprueba que la versión desplegada es la que pasó las pruebas.
 
-Qué hace cada una, cuáles son obligatorias y qué pasa si faltan está en el [manual de despliegue](manual/docs/despliegue/variables.md).
-
-Los secretos nunca se versionan: `.env` y `.env.test` están en `.gitignore`.
+La receta paso a paso, las variables y las copias de seguridad están en el manual (sección **Despliegue**).
 
 ## Desarrollo
 
@@ -169,7 +151,7 @@ Los comandos se ejecutan dentro de los contenedores. Los más habituales:
 ```bash
 # Backend: estilo, tipos y migraciones
 docker compose exec api ruff check .
-docker compose exec api mypy app tests
+docker compose exec api mypy app tests evals
 docker compose exec api alembic revision --autogenerate -m "descripcion"
 
 # Frontend: lint, tipos, tests y build
@@ -189,59 +171,83 @@ docker compose -f compose.test.yml down -v
 
 ## Calidad y pruebas
 
-- **Backend:** pruebas de repositories, services y API contra PostgreSQL real, cada una dentro de una transacción que se revierte al terminar. Incluyen **pruebas adversas**: un usuario intenta leer, editar y borrar los recursos de otro por cada endpoint (la lista de endpoints se lee del OpenAPI, así que un endpoint nuevo queda cubierto solo), transiciones de estado inválidas, cuotas y el borrado completo de una cuenta.
+- **Backend:** más de 1 100 pruebas de repositories, services y API contra PostgreSQL real, cada una dentro de una transacción que se revierte al terminar. Incluyen **pruebas adversas**:
+  - un usuario intenta leer, editar y borrar los recursos de otro en cada endpoint (la lista se lee del OpenAPI, así que un endpoint nuevo queda cubierto solo);
+  - transiciones de estado inválidas;
+  - carreras entre peticiones simultáneas;
+  - el mismo email enviado dos veces a la vez;
+  - cuotas que se intentan esquivar;
+  - respuestas de la IA que inventan o citan lo que no existe.
 - **Frontend:** Vitest y Testing Library para schemas, utilidades, hooks y componentes con lógica.
-- **Autenticación:** una prueba de humo contra el core real de SuperTokens.
+- **Autenticación:** pruebas contra el core real de SuperTokens.
+- **IA:** una evaluación manual con casos inventados mide cada modelo con el mismo código que se ejecuta en producción.
 - **Rendimiento:** un script mide el listado y el dashboard con 2 000 solicitudes por usuario contra su presupuesto (300 ms y 500 ms en p95).
 
-La integración continua ([`ci.yml`](.github/workflows/ci.yml)) corre en cada push y pull request con cinco jobs: lint y tipos del backend, tests del backend, frontend (lint, tipos, tests y build), construcción estricta de la documentación de desarrollo y construcción del manual (con la comprobación de que cada página existe en los dos idiomas).
+La integración continua ([`ci.yml`](.github/workflows/ci.yml)) corre en cada push y pull request:
+- lint y tipos del backend, y sus pruebas;
+- frontend: lint, tipos, pruebas y build;
+- construcción estricta de los dos sitios de documentación;
+- construcción de las imágenes de producción, con la validación de Nginx y de `compose.prod.yml`;
+- en `main`, el despliegue.
 
 ## Documentación
 
 Hay dos sitios, cada uno para un público:
 
-- **Manual** ([`manual/`](manual/), Docusaurus, `http://localhost:3001` en local), en español y en inglés, para quien **usa**, **despliega** o **se integra** con la aplicación: una página por tarea, el despliegue paso a paso y la referencia de la API generada del contrato OpenAPI.
-- **Documentación de desarrollo** ([`docs/`](docs/), MkDocs, `http://localhost:8001`), para quien trabaja en el código:
+- **Manual** ([`manual/`](manual/), Docusaurus), en español y en inglés, para quien **usa**, **despliega** o **se integra** con la aplicación: una página por tarea, el despliegue paso a paso y la referencia de la API generada del contrato OpenAPI. En producción se sirve en `/manual/`.
+- **Documentación de desarrollo** ([`docs/`](docs/), MkDocs), para quien trabaja en el código:
 
 | Sección | Contenido |
 |---|---|
 | [Especificación](docs/producto/especificacion.md) | Requisitos numerados, ciclo de vida, límites, fases y riesgos |
 | [Arquitectura](docs/arquitectura/index.md) | Decisiones con la alternativa descartada, modelo de datos, flujos e invariantes |
-| [Servicios y estructura](docs/arquitectura/servicios-y-estructura.md) | Servicios, estructura de carpetas y reglas de capas |
+| [Arquitectura de la v2](docs/arquitectura/v2.md) | Segundo plano y emails, ficheros, IA, límites y abuso, cada tema con sus trampas |
+| [Servicios y estructura](docs/arquitectura/servicios-y-estructura.md) | Servicios, estructura de carpetas, reglas de capas y producción |
 | [Autenticación](docs/arquitectura/autenticacion.md) | Integración con SuperTokens y sus trampas |
-| [Arquitectura de la v2](docs/arquitectura/v2.md) | Diseño de la siguiente versión, con sus documentos por tema |
-| [Guía de la API](docs/guias/documentar-la-api.md) | Cómo se documenta un endpoint y cómo probar la API desde Swagger |
 | [Decisiones](docs/decisiones/index.md) | Bitácora de los cambios de rumbo durante el desarrollo |
-
-La referencia completa de la API está en el manual, en `http://localhost:8000/docs` y, versionada, en [`docs/referencia/openapi.json`](docs/referencia/openapi.json): las tres salen del mismo contrato.
 
 ## Estructura del repositorio
 
 ```
 applications-tracker/
-├── backend/                 API FastAPI
+├── backend/                 API FastAPI y worker
 │   ├── app/
 │   │   ├── api/v1/          endpoints y dependencias (sesión, services)
 │   │   ├── services/        reglas de negocio y transacciones
 │   │   ├── repositories/    todo el acceso a datos
-│   │   ├── domain/          reglas puras: estados y transiciones
-│   │   ├── infra/           cola, correo, ficheros y PDF, cada uno tras una interfaz
-│   │   ├── jobs/            trabajos del worker (segundo plano)
+│   │   ├── domain/          reglas puras: estados, límites, IA…
+│   │   ├── infra/           cola, correo, ficheros, PDF, IA y rate limit, tras una interfaz
+│   │   ├── jobs/            trabajos del worker
+│   │   ├── templates/       emails y diseños de CV
 │   │   ├── models/          tablas SQLAlchemy
 │   │   └── schemas/         entrada y salida (Pydantic)
 │   ├── migrations/          migraciones de Alembic
-│   └── tests/               repositories, services, API y dominio
+│   ├── evals/               evaluación manual de la IA
+│   └── tests/
 ├── frontend/                SPA React
 │   └── src/
 │       ├── features/        una carpeta por funcionalidad
 │       ├── pages/           una página por ruta
 │       └── shared/          UI, formularios, layout, i18n y utilidades
+├── deploy/                  producción: Nginx (web), copias de seguridad y despliegue continuo
 ├── docs/                    documentación de desarrollo (MkDocs)
 ├── manual/                  manual de uso, despliegue y API (Docusaurus, es + en)
-├── .github/workflows/       integración continua
+├── .github/workflows/       integración y despliegue continuos
 ├── compose.yml              entorno de desarrollo
-└── compose.test.yml         entorno de pruebas del backend
+├── compose.test.yml         entorno de pruebas del backend
+└── compose.prod.yml         producción
 ```
+
+## Seguridad
+
+- **Sesiones** con SuperTokens: cookies httpOnly y `Secure`, refresh token que rota en cada uso y protección anti-CSRF.
+- **Aislamiento** entre usuarios en cada consulta, comprobado con pruebas adversas en el CI.
+- **Rate limiting** en dos capas: Nginx frena el abuso masivo, y la aplicación limita por IP real, por email y por usuario.
+- **Cabeceras de seguridad** con una CSP estricta y HSTS.
+- **Claves de IA de los usuarios** cifradas en la base de datos; solo se descifran dentro del worker durante la llamada.
+- **Ficheros** guardados fuera de la ruta pública, con nombres generados y tamaño limitado al leerlos.
+
+Si encuentras una vulnerabilidad, **no abras un issue público**: contacta con el autor a través de [su perfil de GitHub](https://github.com/iMiguel10).
 
 ## Contribuir
 
@@ -252,13 +258,9 @@ applications-tracker/
 
 Las convenciones completas, las reglas de capas y los invariantes que no se pueden romper están en [CLAUDE.md](CLAUDE.md).
 
-## Seguridad
-
-Las sesiones las gestiona SuperTokens, cada consulta se filtra por el usuario de la sesión y hay pruebas adversas de aislamiento entre usuarios en el CI. Si encuentras una vulnerabilidad, **no abras un issue público**: contacta con el autor a través de [su perfil de GitHub](https://github.com/iMiguel10).
-
 ## Licencia
 
-Este repositorio todavía **no tiene licencia**. Mientras no se añada, el código está disponible para consulta, pero se reservan todos los derechos.
+Este repositorio **no tiene licencia**: el código está disponible para consulta, pero se reservan todos los derechos.
 
 ---
 

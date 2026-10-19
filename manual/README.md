@@ -5,7 +5,7 @@ Sitio Docusaurus para quien **usa**, **despliega** o **se integra** con Applicat
 | Carpeta | Contenido |
 |---|---|
 | `docs/uso/` | Manual de uso, una página por tarea |
-| `docs/despliegue/` | Servicios, variables, correo, copias de seguridad |
+| `docs/despliegue/` | Despliegue con y sin Coolify, variables, cuentas, correo, IA, copias de seguridad, despliegue continuo |
 | `docs/api/guia.md` | Guía de integración con la API |
 | `docs/api/referencia/` | **Generada** de `../docs/referencia/openapi.json` en cada `start` y `build`. No se versiona ni se edita |
 | `i18n/en/docusaurus-plugin-content-docs/current/` | Traducción al inglés, con la misma estructura que `docs/` |

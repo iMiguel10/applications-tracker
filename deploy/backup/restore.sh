@@ -37,13 +37,25 @@ others() {
 # Se vacía el esquema entero en lugar de `pg_restore --clean`: con --clean, las tablas
 # que la copia no conoce (una migración posterior) seguirían ahí, y alembic, al
 # arrancar, intentaría crearlas de nuevo.
+#
+# Vaciar y restaurar van en UNA transacción: si la restauración fallara a mitad, la
+# BD se queda como estaba en lugar de vacía. Por eso el volcado se pasa antes a SQL
+# en un fichero (pg_restore -f) y no por una tubería: si pg_restore fallara a mitad
+# de la tubería, psql recibiría el SQL cortado y lo confirmaría igual.
 restore_db() {
     host=$1 password=$2 user=$3 db=$4 dump=$5
     log "restaurando $db"
-    PGPASSWORD="$password" psql -h "$host" -U "$user" -d "$db" -v ON_ERROR_STOP=1 -q \
-        -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-    PGPASSWORD="$password" pg_restore -h "$host" -U "$user" -d "$db" \
-        --no-owner --single-transaction --exit-on-error "$dir/$dump"
+    sql=$(mktemp)
+    {
+        echo "DROP SCHEMA public CASCADE;"
+        echo "CREATE SCHEMA public;"
+    } > "$sql"
+    pg_restore --no-owner --file=- "$dir/$dump" >> "$sql" \
+        || { rm -f "$sql"; die "no se pudo leer $dump: no se ha tocado $db"; }
+    PGPASSWORD="$password" psql -h "$host" -U "$user" -d "$db" -q -X \
+        -v ON_ERROR_STOP=1 --single-transaction -f "$sql" > /dev/null \
+        || { rm -f "$sql"; die "la restauración de $db falló y se deshizo: $db sigue como estaba"; }
+    rm -f "$sql"
 }
 restore_db "$APP_DB_HOST" "$APP_DB_PASSWORD" "$APP_DB_USER" "$APP_DB_NAME" app.dump
 restore_db "$AUTH_DB_HOST" "$AUTH_DB_PASSWORD" "$AUTH_DB_USER" "$AUTH_DB_NAME" supertokens.dump

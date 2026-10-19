@@ -11,9 +11,9 @@ This manual has three parts, depending on what you are here for:
 | Part | For | What you will find |
 |---|---|---|
 | [Usage](uso/primeros-pasos.md) | People using the application | Each task explained step by step: adding an application, changing its status, scheduling an interview… |
-| [Deployment](despliegue/index.md) | People installing and running an instance | Services, environment variables, email and backups |
+| [Deployment](despliegue/index.md) | People installing and running an instance | Deploying with or without Coolify, environment variables, accounts, email, AI, backups and continuous deployment |
 | [API](api/guia.md) | People integrating another system | Authentication, errors and pagination, plus the full reference of every endpoint |
 
 :::note What this manual covers
-Only what the application does today. The feature still in development (AI) will be added here once it exists.
+Only what the application does today.
 :::

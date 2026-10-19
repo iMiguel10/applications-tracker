@@ -32,9 +32,15 @@ const sidebars: SidebarsConfig = {
   despliegue: [
     "despliegue/index",
     "despliegue/requisitos",
+    "despliegue/coolify",
+    "despliegue/sin-coolify",
     "despliegue/variables",
+    "despliegue/cuentas",
     "despliegue/correo",
+    "despliegue/ia-de-la-plataforma",
     "despliegue/copias-de-seguridad",
+    "despliegue/despliegue-continuo",
+    "despliegue/actualizar",
   ],
   api: [
     "api/guia",
