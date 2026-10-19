@@ -20,9 +20,15 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud y 
 
 ---
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png" />
+  <img src="docs/images/dashboard.png" alt="Dashboard de Applications Tracker: solicitudes por estado, envíos por semana, tasa de respuesta, próximas entrevistas, recordatorios pendientes y solicitudes sin actividad" />
+</picture>
+
 ## Contenido
 
 - [Funcionalidades](#funcionalidades)
+- [Capturas](#capturas)
 - [Arquitectura](#arquitectura)
 - [Stack](#stack)
 - [Puesta en marcha](#puesta-en-marcha)
@@ -51,6 +57,17 @@ Un cuaderno de bitácora para la búsqueda de empleo: registra cada solicitud y 
 | **Métricas honestas** | Cada porcentaje indica sobre cuántas solicitudes se calcula y no se muestra con menos de 5. Nunca se da por descartada una candidatura que solo lleva tiempo sin respuesta. |
 | **Cuenta** | Verificación de email, recuperación de contraseña, límites de uso visibles, exportación completa a CSV y borrado de la cuenta con todos sus datos. El registro puede cerrarse y las cuentas crearse con un script. |
 | **Interfaz** | Español e inglés, tema claro u oscuro, diseño adaptable a móvil y accesibilidad trabajada (contraste AA medido, navegación por teclado, errores enlazados a sus campos). |
+
+## Capturas
+
+Datos de demostración: una persona y unas empresas inventadas.
+
+| | |
+|---|---|
+| ![Tablero Kanban con las solicitudes por columnas de estado](docs/images/board.png) | ![Detalle de una solicitud con su historial de estados, entrevistas y recordatorios](docs/images/application-detail.png) |
+| **Tablero.** Mover una tarjeta cambia su estado, con deshacer. | **Detalle.** Historial de estados, entrevistas, recordatorios y documentos enviados. |
+| ![Revisión del CV adaptado con IA: encaje con la oferta antes y después, y el resumen propuesto junto al original](docs/images/ai-tailored-cv.png) | <img src="docs/images/mobile-dashboard.png" alt="Dashboard en el móvil" width="45%" /> <img src="docs/images/mobile-application-detail.png" alt="Detalle de una solicitud en el móvil" width="45%" /> |
+| **CV adaptado con IA.** El encaje con la oferta lo calcula la aplicación; cada cambio se revisa junto al original. | **Móvil.** La misma aplicación, adaptada a pantallas pequeñas. |
 
 ## Arquitectura
 
