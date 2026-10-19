@@ -3,8 +3,9 @@
 # main pasa todo lo demás. Pide el despliegue a la API de Coolify, espera a que
 # termine y comprueba la aplicación ya desplegada.
 #
-# Variables: COOLIFY_URL, COOLIFY_TOKEN (permiso de despliegue), COOLIFY_APP_UUID,
-# PRODUCTION_URL y EXPECTED_SHA (el commit que ha pasado la CI).
+# Variables: COOLIFY_URL, COOLIFY_TOKEN (permisos read y deploy: con solo deploy,
+# lanza el despliegue pero no puede seguirlo), COOLIFY_APP_UUID, PRODUCTION_URL y
+# EXPECTED_SHA (el commit que ha pasado la CI).
 #
 # Coolify despliega siempre lo último de la rama, no un commit concreto: si main ya
 # ha avanzado, desplegar aquí subiría un commit que esta CI no ha probado. Ese caso
@@ -17,11 +18,29 @@ set -eu
 COOLIFY_URL=${COOLIFY_URL%/}
 PRODUCTION_URL=${PRODUCTION_URL%/}
 
-# api <método> <ruta>. Lanzar un despliegue es POST desde Coolify 4.4 (antes, GET:
-# con GET responde 405).
+BODY=$(mktemp)
+trap 'rm -f "$BODY"' EXIT
+
+# api <método> <ruta>: deja la respuesta en $BODY y devuelve 0 si es 2xx, 2 si el
+# error no se arregla repitiendo (4xx: token sin permiso, uuid incorrecto…) y 1 si
+# puede ser pasajero (red, 5xx). Lanzar un despliegue es POST desde Coolify 4.4 (con
+# GET responde 405).
 api() {
-    curl -fsS --max-time 30 -X "$1" -H "Authorization: Bearer $COOLIFY_TOKEN" \
-        -H "Accept: application/json" "$COOLIFY_URL/api/v1/$2"
+    code=$(curl -sS --max-time 30 -o "$BODY" -w '%{http_code}' -X "$1" \
+        -H "Authorization: Bearer $COOLIFY_TOKEN" -H "Accept: application/json" \
+        "$COOLIFY_URL/api/v1/$2") || code=000
+    case "$code" in
+        2??) return 0 ;;
+        401|403)
+            echo "Coolify rechazó el token ($code) en $1 /api/v1/${2%%\?*}: necesita los permisos read y deploy" >&2
+            return 2 ;;
+        4??)
+            echo "Coolify respondió $code a $1 /api/v1/${2%%\?*}" >&2
+            return 2 ;;
+        *)
+            echo "Coolify no respondió bien ($code) a $1 /api/v1/${2%%\?*}" >&2
+            return 1 ;;
+    esac
 }
 
 head_sha=$(git ls-remote origin refs/heads/main | cut -f1)
@@ -30,19 +49,30 @@ if [ "$head_sha" != "$EXPECTED_SHA" ]; then
     exit 0
 fi
 
-deployment=$(api POST "deploy?uuid=$COOLIFY_APP_UUID&force=false" \
-    | jq -r '.deployments[0].deployment_uuid // empty')
+api POST "deploy?uuid=$COOLIFY_APP_UUID&force=false" || exit 1
+deployment=$(jq -r '.deployments[0].deployment_uuid // empty' "$BODY")
 [ -n "$deployment" ] || { echo "Coolify no devolvió ningún despliegue" >&2; exit 1; }
 echo "Despliegue $deployment en cola"
 
-# Construye en el servidor: unos 6 minutos. Se espera hasta 30.
+# Construye en el servidor: unos 7 minutos. Se espera hasta 30. Un fallo pasajero se
+# tolera unas pocas veces seguidas; uno que no se arregla repitiendo, ninguna.
 status=""
+failures=0
 i=0
 while [ "$i" -lt 180 ]; do
     i=$((i + 1))
     sleep 10
-    info=$(api GET "deployments/$deployment") || continue
-    status=$(echo "$info" | jq -r '.status')
+    rc=0
+    api GET "deployments/$deployment" || rc=$?
+    if [ "$rc" -eq 2 ]; then
+        exit 1
+    elif [ "$rc" -ne 0 ]; then
+        failures=$((failures + 1))
+        [ "$failures" -lt 6 ] || { echo "Coolify falló 6 veces seguidas" >&2; exit 1; }
+        continue
+    fi
+    failures=0
+    status=$(jq -r '.status' "$BODY")
     case "$status" in
         finished) break ;;
         failed|cancelled*)
@@ -52,7 +82,7 @@ while [ "$i" -lt 180 ]; do
 done
 [ "$status" = "finished" ] || { echo "El despliegue no terminó en 30 minutos" >&2; exit 1; }
 
-deployed=$(echo "$info" | jq -r '.commit // empty')
+deployed=$(jq -r '.commit // empty' "$BODY")
 if [ -n "$deployed" ] && [ "$deployed" != "$EXPECTED_SHA" ]; then
     echo "Coolify desplegó $deployed y no $EXPECTED_SHA (main avanzó a la vez)" >&2
     exit 1

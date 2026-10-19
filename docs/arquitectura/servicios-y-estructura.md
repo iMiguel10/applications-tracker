@@ -671,13 +671,15 @@ La CI construye las tres imágenes, pasa `nginx -t` y `sh -n` a los scripts de c
 Un push a `main` que pasa los demás jobs se despliega solo (0023). El job `deploy` de `ci.yml` corre en un runner normal de GitHub y ejecuta `deploy/coolify-deploy.sh` contra la API de Coolify:
 
 1. Si `main` ya no apunta a su commit, termina sin desplegar: Coolify despliega siempre lo último de la rama, y así subiría un commit que esa CI no ha probado. Lo despliega la CI del commit nuevo.
-2. Pide el despliegue (`POST /api/v1/deploy?uuid=…`; con `GET`, como en versiones anteriores de Coolify, responde 405) y consulta su estado cada 10 s (`/api/v1/deployments/{uuid}`) hasta `finished`, con un máximo de 30 minutos. `failed` o `cancelled` hacen fallar el job.
+2. Pide el despliegue (`POST /api/v1/deploy?uuid=…`; con `GET`, como en versiones anteriores de Coolify, responde 405) y consulta su estado cada 10 s (`/api/v1/deployments/{uuid}`) hasta `finished`, con un máximo de 30 minutos. `failed` o `cancelled` hacen fallar el job, igual que un `4xx` de la API (un token sin permiso no se arregla repitiendo); un fallo de red o un `5xx` se tolera hasta 5 veces seguidas.
 3. Comprueba que el `commit` del despliegue es el suyo y que `/api/v1/health` responde `ok`.
 
 Configuración en GitHub:
-- Los secretos `COOLIFY_URL`, `COOLIFY_TOKEN` y `COOLIFY_APP_UUID`. El token es de Coolify, solo con permiso de despliegue y distinto del de cualquier otro uso.
+- Los secretos `COOLIFY_URL`, `COOLIFY_TOKEN` y `COOLIFY_APP_UUID`. El token es de Coolify, con los permisos `read` y `deploy` (nada más) y distinto del de cualquier otro uso. Con solo `deploy` lanza el despliegue pero no puede seguirlo: `GET /api/v1/deployments/{uuid}` responde 403.
 - La variable `PRODUCTION_URL`, que hace de interruptor: sin ella (en un fork u otra instalación), el job no se ejecuta.
 
 El *Auto Deploy* de Coolify va desactivado: si no, desplegaría también en cada push sin esperar a la CI.
+
+> **Trampa — un error de la API que se repite en silencio.** La primera versión del script reintentaba cualquier fallo al consultar el estado: con un token sin el permiso `read`, cada consulta daba 403 y el job esperó callado mientras Coolify ya había terminado. Un `4xx` termina ahora el job al momento, con su motivo.
 
 > **Trampa — Coolify despliega la rama, no un commit.** La API no recibe el commit: despliega lo último de `main` en el momento de construir. Con dos pushes seguidos, la CI del primero podría desplegar el segundo sin haberlo probado. El script lo comprueba antes (`git ls-remote`) y después (el `commit` del despliegue).
