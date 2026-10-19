@@ -268,10 +268,13 @@ async def test_eleventh_password_reset_from_the_same_ip_is_429(
 # SuperTokens atiende la misma API con el tenant en la ruta (/auth/<tenant>/…) y
 # con una barra final (normaliza la ruta). El límite tiene que valer también ahí,
 # o basta con cambiar la URL para saltárselo.
-SIGNIN_VARIANTS = ["/auth/public/signin", "/auth/signin/"]
+# Con ";…" al final (parámetros de ruta, RFC 3986): SuperTokens lo atiende como la
+# ruta sin ellos (cierre de F7, encontrado por el qa-verifier).
+SIGNIN_VARIANTS = ["/auth/public/signin", "/auth/signin/", "/auth/signin;x"]
 RESET_VARIANTS = [
     "/auth/public/user/password/reset/token",
     "/auth/user/password/reset/token/",
+    "/auth/user/password/reset/token;x",
 ]
 
 
@@ -313,6 +316,8 @@ async def test_password_reset_email_limit_also_covers_equivalent_paths(
         ("/auth/signin/", rate_limits.AUTH_RULES["/auth/signin"]),
         ("/auth/public/signin", rate_limits.AUTH_RULES["/auth/signin"]),
         ("/Auth//otro-tenant/SignIn/", rate_limits.AUTH_RULES["/auth/signin"]),
+        ("/auth/signin;x", rate_limits.AUTH_RULES["/auth/signin"]),
+        ("/auth/public/signin;a=b", rate_limits.AUTH_RULES["/auth/signin"]),
         (
             "/auth/public/user/email/verify/token",
             rate_limits.AUTH_RULES["/auth/user/email/verify/token"],
