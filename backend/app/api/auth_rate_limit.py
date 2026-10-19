@@ -68,13 +68,17 @@ AUTH_PREFIX = "auth"
 def rules_for(path: str) -> tuple[RateRule, ...] | None:
     """Las reglas de una ruta, reconociendo sus formas equivalentes.
 
-    SuperTokens atiende la misma API con una barra final (`/auth/signin/`) y con
-    el tenant en la ruta (`/auth/public/signin`). Si aquí solo se reconociera la
-    forma canónica, bastaría con cambiar la URL para saltarse el límite (límites
-    y abuso §2). La normalización es más amplia que la de SuperTokens (barras
-    repetidas, mayúsculas): limitar de más una ruta que él rechaza no cuesta nada.
+    SuperTokens atiende la misma API con una barra final (`/auth/signin/`), con
+    el tenant en la ruta (`/auth/public/signin`) y con parámetros de ruta
+    (`/auth/signin;x`, RFC 3986: su análisis de la URL los separa y los ignora).
+    Si aquí solo se reconociera la forma canónica, bastaría con cambiar la URL
+    para saltarse el límite (límites y abuso §2). La normalización es más amplia
+    que la de SuperTokens (barras repetidas, mayúsculas, `;` en cualquier
+    segmento): limitar de más una ruta que él rechaza no cuesta nada.
     """
-    segments = [s for s in path.lower().split("/") if s]
+    segments = [
+        segment for s in path.lower().split("/") if (segment := s.split(";", 1)[0])
+    ]
     if not segments or segments[0] != AUTH_PREFIX:
         return None
     rest = segments[1:]
