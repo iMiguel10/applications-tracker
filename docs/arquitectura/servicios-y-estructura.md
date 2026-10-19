@@ -671,7 +671,7 @@ La CI construye las tres imágenes, pasa `nginx -t` y `sh -n` a los scripts de c
 Un push a `main` que pasa los demás jobs se despliega solo (0023). El job `deploy` de `ci.yml` corre en un runner normal de GitHub y ejecuta `deploy/coolify-deploy.sh` contra la API de Coolify:
 
 1. Si `main` ya no apunta a su commit, termina sin desplegar: Coolify despliega siempre lo último de la rama, y así subiría un commit que esa CI no ha probado. Lo despliega la CI del commit nuevo.
-2. Pide el despliegue (`GET /api/v1/deploy?uuid=…`) y consulta su estado cada 10 s (`/api/v1/deployments/{uuid}`) hasta `finished`, con un máximo de 30 minutos. `failed` o `cancelled` hacen fallar el job.
+2. Pide el despliegue (`POST /api/v1/deploy?uuid=…`; con `GET`, como en versiones anteriores de Coolify, responde 405) y consulta su estado cada 10 s (`/api/v1/deployments/{uuid}`) hasta `finished`, con un máximo de 30 minutos. `failed` o `cancelled` hacen fallar el job.
 3. Comprueba que el `commit` del despliegue es el suyo y que `/api/v1/health` responde `ok`.
 
 Configuración en GitHub:

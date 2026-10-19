@@ -17,9 +17,11 @@ set -eu
 COOLIFY_URL=${COOLIFY_URL%/}
 PRODUCTION_URL=${PRODUCTION_URL%/}
 
+# api <método> <ruta>. Lanzar un despliegue es POST desde Coolify 4.4 (antes, GET:
+# con GET responde 405).
 api() {
-    curl -fsS --max-time 30 -H "Authorization: Bearer $COOLIFY_TOKEN" \
-        -H "Accept: application/json" "$COOLIFY_URL/api/v1/$1"
+    curl -fsS --max-time 30 -X "$1" -H "Authorization: Bearer $COOLIFY_TOKEN" \
+        -H "Accept: application/json" "$COOLIFY_URL/api/v1/$2"
 }
 
 head_sha=$(git ls-remote origin refs/heads/main | cut -f1)
@@ -28,7 +30,7 @@ if [ "$head_sha" != "$EXPECTED_SHA" ]; then
     exit 0
 fi
 
-deployment=$(api "deploy?uuid=$COOLIFY_APP_UUID&force=false" \
+deployment=$(api POST "deploy?uuid=$COOLIFY_APP_UUID&force=false" \
     | jq -r '.deployments[0].deployment_uuid // empty')
 [ -n "$deployment" ] || { echo "Coolify no devolvió ningún despliegue" >&2; exit 1; }
 echo "Despliegue $deployment en cola"
@@ -39,7 +41,7 @@ i=0
 while [ "$i" -lt 180 ]; do
     i=$((i + 1))
     sleep 10
-    info=$(api "deployments/$deployment") || continue
+    info=$(api GET "deployments/$deployment") || continue
     status=$(echo "$info" | jq -r '.status')
     case "$status" in
         finished) break ;;
