@@ -52,6 +52,15 @@ The first screen is the **Dashboard**, the summary of your job search. While you
 
 Every account is private: nobody else can see your applications, companies, interviews or reminders.
 
+## Where to find help
+
+This guide opens from the application itself, always in a new tab so you don't lose what you were doing:
+
+- **Help**, in your account menu (on narrow screens, inside the main menu), opens its home page. It is also at the top right of the access screens, next to the language switcher.
+- The **?** icon next to the title of a page or a card opens the guide page about it directly: the board, the calendar, tailoring your CV with AI…
+
+The guide opens in the interface language.
+
 :::info Interface language
 The interface is available in Spanish and English. The access screens (sign in, sign up and password recovery) have the **Español · English** switcher at the top right, which is remembered in that browser. Inside the application that language is kept until you choose one in [Preferences](preferencias.md), which applies on every device.
 :::

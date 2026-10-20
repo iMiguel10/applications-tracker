@@ -9,6 +9,7 @@ import { ErrorState } from "@/shared/components/common/ErrorState";
 import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -23,6 +24,7 @@ import { UsageCard } from "@/features/usage/components/UsageCard";
 import { AiSettingsCard } from "@/features/ai/components/AiSettingsCard";
 import { NotificationSettingsCard } from "@/features/notifications/components/NotificationSettingsCard";
 import { usePreferences } from "@/features/auth/hooks/queries/usePreferences";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function PreferencesPage() {
   const { t } = useTranslation();
@@ -33,7 +35,10 @@ export function PreferencesPage() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-2xl font-semibold">{t("preferences.title")}</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold">{t("preferences.title")}</h1>
+        <HelpLink page="preferences" />
+      </div>
 
       {/* Ajustes a la izquierda y acciones de cuenta a la derecha, como el resto de
           páginas: ocupan el ancho completo en vez de una columna estrecha. */}
@@ -60,6 +65,9 @@ export function PreferencesPage() {
             <Card className="ring-destructive/25">
               <CardHeader>
                 <CardTitle>{t("account.delete.title")}</CardTitle>
+                <CardAction>
+                  <HelpLink page="deleteAccount" />
+                </CardAction>
                 <CardDescription>
                   <Trans
                     i18nKey="account.delete.description"

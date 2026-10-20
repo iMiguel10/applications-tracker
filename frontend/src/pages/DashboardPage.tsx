@@ -15,6 +15,7 @@ import { UpcomingInterviewsWidget } from "@/features/dashboard/components/Upcomi
 import { WeeklyApplicationsChart } from "@/features/dashboard/components/WeeklyApplicationsChart";
 import { useDashboard } from "@/features/dashboard/hooks/queries/useDashboard";
 import type { Dashboard } from "@/features/dashboard/types/Dashboard";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 /** Sin nada que contar, seis tarjetas a cero no dicen nada: mejor invitar a empezar.
  * Las archivadas no cuentan en `status_counts`, por eso se miran también el resto de
@@ -35,7 +36,10 @@ export function DashboardPage() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-2xl font-semibold">{t("dashboard.title")}</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold">{t("dashboard.title")}</h1>
+        <HelpLink page="dashboard" />
+      </div>
 
       {isLoading && <DashboardSkeleton />}
       {isError && <ErrorState onRetry={() => refetch()} retrying={isFetching} />}

@@ -90,6 +90,9 @@ jobs:
         working-directory: manual
       - run: npm run check-i18n
         working-directory: manual
+      # Cada página que enlaza la ayuda de la aplicación (issue #6) existe en es y en.
+      - run: npm run check-help-links
+        working-directory: manual
       - run: npm run build
         working-directory: manual
       # Después del build: sidebars.ts importa la referencia que genera.

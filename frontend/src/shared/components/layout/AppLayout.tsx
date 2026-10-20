@@ -8,6 +8,7 @@ import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
+import { ManualLink } from "@/shared/components/help/ManualLink";
 import { NAV_ITEMS } from "@/shared/config/navigation";
 import { EmailVerificationBanner } from "@/features/auth/components/EmailVerificationBanner";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
@@ -142,7 +143,8 @@ export function AppLayout() {
   );
 }
 
-/** La cuenta: quién ha iniciado sesión, tema, preferencias y cerrar sesión. */
+/** La cuenta: quién ha iniciado sesión, tema, preferencias, la ayuda (el manual,
+ * en otra pestaña) y cerrar sesión. */
 function AccountMenu({
   email,
   onNavigate,
@@ -164,6 +166,7 @@ function AccountMenu({
         <Settings className="size-4" />
         {t("nav.preferences")}
       </NavLink>
+      <ManualLink className={navLinkClass({ isActive: false })} />
       <Button
         variant="ghost"
         className="w-full justify-start px-3 text-sm font-normal text-muted-foreground hover:text-foreground"

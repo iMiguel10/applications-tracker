@@ -9,6 +9,7 @@ import { formatDateTime } from "@/shared/lib/format";
 import { Button, buttonVariants } from "@/shared/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -30,6 +31,7 @@ import { AI_SETTINGS_PATH, providerList, providerName } from "../lib/providers";
 import { watchProposal } from "../lib/watchedProposals";
 import type { AiKeys, AiProposal, AiTask, ProposalLanguage } from "../types/Ai";
 import { AiConsentDialog } from "./AiConsentDialog";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 /** Igual que el backend (MIN_JOB_DESCRIPTION_LENGTH): más corta, no se pide. */
 export const MIN_JOB_DESCRIPTION_LENGTH = 200;
@@ -129,6 +131,9 @@ export function AiTailorCard({ application }: { application: ApplicationDetail }
           {t("ai.tailor.title")}
         </CardTitle>
         <CardDescription>{t("ai.tailor.description")}</CardDescription>
+        <CardAction>
+          <HelpLink page="aiCv" />
+        </CardAction>
       </CardHeader>
       <CardContent className="grid gap-4">
         {blocked === "noDescription" && (

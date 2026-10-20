@@ -185,7 +185,11 @@ describe("AiTailorCard", () => {
       renderCard({ remaining: 0 });
 
       expect(await screen.findByText(/no admite claves propias/)).toBeInTheDocument();
-      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      // El único enlace es el de la ayuda (issue #6), no uno para usar una clave.
+      const helpName = `${i18n.t("help.pages.aiCv")} ${i18n.t("help.newTab")}`;
+      expect(screen.getAllByRole("link").map((link) => link.getAttribute("aria-label"))).toEqual([
+        helpName,
+      ]);
     });
   });
 

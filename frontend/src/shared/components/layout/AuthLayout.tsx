@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { useForceLightTheme } from "@/app/providers/useForceLightTheme";
 import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
+import { ManualLink } from "@/shared/components/help/ManualLink";
 import { AuthShowcase } from "./AuthShowcase";
 
 interface AuthLayoutProps {
@@ -93,7 +94,11 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
       </div>
 
       <main className="relative flex flex-col justify-center overflow-y-auto px-6 py-12 sm:px-12 lg:px-16">
-        <LanguageSwitcher className="absolute top-4 right-4 sm:right-6" />
+        {/* La ayuda también aquí, para quien aún no ha entrado (issue #6). */}
+        <div className="absolute top-4 right-4 flex items-center gap-2 sm:right-6">
+          <ManualLink className="rounded-md px-2 py-1 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50" />
+          <LanguageSwitcher />
+        </div>
         <div className="mx-auto w-full max-w-sm">
           {/* Dentro del bloque del formulario: así queda alineado con él a cualquier ancho. */}
           <span className="mb-12 flex items-center gap-2.5 lg:hidden">
