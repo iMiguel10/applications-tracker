@@ -76,6 +76,30 @@ class RateLimitedError(AppException):
         )
 
 
+class LegalNotConfiguredError(AppException):
+    """409 al aceptar los textos legales de una instalación que no los tiene (sin
+    responsable configurado, issue #3)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "This installation has no legal texts to accept",
+            status_code=409,
+            code="legal_not_configured",
+        )
+
+
+class LegalVersionOutdatedError(AppException):
+    """409 al aceptar una versión de los textos legales que ya no es la vigente: el
+    cliente debe volver a pedirla a `GET /meta` y mostrar la nueva."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "That is not the current version of the legal texts",
+            status_code=409,
+            code="legal_version_outdated",
+        )
+
+
 class WrongCurrentPasswordError(AppException):
     """400 al cambiar la contraseña: la actual no es correcta. No cambia nada."""
 

@@ -1,6 +1,8 @@
 export interface Me {
   id: string;
   email: string | null;
+  /** Versión de los términos y la privacidad aceptada (issue #3); `null`, ninguna. */
+  legal_accepted_version: string | null;
 }
 
 export const LANGUAGES = ["es", "en"] as const;

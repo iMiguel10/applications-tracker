@@ -27,6 +27,29 @@
       "deleteAccount": "Ayuda sobre borrar la cuenta"
     }
   },
+  "legal": {
+    "nav": {
+      "label": "Información legal",
+      "notice": "Aviso legal",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "cookies": "Cookies"
+    },
+    "version": "Versión vigente: {{version}}",
+    "notConfigured": {
+      "title": "Esta instalación no tiene textos legales",
+      "body": "Quien la administra no ha configurado sus datos de responsable: es una instalación de uso personal. Si te han dado una cuenta en ella, pregúntale quién trata tus datos y cómo."
+    },
+    "consent": {
+      "label": "He leído y acepto los <terms>términos y condiciones</terms> y la <privacy>política de privacidad</privacy>.",
+      "required": "Tienes que aceptarlos para continuar."
+    },
+    "accept": {
+      "title": "Antes de seguir",
+      "description": "Para usar la aplicación en esta instalación, acepta sus términos y su política de privacidad (versión {{version}}). Ábrelos para leerlos: se abren en otra pestaña.",
+      "button": "Aceptar y continuar"
+    }
+  },
   "health": {
     "title": "Estado del sistema",
     "api": "API",
@@ -542,7 +565,9 @@
     "ai_keys_disabled": "Esta instalación no admite claves propias.",
     "ai_provider_quota": "Tu cuenta del proveedor no tiene saldo o ha llegado a su límite.",
     "ai_provider_unavailable": "No se pudo contactar con el proveedor de IA. Inténtalo más tarde.",
-    "ai_document_mismatch": "El contenido no corresponde al tipo de la propuesta."
+    "ai_document_mismatch": "El contenido no corresponde al tipo de la propuesta.",
+    "legal_version_outdated": "Los textos legales acaban de cambiar: léelos y acepta la versión nueva.",
+    "legal_not_configured": "Esta instalación no tiene textos legales que aceptar."
   },
   "documents": {
     "title": "Documentos",

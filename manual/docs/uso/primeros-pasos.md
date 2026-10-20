@@ -52,6 +52,10 @@ La primera pantalla es el **Dashboard**, el resumen de tu búsqueda. Mientras no
 
 Cada cuenta es privada: nadie más puede ver tus solicitudes, empresas, entrevistas ni recordatorios.
 
+## Términos y privacidad
+
+Si quien administra la instalación ha publicado sus textos legales, sus enlaces (**Aviso legal**, **Privacidad**, **Términos** y **Cookies**) están bajo el formulario de inicio de sesión y al pie de la aplicación. Al registrarte hay que aceptarlos con la casilla y, si tu cuenta la creó quien administra, al entrar por primera vez verás **Antes de seguir**: márcala y pulsa **Aceptar y continuar**. Si los textos cambian en algo importante, te lo volverá a pedir.
+
 ## Dónde está la ayuda
 
 Este manual se abre desde la propia aplicación, siempre en otra pestaña para que no pierdas lo que estabas haciendo:

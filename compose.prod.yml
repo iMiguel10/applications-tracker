@@ -26,6 +26,17 @@ x-backend-env: &backend-env
   FILES_ROOT: /data/files
   TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7
   SIGNUP_ENABLED: ${SIGNUP_ENABLED:-false}
+  # Páginas legales (issue #3): sin nombre y contacto, la instalación es de uso
+  # personal (sin enlaces ni aceptación).
+  LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-}
+  LEGAL_CONTACT_EMAIL: ${LEGAL_CONTACT_EMAIL:-}
+  LEGAL_ADDRESS: ${LEGAL_ADDRESS:-}
+  LEGAL_TAX_ID: ${LEGAL_TAX_ID:-}
+  LEGAL_SUPERVISORY_AUTHORITY: ${LEGAL_SUPERVISORY_AUTHORITY:-}
+  # La retención de las copias, para decirla en la política de privacidad: la
+  # misma que usa el servicio `backup`.
+  BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+  BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
   # Cuenta de demostración: solo la lee scripts/reset_demo.py.
   DEMO_PASSWORD: ${DEMO_PASSWORD:-}
   # Correo (RNF-34): sin SMTP_HOST no se envía nada.

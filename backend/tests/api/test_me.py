@@ -179,6 +179,7 @@ async def test_me_returns_own_id_and_email_from_identity_store(
     assert response.json() == {
         "id": str(user.id),
         "email": f"{user.supertokens_user_id}@example.com",
+        "legal_accepted_version": None,
     }
 
 

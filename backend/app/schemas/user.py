@@ -10,6 +10,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.domain.legal import LEGAL_VERSION_MAX_LENGTH
 from app.domain.notifications import (
     MAX_INTERVIEW_NOTICE_HOURS,
     MAX_REMINDER_NOTICE_HOURS,
@@ -68,6 +69,22 @@ class MeRead(BaseModel):
     email: str | None = Field(
         description="Email de la cuenta, leído de SuperTokens en cada petición.",
         examples=["ana@example.com"],
+    )
+    legal_accepted_version: str | None = Field(
+        default=None,
+        description="Versión de los términos y la política de privacidad que "
+        "aceptó la cuenta (`null`: ninguna). Si la instalación los tiene "
+        "(`legal.configured` en `GET /meta`) y no coincide con `legal.version`, "
+        "debe aceptar la vigente con `POST /me/legal-acceptance`.",
+        examples=["2026-10-20"],
+    )
+
+
+class LegalAcceptance(BaseModel):
+    version: str = Field(
+        max_length=LEGAL_VERSION_MAX_LENGTH,
+        description="La versión que se acepta: la de `legal.version` en `GET /meta`.",
+        examples=["2026-10-20"],
     )
 
 

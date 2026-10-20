@@ -11,6 +11,7 @@ import { metaService } from "@/features/meta/services/meta.service";
 import { aiService } from "@/features/ai/services/ai.service";
 import { notificationSettingsService } from "../services/notificationSettings.service";
 import { NotificationSettingsCard } from "./NotificationSettingsCard";
+import { makeMeta } from "@/test/meta";
 
 vi.mock("@/features/meta/services/meta.service", () => ({
   metaService: { get: vi.fn() },
@@ -55,11 +56,9 @@ function renderCard({
     providers: [],
     active_provider: null,
   });
-  vi.mocked(metaService.get).mockResolvedValue({
-    email_enabled: emailEnabled,
-    signup_enabled: true,
-    max_document_bytes: 5 * 1024 * 1024,
-  });
+  vi.mocked(metaService.get).mockResolvedValue(
+    makeMeta({ email_enabled: emailEnabled, signup_enabled: true }),
+  );
   vi.mocked(authService.isEmailVerified).mockResolvedValue(verified);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(authKeys.preferences(), preferences);

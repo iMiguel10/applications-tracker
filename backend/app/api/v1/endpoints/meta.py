@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.core.config import settings
 from app.schemas.meta import MetaRead
+from app.services.legal_service import legal_info
 
 router = APIRouter(
     prefix="/meta",
@@ -21,4 +22,5 @@ async def meta() -> MetaRead:
         email_enabled=settings.email_enabled,
         signup_enabled=settings.signup_enabled,
         max_document_bytes=settings.document_max_bytes,
+        legal=legal_info(),
     )

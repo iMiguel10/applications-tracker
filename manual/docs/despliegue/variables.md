@@ -36,6 +36,18 @@ Cambiar `POSTGRES_PASSWORD` o `SUPERTOKENS_DB_PASSWORD` **después del primer ar
 | `SIGNUP_ENABLED` | `false` | Con `false`, nadie puede crearse una cuenta: el inicio de sesión no lo ofrece y la página de registro explica que está cerrado. Las cuentas las creas tú ([Cuentas](cuentas.md)). Con `true`, cualquiera puede registrarse |
 | `DEMO_PASSWORD` | vacía | Contraseña de la [cuenta de demostración](cuentas.md#cuenta-de-demostración). Solo la lee el script `reset_demo`; sin ella, el script no hace nada |
 
+## Textos legales
+
+Si das cuentas a otras personas, pon al menos el nombre y el contacto: la aplicación publica entonces su aviso legal, su política de privacidad, sus términos y su política de cookies, y pide aceptarlos. Sin ellos, la instalación se trata como de uso personal. Ver [Tus obligaciones como responsable](obligaciones.md#informar-a-tus-usuarios).
+
+| Variable | Por defecto | Qué es |
+|---|---|---|
+| `LEGAL_OPERATOR_NAME` | vacía | Tu nombre o el de tu entidad: el responsable de los datos |
+| `LEGAL_CONTACT_EMAIL` | vacía | El email al que se escribe para dudas y para ejercer los derechos |
+| `LEGAL_ADDRESS` | vacía | Dirección postal, si quieres publicarla |
+| `LEGAL_TAX_ID` | vacía | Tu NIF, si quieres publicarlo |
+| `LEGAL_SUPERVISORY_AUTHORITY` | vacía (la AEPD) | La autoridad de control ante la que reclamar, si no es la española. Se escribe tal cual en la política: `la CNIL (www.cnil.fr)` |
+
 ## Claves de IA propias de los usuarios
 
 | Variable | Por defecto | Qué es |

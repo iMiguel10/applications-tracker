@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useForceLightTheme } from "@/app/providers/useForceLightTheme";
 import { LanguageSwitcher } from "@/shared/components/LanguageSwitcher";
 import { ManualLink } from "@/shared/components/help/ManualLink";
+import { LegalLinks } from "@/features/legal/components/LegalLinks";
 import { AuthShowcase } from "./AuthShowcase";
 
 interface AuthLayoutProps {
@@ -111,6 +112,7 @@ export function AuthLayout({ title, subtitle, children, footer }: AuthLayoutProp
           <p className="mt-2 text-muted-foreground">{subtitle}</p>
           <div className="mt-8">{children}</div>
           {footer && <div className="mt-8 border-t pt-6">{footer}</div>}
+          <LegalLinks className="mt-10" />
         </div>
       </main>
     </div>

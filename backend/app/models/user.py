@@ -18,6 +18,7 @@ from app.db.base import Base
 from app.db.constraints import enum_check, values_check
 from app.domain.ai import PERSONAL_PROVIDERS
 from app.domain.dashboard import STALE_AFTER_DAYS
+from app.domain.legal import LEGAL_VERSION_MAX_LENGTH
 from app.domain.notifications import (
     DEFAULT_INTERVIEW_NOTICE_HOURS,
     DEFAULT_REMINDER_NOTICE_HOURS,
@@ -58,6 +59,10 @@ class User(Base):
             "interview_notice_hours BETWEEN "
             f"{MIN_INTERVIEW_NOTICE_HOURS} AND {MAX_INTERVIEW_NOTICE_HOURS}",
             name="interview_notice_hours_range",
+        ),
+        CheckConstraint(
+            "(legal_version IS NULL) = (legal_accepted_at IS NULL)",
+            name="legal_acceptance_complete",
         ),
     )
 
@@ -103,6 +108,11 @@ class User(Base):
     # pondría a NULL también la columna del usuario; el service la vacía al borrar
     # la clave, en la misma transacción.
     ai_provider: Mapped[str | None] = mapped_column(String(30))
+
+    # Issue #3: qué versión de los términos y la política de privacidad aceptó y
+    # cuándo. NULL: ninguna todavía (o la instalación no los tiene).
+    legal_version: Mapped[str | None] = mapped_column(String(LEGAL_VERSION_MAX_LENGTH))
+    legal_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

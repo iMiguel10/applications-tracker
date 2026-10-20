@@ -7,6 +7,7 @@ import i18n from "@/shared/i18n/i18n";
 import { metaService } from "@/features/meta/services/meta.service";
 import { LoginPage } from "./LoginPage";
 import { RegisterPage } from "./RegisterPage";
+import { makeMeta } from "@/test/meta";
 
 // El selector de tema del AuthLayout, sin el ThemeProvider (matchMedia en jsdom).
 vi.mock("@/app/providers/useTheme", () => ({
@@ -22,11 +23,9 @@ vi.mock("@/features/meta/services/meta.service", () => ({
 }));
 
 function renderPage(page: "login" | "register", signupEnabled: boolean) {
-  vi.mocked(metaService.get).mockResolvedValue({
-    email_enabled: true,
-    signup_enabled: signupEnabled,
-    max_document_bytes: 5 * 1024 * 1024,
-  });
+  vi.mocked(metaService.get).mockResolvedValue(
+    makeMeta({ email_enabled: true, signup_enabled: signupEnabled }),
+  );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={queryClient}>

@@ -9,6 +9,8 @@ import { Button } from "@/shared/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/components/ui/popover";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { ManualLink } from "@/shared/components/help/ManualLink";
+import { LegalGate } from "@/features/legal/components/LegalGate";
+import { LegalLinks } from "@/features/legal/components/LegalLinks";
 import { NAV_ITEMS } from "@/shared/config/navigation";
 import { EmailVerificationBanner } from "@/features/auth/components/EmailVerificationBanner";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
@@ -137,8 +139,14 @@ export function AppLayout() {
       </header>
       {me?.email && <EmailVerificationBanner email={me.email} />}
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none">
-        <Outlet />
+        {/* Sin aceptar los textos legales vigentes, la pantalla para aceptarlos. */}
+        <LegalGate>
+          <Outlet />
+        </LegalGate>
       </main>
+      <footer className="mx-auto max-w-6xl px-4 pb-6">
+        <LegalLinks />
+      </footer>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import i18n from "@/shared/i18n/i18n";
 import { metaService } from "@/features/meta/services/meta.service";
 import { authService } from "../services/auth.service";
 import { EmailVerificationBanner } from "./EmailVerificationBanner";
+import { makeMeta } from "@/test/meta";
 
 vi.mock("@/features/meta/services/meta.service", () => ({
   metaService: { get: vi.fn() },
@@ -18,11 +19,9 @@ vi.mock("../services/auth.service", () => ({
 const EMAIL = "ana@example.com";
 
 function renderBanner({ emailEnabled, verified }: { emailEnabled: boolean; verified: boolean }) {
-  vi.mocked(metaService.get).mockResolvedValue({
-    email_enabled: emailEnabled,
-    signup_enabled: true,
-    max_document_bytes: 5 * 1024 * 1024,
-  });
+  vi.mocked(metaService.get).mockResolvedValue(
+    makeMeta({ email_enabled: emailEnabled, signup_enabled: true }),
+  );
   vi.mocked(authService.isEmailVerified).mockResolvedValue(verified);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(

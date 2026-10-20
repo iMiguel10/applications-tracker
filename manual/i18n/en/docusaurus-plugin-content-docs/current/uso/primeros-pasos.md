@@ -52,6 +52,10 @@ The first screen is the **Dashboard**, the summary of your job search. While you
 
 Every account is private: nobody else can see your applications, companies, interviews or reminders.
 
+## Terms and privacy
+
+If whoever runs the installation has published its legal texts, their links (**Legal notice**, **Privacy**, **Terms** and **Cookies**) are under the sign-in form and at the foot of the application. When you sign up you have to accept them with the box and, if your account was created by whoever runs the installation, the first time you sign in you will see **Before you go on**: tick it and click **Accept and continue**. If the texts change in anything important, you will be asked again.
+
 ## Where to find help
 
 This guide opens from the application itself, always in a new tab so you don't lose what you were doing:
