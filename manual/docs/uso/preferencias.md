@@ -34,7 +34,7 @@ En la tarjeta **Avisos por email** activas o desactivas cada aviso por separado.
 
 Nunca recibes dos emails por el mismo motivo. Cada email trae al pie un enlace para **darte de baja** de ese aviso sin iniciar sesión: abre una página que te pregunta si quieres dejar de recibirlo, y solo se aplica al pulsar **Darme de baja**. Tu programa de correo también puede mostrar su propio botón de baja, que hace lo mismo. Para volver a recibirlo, actívalo aquí.
 
-Los avisos solo llegan a un email **verificado**: mientras no lo esté, la tarjeta te lo recuerda. Si la instalación no envía emails, la tarjeta lo dice y los interruptores no se pueden cambiar.
+Los avisos solo llegan a un email **verificado**: mientras no lo esté, la tarjeta te lo recuerda. Si la instalación no envía emails, la tarjeta lo dice en lugar de los interruptores: no hay avisos que elegir hasta que quien la administra configure el correo.
 
 ## Ver el uso de tu cuenta
 

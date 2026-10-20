@@ -34,7 +34,7 @@ In the **Email notifications** card you turn each notification on or off separat
 
 You never get two emails for the same reason. Every email has a link at the bottom to **unsubscribe** from that notification without signing in: it opens a page that asks whether you want to stop receiving it, and it only applies when you click **Unsubscribe**. Your email program may also show its own unsubscribe button, which does the same. To receive it again, turn it back on here.
 
-Notifications only go to a **verified** email: until it is, the card reminds you. If the installation does not send email, the card says so and the switches cannot be changed.
+Notifications only go to a **verified** email: until it is, the card reminds you. If the installation does not send email, the card says so instead of showing the switches: there are no notifications to choose until whoever runs it sets up email.
 
 ## See your account usage
 
