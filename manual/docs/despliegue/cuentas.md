@@ -37,3 +37,24 @@ Sin SMTP, cada persona puede **cambiar** su contraseña desde **Preferencias** e
 Con `SIGNUP_ENABLED=true` (y volviendo a desplegar), cualquiera puede registrarse desde la pantalla de inicio de sesión. Piénsalo antes: cada cuenta usa disco y, si tienes IA de la plataforma, puede gastar sus usos gratuitos. Los [límites por cuenta](variables.md) acotan el daño, pero no lo evitan.
 
 El script `create_user` sigue sirviendo con el registro abierto.
+
+## Cuenta de demostración
+
+Para que otras personas prueben la aplicación sin que les des una cuenta, puedes mantener una cuenta pública (`demo@example.com`) con una contraseña que todos conocen. Como cualquiera puede ensuciarla, **se vuelve a crear de cero cada día**.
+
+1. Añade la variable `DEMO_PASSWORD` (la contraseña que quieras publicar) y vuelve a desplegar.
+2. Crea la cuenta por primera vez, en la terminal del servicio `api`:
+
+    ```bash
+    python -m app.scripts.reset_demo
+    ```
+
+3. Programa el mismo comando cada día. En Coolify: en el recurso, **Scheduled Tasks** → añade una tarea con el comando `python -m app.scripts.reset_demo`, el contenedor `api` y la frecuencia `0 4 * * *`. Sin Coolify, una entrada de `cron` en el servidor: `0 4 * * * docker compose -f compose.prod.yml exec -T api python -m app.scripts.reset_demo`.
+
+Cada ejecución **borra la cuenta entera** (solicitudes, documentos, perfil, claves de IA, sesiones abiertas) y la crea de nuevo con el email ya verificado, esa contraseña y estos límites: 15 solicitudes, 10 empresas, 10 recordatorios, 3 documentos, 2 MB de almacenamiento y **ninguna** propuesta de IA. Los avisos por email quedan apagados. Quien tenga la sesión abierta en ese momento la pierde. Con `--email` y `--language` puedes cambiar la dirección y el idioma.
+
+**Qué debe verse:** el script imprime `Cuenta de demostración … lista`, puedes entrar con `demo@example.com` y la contraseña, y **Preferencias** muestra el uso de la cuenta con esos límites.
+
+:::caution La contraseña es pública
+No pongas datos reales en esa cuenta. Si alguien cambia su contraseña, queda así hasta el siguiente reseteo. El servidor de la hora de Coolify puede estar en UTC: ajusta el cron si te importa la hora local.
+:::

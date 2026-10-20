@@ -34,6 +34,7 @@ Cambiar `POSTGRES_PASSWORD` o `SUPERTOKENS_DB_PASSWORD` **después del primer ar
 | Variable | Por defecto | Qué es |
 |---|---|---|
 | `SIGNUP_ENABLED` | `false` | Con `false`, nadie puede crearse una cuenta: el inicio de sesión no lo ofrece y la página de registro explica que está cerrado. Las cuentas las creas tú ([Cuentas](cuentas.md)). Con `true`, cualquiera puede registrarse |
+| `DEMO_PASSWORD` | vacía | Contraseña de la [cuenta de demostración](cuentas.md#cuenta-de-demostración). Solo la lee el script `reset_demo`; sin ella, el script no hace nada |
 
 ## Claves de IA propias de los usuarios
 
