@@ -6,8 +6,15 @@ from supertokens_python.asyncio import (
 from supertokens_python.recipe.emailpassword.asyncio import (
     create_reset_password_link,
     sign_up,
+    update_email_or_password,
+    verify_credentials,
 )
-from supertokens_python.recipe.emailpassword.interfaces import SignUpOkResult
+from supertokens_python.recipe.emailpassword.interfaces import (
+    PasswordPolicyViolationError,
+    SignInOkResult,
+    SignUpOkResult,
+    UpdateEmailOrPasswordOkResult,
+)
 from supertokens_python.recipe.emailverification.asyncio import (
     create_email_verification_link,
     create_email_verification_token,
@@ -17,6 +24,10 @@ from supertokens_python.recipe.emailverification.asyncio import (
 from supertokens_python.recipe.emailverification.interfaces import (
     CreateEmailVerificationLinkOkResult,
     CreateEmailVerificationTokenOkResult,
+)
+from supertokens_python.recipe.session.asyncio import (
+    get_all_session_handles_for_user,
+    revoke_multiple_sessions,
 )
 from supertokens_python.types import RecipeUserId
 from supertokens_python.types.base import AccountInfoInput
@@ -82,6 +93,45 @@ class IdentityRepository:
         if isinstance(result, CreateEmailVerificationLinkOkResult):
             return result.link
         return None
+
+    async def verify_password(
+        self, supertokens_user_id: str, email: str, password: str
+    ) -> bool:
+        """Si `password` es la contraseña de esa cuenta. Pregunta al core sin crear
+        sesión; se exige además que la identidad sea la misma, no otra con el
+        mismo email."""
+        result = await verify_credentials("public", email, password)
+        return isinstance(result, SignInOkResult) and result.user.id == (
+            supertokens_user_id
+        )
+
+    async def update_password(self, supertokens_user_id: str, password: str) -> bool:
+        """Cambia la contraseña aplicando la política del backend (invariante 7).
+        False si no la cumple; no cambia nada."""
+        result = await update_email_or_password(
+            RecipeUserId(supertokens_user_id),
+            password=password,
+            apply_password_policy=True,
+            tenant_id_for_password_policy="public",
+        )
+        if isinstance(result, UpdateEmailOrPasswordOkResult):
+            return True
+        if isinstance(result, PasswordPolicyViolationError):
+            return False
+        # La cuenta desapareció entre la comprobación y el cambio (un borrado de
+        # cuenta simultáneo). El resto de resultados son de cambiar el email.
+        raise RuntimeError(f"No se pudo cambiar la contraseña: {type(result).__name__}")
+
+    async def revoke_other_sessions(
+        self, supertokens_user_id: str, keep_session_handle: str
+    ) -> None:
+        """Cierra todas las sesiones de la cuenta salvo `keep_session_handle`: sus
+        refresh tokens dejan de servir. Un access token ya emitido sigue valiendo
+        hasta caducar (5 min, decisión 0002)."""
+        handles = await get_all_session_handles_for_user(supertokens_user_id)
+        others = [handle for handle in handles if handle != keep_session_handle]
+        if others:
+            await revoke_multiple_sessions(others)
 
     async def is_email_verified(self, supertokens_user_id: str) -> bool:
         """Consulta al core, no al access token (autenticación §8)."""

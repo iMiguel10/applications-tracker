@@ -2,6 +2,8 @@
 `RecordingEmailSender`. La parte que habla con el core real está en
 tests/api/test_password_reset.py."""
 
+from datetime import UTC, datetime
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -211,3 +213,49 @@ async def test_already_verified_sends_nothing(
     )
 
     assert sender.sent == []
+
+
+@pytest.mark.asyncio
+async def test_password_changed_notice_in_the_account_zone_and_language(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    # Issue #2: el aviso de contraseña cambiada, con la hora en la zona y el idioma
+    # de la cuenta y un enlace a la página para pedir la recuperación, sin token:
+    # llega sin haberlo pedido.
+    row = await UserRepository(db_session).get_by_id(user.id)
+    assert row is not None
+    row.language = "es"
+    row.timezone = "Europe/Madrid"
+    await db_session.flush()
+    sender = RecordingEmailSender()
+    identities = FakeIdentities()
+    service = AuthEmailService(db_session, email_sender=sender, identities=identities)
+
+    await service.send_password_changed(
+        supertokens_user_id=user.supertokens_user_id,
+        changed_at=datetime(2026, 10, 20, 8, 15, tzinfo=UTC),
+    )
+
+    [email] = sender.sent
+    assert email.to == EMAIL
+    assert email.subject == "Tu contraseña de Applications Tracker ha cambiado"
+    assert "martes, 20 de octubre de 2026, 10:15" in email.text
+    assert "/forgot-password" in email.text
+    assert "token=" not in email.text
+    assert identities.links_created == 0
+
+
+@pytest.mark.asyncio
+async def test_password_changed_notice_without_smtp_sends_nothing(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+
+    sender = DisabledEmailSender()
+    service = AuthEmailService(
+        db_session, email_sender=sender, identities=FakeIdentities()
+    )
+
+    await service.send_password_changed(
+        supertokens_user_id=user.supertokens_user_id,
+        changed_at=datetime.now(UTC),
+    )

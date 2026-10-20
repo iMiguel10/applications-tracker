@@ -1,9 +1,12 @@
 import logging
 from collections.abc import Awaitable, Callable, Mapping
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.domain.dates import format_local_datetime
 from app.domain.user import DEFAULT_LANGUAGE, Language
 from app.infra.email import (
     EmailDeliveryUnknownError,
@@ -78,6 +81,32 @@ class AuthEmailService:
             language_hint=language_hint,
             link_for=link_for,
             context={"expires_in_minutes": PASSWORD_RESET_LINK_MINUTES},
+        )
+
+    async def send_password_changed(
+        self, *, supertokens_user_id: str, changed_at: datetime
+    ) -> None:
+        """El aviso de que la contraseña se cambió desde la aplicación (issue #2).
+
+        No lleva un enlace de recuperación con token, sino a la página para pedirlo:
+        es un aviso que llega sin haberlo pedido, y quien lo necesite (porque no fue
+        él) lo pide desde ahí y le llega a su correo. La hora va en la zona y el
+        idioma de la cuenta."""
+        user = await self.users.get_by_supertokens_id(supertokens_user_id)
+        timezone = user.timezone if user is not None else None
+        language = await self._language_for(supertokens_user_id, None)
+
+        async def link_for(email: str) -> str | None:
+            return f"{settings.website_domain}/forgot-password"
+
+        await self._send_link_email(
+            "password_changed",
+            supertokens_user_id=supertokens_user_id,
+            language_hint=language.value,
+            link_for=link_for,
+            context={
+                "changed_at": format_local_datetime(changed_at, timezone, language)
+            },
         )
 
     async def send_verification(

@@ -52,8 +52,12 @@ The **Email** card shows your account address and whether it is **Verified** or 
 
 ## Change your password
 
-In the **Password** card, click **Send link to change it**. You receive at your account email the same link as to [recover your password](primeros-pasos.md#if-you-forget-your-password): open it, choose the new password and click **Save password**.
+In the **Password** card, type your **Current password**, the **New password**, repeat it in **Repeat the new password**, and click **Change password**. The new one must be at least 8 characters long and include letters and numbers; if it isn't, the form says so in the field.
 
-The current password is not asked for: changing it requires access to your email, so someone with one of your sessions open cannot change it. Saving it **signs you out of every session**, including the one you had open, and you sign in again with the new one.
+Changing it **signs you out of your other sessions** (other browsers or devices), and the one in this browser stays open. The current password is asked for so that nobody who finds your session open can change it. If you get it wrong several times in a row, you'll have to wait a few minutes before trying again.
 
-If the installation does not send email, the card says so instead of showing the button.
+If the installation sends email:
+
+- You'll receive a notice that your password has changed. If it wasn't you, the email itself takes you to ask for a link to recover it.
+- If you've forgotten the current one, **Send link** is below the form: you'll receive the same link as to [recover your password](primeros-pasos.md#if-you-forget-your-password). Saving the new one with that link signs you out of **every** session, this one included.
+

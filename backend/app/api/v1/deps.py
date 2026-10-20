@@ -15,6 +15,7 @@ from app.domain.rate_limits import (
     AI_PER_USER_MINUTE,
     API_PER_USER,
     GENERATE_PER_USER,
+    PASSWORD_CHANGE_PER_USER,
     UNSUBSCRIBE_PER_IP,
     UPLOAD_PER_USER,
     RateRule,
@@ -37,6 +38,7 @@ from app.services.dashboard_service import DashboardService
 from app.services.document_service import DocumentService
 from app.services.interview_service import InterviewService
 from app.services.limit_service import LimitService
+from app.services.password_service import PasswordService
 from app.services.profile_entry_service import ProfileEntryService
 from app.services.profile_service import ProfileService
 from app.services.profile_skill_service import ProfileSkillService
@@ -273,6 +275,28 @@ async def _enforce_user_rule(
     )
     if not result.allowed:
         raise RateLimitedError(result.retry_after)
+
+
+async def get_session_handle(
+    session: SessionContainer = Depends(_session_dependency),
+) -> str:
+    """El identificador de la sesión de la petición (cambiar la contraseña cierra
+    las demás). Misma instancia de `verify_session()` que get_current_user, así
+    que la sesión se valida una sola vez."""
+    return session.get_handle()
+
+
+async def enforce_password_change_rate_limit(
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Límite de cambios de contraseña por usuario (issue #2): 5 cada 15 minutos.
+    Cuenta todos los intentos, para que no se pueda adivinar la actual."""
+    await _enforce_user_rule(request, PASSWORD_CHANGE_PER_USER, current_user)
+
+
+def get_password_service(request: Request) -> PasswordService:
+    return PasswordService(get_job_queue(request), email_enabled=settings.email_enabled)
 
 
 async def enforce_upload_rate_limit(

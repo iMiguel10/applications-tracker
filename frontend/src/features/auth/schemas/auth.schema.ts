@@ -28,7 +28,21 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+// Cambiar la contraseña con la actual (issue #2). Solo que estén y que la nueva
+// coincida: la política la aplica el backend (invariante 7).
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "auth.validation.passwordRequired"),
+    newPassword: z.string().min(1, "auth.validation.passwordRequired"),
+    confirmPassword: z.string().min(1, "auth.validation.passwordRequired"),
+  })
+  .refine((values) => values.newPassword === values.confirmPassword, {
+    message: "auth.validation.passwordsDoNotMatch",
+    path: ["confirmPassword"],
+  });
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

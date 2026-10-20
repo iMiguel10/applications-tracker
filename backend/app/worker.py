@@ -19,7 +19,11 @@ from app.infra.pdf.weasyprint_renderer import WeasyPrintRenderer
 from app.infra.queue import SaqJobQueue
 from app.infra.storage import LocalFileStorage
 from app.jobs.ai import ai_cron_jobs, run_ai_proposal
-from app.jobs.auth_emails import send_password_reset_email, send_verification_email
+from app.jobs.auth_emails import (
+    send_password_changed_email,
+    send_password_reset_email,
+    send_verification_email,
+)
 from app.jobs.context import WorkerContext
 from app.jobs.documents import document_cron_jobs, generate_document
 from app.jobs.files import file_cron_jobs
@@ -50,6 +54,7 @@ settings = {
     "queue": queue,
     "functions": [
         send_password_reset_email,
+        send_password_changed_email,
         send_verification_email,
         send_notification,
         generate_document,

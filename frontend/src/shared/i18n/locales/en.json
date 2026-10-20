@@ -273,10 +273,17 @@
     },
     "password": {
       "title": "Password",
-      "description": "We will send {{email}} a link to choose a new password. Saving it signs you out of every session, this one included.",
-      "send": "Send link to change it",
-      "sent": "Link sent to {{email}}. It expires in 1 hour; if you don’t see it, check your spam folder.",
-      "unavailable": "This installation doesn’t send emails, so the password can’t be changed from here. Ask whoever runs it for help."
+      "description": "To change it, type your current password and the new one. Saving it signs you out of your other sessions; this one stays open.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Repeat the new password",
+      "submit": "Change password",
+      "changed": "Password changed. We’ve signed you out of your other sessions.",
+      "wrongCurrent": "The current password is wrong",
+      "forgotten": "Forgot your current password?",
+      "forgottenHint": "We’ll send {{email}} a link to choose another one. Saving it signs you out of every session, this one included.",
+      "send": "Send link",
+      "sent": "Link sent to {{email}}. It expires in 1 hour; if you don’t see it, check your spam folder."
     },
     "email": {
       "title": "Email",
@@ -466,6 +473,8 @@
     "reminders_limit_reached": "You have reached your limit of {{limit, number}} reminders",
     "reminder_not_pending": "This reminder is no longer pending",
     "rate_limited": "Too many attempts. Try again {{wait}}.",
+    "wrong_current_password": "The current password is wrong.",
+    "password_policy": "The password must be at least 8 characters long and include letters and numbers.",
     "invalid_unsubscribe_token": "This unsubscribe link is not valid. Copy the full link from the email, or change your notifications in Preferences.",
     "email_not_verified": "Verify your email to use this feature. The link is in your inbox, or you can request another one in Preferences.",
     "file_too_large": "The PDF is over the maximum size of {{max}}.",

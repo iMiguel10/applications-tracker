@@ -28,8 +28,8 @@ The link expires in **60 minutes**. If it expires, they can ask for another one 
 
 **What you should see:** the script finishes without an error and, opening the link in the browser, the page to choose the password appears. The script does nothing if an account with that email already exists.
 
-:::note Without email, the password can't be changed from the application
-Without SMTP, an account can't change or recover its password on its own (the application doesn't offer the link). If you want it to be able to, set up [email](correo.md).
+:::note Without email, a forgotten password can't be recovered
+Without SMTP, each person can **change** their password in **Preferences** by typing the current one, but can't **recover** it if they forget it: there's no link to send. In that case, delete their account and create it again with the script, or set up [email](correo.md).
 :::
 
 ## Open sign-up

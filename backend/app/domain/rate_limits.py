@@ -50,6 +50,10 @@ GENERATE_PER_USER = RateRule("generate", "30/hour", RateKey.USER)
 # acota la plataforma; esto frena ráfagas y a quien entrara en una cuenta ajena.
 AI_PER_USER_MINUTE = RateRule("ai_minute", "5/minute", RateKey.USER)
 AI_PER_USER_DAY = RateRule("ai_day", "50/day", RateKey.USER)
+# Cambiar la contraseña con la actual (issue #2): es una vía para adivinarla desde
+# una sesión abierta (un ordenador ajeno, una sesión robada). Cuenta todos los
+# intentos, también los correctos: nadie cambia su contraseña cinco veces seguidas.
+PASSWORD_CHANGE_PER_USER = RateRule("password_change", "5/15minutes", RateKey.USER)
 
 # Rutas /auth/* de SuperTokens (POST) y sus reglas. Las sirve el middleware de
 # SuperTokens, no nuestros endpoints: las limita api/auth_rate_limit.py.
