@@ -32,6 +32,22 @@ El enlace caduca en **60 minutos**. Si caduca, puede pedir otro con **¿Olvidast
 Sin SMTP, cada persona puede **cambiar** su contraseña desde **Preferencias** escribiendo la actual, pero no **recuperarla** si la olvida: no hay enlace que enviar. Entonces hay que borrar su cuenta y crearla de nuevo con el script, o configurar el [correo](correo.md).
 :::
 
+## Cambiar el email de una cuenta
+
+La aplicación no deja a cada persona cambiar su email. Si te lo pide (o hay que corregirlo), cámbialo tú, en la terminal del servicio `api`:
+
+```bash
+python -m app.scripts.change_email ana@example.com ana@nuevo.es
+```
+
+Antes de cambiar nada, el script muestra los dos emails y pide que escribas `s` para seguir (`--yes` lo salta, si lo lanzas sin terminal). El email nuevo queda **verificado**: lo das por bueno tú, como al crear la cuenta. La contraseña, las sesiones abiertas y los datos no cambian; desde ese momento entra con el nuevo.
+
+:::caution Comprueba que lo pide la titular
+Si el email nuevo no es suyo (una errata, o alguien que se hace pasar por ella), quien lo controle podría pedir una contraseña nueva con **¿Olvidaste tu contraseña?** y quedarse con la cuenta. Pide que la petición llegue desde el email actual. Si la instalación envía emails, el script **avisa a la dirección antigua** («El email de tu cuenta de Applications Tracker ha cambiado», con el nuevo enmascarado), para que la titular se entere si no fue ella; sin correo, díselo tú.
+:::
+
+**Qué debe verse:** el script imprime `Email cambiado: … → …, ya verificado.` y si se avisó a la dirección antigua, y la persona entra con el email nuevo; con el antiguo, ya no. Termina con un error y no cambia nada si no hay ninguna cuenta con el actual, si otra cuenta ya usa el nuevo o si el nuevo no es un email.
+
 ## Exportar los datos de una cuenta
 
 Cada persona puede descargar todos sus datos desde **Preferencias** (un `.zip` con un JSON por tipo de dato y sus PDF). Si te los pide por otra vía, por ejemplo porque ya no puede entrar, genera el mismo `.zip` con el script. Como responsable de los datos, tienes un mes para responder a esa petición (RGPD, arts. 12, 15 y 20).

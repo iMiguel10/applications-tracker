@@ -32,6 +32,22 @@ The link expires in **60 minutes**. If it expires, they can ask for another one 
 Without SMTP, each person can **change** their password in **Preferences** by typing the current one, but can't **recover** it if they forget it: there's no link to send. In that case, delete their account and create it again with the script, or set up [email](correo.md).
 :::
 
+## Change an account's email
+
+The application doesn't let each person change their email. If they ask you (or it needs correcting), change it yourself, in the `api` service terminal:
+
+```bash
+python -m app.scripts.change_email ana@example.com ana@new.example
+```
+
+Before changing anything, the script shows both emails and asks you to type `s` to go on (`--yes` skips it, if you run it without a terminal). The new email is **verified**: you vouch for it, as when creating the account. The password, open sessions and data don't change; from then on they sign in with the new one.
+
+:::caution Check that the account holder is asking
+If the new email isn't theirs (a typo, or someone impersonating them), whoever controls it could ask for a new password with **Forgot your password?** and take over the account. Ask for the request to come from the current email. If the installation sends email, the script **notifies the old address** ("Your Applications Tracker account email has changed", with the new one masked), so the holder finds out if it wasn't them; without email, tell them yourself.
+:::
+
+**What you should see:** the script prints `Email cambiado: … → …, ya verificado.` and whether the old address was notified, and the person signs in with the new email; with the old one, no longer. It ends with an error and changes nothing if there is no account with the current one, if another account already uses the new one or if the new one isn't an email.
+
 ## Export an account's data
 
 Each person can download all their data from **Preferences** (a `.zip` with one JSON per kind of data and their PDFs). If they ask you for it some other way, for example because they can no longer sign in, generate the same `.zip` with the script. As the data controller, you have one month to answer that request (GDPR, arts. 12, 15 and 20).

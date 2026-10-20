@@ -46,5 +46,6 @@ Con solo las [variables obligatorias](variables.md) la instalación arranca y se
 3. Crea la [primera cuenta](cuentas.md).
 4. Comprueba que las [copias de seguridad](copias-de-seguridad.md) se hacen y guarda aparte los secretos.
 5. Opcional: configura el [correo](correo.md), la [IA de la plataforma](ia-de-la-plataforma.md) y el [despliegue continuo](despliegue-continuo.md).
+6. Si das cuentas a otras personas, repasa [tus obligaciones como responsable](obligaciones.md) de sus datos.
 
 Para [actualizar a una versión nueva](actualizar.md) no hay que ejecutar nada a mano.

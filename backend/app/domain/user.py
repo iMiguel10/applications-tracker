@@ -71,3 +71,12 @@ def email_language(account_language: str | None) -> Language:
     el de la cuenta, o el de por defecto si sigue al navegador, porque no hay
     navegador al que preguntar."""
     return Language(account_language) if account_language else DEFAULT_LANGUAGE
+
+
+def mask_email(email: str) -> str:
+    """El email con la parte local tapada salvo su primera letra (`a***@nuevo.es`),
+    para nombrarlo en un aviso que podría leer alguien que ya no es la titular."""
+    local, at, domain = email.rpartition("@")
+    if not at or not local:
+        return "***"
+    return f"{local[0]}***@{domain}"

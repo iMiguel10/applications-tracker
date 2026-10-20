@@ -61,6 +61,48 @@ SFTP or SMB passwords go **obscured** with `rclone obscure <password>` (it doesn
 - If sending fails, the backup fails (even though the local one is there) and the service goes *unhealthy*.
 - The store's keys go in an environment variable: treat it as a secret.
 
+### Encrypt the backups stored outside
+
+The backups hold **all your users' data** in the clear. If they leave the server for a store you don't fully control (an S3 bucket, a shared NAS), **encrypt them**: as the [controller](obligaciones.md), it is what is expected of you, and if someone gets into that store they won't be able to read them. rclone encrypts with a `crypt` destination that wraps the usual one: it encrypts the content and the file names before sending them.
+
+1. **Generate two long random passwords** (the second is the *salt*) and keep them in your password manager: **without them, the backups stored outside can't be recovered**.
+2. **Obscure them** for the variable, with the `backup` service image (it ships rclone):
+
+    ```bash
+    docker exec <backup-container> rclone obscure '<password>'
+    docker exec <backup-container> rclone obscure '<salt>'
+    ```
+
+3. **Wrap the destination** in `BACKUP_RCLONE_REMOTE`: the previous one goes in single quotes in `remote`, and `password` and `password2` take the two obscured values:
+
+    ```text
+    # S3 or compatible, encrypted
+    BACKUP_RCLONE_REMOTE=:crypt,remote=':s3,provider=Cloudflare,access_key_id=<id>,secret_access_key=<secret>,endpoint=https://<account>.r2.cloudflarestorage.com:bucket/applications-tracker',password=<obscured password>,password2=<obscured salt>:
+
+    # SFTP, encrypted
+    BACKUP_RCLONE_REMOTE=:crypt,remote=':sftp,host=nas.local,user=backup,pass=<obscured password>:/volume1/backups/applications-tracker',password=<obscured password>,password2=<obscured salt>:
+    ```
+
+4. **Redeploy** and run a backup (`docker exec <backup-container> backup`).
+
+**What you should see:** in the store, each backup's folder and its files have unreadable names (`le237ndr70jg…`) and their content can't be opened; the local copy on the server stays in the clear. How to bring it back is in [Restore](#restore).
+
+`rclone obscure` doesn't encrypt (anyone with rclone can undo it): what protects the backups is that the variable, and the passwords, only live on the server and in your password manager.
+
+#### Make sure you can recover them without the server
+
+The backups stored outside are for when you lose the server, and the variable goes with it: Coolify keeps it in its own database, on that same server. If the passwords only lived there, **the encrypted backups can't be recovered**; rclone has no back door.
+
+- **Keep in your password manager** the two passwords in the clear and the whole value of `BACKUP_RCLONE_REMOTE` (it also holds the store's keys). If you only have the obscured ones, `docker exec <backup-container> rclone reveal '<obscured value>'` returns each one in the clear while you still have the server.
+- **Test it once from another machine**, with rclone and only what is in the password manager: `rclone copy "<BACKUP_RCLONE_REMOTE value>/<backup>" ./test` and, inside the folder, `sha256sum -c SHA256SUMS`. If everything says `OK`, you don't depend on the server to recover them.
+
+#### The backups on the server are in the clear
+
+Only what leaves with `BACKUP_RCLONE_REMOTE` is encrypted. The backups in `/var/backups/applications-tracker` are **in the clear on purpose**: they are on the same disk as the live databases, which aren't encrypted either, so whoever can read that folder can already read the data; and encrypting them would make restoring, which is what they are for, slower and more delicate.
+
+- **If the server is somewhere others can physically reach** (at home, in an office), what protects the data and the backups at once is **encrypting the whole disk** (LUKS on Linux), usually when installing the system.
+- **Don't move the backups by hand as they are** to a NAS or an external disk: they would leave in the clear. Set that destination as `BACKUP_RCLONE_REMOTE` with `crypt` and every new backup leaves encrypted on its own.
+
 ## Secrets to keep elsewhere
 
 Backups deliberately **don't include** these values. Keep them in a password manager, **outside the server and the backups**:
@@ -71,6 +113,7 @@ Backups deliberately **don't include** these values. Keep them in a password man
 | `APP_SECRET` | The unsubscribe links in emails already sent stop working |
 | `POSTGRES_PASSWORD`, `SUPERTOKENS_DB_PASSWORD`, `SUPERTOKENS_API_KEY` | You can't rebuild the installation with the same databases |
 | `BACKUP_RCLONE_REMOTE` (its keys) | You can't recover the backups stored outside |
+| The two encryption (`crypt`) passwords, in the clear | The encrypted backups stored outside **can't be decrypted**: by nobody, you included |
 
 ## Restore
 
@@ -80,7 +123,13 @@ Restoring **replaces** the two databases and the files currently in place with t
 
 Restoring requires that **nobody is writing**: `api`, `worker` and `supertokens` must be stopped. If any connection to the databases remains, `restore` refuses to start and touches nothing. It doesn't touch anything either if the backup is damaged (the `SHA256SUMS` don't match).
 
-1. **Choose the backup.** Look at the ones in the server folder (`ls /var/backups/applications-tracker`). A backup brought from outside (NAS, S3) is first placed in that folder, with its dated folder.
+1. **Choose the backup.** Look at the ones in the server folder (`ls /var/backups/applications-tracker`). A backup brought from outside (NAS, S3) is first placed in that folder, with its dated folder. If it is outside (encrypted too), bring it back with the `backup` service itself, which decrypts it with `BACKUP_RCLONE_REMOTE`:
+
+    ```bash
+    docker exec <backup-container> sh -c 'rclone copy "$BACKUP_RCLONE_REMOTE/2026-10-19_030000" /backups/2026-10-19_030000'
+    ```
+
+    `restore` then checks the `SHA256SUMS`: if decrypting or downloading had gone wrong, it touches nothing.
 
 2. **Stop `api`, `worker` and `supertokens`.** With Coolify, over SSH (container names, with `docker ps`):
 

@@ -2,6 +2,7 @@ import secrets
 import uuid
 from dataclasses import dataclass
 
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.user import Language
@@ -22,6 +23,17 @@ class CreatedAccount:
 
 class AccountExistsError(Exception):
     """Ya hay una cuenta con ese email."""
+
+
+class AccountNotFoundError(Exception):
+    """No hay ninguna cuenta con ese email."""
+
+
+class InvalidEmailError(Exception):
+    """El email nuevo no tiene forma de email."""
+
+
+_EMAIL = TypeAdapter(EmailStr)
 
 
 class AccountProvisioningService:
@@ -70,3 +82,30 @@ class AccountProvisioningService:
             )
         )
         return CreatedAccount(user_id=user.id, email_sent=sent, link=link)
+
+    async def change_email(self, current_email: str, new_email: str) -> bool:
+        """Cambia el email de una cuenta desde la administración (`scripts/
+        change_email.py`, derecho de rectificación): la aplicación no deja hacerlo a
+        la persona. El nuevo queda verificado, como al crear la cuenta: lo da por
+        bueno quien administra. La contraseña y las sesiones no cambian.
+
+        Con correo, avisa a la dirección antigua: si el nuevo no es de la titular
+        (una errata, alguien que se hace pasar por ella), se entera al momento.
+        Devuelve si ese aviso salió."""
+        try:
+            _EMAIL.validate_python(new_email)
+        except ValidationError:
+            raise InvalidEmailError(new_email) from None
+        supertokens_id = await self.identities.find_id_by_email(current_email)
+        if supertokens_id is None:
+            raise AccountNotFoundError(current_email)
+        # La que guarda el core, tal cual: el aviso va ahí.
+        old_email = await self.identities.get_email(supertokens_id) or current_email
+        if not await self.identities.update_email(supertokens_id, new_email):
+            raise AccountExistsError(new_email)
+        await self.identities.mark_email_verified(supertokens_id, new_email)
+        return await self.emails.send_email_changed(
+            supertokens_user_id=supertokens_id,
+            old_email=old_email,
+            new_email=new_email,
+        )

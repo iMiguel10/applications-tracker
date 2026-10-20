@@ -308,6 +308,12 @@ Los enlaces los construye SuperTokens a partir del `website_domain` de su `appIn
 
 Tiene un rate limit propio de 5 intentos cada 15 minutos por usuario, que cuenta también los correctos ([límites y abuso §2](limites-y-abuso.md#2-rate-limiting-rnf-04)). No exige el email verificado: es justo el camino que tiene que funcionar sin correo.
 
+### Cambiar el email desde la administración (issue #5)
+
+La aplicación no deja cambiar el email a la persona. Lo hace quien administra con `scripts/change_email.py` (`AccountProvisioningService.change_email`, derecho de rectificación): valida el nuevo, busca la cuenta por el actual, lo cambia en el core (`update_email_or_password` con `email`, que responde `EmailAlreadyExistsError` si otra cuenta lo usa) y lo da por verificado, como `create_user`. Contraseña y sesiones no cambian.
+
+El riesgo es que el email nuevo no sea de la titular: con correo, quien lo controle se quedaría con la cuenta pidiendo una contraseña nueva. Por eso el script pide confirmación (`--yes` la salta) y, con SMTP, avisa a la dirección **antigua** (`AuthEmailService.send_email_changed`, plantilla `email_changed`), con el nuevo enmascarado (`mask_email`) y sin enlaces. El aviso se envía directamente, sin cola: el script es un proceso de administración y dice si salió.
+
 > **Trampa — un 422 que devuelve la contraseña.** Pydantic pone en cada error de validación la entrada **original**, también la de un `SecretStr`, y si falta un campo, el **cuerpo entero**. Con `min_length`/`max_length` en el campo, una contraseña demasiado larga volvía en claro en el 422, y validar después de envolverla en `SecretStr` no lo arregla. Las dos contraseñas son `SecretStr` sin restricciones y con valor por defecto vacío, así que el schema nunca falla por ellas. El service rechaza lo que no vale: una actual vacía o enorme es una actual incorrecta; una nueva vacía o de más de 256 caracteres no cumple la política. En el contrato OpenAPI siguen siendo obligatorias. Lo vigila `test_an_invalid_body_never_echoes_the_passwords`.
 
 > **Trampa — un inicio de sesión en modo cabecera borra las cookies del cliente.** Al probar "las demás sesiones se cierran" con el mismo cliente HTTP, el segundo inicio de sesión (en modo cabecera, para obtener el refresh token) borraba las cookies de la primera sesión, y el cambio respondía 401. Es lo que hace SuperTokens para no tener tokens en los dos sitios. El "otro dispositivo" de la prueba usa su propio cliente.

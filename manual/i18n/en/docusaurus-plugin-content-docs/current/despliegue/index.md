@@ -46,5 +46,6 @@ With only the [required variables](variables.md) the installation starts and can
 3. Create the [first account](cuentas.md).
 4. Check that [backups](copias-de-seguridad.md) are being made and keep the secrets somewhere else.
 5. Optional: set up [email](correo.md), [platform AI](ia-de-la-plataforma.md) and [continuous deployment](despliegue-continuo.md).
+6. If you give accounts to other people, go over [your obligations as controller](obligaciones.md) of their data.
 
 To [upgrade to a new version](actualizar.md) there is nothing to run by hand.

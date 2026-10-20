@@ -10,6 +10,7 @@ from supertokens_python.recipe.emailpassword.asyncio import (
     verify_credentials,
 )
 from supertokens_python.recipe.emailpassword.interfaces import (
+    EmailAlreadyExistsError,
     PasswordPolicyViolationError,
     SignInOkResult,
     SignUpOkResult,
@@ -121,6 +122,18 @@ class IdentityRepository:
         # La cuenta desapareció entre la comprobación y el cambio (un borrado de
         # cuenta simultáneo). El resto de resultados son de cambiar el email.
         raise RuntimeError(f"No se pudo cambiar la contraseña: {type(result).__name__}")
+
+    async def update_email(self, supertokens_user_id: str, email: str) -> bool:
+        """Cambia el email de la cuenta (`scripts/change_email.py`). False si otra
+        cuenta ya lo usa; no cambia nada. El email nuevo nace sin verificar."""
+        result = await update_email_or_password(
+            RecipeUserId(supertokens_user_id), email=email
+        )
+        if isinstance(result, UpdateEmailOrPasswordOkResult):
+            return True
+        if isinstance(result, EmailAlreadyExistsError):
+            return False
+        raise RuntimeError(f"No se pudo cambiar el email: {type(result).__name__}")
 
     async def revoke_other_sessions(
         self, supertokens_user_id: str, keep_session_handle: str

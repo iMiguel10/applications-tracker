@@ -1,0 +1,8 @@
+{% set subject = "El email de tu cuenta de Applications Tracker ha cambiado" -%}
+Hola:
+
+Quien administra esta instalación de Applications Tracker ha cambiado el email de tu cuenta. Desde ahora se entra con {{ new_email }} y esta dirección ya no sirve para entrar.
+
+Si lo pediste tú, no tienes que hacer nada.
+
+Si no lo pediste, ponte en contacto cuanto antes con quien administra la instalación: quien controle el email nuevo podría quedarse con tu cuenta.
