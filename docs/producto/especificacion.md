@@ -182,6 +182,7 @@ Usuario
 
 - **RF-70** Exportar todas las solicitudes del usuario a CSV.
 - **RF-71** Importar desde CSV `[C]`. La costura es el campo `origin`.
+- **RF-72** Descargar **todos** los datos de la cuenta (RGPD, arts. 15 y 20): un `.zip` con un JSON por tipo de dato y los PDF, desde Preferencias y, para quien administra, con el script `export_user`. Nunca incluye las claves de IA. Issue [#4](https://github.com/iMiguel10/applications-tracker/issues/4), decisión [0025](../decisiones/0025-exportar-todos-los-datos-en-streaming.md).
 
 ### Notificaciones por email (RF-80…) · v2
 

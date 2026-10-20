@@ -32,6 +32,17 @@ The link expires in **60 minutes**. If it expires, they can ask for another one 
 Without SMTP, each person can **change** their password in **Preferences** by typing the current one, but can't **recover** it if they forget it: there's no link to send. In that case, delete their account and create it again with the script, or set up [email](correo.md).
 :::
 
+## Export an account's data
+
+Each person can download all their data from **Preferences** (a `.zip` with one JSON per kind of data and their PDFs). If they ask you for it some other way, for example because they can no longer sign in, generate the same `.zip` with the script. As the data controller, you have one month to answer that request (GDPR, arts. 12, 15 and 20).
+
+The script writes the `.zip` to standard output: run it from the server and redirect it to a file, without a terminal (with one, the output gets mixed with the terminal and the `.zip` comes out broken):
+
+- **Coolify,** over SSH: `docker exec $(docker ps --format '{{.Names}}' | grep '^api-') python -m app.scripts.export_user ana@example.com > ana.zip`
+- **Without Coolify:** `docker compose -f compose.prod.yml exec -T api python -m app.scripts.export_user ana@example.com > ana.zip`
+
+**What you should see:** the script says how many PDFs and MB it exported, and `ana.zip` opens with any unzip tool and contains a `README.txt`. If there is no account with that email, it ends with an error. It never includes the person's AI keys.
+
 ## Open sign-up
 
 With `SIGNUP_ENABLED=true` (and deploying again), anyone can sign up from the sign-in page. Think it over first: each account uses disk and, if you have platform AI, can spend its free uses. The [per-account limits](variables.md) bound the damage but don't prevent it.

@@ -22,6 +22,7 @@ export const MANUAL_PAGES = {
   aiCoverLetter: "uso/escribir-una-carta-con-ia",
   ownAiKey: "uso/usar-tu-propia-clave-de-ia",
   preferences: "uso/preferencias",
+  exportData: "uso/exportar",
   deleteAccount: "uso/borrar-la-cuenta",
 } as const;
 

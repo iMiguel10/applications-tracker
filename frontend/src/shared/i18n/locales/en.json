@@ -23,6 +23,7 @@
       "aiCoverLetter": "Help on writing a cover letter with AI",
       "ownAiKey": "Help on using your own AI key",
       "preferences": "Help on preferences",
+      "exportData": "Help on exporting your data",
       "deleteAccount": "Help on deleting your account"
     }
   },
@@ -286,13 +287,19 @@
   "account": {
     "delete": {
       "title": "Delete account",
-      "description": "Your account and all your data will be permanently deleted: applications with their history, companies, interviews, reminders and documents. To keep them, export your applications to CSV from <link>Applications</link> first and download any PDFs you want to keep: they are not in the CSV.",
+      "description": "Your account and all your data will be permanently deleted: applications with their history, companies, interviews, reminders, documents and your profile. To keep them, download them first with “Download all my data”, on this same page.",
       "openButton": "Delete account",
       "dialogTitle": "Delete your account?",
       "dialogDescription": "This can't be undone. All your data will be deleted and you'll be signed out.",
       "confirmLabel": "Type {{email}} to confirm",
       "confirmButton": "Delete account permanently",
       "deletedToast": "Account deleted"
+    },
+    "export": {
+      "title": "Your data",
+      "description": "Download everything you have in the application as a .zip: applications with their history, companies, interviews, reminders, your profile, AI proposals and preferences, each in its own JSON file, plus all your PDFs. Your AI keys are never included.",
+      "button": "Download all my data",
+      "preparing": "Preparing the download…"
     },
     "password": {
       "title": "Password",

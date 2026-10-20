@@ -1,7 +1,32 @@
 ---
-title: Exportar tus solicitudes
-sidebar_label: Exportar a CSV
+title: Exportar tus datos
+sidebar_label: Exportar
 ---
+
+Hay dos exportaciones: **todos tus datos**, para llevártelos o guardarlos, y tus **solicitudes en CSV**, para trabajar con ellas en una hoja de cálculo.
+
+## Descargar todos tus datos
+
+En **Preferencias**, en la tarjeta **Tus datos**, pulsa **Descargar todos mis datos**. Mientras se prepara, el botón dice **Preparando la descarga…**; después se descarga `applications-tracker-export-<fecha>.zip`.
+
+El `.zip` lleva todo lo que tienes en la aplicación:
+
+- `account.json`: tu email, tus preferencias (idioma, zona horaria, avisos) y la fecha de alta.
+- Un fichero JSON por tipo de dato: empresas, solicitudes, historial de estados, entrevistas, recordatorios, documentos, tu perfil (experiencia, formación, proyectos, certificaciones, logros, habilidades e idiomas), propuestas de IA y consentimientos. Cada fichero lleva el nombre de su tipo en inglés (`applications.json`, `interviews.json`…).
+- `documents/`: todos tus PDF, subidos y generados.
+- `README.txt`: qué es cada fichero, en español y en inglés.
+
+Los datos van con sus códigos y sus ids, como en el CSV: cada entrevista dice a qué solicitud pertenece con `application_id`, y las fechas van en ISO 8601, en UTC. Es un formato pensado para que lo lea otro programa.
+
+**Nunca incluye tus claves de IA**, ni siquiera cifradas: solo qué proveedor y modelo usabas.
+
+Puedes descargarlo **5 veces por hora**. Si la descarga se corta, vuelve a pulsar el botón.
+
+:::tip Si ya no puedes entrar
+Pide tus datos a quien administra la instalación: puede generar el mismo `.zip` sin tu contraseña.
+:::
+
+## Exportar tus solicitudes a CSV
 
 En **Solicitudes**, pulsa **Exportar CSV**. Se descarga un fichero con **todas** tus solicitudes, archivadas incluidas, sin importar los filtros que tengas puestos.
 
@@ -24,4 +49,4 @@ Los estados, modalidades y fuentes van con su **código**, no con la etiqueta de
 | `rejected` | Descartada |
 | `withdrawn` | Retirada |
 
-El CSV no incluye el historial de estados, las entrevistas ni los recordatorios.
+El CSV no incluye el historial de estados, las entrevistas ni los recordatorios: para eso, [descarga todos tus datos](#descargar-todos-tus-datos).

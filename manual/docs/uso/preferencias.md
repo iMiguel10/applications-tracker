@@ -61,3 +61,6 @@ Si la instalación envía emails:
 - Recibirás un aviso de que tu contraseña ha cambiado. Si no has sido tú, el propio email te lleva a pedir un enlace para recuperarla.
 - Si has olvidado la actual, debajo del formulario está **Enviar enlace**: recibirás el mismo enlace que para [recuperar la contraseña](primeros-pasos.md#si-olvidas-la-contraseña). Al guardar la nueva con ese enlace se cierran **todas** tus sesiones, también esta.
 
+## Descargar tus datos
+
+La tarjeta **Tus datos** descarga en un `.zip` todo lo que tienes en la aplicación, con tus PDF: ver [Exportar tus datos](exportar.md#descargar-todos-tus-datos).

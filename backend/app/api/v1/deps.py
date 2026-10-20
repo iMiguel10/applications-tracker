@@ -14,6 +14,7 @@ from app.domain.rate_limits import (
     AI_PER_USER_DAY,
     AI_PER_USER_MINUTE,
     API_PER_USER,
+    EXPORT_PER_USER,
     GENERATE_PER_USER,
     PASSWORD_CHANGE_PER_USER,
     UNSUBSCRIBE_PER_IP,
@@ -25,6 +26,7 @@ from app.infra.queue import JobQueue
 from app.infra.rate_limit import RateLimiter
 from app.infra.storage import FileStorage, LocalFileStorage
 from app.schemas.user import CurrentUser
+from app.services.account_export_service import AccountExportService
 from app.services.account_service import AccountService
 from app.services.ai_consent_service import AiConsentService
 from app.services.ai_key_service import AiKeyService
@@ -196,6 +198,13 @@ def get_account_service(
     return AccountService(db, storage)
 
 
+def get_account_export_service(
+    db: AsyncSession = Depends(get_db),
+    storage: FileStorage = Depends(get_file_storage),
+) -> AccountExportService:
+    return AccountExportService(db, storage)
+
+
 def get_user_service(
     db: AsyncSession = Depends(get_db),
 ) -> UserService:
@@ -293,6 +302,15 @@ async def enforce_password_change_rate_limit(
     """Límite de cambios de contraseña por usuario (issue #2): 5 cada 15 minutos.
     Cuenta todos los intentos, para que no se pueda adivinar la actual."""
     await _enforce_user_rule(request, PASSWORD_CHANGE_PER_USER, current_user)
+
+
+async def enforce_export_rate_limit(
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user),
+) -> None:
+    """Límite de exportaciones completas por usuario (issue #4): 5 por hora. Cada una
+    lee la cuenta entera y comprime todos sus PDF."""
+    await _enforce_user_rule(request, EXPORT_PER_USER, current_user)
 
 
 def get_password_service(request: Request) -> PasswordService:
