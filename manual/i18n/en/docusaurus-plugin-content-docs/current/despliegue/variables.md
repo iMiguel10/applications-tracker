@@ -34,6 +34,7 @@ Changing `POSTGRES_PASSWORD` or `SUPERTOKENS_DB_PASSWORD` **after the first star
 | Variable | Default | What it is |
 |---|---|---|
 | `SIGNUP_ENABLED` | `false` | With `false`, nobody can create an account: the sign-in page doesn't offer it and the sign-up page says it is closed. You create the accounts ([Accounts](cuentas.md)). With `true`, anyone can sign up |
+| `DEMO_PASSWORD` | empty | Password of the [demo account](cuentas.md#demo-account). Only the `reset_demo` script reads it; without it, the script does nothing |
 
 ## Users' own AI keys
 

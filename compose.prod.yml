@@ -26,6 +26,8 @@ x-backend-env: &backend-env
   FILES_ROOT: /data/files
   TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7
   SIGNUP_ENABLED: ${SIGNUP_ENABLED:-false}
+  # Cuenta de demostración: solo la lee scripts/reset_demo.py.
+  DEMO_PASSWORD: ${DEMO_PASSWORD:-}
   # Correo (RNF-34): sin SMTP_HOST no se envía nada.
   SMTP_HOST: ${SMTP_HOST:-}
   SMTP_PORT: ${SMTP_PORT:-}
