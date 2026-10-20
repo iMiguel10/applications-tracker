@@ -62,7 +62,17 @@ Con **claves propias**, la persona usa su propia cuenta del proveedor: el contra
 
 Cada persona debe saber quién eres, qué datos tratas, para qué, con quién los compartes, cuánto los guardas y cómo ejercer sus derechos (arts. 13 y 14): es la **política de privacidad**. Si ofreces el servicio a otras personas, también necesitas un **aviso legal** con tus datos (LSSI-CE, art. 10) y unos **términos**.
 
-La aplicación todavía no trae estas páginas: llegarán como plantillas que rellenarás con variables ([issue #3](https://github.com/iMiguel10/applications-tracker/issues/3)). Mientras tanto, si tienes usuarios, publícalas tú y pásales el enlace. Las tablas de arriba son la base del contenido.
+La aplicación las trae, en español y en inglés: **Aviso legal**, **Privacidad**, **Términos** y **Cookies**, en `/legal/…`. Para activarlas:
+
+1. Pon tus datos en las [variables de textos legales](variables.md#textos-legales): como mínimo `LEGAL_OPERATOR_NAME` y `LEGAL_CONTACT_EMAIL`.
+2. Vuelve a desplegar.
+3. **Léelas** (por ejemplo, `https://tracker.example.com/legal/privacy`) y comprueba que encajan con tu caso.
+
+**Qué debe verse:** los enlaces a las cuatro páginas aparecen bajo el formulario de inicio de sesión y al pie de la aplicación, y al entrar, cada cuenta ve **Antes de seguir** hasta aceptar los términos y la privacidad. En el registro, si está abierto, hay que marcar la casilla para crear la cuenta. Se guarda qué versión aceptó cada uno y cuándo.
+
+Los textos se montan con lo que tiene activa tu instalación: nombran el correo solo si lo tienes, el proveedor de la IA de la plataforma y la transferencia a EE. UU. si es Anthropic, OpenAI o Groq (no con Ollama), los proveedores de claves propias que ofreces y los días que un dato borrado sigue en las copias (de `BACKUP_KEEP_DAILY` y `BACKUP_KEEP_WEEKLY`). Están pensados para España (LSSI, RGPD y la AEPD); con `LEGAL_SUPERVISORY_AUTHORITY` puedes nombrar otra autoridad. Son una base: si tu caso tiene algo más (cobras por el servicio, tratas otros datos), escribe tus propios textos y publícalos tú.
+
+Cuando una actualización de la aplicación cambia los textos de forma importante, cambia su versión y todas las cuentas vuelven a ver **Antes de seguir**.
 
 En España, el consentimiento de un menor solo vale desde los **14 años** (LOPDGDD, art. 7): no des cuentas a menores de esa edad.
 

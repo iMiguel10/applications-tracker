@@ -18,6 +18,7 @@ from app.schemas.common import error_responses
 from app.schemas.usage import LimitUsageRead, UsageRead
 from app.schemas.user import (
     CurrentUser,
+    LegalAcceptance,
     MeRead,
     PasswordChange,
     PreferencesRead,
@@ -62,6 +63,27 @@ async def delete_me(
     Un access token ya emitido sigue validándose sin consultar al core hasta que
     caduca (máximo 5 minutos): el cliente debe cerrar sesión justo después."""
     await accounts.delete_account(current_user)
+
+
+@router.post(
+    "/legal-acceptance",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Acepta los términos y la política de privacidad",
+    responses=error_responses(409),
+)
+async def accept_legal(
+    data: LegalAcceptance,
+    current_user: CurrentUser = Depends(get_current_user),
+    users: UserService = Depends(get_user_service),
+) -> None:
+    """Registra que la cuenta acepta la versión vigente de los términos y la
+    política de privacidad de esta instalación, con la fecha. La vigente está en
+    `legal.version` de `GET /meta`; la aceptada, en `legal_accepted_version` de
+    `GET /me`.
+
+    - **409** `legal_not_configured`: la instalación no tiene textos legales.
+    - **409** `legal_version_outdated`: esa no es la versión vigente."""
+    await users.accept_legal(current_user.id, data.version)
 
 
 @router.get(

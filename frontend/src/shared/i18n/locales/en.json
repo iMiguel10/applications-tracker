@@ -27,6 +27,29 @@
       "deleteAccount": "Help on deleting your account"
     }
   },
+  "legal": {
+    "nav": {
+      "label": "Legal information",
+      "notice": "Legal notice",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "cookies": "Cookies"
+    },
+    "version": "Current version: {{version}}",
+    "notConfigured": {
+      "title": "This installation has no legal texts",
+      "body": "Whoever runs it hasn't set up their details as data controller: it is an installation for personal use. If you were given an account on it, ask them who processes your data and how."
+    },
+    "consent": {
+      "label": "I have read and accept the <terms>terms and conditions</terms> and the <privacy>privacy policy</privacy>.",
+      "required": "You have to accept them to continue."
+    },
+    "accept": {
+      "title": "Before you go on",
+      "description": "To use the application on this installation, accept its terms and its privacy policy (version {{version}}). Open them to read them: they open in a new tab.",
+      "button": "Accept and continue"
+    }
+  },
   "health": {
     "title": "System status",
     "api": "API",
@@ -542,7 +565,9 @@
     "ai_keys_disabled": "This installation doesn't allow your own keys.",
     "ai_provider_quota": "Your provider account has no credit left or has reached its limit.",
     "ai_provider_unavailable": "The AI provider couldn't be reached. Try again later.",
-    "ai_document_mismatch": "The content doesn't match the type of the proposal."
+    "ai_document_mismatch": "The content doesn't match the type of the proposal.",
+    "legal_version_outdated": "The legal texts have just changed: read them and accept the new version.",
+    "legal_not_configured": "This installation has no legal texts to accept."
   },
   "documents": {
     "title": "Documents",

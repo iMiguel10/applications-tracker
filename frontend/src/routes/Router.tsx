@@ -13,6 +13,7 @@ import { DashboardPage } from "../pages/DashboardPage";
 import { DocumentsPage } from "../pages/DocumentsPage";
 import { ForgotPasswordPage } from "../pages/ForgotPasswordPage";
 import { HealthPage } from "../pages/HealthPage";
+import { LegalPage } from "../pages/LegalPage";
 import { LoginPage } from "../pages/LoginPage";
 import { PreferencesPage } from "../pages/PreferencesPage";
 import { ProfilePage } from "../pages/ProfilePage";
@@ -53,6 +54,9 @@ export const router = createBrowserRouter([
   // Sin loader: la baja de avisos funciona sin sesión y con cualquier sesión (RF-85).
   { path: "/unsubscribe", element: <UnsubscribePage /> },
   { path: "/health", element: <HealthPage /> },
+  // Sin loader: las páginas legales se leen con o sin sesión, también antes de tener
+  // cuenta (issue #3).
+  { path: "/legal/:page", element: <LegalPage /> },
 
   // Protegidas: el loader del layout se ejecuta en cada navegación a cualquier hija.
   {

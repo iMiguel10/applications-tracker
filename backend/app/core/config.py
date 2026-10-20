@@ -5,6 +5,7 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.domain.ai import AiProvider
+from app.domain.legal import legal_configured
 from app.infra.crypto import parse_master_keys
 
 
@@ -38,6 +39,20 @@ class Settings(BaseSettings):
     # crearse una cuenta: las crea quien administra con scripts/create_user.py, y
     # las que ya existen siguen funcionando igual.
     signup_enabled: bool = True
+
+    # Páginas legales (issue #3, decisión 0026): quién es el responsable de los
+    # datos de esta instalación. Sin nombre y contacto, la instalación es de uso
+    # personal: sin enlaces a las páginas ni pantalla de aceptación.
+    legal_operator_name: str | None = None
+    legal_contact_email: str | None = None
+    legal_address: str | None = None
+    legal_tax_id: str | None = None
+    # Autoridad de control ante la que reclamar. Vacía: la española (AEPD).
+    legal_supervisory_authority: str | None = None
+    # La retención del servicio `backup` (deploy/backup), para decir en la política
+    # de privacidad cuánto sigue un dato borrado en las copias.
+    backup_keep_daily: int = Field(default=7, ge=0)
+    backup_keep_weekly: int = Field(default=4, ge=0)
 
     # Correo (RNF-34). Opcional a propósito: sin SMTP_HOST la aplicación arranca
     # igual y lo que depende del email aparece como no disponible. El servidor lo
@@ -188,6 +203,10 @@ class Settings(BaseSettings):
     @property
     def email_enabled(self) -> bool:
         return bool(self.smtp_host)
+
+    @property
+    def legal_configured(self) -> bool:
+        return legal_configured(self.legal_operator_name, self.legal_contact_email)
 
     def ai_models(self, provider: AiProvider) -> list[str]:
         """Modelos que un usuario puede elegir con su clave de `provider`, en orden

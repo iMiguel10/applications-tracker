@@ -8,6 +8,7 @@ import { ApiError } from "@/shared/lib/apiClient";
 import { metaService } from "@/features/meta/services/meta.service";
 import { authService } from "../services/auth.service";
 import { ChangePasswordCard } from "./ChangePasswordCard";
+import { makeMeta } from "@/test/meta";
 
 vi.mock("@/features/meta/services/meta.service", () => ({
   metaService: { get: vi.fn() },
@@ -20,11 +21,9 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 const EMAIL = "ana@example.com";
 
 function renderCard({ emailEnabled }: { emailEnabled: boolean }) {
-  vi.mocked(metaService.get).mockResolvedValue({
-    email_enabled: emailEnabled,
-    signup_enabled: true,
-    max_document_bytes: 5 * 1024 * 1024,
-  });
+  vi.mocked(metaService.get).mockResolvedValue(
+    makeMeta({ email_enabled: emailEnabled, signup_enabled: true }),
+  );
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });

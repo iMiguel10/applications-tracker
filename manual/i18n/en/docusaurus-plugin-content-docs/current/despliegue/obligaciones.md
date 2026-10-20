@@ -62,7 +62,17 @@ With **own keys**, the person uses their own account with the provider: the cont
 
 Each person must know who you are, what data you process, what for, who you share it with, how long you keep it and how to exercise their rights (arts. 13 and 14): that is the **privacy policy**. If you offer the service to other people, you also need a **legal notice** with your details (Spanish LSSI-CE, art. 10) and **terms**.
 
-The application doesn't ship these pages yet: they will come as templates you fill in with variables ([issue #3](https://github.com/iMiguel10/applications-tracker/issues/3)). Meanwhile, if you have users, publish them yourself and send them the link. The tables above are the basis of their content.
+The application ships them, in Spanish and English: **Legal notice**, **Privacy**, **Terms** and **Cookies**, at `/legal/…`. To turn them on:
+
+1. Put your details in the [legal text variables](variables.md#legal-texts): at least `LEGAL_OPERATOR_NAME` and `LEGAL_CONTACT_EMAIL`.
+2. Redeploy.
+3. **Read them** (for example, `https://tracker.example.com/legal/privacy`) and check that they fit your case.
+
+**What you should see:** links to the four pages appear under the sign-in form and at the foot of the application, and on signing in each account sees **Before you go on** until it accepts the terms and the privacy policy. On sign-up, if it is open, the box has to be ticked to create the account. Which version each person accepted, and when, is recorded.
+
+The texts are built from what your installation has turned on: they mention email only if you have it, the platform AI provider and the transfer to the US if it is Anthropic, OpenAI or Groq (not with Ollama), the own-key providers you offer and how many days deleted data stays in the backups (from `BACKUP_KEEP_DAILY` and `BACKUP_KEEP_WEEKLY`). They are written for Spain (LSSI, GDPR and the AEPD); with `LEGAL_SUPERVISORY_AUTHORITY` you can name another authority. They are a base: if your case has something more (you charge for the service, you process other data), write your own texts and publish them yourself.
+
+When an application update changes the texts in an important way, their version changes and every account sees **Before you go on** again.
 
 In Spain, a minor's consent is only valid from **14 years old** (LOPDGDD, art. 7): don't give accounts to anyone younger.
 

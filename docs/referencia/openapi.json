@@ -865,6 +865,79 @@
         ]
       }
     },
+    "/api/v1/me/legal-acceptance": {
+      "post": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Acepta los términos y la política de privacidad",
+        "description": "Registra que la cuenta acepta la versión vigente de los términos y la\npolítica de privacidad de esta instalación, con la fecha. La vigente está en\n`legal.version` de `GET /meta`; la aceptada, en `legal_accepted_version` de\n`GET /me`.\n\n- **409** `legal_not_configured`: la instalación no tiene textos legales.\n- **409** `legal_version_outdated`: esa no es la versión vigente.",
+        "operationId": "accept_legal_api_v1_me_legal_acceptance_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LegalAcceptance"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Una regla de negocio impide la operación; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/me/export": {
       "get": {
         "tags": [
@@ -10500,6 +10573,170 @@
         ],
         "title": "LanguagesUpdate"
       },
+      "LegalAcceptance": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Version",
+            "description": "La versión que se acepta: la de `legal.version` en `GET /meta`.",
+            "examples": [
+              "2026-10-20"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "LegalAcceptance"
+      },
+      "LegalRead": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured",
+            "description": "`false` si quien despliega no ha puesto su nombre y contacto: la instalación se trata como de uso personal, sin enlaces a las páginas legales ni aceptación.",
+            "examples": [
+              true
+            ]
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "description": "Versión vigente de los términos y la política de privacidad. Una cuenta que aceptó otra (`legal_accepted_version` en `GET /me`) debe aceptar esta.",
+            "examples": [
+              "2026-10-20"
+            ]
+          },
+          "operator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Name",
+            "description": "Responsable del tratamiento: persona o entidad.",
+            "examples": [
+              "Ana García"
+            ]
+          },
+          "contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Email",
+            "description": "Contacto para dudas y para ejercer los derechos.",
+            "examples": [
+              "privacidad@example.com"
+            ]
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address",
+            "description": "Dirección postal, si quien despliega la publica.",
+            "examples": [
+              "Calle Mayor 1, 28001 Madrid"
+            ]
+          },
+          "tax_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Id",
+            "description": "Identificación fiscal (NIF), si quien despliega la publica.",
+            "examples": [
+              "12345678Z"
+            ]
+          },
+          "supervisory_authority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supervisory Authority",
+            "description": "Autoridad de control ante la que reclamar. `null`: la española (AEPD).",
+            "examples": [
+              null
+            ]
+          },
+          "ai_platform_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiProvider"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proveedor de la IA de la plataforma, si hay. Con Anthropic, OpenAI o Groq los datos salen a EE. UU.; con Ollama, a un servidor que elige quien despliega.",
+            "examples": [
+              "groq"
+            ]
+          },
+          "ai_own_key_providers": {
+            "items": {
+              "$ref": "#/components/schemas/AiProvider"
+            },
+            "type": "array",
+            "title": "Ai Own Key Providers",
+            "description": "Proveedores con los que cada persona puede usar su propia clave de IA.",
+            "examples": [
+              [
+                "anthropic",
+                "openai"
+              ]
+            ]
+          },
+          "backup_retention_days": {
+            "type": "integer",
+            "title": "Backup Retention Days",
+            "description": "Días, como mucho, que un dato borrado sigue en las copias de seguridad.",
+            "examples": [
+              35
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "configured",
+          "version",
+          "operator_name",
+          "contact_email",
+          "address",
+          "tax_id",
+          "supervisory_authority",
+          "ai_platform_provider",
+          "ai_own_key_providers",
+          "backup_retention_days"
+        ],
+        "title": "LegalRead",
+        "description": "Lo que necesitan las páginas legales de la instalación (issue #3): quién es\nel responsable de los datos y lo que la instalación tiene activo."
+      },
       "LetterParagraph": {
         "properties": {
           "text": {
@@ -10621,6 +10858,21 @@
             "examples": [
               "ana@example.com"
             ]
+          },
+          "legal_accepted_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Accepted Version",
+            "description": "Versión de los términos y la política de privacidad que aceptó la cuenta (`null`: ninguna). Si la instalación los tiene (`legal.configured` en `GET /meta`) y no coincide con `legal.version`, debe aceptar la vigente con `POST /me/legal-acceptance`.",
+            "examples": [
+              "2026-10-20"
+            ]
           }
         },
         "type": "object",
@@ -10655,13 +10907,18 @@
             "examples": [
               5242880
             ]
+          },
+          "legal": {
+            "$ref": "#/components/schemas/LegalRead",
+            "description": "Datos de las páginas legales (aviso legal, privacidad, términos y cookies)."
           }
         },
         "type": "object",
         "required": [
           "email_enabled",
           "signup_enabled",
-          "max_document_bytes"
+          "max_document_bytes",
+          "legal"
         ],
         "title": "MetaRead"
       },

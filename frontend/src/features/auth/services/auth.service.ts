@@ -136,6 +136,9 @@ export const authService = {
 
   deleteAccount: () => apiClient.delete<void>("/me"),
 
+  /** Acepta la versión vigente de los términos y la privacidad (issue #3). */
+  acceptLegal: (version: string) => apiClient.post<void>("/me/legal-acceptance", { version }),
+
   /** Todos los datos de la cuenta en un `.zip` (issue #4). */
   exportData: () => apiClient.getBlob("/me/export"),
 

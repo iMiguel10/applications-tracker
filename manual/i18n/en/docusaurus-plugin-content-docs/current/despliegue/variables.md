@@ -36,6 +36,18 @@ Changing `POSTGRES_PASSWORD` or `SUPERTOKENS_DB_PASSWORD` **after the first star
 | `SIGNUP_ENABLED` | `false` | With `false`, nobody can create an account: the sign-in page doesn't offer it and the sign-up page says it is closed. You create the accounts ([Accounts](cuentas.md)). With `true`, anyone can sign up |
 | `DEMO_PASSWORD` | empty | Password of the [demo account](cuentas.md#demo-account). Only the `reset_demo` script reads it; without it, the script does nothing |
 
+## Legal texts
+
+If you give accounts to other people, set at least the name and the contact: the application then publishes its legal notice, privacy policy, terms and cookie policy, and asks for them to be accepted. Without them, the installation is treated as for personal use. See [Your obligations as controller](obligaciones.md#informing-your-users).
+
+| Variable | Default | What it is |
+|---|---|---|
+| `LEGAL_OPERATOR_NAME` | empty | Your name or your organisation's: the data controller |
+| `LEGAL_CONTACT_EMAIL` | empty | The email to write to with questions and to exercise rights |
+| `LEGAL_ADDRESS` | empty | Postal address, if you want to publish it |
+| `LEGAL_TAX_ID` | empty | Your tax ID, if you want to publish it |
+| `LEGAL_SUPERVISORY_AUTHORITY` | empty (the AEPD) | The supervisory authority to complain to, if not the Spanish one. It is written as is in the policy, in the policy's language: `the CNIL (www.cnil.fr)` |
+
 ## Users' own AI keys
 
 | Variable | Default | What it is |
