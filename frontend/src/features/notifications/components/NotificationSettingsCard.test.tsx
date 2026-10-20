@@ -136,11 +136,22 @@ describe("NotificationSettingsCard", () => {
     expect(screen.queryByRole("switch", { name: /propuesta de ia/i })).not.toBeInTheDocument();
   });
 
-  it("explains and locks the switches when the installation sends no email", async () => {
+  it("without email, explains it instead of showing switches that can't work (issue #1)", async () => {
     renderCard({ emailEnabled: false });
 
     expect(await screen.findByText(i18n.t("notifications.unavailable"))).toBeInTheDocument();
-    expect(toggle("notify_reminder_due")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(i18n.t("notifications.unavailableHint"))).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+    // La tarjeta sigue ahí, con su título: la función existe.
+    expect(screen.getByText(i18n.t("notifications.title"))).toBeInTheDocument();
+  });
+
+  it("with email, shows the switches and not the notice", async () => {
+    renderCard({ emailEnabled: true });
+
+    expect(await screen.findByText(i18n.t("notifications.description"))).toBeInTheDocument();
+    expect(toggle("notify_reminder_due")).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByText(i18n.t("notifications.unavailable"))).not.toBeInTheDocument();
   });
 
   it("warns that notifications need a verified email", async () => {
