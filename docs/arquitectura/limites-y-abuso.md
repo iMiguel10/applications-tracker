@@ -105,6 +105,7 @@ El `429` de Nginx tiene el mismo formato que el de la aplicación (`{detail, cod
 | Toda la API con sesión **[añadido en F11]** | 600 / min | por usuario |
 | Propuestas de IA **[construido en F15]** | 5 / min y 50 / día | por usuario (también con clave propia: el `worker` es de todos). `AI_PER_USER_MINUTE` y `AI_PER_USER_DAY`, en `POST /applications/{id}/ai-proposals` |
 | Guardar o validar una clave de IA | 10 / hora | por usuario |
+| Cambiar la contraseña con la actual **[0024]** | 5 / 15 min | por usuario (`PASSWORD_CHANGE_PER_USER`). Cuenta también los intentos correctos: sin él, una sesión abierta serviría para adivinar la contraseña actual |
 | Subir documentos **[construido en F13]** | 30 / hora | por usuario (`UPLOAD_PER_USER`; el diseño decía 20, se subió a 30 al construirlo y el documento no se actualizó hasta F14) |
 | Generar PDF **[construido en F14]** | 30 / hora | por usuario (`GENERATE_PER_USER`, ventana aparte de la de subidas) |
 | Baja de avisos | 30 / hora | por IP |

@@ -1,7 +1,14 @@
 import uuid
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 
 from app.domain.notifications import (
     MAX_INTERVIEW_NOTICE_HOURS,
@@ -23,6 +30,37 @@ class CurrentUser(BaseModel):
 
     id: uuid.UUID
     supertokens_user_id: str
+
+
+def _no_default_in_schema(schema: dict[str, Any]) -> None:
+    schema.pop("default", None)
+
+
+# Las dos contraseñas son SecretStr, sin restricciones y con un valor por defecto
+# vacío, a propósito: Pydantic pone en cualquier error de validación la entrada
+# original, en claro, y si falta un campo, el cuerpo entero, así que el 422
+# devolvería la contraseña. El schema no falla por ellas, y el service rechaza lo
+# que no vale: una actual vacía es una actual incorrecta, y una nueva vacía o
+# demasiado larga no cumple la política. En el contrato siguen siendo obligatorias.
+class PasswordChange(BaseModel):
+    """Cambiar la contraseña con la actual. Las dos son obligatorias."""
+
+    model_config = ConfigDict(
+        json_schema_extra={"required": ["current_password", "new_password"]}
+    )
+
+    current_password: SecretStr = Field(
+        default=SecretStr(""),
+        description="La contraseña actual.",
+        json_schema_extra=_no_default_in_schema,
+    )
+    new_password: SecretStr = Field(
+        default=SecretStr(""),
+        description="La contraseña nueva. Debe cumplir la política de contraseñas "
+        "(entre 8 y 100 caracteres, con letras y números); si no, 422 "
+        "`password_policy`.",
+        json_schema_extra=_no_default_in_schema,
+    )
 
 
 class MeRead(BaseModel):

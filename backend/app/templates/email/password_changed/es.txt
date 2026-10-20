@@ -1,0 +1,10 @@
+{% set subject = "Tu contraseña de Applications Tracker ha cambiado" -%}
+Hola:
+
+La contraseña de tu cuenta de Applications Tracker se cambió el {{ changed_at }}, desde la propia aplicación y con la contraseña anterior. Se han cerrado las demás sesiones abiertas.
+
+Si has sido tú, no tienes que hacer nada.
+
+Si no has sido tú, recupera tu cuenta ahora: pide un enlace para elegir otra contraseña en esta página y te llegará a este correo.
+
+{{ link }}

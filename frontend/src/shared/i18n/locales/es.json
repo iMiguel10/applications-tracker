@@ -273,10 +273,17 @@
     },
     "password": {
       "title": "Contraseña",
-      "description": "Te enviaremos a {{email}} un enlace para elegir una contraseña nueva. Al guardarla se cerrarán todas tus sesiones, también esta.",
-      "send": "Enviar enlace para cambiarla",
-      "sent": "Enlace enviado a {{email}}. Caduca en 1 hora; si no lo ves, revisa la carpeta de spam.",
-      "unavailable": "Esta instalación no envía emails, así que la contraseña no se puede cambiar desde aquí. Pide ayuda a quien la administra."
+      "description": "Para cambiarla, escribe la actual y la nueva. Al guardarla se cerrarán tus otras sesiones; esta sigue abierta.",
+      "current": "Contraseña actual",
+      "new": "Contraseña nueva",
+      "confirm": "Repite la contraseña nueva",
+      "submit": "Cambiar contraseña",
+      "changed": "Contraseña cambiada. Hemos cerrado tus otras sesiones.",
+      "wrongCurrent": "La contraseña actual no es correcta",
+      "forgotten": "¿Has olvidado la actual?",
+      "forgottenHint": "Te enviamos a {{email}} un enlace para elegir otra. Al guardarla se cerrarán todas tus sesiones, también esta.",
+      "send": "Enviar enlace",
+      "sent": "Enlace enviado a {{email}}. Caduca en 1 hora; si no lo ves, revisa la carpeta de spam."
     },
     "email": {
       "title": "Email",
@@ -466,6 +473,8 @@
     "reminders_limit_reached": "Has alcanzado tu límite de {{limit, number}} recordatorios",
     "reminder_not_pending": "Este recordatorio ya no está pendiente",
     "rate_limited": "Demasiados intentos. Vuelve a intentarlo {{wait}}.",
+    "wrong_current_password": "La contraseña actual no es correcta.",
+    "password_policy": "La contraseña debe tener al menos 8 caracteres e incluir letras y números.",
     "invalid_unsubscribe_token": "Este enlace de baja no es válido. Copia el enlace completo del email, o cambia tus avisos en Preferencias.",
     "email_not_verified": "Verifica tu email para usar esta función. Tienes el enlace en tu correo, o puedes pedir otro en Preferencias.",
     "file_too_large": "El PDF pasa del tamaño máximo de {{max}}.",

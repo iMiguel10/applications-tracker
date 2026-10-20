@@ -297,6 +297,21 @@ Los enlaces los construye SuperTokens a partir del `website_domain` de su `appIn
 >
 > Construido como override de la API `password_reset_post` (`revoke_sessions_after_password_reset` en `core/auth_emails.py`), que llama a `revoke_all_sessions_for_user` cuando el resultado es `OK`. Al construirlo se comprobó que la trampa es real: sin el override, la sesión copiada **se renueva** (200) después de cambiar la contraseña, y la prueba T11 se pone en rojo. En el frontend, tras guardar la contraseña también se cierra la sesión local, si la hay, para que este navegador no aparente seguir dentro durante esos 5 minutos.
 
+### Cambiar la contraseña con la actual ([0024](../decisiones/0024-cambiar-la-contrasena-con-la-actual.md))
+
+`POST /api/v1/me/password` (`PasswordService`), con `current_password` y `new_password`. Funciona con o sin correo:
+
+1. Comprueba la actual con el core (`verify_credentials`, sin crear sesión) y exige que la identidad sea la de la sesión. Si no coincide: `400 wrong_current_password`, sin cambiar nada.
+2. Cambia la contraseña con la política del backend (`update_email_or_password` con `apply_password_policy`). Si no la cumple: `422 password_policy`.
+3. Cierra **las demás sesiones** (`get_all_session_handles_for_user` y `revoke_multiple_sessions`) y deja la de la petición, cuyo identificador da `get_session_handle` (`deps.py`, sobre la misma instancia de `verify_session()`).
+4. Con correo, encola `send_password_changed_email` solo con ids y la hora. El `worker` envía el aviso en la zona y el idioma de la cuenta, con un enlace a `/forgot-password` sin token.
+
+Tiene un rate limit propio de 5 intentos cada 15 minutos por usuario, que cuenta también los correctos ([límites y abuso §2](limites-y-abuso.md#2-rate-limiting-rnf-04)). No exige el email verificado: es justo el camino que tiene que funcionar sin correo.
+
+> **Trampa — un 422 que devuelve la contraseña.** Pydantic pone en cada error de validación la entrada **original**, también la de un `SecretStr`, y si falta un campo, el **cuerpo entero**. Con `min_length`/`max_length` en el campo, una contraseña demasiado larga volvía en claro en el 422, y validar después de envolverla en `SecretStr` no lo arregla. Las dos contraseñas son `SecretStr` sin restricciones y con valor por defecto vacío, así que el schema nunca falla por ellas. El service rechaza lo que no vale: una actual vacía o enorme es una actual incorrecta; una nueva vacía o de más de 256 caracteres no cumple la política. En el contrato OpenAPI siguen siendo obligatorias. Lo vigila `test_an_invalid_body_never_echoes_the_passwords`.
+
+> **Trampa — un inicio de sesión en modo cabecera borra las cookies del cliente.** Al probar "las demás sesiones se cierran" con el mismo cliente HTTP, el segundo inicio de sesión (en modo cabecera, para obtener el refresh token) borraba las cookies de la primera sesión, y el cambio respondía 401. Es lo que hace SuperTokens para no tener tokens en los dos sitios. El "otro dispositivo" de la prueba usa su propio cliente.
+
 ### Verificación de email (RF-05, RF-06)
 
 - **Envío automático al registrarse**: el backend lo dispara tras el registro, sin depender de que el frontend lo pida, para que cualquier cliente de la API lo reciba igual.

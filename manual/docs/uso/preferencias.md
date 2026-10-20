@@ -52,8 +52,12 @@ La tarjeta **Email** muestra la dirección de tu cuenta y si está **Verificado*
 
 ## Cambiar la contraseña
 
-En la tarjeta **Contraseña**, pulsa **Enviar enlace para cambiarla**. Recibirás en el email de tu cuenta el mismo enlace que para [recuperar la contraseña](primeros-pasos.md#si-olvidas-la-contraseña): ábrelo, elige la contraseña nueva y pulsa **Guardar contraseña**.
+En la tarjeta **Contraseña**, escribe tu **Contraseña actual**, la **Contraseña nueva** y repítela en **Repite la contraseña nueva**, y pulsa **Cambiar contraseña**. La nueva debe tener al menos 8 caracteres e incluir letras y números; si no, el formulario lo dice en el campo.
 
-No se pide la contraseña actual: cambiarla exige tener acceso a tu correo, así que alguien con una sesión tuya abierta no puede cambiártela. Al guardarla **se cierran todas tus sesiones**, también la que tenías abierta, y vuelves a entrar con la nueva.
+Al cambiarla **se cierran tus otras sesiones** (otros navegadores o dispositivos) y la de este navegador sigue abierta. Se pide la actual para que nadie que encuentre tu sesión abierta pueda cambiártela. Si te equivocas varias veces seguidas, tendrás que esperar unos minutos antes de volver a intentarlo.
 
-Si la instalación no envía emails, la tarjeta lo dice en lugar del botón.
+Si la instalación envía emails:
+
+- Recibirás un aviso de que tu contraseña ha cambiado. Si no has sido tú, el propio email te lleva a pedir un enlace para recuperarla.
+- Si has olvidado la actual, debajo del formulario está **Enviar enlace**: recibirás el mismo enlace que para [recuperar la contraseña](primeros-pasos.md#si-olvidas-la-contraseña). Al guardar la nueva con ese enlace se cierran **todas** tus sesiones, también esta.
+

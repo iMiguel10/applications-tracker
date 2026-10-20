@@ -1,16 +1,27 @@
 from fastapi import APIRouter, Depends, status
 
 from app.api.v1.deps import (
+    enforce_password_change_rate_limit,
     get_account_service,
     get_current_user,
     get_limit_service,
+    get_password_service,
+    get_session_handle,
     get_user_service,
 )
 from app.domain.limits import WARNING_RATIO
+from app.schemas.common import error_responses
 from app.schemas.usage import LimitUsageRead, UsageRead
-from app.schemas.user import CurrentUser, MeRead, PreferencesRead, PreferencesUpdate
+from app.schemas.user import (
+    CurrentUser,
+    MeRead,
+    PasswordChange,
+    PreferencesRead,
+    PreferencesUpdate,
+)
 from app.services.account_service import AccountService
 from app.services.limit_service import LimitService
+from app.services.password_service import PasswordService
 from app.services.user_service import UserService
 
 router = APIRouter(
@@ -46,6 +57,37 @@ async def delete_me(
     Un access token ya emitido sigue validándose sin consultar al core hasta que
     caduca (máximo 5 minutos): el cliente debe cerrar sesión justo después."""
     await accounts.delete_account(current_user)
+
+
+@router.post(
+    "/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Cambia la contraseña con la actual",
+    dependencies=[Depends(enforce_password_change_rate_limit)],
+    responses=error_responses(400, 422),
+)
+async def change_password(
+    data: PasswordChange,
+    current_user: CurrentUser = Depends(get_current_user),
+    session_handle: str = Depends(get_session_handle),
+    passwords: PasswordService = Depends(get_password_service),
+) -> None:
+    """Cambia la contraseña de la cuenta pidiendo la actual: funciona también en
+    una instalación sin correo, donde no hay enlace de recuperación.
+
+    - **400** `wrong_current_password`: la actual no es correcta; no cambia nada.
+    - **422** `password_policy`: la nueva no cumple la política de contraseñas.
+    - **429** `rate_limited`: más de 5 intentos en 15 minutos.
+
+    Al cambiarla se cierran **las demás sesiones** de la cuenta (sus refresh tokens
+    dejan de servir); la de esta petición sigue abierta. Si la instalación envía
+    correo, llega un aviso a la dirección de la cuenta."""
+    await passwords.change(
+        current_user,
+        session_handle=session_handle,
+        current_password=data.current_password.get_secret_value(),
+        new_password=data.new_password.get_secret_value(),
+    )
 
 
 @router.get("/preferences", summary="Preferencias del usuario actual")

@@ -82,3 +82,4 @@ nav:
       - "0021 — Aviso al terminar una propuesta de IA": decisiones/0021-aviso-al-terminar-una-propuesta-de-ia.md
       - "0022 — Registro cerrado por configuración": decisiones/0022-registro-cerrado-por-configuracion.md
       - "0023 — Producción en Coolify, un solo dominio y Nginx propio": decisiones/0023-produccion-en-coolify-con-un-solo-dominio.md
+      - "0024 — Cambiar la contraseña con la actual": decisiones/0024-cambiar-la-contrasena-con-la-actual.md

@@ -28,8 +28,8 @@ El enlace caduca en **60 minutos**. Si caduca, puede pedir otro con **¿Olvidast
 
 **Qué debe verse:** el script termina sin error y, abriendo el enlace en el navegador, aparece la pantalla para elegir la contraseña. El script no hace nada si ya existe una cuenta con ese email.
 
-:::note Sin correo, no se puede cambiar la contraseña desde la aplicación
-Sin SMTP, una cuenta no puede cambiar ni recuperar su contraseña por sí sola (la aplicación no ofrece el enlace). Si quieres que lo pueda hacer, configura el [correo](correo.md).
+:::note Sin correo, la contraseña olvidada no se puede recuperar
+Sin SMTP, cada persona puede **cambiar** su contraseña desde **Preferencias** escribiendo la actual, pero no **recuperarla** si la olvida: no hay enlace que enviar. Entonces hay que borrar su cuenta y crearla de nuevo con el script, o configurar el [correo](correo.md).
 :::
 
 ## Abrir el registro

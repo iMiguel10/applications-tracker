@@ -76,6 +76,29 @@ class RateLimitedError(AppException):
         )
 
 
+class WrongCurrentPasswordError(AppException):
+    """400 al cambiar la contraseña: la actual no es correcta. No cambia nada."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "The current password is wrong",
+            status_code=400,
+            code="wrong_current_password",
+        )
+
+
+class PasswordPolicyError(AppException):
+    """422 al cambiar la contraseña: la nueva no cumple la política, que vive solo
+    en el backend (invariante 7). El frontend la explica con su propio texto."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "The new password does not meet the password policy",
+            status_code=422,
+            code="password_policy",
+        )
+
+
 class FileTooLargeAppError(AppException):
     """413: el fichero pasa del tamaño máximo (especificación §10). Se corta al
     leerlo, sin esperar al final."""

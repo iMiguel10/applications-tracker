@@ -74,6 +74,7 @@ class RateLimitedRead(BaseModel):
 def error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
     """Respuestas de error documentadas en el OpenAPI de un endpoint."""
     descriptions = {
+        400: "La petición no se puede aplicar tal cual; ver `code`.",
         404: "No existe o pertenece a otro usuario (no se distingue).",
         409: "Una regla de negocio impide la operación; ver `code`.",
         422: "Datos no válidos.",

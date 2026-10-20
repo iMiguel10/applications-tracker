@@ -1,4 +1,7 @@
-"""Emails de la cuenta que dispara SuperTokens (autenticación §8)."""
+"""Emails de la cuenta que dispara SuperTokens (autenticación §8) y el aviso de
+contraseña cambiada (issue #2)."""
+
+from datetime import datetime
 
 from app.jobs.context import WorkerContext
 from app.services.auth_email_service import AuthEmailService
@@ -20,6 +23,18 @@ async def send_password_reset_email(
             supertokens_user_id=supertokens_user_id,
             tenant_id=tenant_id,
             language_hint=language_hint,
+        )
+
+
+async def send_password_changed_email(
+    ctx: WorkerContext, *, supertokens_user_id: str, changed_at: str
+) -> None:
+    """Lo encola PasswordService (SEND_PASSWORD_CHANGED_EMAIL) al cambiarla."""
+    async with ctx["session_factory"]() as session:
+        service = AuthEmailService(session, email_sender=ctx["email_sender"])
+        await service.send_password_changed(
+            supertokens_user_id=supertokens_user_id,
+            changed_at=datetime.fromisoformat(changed_at),
         )
 
 

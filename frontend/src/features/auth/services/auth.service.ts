@@ -135,4 +135,11 @@ export const authService = {
   getMe: () => apiClient.get<Me>("/me"),
 
   deleteAccount: () => apiClient.delete<void>("/me"),
+
+  /** Con la actual (issue #2). Cierra las demás sesiones; esta sigue abierta. */
+  changePassword: (currentPassword: string, newPassword: string) =>
+    apiClient.post<void>("/me/password", {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
 };

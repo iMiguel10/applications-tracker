@@ -865,6 +865,79 @@
         ]
       }
     },
+    "/api/v1/me/password": {
+      "post": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Cambia la contraseña con la actual",
+        "description": "Cambia la contraseña de la cuenta pidiendo la actual: funciona también en\nuna instalación sin correo, donde no hay enlace de recuperación.\n\n- **400** `wrong_current_password`: la actual no es correcta; no cambia nada.\n- **422** `password_policy`: la nueva no cumple la política de contraseñas.\n- **429** `rate_limited`: más de 5 intentos en 15 minutos.\n\nAl cambiarla se cierran **las demás sesiones** de la cuenta (sus refresh tokens\ndejan de servir); la de esta petición sigue abierta. Si la instalación envía\ncorreo, llega un aviso a la dirección de la cuenta.",
+        "operationId": "change_password_api_v1_me_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "La petición no se puede aplicar tal cual; ver `code`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos no válidos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/me/preferences": {
       "get": {
         "tags": [
@@ -10715,6 +10788,31 @@
           "pages"
         ],
         "title": "Page[ReminderRead]"
+      },
+      "PasswordChange": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "format": "password",
+            "title": "Current Password",
+            "description": "La contraseña actual.",
+            "writeOnly": true
+          },
+          "new_password": {
+            "type": "string",
+            "format": "password",
+            "title": "New Password",
+            "description": "La contraseña nueva. Debe cumplir la política de contraseñas (entre 8 y 100 caracteres, con letras y números); si no, 422 `password_policy`.",
+            "writeOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "PasswordChange",
+        "description": "Cambiar la contraseña con la actual. Las dos son obligatorias."
       },
       "PasswordField": {
         "properties": {

@@ -1,0 +1,10 @@
+{% set subject = "Your Applications Tracker password has changed" -%}
+Hi,
+
+The password of your Applications Tracker account was changed on {{ changed_at }}, from the application itself and using the previous password. Your other open sessions have been signed out.
+
+If it was you, you don't need to do anything.
+
+If it wasn't you, recover your account now: ask for a link to choose another password on this page and it will be sent to this email.
+
+{{ link }}
