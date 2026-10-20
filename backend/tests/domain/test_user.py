@@ -1,6 +1,6 @@
 import pytest
 
-from app.domain.user import Language, language_from_accept_language
+from app.domain.user import Language, language_from_accept_language, mask_email
 
 
 @pytest.mark.parametrize(
@@ -24,3 +24,17 @@ from app.domain.user import Language, language_from_accept_language
 )
 def test_language_from_accept_language(header: str | None, expected: Language | None):
     assert language_from_accept_language(header) == expected
+
+
+@pytest.mark.parametrize(
+    ("email", "masked"),
+    [
+        ("ana@nuevo.es", "a***@nuevo.es"),
+        ("a@b.es", "a***@b.es"),
+        ("raro@sub@dominio.es", "r***@dominio.es"),
+        ("sin-arroba", "***"),
+        ("@dominio.es", "***"),
+    ],
+)
+def test_mask_email(email: str, masked: str) -> None:
+    assert mask_email(email) == masked

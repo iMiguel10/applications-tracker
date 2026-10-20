@@ -259,3 +259,50 @@ async def test_password_changed_notice_without_smtp_sends_nothing(
         supertokens_user_id=user.supertokens_user_id,
         changed_at=datetime.now(UTC),
     )
+
+
+@pytest.mark.asyncio
+async def test_email_changed_notice_goes_to_the_old_address_masked(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    # Un email cambiado por quien administra: el aviso va a la dirección antigua,
+    # en el idioma de la cuenta, con el nuevo enmascarado y sin enlaces.
+    row = await UserRepository(db_session).get_by_id(user.id)
+    assert row is not None
+    row.language = "en"
+    await db_session.flush()
+    sender = RecordingEmailSender()
+    service = AuthEmailService(
+        db_session, email_sender=sender, identities=FakeIdentities()
+    )
+
+    sent = await service.send_email_changed(
+        supertokens_user_id=user.supertokens_user_id,
+        old_email="antes@example.com",
+        new_email="despues@nuevo.es",
+    )
+
+    assert sent is True
+    [email] = sender.sent
+    assert email.to == "antes@example.com"
+    assert email.subject == "Your Applications Tracker account email has changed"
+    assert "d***@nuevo.es" in email.text
+    assert "despues@" not in email.text and "despues@" not in (email.html or "")
+    assert "http" not in email.text
+
+
+@pytest.mark.asyncio
+async def test_email_changed_notice_without_smtp_sends_nothing(
+    db_session: AsyncSession, user: CurrentUser
+) -> None:
+    service = AuthEmailService(
+        db_session, email_sender=DisabledEmailSender(), identities=FakeIdentities()
+    )
+
+    sent = await service.send_email_changed(
+        supertokens_user_id=user.supertokens_user_id,
+        old_email="antes@example.com",
+        new_email="despues@nuevo.es",
+    )
+
+    assert sent is False

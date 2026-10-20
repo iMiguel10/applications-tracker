@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.domain.dates import format_local_datetime
-from app.domain.user import DEFAULT_LANGUAGE, Language
+from app.domain.user import DEFAULT_LANGUAGE, Language, mask_email
 from app.infra.email import (
     EmailDeliveryUnknownError,
     EmailDisabledError,
@@ -107,6 +107,32 @@ class AuthEmailService:
             context={
                 "changed_at": format_local_datetime(changed_at, timezone, language)
             },
+        )
+
+    async def send_email_changed(
+        self, *, supertokens_user_id: str, old_email: str, new_email: str
+    ) -> bool:
+        """El aviso, a la dirección **antigua**, de que quien administra ha cambiado
+        el email de la cuenta (`scripts/change_email.py`). Si no lo pidió la
+        titular, se entera al momento: el nuevo podría ser de otra persona, que con
+        la recuperación de contraseña se quedaría con la cuenta. Nombra el nuevo
+        enmascarado y no lleva enlaces: el antiguo ya no da acceso a nada. True si
+        el servidor SMTP lo aceptó."""
+        if not self.email_sender.enabled:
+            return False
+        language = await self._language_for(supertokens_user_id, None)
+        rendered = self.templates.render(
+            "email_changed", language, {"new_email": mask_email(new_email)}
+        )
+        return await self._send(
+            OutgoingEmail(
+                to=old_email,
+                subject=rendered.subject,
+                text=rendered.text,
+                html=rendered.html,
+            ),
+            kind="email_changed",
+            supertokens_user_id=supertokens_user_id,
         )
 
     async def send_verification(

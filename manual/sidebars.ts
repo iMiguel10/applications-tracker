@@ -41,6 +41,7 @@ const sidebars: SidebarsConfig = {
     "despliegue/copias-de-seguridad",
     "despliegue/despliegue-continuo",
     "despliegue/actualizar",
+    "despliegue/obligaciones",
   ],
   api: [
     "api/guia",
