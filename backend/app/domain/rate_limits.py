@@ -54,6 +54,10 @@ AI_PER_USER_DAY = RateRule("ai_day", "50/day", RateKey.USER)
 # una sesión abierta (un ordenador ajeno, una sesión robada). Cuenta todos los
 # intentos, también los correctos: nadie cambia su contraseña cinco veces seguidas.
 PASSWORD_CHANGE_PER_USER = RateRule("password_change", "5/15minutes", RateKey.USER)
+# Exportar todos los datos (issue #4): cada una lee la cuenta entera y comprime
+# hasta el almacenamiento de la cuenta (100 MB por defecto). Nadie la necesita más
+# de unas pocas veces seguidas.
+EXPORT_PER_USER = RateRule("export", "5/hour", RateKey.USER)
 
 # Rutas /auth/* de SuperTokens (POST) y sus reglas. Las sirve el middleware de
 # SuperTokens, no nuestros endpoints: las limita api/auth_rate_limit.py.

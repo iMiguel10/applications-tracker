@@ -32,6 +32,17 @@ El enlace caduca en **60 minutos**. Si caduca, puede pedir otro con **¿Olvidast
 Sin SMTP, cada persona puede **cambiar** su contraseña desde **Preferencias** escribiendo la actual, pero no **recuperarla** si la olvida: no hay enlace que enviar. Entonces hay que borrar su cuenta y crearla de nuevo con el script, o configurar el [correo](correo.md).
 :::
 
+## Exportar los datos de una cuenta
+
+Cada persona puede descargar todos sus datos desde **Preferencias** (un `.zip` con un JSON por tipo de dato y sus PDF). Si te los pide por otra vía, por ejemplo porque ya no puede entrar, genera el mismo `.zip` con el script. Como responsable de los datos, tienes un mes para responder a esa petición (RGPD, arts. 12, 15 y 20).
+
+El script escribe el `.zip` en la salida estándar: lánzalo desde el servidor y redirígelo a un fichero, sin terminal (sin él, la salida se mezcla con el terminal y el `.zip` sale roto):
+
+- **Coolify,** por SSH: `docker exec $(docker ps --format '{{.Names}}' | grep '^api-') python -m app.scripts.export_user ana@example.com > ana.zip`
+- **Sin Coolify:** `docker compose -f compose.prod.yml exec -T api python -m app.scripts.export_user ana@example.com > ana.zip`
+
+**Qué debe verse:** el script dice cuántos PDF y cuántos MB ha exportado, y `ana.zip` se abre con cualquier descompresor y lleva un `README.txt`. Si no hay ninguna cuenta con ese email, termina con un error. Nunca incluye las claves de IA de la persona.
+
 ## Abrir el registro
 
 Con `SIGNUP_ENABLED=true` (y volviendo a desplegar), cualquiera puede registrarse desde la pantalla de inicio de sesión. Piénsalo antes: cada cuenta usa disco y, si tienes IA de la plataforma, puede gastar sus usos gratuitos. Los [límites por cuenta](variables.md) acotan el daño, pero no lo evitan.

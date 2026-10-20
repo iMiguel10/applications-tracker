@@ -61,3 +61,6 @@ If the installation sends email:
 - You'll receive a notice that your password has changed. If it wasn't you, the email itself takes you to ask for a link to recover it.
 - If you've forgotten the current one, **Send link** is below the form: you'll receive the same link as to [recover your password](primeros-pasos.md#if-you-forget-your-password). Saving the new one with that link signs you out of **every** session, this one included.
 
+## Download your data
+
+The **Your data** card downloads everything you have in the application as a `.zip`, PDFs included: see [Export your data](exportar.md#download-all-your-data).

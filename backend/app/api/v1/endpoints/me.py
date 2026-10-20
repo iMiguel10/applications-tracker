@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 
 from app.api.v1.deps import (
+    enforce_export_rate_limit,
     enforce_password_change_rate_limit,
+    get_account_export_service,
     get_account_service,
     get_current_user,
     get_limit_service,
@@ -9,6 +12,7 @@ from app.api.v1.deps import (
     get_session_handle,
     get_user_service,
 )
+from app.domain.account_export import export_filename
 from app.domain.limits import WARNING_RATIO
 from app.schemas.common import error_responses
 from app.schemas.usage import LimitUsageRead, UsageRead
@@ -19,6 +23,7 @@ from app.schemas.user import (
     PreferencesRead,
     PreferencesUpdate,
 )
+from app.services.account_export_service import AccountExportService
 from app.services.account_service import AccountService
 from app.services.limit_service import LimitService
 from app.services.password_service import PasswordService
@@ -57,6 +62,42 @@ async def delete_me(
     Un access token ya emitido sigue validándose sin consultar al core hasta que
     caduca (máximo 5 minutos): el cliente debe cerrar sesión justo después."""
     await accounts.delete_account(current_user)
+
+
+@router.get(
+    "/export",
+    summary="Descarga todos los datos de la cuenta",
+    dependencies=[Depends(enforce_export_rate_limit)],
+    response_class=StreamingResponse,
+    responses={
+        200: {
+            "description": "`.zip` con todos los datos de la cuenta.",
+            "content": {
+                "application/zip": {"schema": {"type": "string", "format": "binary"}}
+            },
+        }
+    },
+)
+async def export_me(
+    current_user: CurrentUser = Depends(get_current_user),
+    exports: AccountExportService = Depends(get_account_export_service),
+) -> StreamingResponse:
+    """Todos los datos de la cuenta en un `.zip` (RGPD arts. 15 y 20): un JSON por
+    tipo de dato (solicitudes con su historial, empresas, entrevistas,
+    recordatorios, documentos, perfil, propuestas de IA, preferencias…), los PDF en
+    `documents/` y un `README.txt` que explica cada fichero.
+
+    Nunca incluye las claves de IA, ni cifradas: solo qué proveedor y modelo. El
+    fichero se genera mientras se descarga; si se corta, se vuelve a pedir.
+
+    - **429** `rate_limited`: más de 5 exportaciones en una hora."""
+    snapshot = await exports.snapshot(current_user)
+    filename = export_filename(snapshot.exported_at)
+    return StreamingResponse(
+        exports.zip_stream(snapshot),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post(

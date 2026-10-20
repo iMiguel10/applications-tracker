@@ -136,6 +136,9 @@ export const authService = {
 
   deleteAccount: () => apiClient.delete<void>("/me"),
 
+  /** Todos los datos de la cuenta en un `.zip` (issue #4). */
+  exportData: () => apiClient.getBlob("/me/export"),
+
   /** Con la actual (issue #2). Cierra las demás sesiones; esta sigue abierta. */
   changePassword: (currentPassword: string, newPassword: string) =>
     apiClient.post<void>("/me/password", {

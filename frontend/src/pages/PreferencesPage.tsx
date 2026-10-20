@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
-import { Trans, useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 import { useDocumentTitle } from "@/shared/hooks/useDocumentTitle";
 import { Button } from "@/shared/components/ui/button";
@@ -18,6 +17,7 @@ import {
 import { ChangePasswordCard } from "@/features/auth/components/ChangePasswordCard";
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog";
 import { EmailVerificationCard } from "@/features/auth/components/EmailVerificationCard";
+import { ExportDataCard } from "@/features/auth/components/ExportDataCard";
 import { PreferencesForm } from "@/features/auth/components/PreferencesForm";
 import { useMe } from "@/features/auth/hooks/queries/useMe";
 import { UsageCard } from "@/features/usage/components/UsageCard";
@@ -62,25 +62,14 @@ export function PreferencesPage() {
           <div className="grid gap-6">
             <EmailVerificationCard email={me.email} />
             <ChangePasswordCard email={me.email} />
+            <ExportDataCard />
             <Card className="ring-destructive/25">
               <CardHeader>
                 <CardTitle>{t("account.delete.title")}</CardTitle>
                 <CardAction>
                   <HelpLink page="deleteAccount" />
                 </CardAction>
-                <CardDescription>
-                  <Trans
-                    i18nKey="account.delete.description"
-                    components={{
-                      link: (
-                        <Link
-                          to="/applications"
-                          className="font-medium text-foreground underline underline-offset-4"
-                        />
-                      ),
-                    }}
-                  />
-                </CardDescription>
+                <CardDescription>{t("account.delete.description")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button

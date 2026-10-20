@@ -6,7 +6,7 @@ title: Delete your account
 Your account and **all** your data are deleted forever: applications with their history, companies, interviews, reminders, documents (their PDF files too), your profile and your preferences.
 :::
 
-1. If you want to keep your applications, [export them to CSV](exportar.md) first. PDFs are not in the CSV: download the ones you want to keep from **Documents**.
+1. If you want to keep your data, [download it](exportar.md#download-all-your-data) first with **Download all my data**, in **Preferences**: a `.zip` with everything, your PDFs included.
 2. In **Preferences**, click **Delete account**.
 3. Type your email to confirm and click **Delete account permanently**.
 

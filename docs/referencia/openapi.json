@@ -865,6 +865,57 @@
         ]
       }
     },
+    "/api/v1/me/export": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Descarga todos los datos de la cuenta",
+        "description": "Todos los datos de la cuenta en un `.zip` (RGPD arts. 15 y 20): un JSON por\ntipo de dato (solicitudes con su historial, empresas, entrevistas,\nrecordatorios, documentos, perfil, propuestas de IA, preferencias…), los PDF en\n`documents/` y un `README.txt` que explica cada fichero.\n\nNunca incluye las claves de IA, ni cifradas: solo qué proveedor y modelo. El\nfichero se genera mientras se descarga; si se corta, se vuelve a pedir.\n\n- **429** `rate_limited`: más de 5 exportaciones en una hora.",
+        "operationId": "export_me_api_v1_me_export_get",
+        "responses": {
+          "200": {
+            "description": "`.zip` con todos los datos de la cuenta.",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión, o el access token ha caducado o no es válido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones de este usuario (600 por minuto). `Retry-After` dice cuántos segundos esperar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitedRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "CookieAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/me/password": {
       "post": {
         "tags": [

@@ -6,7 +6,7 @@ title: Eliminar tu cuenta
 Se borran para siempre tu cuenta y **todos** tus datos: solicitudes con su historial, empresas, entrevistas, recordatorios, documentos (también sus ficheros PDF), tu perfil y tus preferencias.
 :::
 
-1. Si quieres conservar tus solicitudes, [expórtalas a CSV](exportar.md) antes. Los PDF no van en el CSV: descarga desde **Documentos** los que quieras guardar.
+1. Si quieres conservar tus datos, [descárgalos](exportar.md#descargar-todos-tus-datos) antes con **Descargar todos mis datos**, en **Preferencias**: un `.zip` con todo, también tus PDF.
 2. En **Preferencias**, pulsa **Eliminar cuenta**.
 3. Escribe tu email para confirmar y pulsa **Eliminar cuenta definitivamente**.
 
