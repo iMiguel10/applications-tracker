@@ -8,6 +8,7 @@ import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { useReminders } from "../hooks/queries/useReminders";
 import { ReminderFormDialog } from "./ReminderFormDialog";
 import { RemindersList } from "./RemindersList";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function RemindersSection({ applicationId }: { applicationId: string }) {
   const { t } = useTranslation();
@@ -24,7 +25,10 @@ export function RemindersSection({ applicationId }: { applicationId: string }) {
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">{t("reminders.title")}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="font-semibold">{t("reminders.title")}</h2>
+          <HelpLink page="reminders" />
+        </div>
         <Button variant="outline" size="sm" onClick={() => setFormOpen(true)}>
           <Plus />
           {t("reminders.new")}

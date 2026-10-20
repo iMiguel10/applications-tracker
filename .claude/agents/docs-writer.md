@@ -136,6 +136,7 @@ Comprueba que los sitios compilan sin avisos ni enlaces rotos:
 ```bash
 docker compose run --rm docs build --strict
 docker compose run --rm --no-deps manual npm run check-i18n   # cada página en es y en
+docker compose run --rm --no-deps manual npm run check-help-links   # las páginas que enlaza la app existen
 docker compose run --rm --no-deps manual npm run build        # los dos idiomas
 ```
 

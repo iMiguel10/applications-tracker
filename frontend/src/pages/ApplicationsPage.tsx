@@ -30,6 +30,7 @@ import type {
 import { ApplicationBoard } from "@/features/board/components/ApplicationBoard";
 import { useBoard } from "@/features/board/hooks/queries/useBoard";
 import { boardFilters } from "@/features/board/services/board.service";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function ApplicationsPage() {
   const { t } = useTranslation();
@@ -72,7 +73,10 @@ export function ApplicationsPage() {
         {/* El selector va junto al título y no junto a los filtros: en el tablero hay
             menos filtros y, a su lado, cambiaría de sitio al cambiar de vista. */}
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-2xl font-semibold">{t("applications.title")}</h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-2xl font-semibold">{t("applications.title")}</h1>
+            <HelpLink page={board ? "board" : "findApplications"} />
+          </div>
           <ViewToggle
             label={t("board.view")}
             options={[

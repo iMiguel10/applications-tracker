@@ -10,6 +10,7 @@ import { ListSkeleton } from "@/shared/components/common/Skeletons";
 import { ApplicationStatusBadge } from "./ApplicationStatusBadge";
 import { UndoStatusChangeDialog } from "./UndoStatusChangeDialog";
 import { useApplicationStatusChanges } from "../hooks/queries/useApplicationStatusChanges";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function StatusHistoryTimeline({ applicationId }: { applicationId: string }) {
   const { t, i18n } = useTranslation();
@@ -26,7 +27,10 @@ export function StatusHistoryTimeline({ applicationId }: { applicationId: string
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">{t("applications.history")}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="font-semibold">{t("applications.history")}</h2>
+          <HelpLink page="statusChanges" />
+        </div>
         {canUndo && (
           <Button variant="ghost" size="sm" onClick={() => setUndoOpen(true)}>
             <Undo2 />

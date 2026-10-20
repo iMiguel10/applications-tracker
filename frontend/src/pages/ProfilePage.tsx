@@ -21,6 +21,7 @@ import {
   useProfileSkills,
 } from "@/features/profile/hooks/queries/useProfileSkills";
 import { ENTRY_KINDS } from "@/features/profile/types/ProfileEntry";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 /** Perfil profesional (RF-100…102): la materia prima de los CVs generados. */
 export function ProfilePage() {
@@ -38,7 +39,10 @@ export function ProfilePage() {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">{t("profile.title")}</h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-2xl font-semibold">{t("profile.title")}</h1>
+            <HelpLink page="profile" />
+          </div>
           <p className="text-muted-foreground">{t("profile.description")}</p>
         </div>
         <Button onClick={() => setGenerateOpen(true)}>

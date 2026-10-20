@@ -15,6 +15,7 @@ import { useInterviews } from "../hooks/queries/useInterviews";
 import { InterviewFormDialog } from "./InterviewFormDialog";
 import { DeleteInterviewDialog } from "./DeleteInterviewDialog";
 import type { Interview } from "../types/Interview";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 interface InterviewsSectionProps {
   application: Application;
@@ -47,7 +48,10 @@ export function InterviewsSection({ application, onSuggestInterviewing }: Interv
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">{t("interviews.title")}</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="font-semibold">{t("interviews.title")}</h2>
+          <HelpLink page="interviews" />
+        </div>
         <Button variant="outline" size="sm" onClick={openCreate}>
           <Plus />
           {t("interviews.new")}

@@ -157,6 +157,8 @@ services:
       - ./manual:/app
       - /app/node_modules
       - ./docs/referencia:/docs/referencia:ro
+      # Las páginas del manual que enlaza la ayuda de la app (npm run check-help-links).
+      - ./frontend/src/shared/config:/frontend/src/shared/config:ro
 
   frontend:
     build:
@@ -170,6 +172,8 @@ services:
     # Solo las variables VITE_* necesarias: el resto del .env no debe llegar al contenedor del frontend.
     environment:
       - VITE_API_URL=${VITE_API_URL}
+      # El manual de desarrollo (servicio `manual`); en producción va en /manual/ del mismo dominio.
+      - VITE_MANUAL_URL=${VITE_MANUAL_URL:-http://localhost:3001/}
     depends_on:
       - api
 

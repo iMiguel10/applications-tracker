@@ -21,6 +21,7 @@ import {
   updateListParams,
 } from "@/features/documents/lib/listParams";
 import type { DocumentListParams } from "@/features/documents/types/Document";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 /** Biblioteca de documentos (RF-90): los CVs y cartas en PDF de la cuenta. */
 export function DocumentsPage() {
@@ -47,7 +48,10 @@ export function DocumentsPage() {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="grid gap-1">
-          <h1 className="text-2xl font-semibold">{t("documents.title")}</h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-2xl font-semibold">{t("documents.title")}</h1>
+            <HelpLink page="documents" />
+          </div>
           <p className="text-sm text-muted-foreground">{t("documents.subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2">

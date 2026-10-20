@@ -485,7 +485,7 @@ Las reglas de capas del frontend no cambian: `services/` sigue siendo la única 
 manual/
 ├── package.json, docusaurus.config.ts, sidebars.ts   Docusaurus 3.10 y docusaurus-plugin-openapi-docs 5.2, fijados
 ├── Dockerfile.dev
-├── scripts/                    prepare-openapi.mjs (copia derivada del contrato) y check-i18n.mjs
+├── scripts/                    prepare-openapi.mjs (copia derivada del contrato), check-i18n.mjs y check-help-links.mjs
 ├── docs/                       español, idioma por defecto
 │   ├── uso/                    manual de uso por tareas (RNF-33)
 │   ├── despliegue/             visión general, requisitos, Coolify y sin Coolify, variables, cuentas, correo, IA,
@@ -552,7 +552,7 @@ Ya añadidas en F9: `saq[redis]`, `weasyprint`, `jinja2` y `aiosmtplib`. WeasyPr
 | Job | Cambio |
 |---|---|
 | `backend-tests` | `compose.test.yml` añade `valkey-test`; los ficheros van a un directorio temporal por prueba |
-| `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
+| `manual` **[construido]** | Nativo con Node 24: `npm ci`, `npm run check-i18n` (cada página en los dos idiomas), `npm run check-help-links` (las páginas que enlaza la ayuda de la aplicación, en `frontend/src/shared/config/manualPages.ts`, existen en los dos idiomas), `npm run build` (falla ante enlaces rotos, igual que `mkdocs build --strict`) y `npm run typecheck` después del build, porque `sidebars.ts` importa la referencia generada |
 | `docs` | Sin cambios |
 | `prod-images` **[F7]** | Construye la imagen del backend (`--target prod`), la `web` y la `backup`, pasa `nginx -t` y `sh -n` a los scripts de copia, y valida `compose.prod.yml` con `docker compose config`. No despliega: comprueba que construye lo que construirá Coolify ([§9](#9-produccion-f7)) |
 | `deploy` **[F7]** | Solo en un push a `main`, tras los demás jobs y con la variable `PRODUCTION_URL`: despliega en Coolify por su API y comprueba el commit y el health (`deploy/coolify-deploy.sh`, §9) |
@@ -602,6 +602,7 @@ deploy/coolify-deploy.sh    despliegue continuo: lo ejecuta el job `deploy` de l
 **Imagen `web`:**
 - Recibe `APP_URL`, el origen público sin barra final, como argumento de build. Es la URL de la API del frontend (`VITE_API_URL`) y la base del manual (`MANUAL_BASE_URL=/manual/`, con `MANUAL_API_URL` para los ejemplos de la referencia de la API).
 - Vite la incrusta al compilar: cambiar de dominio exige reconstruir la imagen.
+- La ayuda del frontend (issue #6) enlaza al manual con `VITE_MANUAL_URL`, que aquí no se pasa: por defecto es `/manual/`, el mismo dominio. En desarrollo, `compose.yml` la pone a `http://localhost:3001/` (el servicio `manual`, que solo sirve el español).
 - `nginx.conf` reparte así:
   - `/api/`, `/auth/`, `/docs` y `/openapi.json` van a `api:8000`. El nombre se resuelve con el DNS de Docker en cada petición (`resolver 127.0.0.11` y `proxy_pass` con variable): con un `proxy_pass` fijo, Nginx seguiría llamando a la IP antigua de la API tras un despliegue (502), y no arrancaría si la API aún no existe.
   - `/manual/` sirve el manual: cada página es su `index.html`, y una carpeta sin página da el 404 del manual, no un 403.

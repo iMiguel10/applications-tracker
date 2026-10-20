@@ -64,6 +64,17 @@ describe("CalendarPage", () => {
     vi.clearAllMocks();
   });
 
+  it("enlaza su página del manual junto al título (issue #6)", async () => {
+    vi.mocked(preferencesService.get).mockResolvedValue(preferences("Europe/Madrid"));
+    vi.mocked(calendarService.events).mockResolvedValue({ events: [] });
+    renderPage("/calendar");
+
+    const help = screen.getByRole("link", {
+      name: `${i18n.t("help.pages.calendar")} ${i18n.t("help.newTab")}`,
+    });
+    expect(help.getAttribute("href")).toMatch(/\/uso\/calendario$/);
+  });
+
   it("pide el rango del mes en la zona de la cuenta, no en la del navegador", async () => {
     vi.mocked(preferencesService.get).mockResolvedValue(preferences("Europe/Madrid"));
     vi.mocked(calendarService.events).mockResolvedValue({ events: [] });

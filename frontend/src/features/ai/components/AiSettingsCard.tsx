@@ -8,6 +8,7 @@ import { formatDateTime } from "@/shared/lib/format";
 import { Button } from "@/shared/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -32,6 +33,7 @@ import { useAiConsents } from "../hooks/queries/useAiConsents";
 import { useAiKeys } from "../hooks/queries/useAiKeys";
 import { AI_SETTINGS_ID, keyPageUrl, providerName } from "../lib/providers";
 import type { AiProvider, AiProviderOption } from "../types/Ai";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 // El valor del selector para los usos gratuitos (un proveedor nunca se llama así).
 const PLATFORM = "platform";
@@ -81,6 +83,9 @@ export function AiSettingsCard() {
     <Card id={AI_SETTINGS_ID} className="scroll-mt-20">
       <CardHeader>
         <CardTitle>{t("ai.settings.title")}</CardTitle>
+        <CardAction>
+          <HelpLink page="ownAiKey" />
+        </CardAction>
         <CardDescription>{t("ai.settings.description")}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">

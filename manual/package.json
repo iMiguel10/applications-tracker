@@ -6,6 +6,7 @@
     "docusaurus": "docusaurus",
     "gen-api": "node scripts/prepare-openapi.mjs && docusaurus clean-api-docs all && docusaurus gen-api-docs all",
     "check-i18n": "node scripts/check-i18n.mjs",
+    "check-help-links": "node scripts/check-help-links.mjs",
     "prestart": "npm run gen-api",
     "start": "docusaurus start",
     "prebuild": "npm run gen-api",

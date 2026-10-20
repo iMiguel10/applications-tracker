@@ -3,6 +3,29 @@
     "name": "Applications Tracker",
     "tagline": "Every application, its story, and your next step — all in one place."
   },
+  "help": {
+    "link": "Help",
+    "newTab": "(opens in a new tab)",
+    "pages": {
+      "home": "User guide",
+      "registerApplication": "Help on adding an application",
+      "findApplications": "Help on finding applications",
+      "statusChanges": "Help on tracking the status",
+      "board": "Help on the board",
+      "interviews": "Help on interviews",
+      "reminders": "Help on reminders",
+      "calendar": "Help on the calendar",
+      "dashboard": "Help on the dashboard",
+      "documents": "Help on documents",
+      "profile": "Help on the profile",
+      "generateCv": "Help on generating a CV",
+      "aiCv": "Help on tailoring your CV with AI",
+      "aiCoverLetter": "Help on writing a cover letter with AI",
+      "ownAiKey": "Help on using your own AI key",
+      "preferences": "Help on preferences",
+      "deleteAccount": "Help on deleting your account"
+    }
+  },
   "health": {
     "title": "System status",
     "api": "API",

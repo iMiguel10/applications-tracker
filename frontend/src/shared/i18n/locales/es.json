@@ -3,6 +3,29 @@
     "name": "Applications Tracker",
     "tagline": "Todas tus candidaturas, su historia y tu próximo paso, en un solo sitio."
   },
+  "help": {
+    "link": "Ayuda",
+    "newTab": "(se abre en otra pestaña)",
+    "pages": {
+      "home": "Manual de uso",
+      "registerApplication": "Ayuda sobre registrar una solicitud",
+      "findApplications": "Ayuda sobre encontrar solicitudes",
+      "statusChanges": "Ayuda sobre seguir el estado",
+      "board": "Ayuda sobre el tablero",
+      "interviews": "Ayuda sobre las entrevistas",
+      "reminders": "Ayuda sobre los recordatorios",
+      "calendar": "Ayuda sobre el calendario",
+      "dashboard": "Ayuda sobre el dashboard",
+      "documents": "Ayuda sobre los documentos",
+      "profile": "Ayuda sobre el perfil",
+      "generateCv": "Ayuda sobre generar un CV",
+      "aiCv": "Ayuda sobre adaptar el CV con IA",
+      "aiCoverLetter": "Ayuda sobre escribir una carta con IA",
+      "ownAiKey": "Ayuda sobre usar tu propia clave de IA",
+      "preferences": "Ayuda sobre las preferencias",
+      "deleteAccount": "Ayuda sobre borrar la cuenta"
+    }
+  },
   "health": {
     "title": "Estado del sistema",
     "api": "API",

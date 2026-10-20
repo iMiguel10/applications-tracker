@@ -23,6 +23,7 @@ import {
   visibleRange,
 } from "@/features/calendar/lib/calendar";
 import type { CalendarParams, CalendarView } from "@/features/calendar/types/Calendar";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 const utc = (date: Date) => new Date(date.getTime()).toISOString();
 
@@ -55,7 +56,10 @@ export function CalendarPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center gap-4">
-        <h1 className="text-2xl font-semibold">{t("calendar.title")}</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold">{t("calendar.title")}</h1>
+          <HelpLink page="calendar" />
+        </div>
         <ViewToggle<CalendarView>
           label={t("calendar.view")}
           options={[

@@ -35,6 +35,7 @@ import type { Profile } from "@/features/profile/types/Profile";
 import type { ProfileEntry } from "@/features/profile/types/ProfileEntry";
 import type { ProfileLanguage, ProfileSkill } from "@/features/profile/types/ProfileSkill";
 import { CvContentPicker } from "./CvContentPicker";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 interface GenerateCvDialogProps {
   open: boolean;
@@ -64,7 +65,10 @@ export function GenerateCvDialog({ open, onOpenChange, onGenerated }: GenerateCv
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{t("documents.generate.title")}</DialogTitle>
+          <div className="flex items-center gap-1">
+            <DialogTitle>{t("documents.generate.title")}</DialogTitle>
+            <HelpLink page="generateCv" />
+          </div>
           <DialogDescription>{t("documents.generate.description")}</DialogDescription>
         </DialogHeader>
 

@@ -20,6 +20,7 @@ import {
   updateListParams,
 } from "@/features/reminders/lib/listParams";
 import type { ReminderListParams } from "@/features/reminders/types/Reminder";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function RemindersPage() {
   const { t } = useTranslation();
@@ -36,7 +37,10 @@ export function RemindersPage() {
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">{t("reminders.title")}</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold">{t("reminders.title")}</h1>
+          <HelpLink page="reminders" />
+        </div>
         <Button onClick={() => setFormOpen(true)}>
           <Plus />
           {t("reminders.new")}

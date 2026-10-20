@@ -52,6 +52,15 @@ La primera pantalla es el **Dashboard**, el resumen de tu búsqueda. Mientras no
 
 Cada cuenta es privada: nadie más puede ver tus solicitudes, empresas, entrevistas ni recordatorios.
 
+## Dónde está la ayuda
+
+Este manual se abre desde la propia aplicación, siempre en otra pestaña para que no pierdas lo que estabas haciendo:
+
+- **Ayuda**, en el menú de tu cuenta (en pantallas estrechas, dentro del menú general), abre su portada. También está arriba a la derecha en las pantallas de acceso, junto al selector de idioma.
+- El icono **?** junto al título de una página o de una tarjeta abre directamente la página del manual sobre eso: el tablero, el calendario, adaptar el CV con IA…
+
+El manual se abre en el idioma de la interfaz.
+
 :::info Idioma de la interfaz
 La interfaz está en español y en inglés. Las pantallas de acceso (inicio de sesión, registro y recuperar la contraseña) tienen arriba a la derecha el selector **Español · English**, que se recuerda en ese navegador. Dentro de la aplicación se sigue ese idioma hasta que eliges uno en [Preferencias](preferencias.md), que se aplica en cualquier dispositivo.
 :::

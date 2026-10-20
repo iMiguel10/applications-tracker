@@ -9,6 +9,7 @@ import { useCreateApplication } from "@/features/applications/hooks/mutations/us
 import { emptyApplicationForm } from "@/features/applications/lib/formValues";
 import { useAccountZone } from "@/features/auth/hooks/useAccountZone";
 import { todayIn } from "@/shared/lib/dates";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function ApplicationNewPage() {
   const { t } = useTranslation();
@@ -20,7 +21,10 @@ export function ApplicationNewPage() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-2xl font-semibold">{t("applications.newTitle")}</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold">{t("applications.newTitle")}</h1>
+        <HelpLink page="registerApplication" />
+      </div>
       <Card>
         <CardContent>
           <ApplicationForm

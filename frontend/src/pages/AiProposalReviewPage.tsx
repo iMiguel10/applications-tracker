@@ -42,6 +42,7 @@ import {
   useProfileLanguages,
   useProfileSkills,
 } from "@/features/profile/hooks/queries/useProfileSkills";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 /** Revisar una propuesta de IA y generar el PDF (RF-113, RF-118): el CV adaptado
  * o la carta de presentación, según el tipo de la propuesta. */
@@ -103,7 +104,10 @@ export function AiProposalReviewPage() {
           <ArrowLeft className="size-4" aria-hidden />
           {application.data.position_title} · {application.data.company.name}
         </Link>
-        <h1 className="text-2xl font-semibold">{title}</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold">{title}</h1>
+          <HelpLink page={letter ? "aiCoverLetter" : "aiCv"} />
+        </div>
         {data && (
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="gap-1">

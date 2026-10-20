@@ -10,6 +10,7 @@ import { ApplicationLoadError } from "@/features/applications/components/Applica
 import { useApplication } from "@/features/applications/hooks/queries/useApplication";
 import { useUpdateApplication } from "@/features/applications/hooks/mutations/useUpdateApplication";
 import { toFormValues } from "@/features/applications/lib/formValues";
+import { HelpLink } from "@/shared/components/help/HelpLink";
 
 export function ApplicationEditPage() {
   const { t } = useTranslation();
@@ -29,7 +30,10 @@ export function ApplicationEditPage() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="text-2xl font-semibold">{t("applications.editTitle")}</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold">{t("applications.editTitle")}</h1>
+        <HelpLink page="registerApplication" />
+      </div>
       <Card>
         <CardContent>
           <ApplicationForm
