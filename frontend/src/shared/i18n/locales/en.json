@@ -692,6 +692,7 @@
     "description": "Choose what you want to hear about by email. Every email has a link to turn that notification off.",
     "unverified": "Notifications are only sent to a verified email. Verify it in the Email card to start receiving them.",
     "unavailable": "This installation doesn't send email, so there are no email notifications.",
+    "unavailableHint": "If whoever runs it sets up email, you’ll be able to choose notices here for overdue reminders, upcoming interviews, inactive applications and a weekly summary.",
     "notify_reminder_due": {
       "label": "Reminder due",
       "description": "When a pending reminder reaches its date, or earlier if you choose so."

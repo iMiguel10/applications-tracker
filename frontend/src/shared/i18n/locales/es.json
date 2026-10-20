@@ -692,6 +692,7 @@
     "description": "Elige de qué quieres que te avisemos por email. Cada email trae un enlace para desactivar ese aviso.",
     "unverified": "Los avisos solo se envían a un email verificado. Verifícalo en la tarjeta Email para empezar a recibirlos.",
     "unavailable": "Esta instalación no envía emails, así que no hay avisos por email.",
+    "unavailableHint": "Si quien la administra configura el correo, aquí podrás elegir avisos de recordatorios vencidos, entrevistas próximas, solicitudes sin actividad y un resumen semanal.",
     "notify_reminder_due": {
       "label": "Recordatorio vencido",
       "description": "Cuando llega la fecha de un recordatorio pendiente, o antes si eliges antelación."

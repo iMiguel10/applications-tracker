@@ -1,3 +1,4 @@
+import { MailX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -25,7 +26,8 @@ import {
 import { NoticeSelect } from "./NoticeSelect";
 
 /** Avisos por email (RF-84): cada tipo se activa por separado y se guarda al
- * momento. Sin correo en la instalación, se explica y no se puede tocar. */
+ * momento. Sin correo en la instalación (issue #1), la tarjeta sigue ahí para que
+ * se sepa que la función existe, pero sin interruptores: solo lo explica. */
 export function NotificationSettingsCard({ preferences }: { preferences: Preferences }) {
   const { t } = useTranslation();
   const { data: meta } = useMeta();
@@ -49,46 +51,56 @@ export function NotificationSettingsCard({ preferences }: { preferences: Prefere
     <Card>
       <CardHeader>
         <CardTitle>{t("notifications.title")}</CardTitle>
-        <CardDescription>
-          {unavailable
-            ? t("notifications.unavailable")
-            : verified === false
-              ? t("notifications.unverified")
-              : t("notifications.description")}
-        </CardDescription>
+        {!unavailable && (
+          <CardDescription>
+            {verified === false ? t("notifications.unverified") : t("notifications.description")}
+          </CardDescription>
+        )}
       </CardHeader>
-      <CardContent className="grid gap-5">
-        {toggles.map((toggle) => {
-          const noticeField =
-            toggle in NOTICE_FIELDS ? NOTICE_FIELDS[toggle as keyof typeof NOTICE_FIELDS] : null;
-          return (
-            <div key={toggle} className="grid gap-3">
-              <label className="flex cursor-pointer items-start justify-between gap-4">
-                <span className="grid gap-0.5">
-                  <span className="text-sm font-medium">{t(`notifications.${toggle}.label`)}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {t(`notifications.${toggle}.description`)}
-                  </span>
-                </span>
-                <Switch
-                  className="mt-0.5"
-                  checked={preferences[toggle]}
-                  disabled={unavailable}
-                  onCheckedChange={(checked) => save({ [toggle]: checked })}
-                />
-              </label>
-              {noticeField && preferences[toggle] && (
-                <NoticeSelect
-                  value={preferences[noticeField]}
-                  options={NOTICE_HOURS[noticeField]}
-                  disabled={unavailable}
-                  onChange={(hours) => save({ [noticeField]: hours })}
-                />
-              )}
+      {unavailable ? (
+        <CardContent>
+          <div className="flex gap-3 rounded-lg border bg-muted/50 p-4">
+            <MailX className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <div className="grid gap-1">
+              <p className="text-sm font-medium">{t("notifications.unavailable")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("notifications.unavailableHint")}
+              </p>
             </div>
-          );
-        })}
-      </CardContent>
+          </div>
+        </CardContent>
+      ) : (
+        <CardContent className="grid gap-5">
+          {toggles.map((toggle) => {
+            const noticeField =
+              toggle in NOTICE_FIELDS ? NOTICE_FIELDS[toggle as keyof typeof NOTICE_FIELDS] : null;
+            return (
+              <div key={toggle} className="grid gap-3">
+                <label className="flex cursor-pointer items-start justify-between gap-4">
+                  <span className="grid gap-0.5">
+                    <span className="text-sm font-medium">{t(`notifications.${toggle}.label`)}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {t(`notifications.${toggle}.description`)}
+                    </span>
+                  </span>
+                  <Switch
+                    className="mt-0.5"
+                    checked={preferences[toggle]}
+                    onCheckedChange={(checked) => save({ [toggle]: checked })}
+                  />
+                </label>
+                {noticeField && preferences[toggle] && (
+                  <NoticeSelect
+                    value={preferences[noticeField]}
+                    options={NOTICE_HOURS[noticeField]}
+                    onChange={(hours) => save({ [noticeField]: hours })}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      )}
     </Card>
   );
 }
