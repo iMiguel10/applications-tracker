@@ -1,0 +1,7 @@
+node_modules
+out
+.remotion
+
+# Se regeneran: el audio con `npm run audio`, las capturas se copian desde ../capturas
+public/audio/
+public/shots/
